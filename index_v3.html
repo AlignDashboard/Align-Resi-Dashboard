@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Align Asset Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ink:        #0e1116;
+    --panel:      #161b22;
+    --panel-2:    #1c232d;
+    --line:       #2a323d;
+    --text:       #e6e9ef;
+    --muted:      #8b95a4;
+    --amber:      #e0a53f;
+    --amber-soft: rgba(224,165,63,0.15);
+    --teal:       #5fb3b3;
+    --red:        #d9694f;
+    --green:      #6bbf8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--ink); color: var(--text);
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, monospace;
+    -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; }
+
+  /* ---------- Password gate ---------- */
+  #gate {
+    position: fixed; inset: 0; z-index: 100;
+    background: radial-gradient(circle at 50% 30%, #171d26 0%, var(--ink) 70%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px; padding: 24px;
+  }
+  #gate h1 { font-size: 15px; letter-spacing: 4px; font-weight: 600; text-transform: uppercase; }
+  #gate .sub { color: var(--muted); font-size: 12px; letter-spacing: 1px; text-align: center; max-width: 320px; line-height: 1.6; }
+  #gate .mark { width: 34px; height: 34px; border: 1px solid var(--amber); position: relative; }
+  #gate .mark::after { content:""; position:absolute; inset:7px; border:1px solid var(--amber); opacity:.4;}
+  .pwrow { display: flex; gap: 8px; }
+  #pw {
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    padding: 12px 14px; font-family: inherit; font-size: 13px; letter-spacing: 2px;
+    width: 220px; outline: none;
+  }
+  #pw:focus { border-color: var(--amber); }
+  #unlock {
+    background: var(--amber); color: #10130f; border: none; padding: 12px 20px;
+    font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer;
+  }
+  #unlock:hover { filter: brightness(1.08); }
+  #err { color: var(--red); font-size: 11px; letter-spacing: 1px; height: 12px; }
+
+  /* ---------- App ---------- */
+  #app { display: none; max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
+  header.top { display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 26px; flex-wrap: wrap; gap: 8px; }
+  header.top .title { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
+  header.top .title span { color: var(--amber); }
+  header.top .meta { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
+  .card.wide { grid-column: 1 / -1; }
+  .card h2 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+    font-weight: 600; margin-bottom: 2px; }
+  .card .eyebrow { font-size: 10px; letter-spacing: 1px; color: var(--amber); margin-bottom: 12px; display:block; }
+  .chartwrap { position: relative; height: 300px; }
+  .card.wide .chartwrap { height: 320px; }
+
+  footer { margin-top: 30px; color: var(--muted); font-size: 10px; letter-spacing: 1px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
+  .loaderr { color: var(--red); font-size: 12px; padding: 40px; text-align:center; }
+  .empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100%; text-align:center; gap:10px; color:var(--muted); }
+  .empty .big { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text); }
+  .empty .why { font-size:11px; line-height:1.6; max-width:420px; }
+  .empty .dash { width:40px; height:1px; background:var(--line); }
+
+  .section-label { grid-column: 1 / -1; margin-top: 14px; display:flex; align-items:center; gap:14px;
+    color: var(--muted); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; }
+  .section-label::before, .section-label::after { content:""; flex:1; height:1px; background: var(--line); }
+  .ph-card { background: var(--panel); border: 1px dashed var(--line); padding: 16px; min-height: 150px;
+    display:flex; flex-direction:column; }
+  .ph-card h3 { font-size: 12px; letter-spacing: 1px; color: var(--text); font-weight: 600; margin-bottom: 4px; }
+  .ph-card .src { font-size: 9px; letter-spacing: .5px; color: var(--amber); text-transform: uppercase; margin-bottom: auto; }
+  .ph-card .stub { display:flex; align-items:flex-end; gap:4px; height:52px; margin-top:12px; opacity:.35; }
+  .ph-card .stub i { flex:1; background: var(--muted); display:block; }
+  .ph-card .await { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-top:10px; }
+
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+  <!-- =================== PASSWORD GATE ===================
+       NOTE: This is a client-side visibility gate, NOT encryption.
+       It deters casual viewing but the page source is readable.
+       Before loading REAL financial data, replace this with true
+       client-side AES encryption of metrics.json (see footer note). -->
+  <div id="gate">
+    <div class="mark"></div>
+    <h1>Align Asset Dashboard</h1>
+    <div class="sub">The Landing · Chorus · The Madelon. Enter the password to view.</div>
+    <div class="pwrow">
+      <input id="pw" type="password" placeholder="PASSWORD" autocomplete="off" />
+      <button id="unlock">Unlock</button>
+    </div>
+    <div id="err"></div>
+  </div>
+
+  <!-- =================== APP =================== -->
+  <div id="app">
+    <header class="top">
+      <div class="title">ALIGN · <span>RESI ASSET MANAGEMENT</span></div>
+      <div class="meta" id="metaline">loading…</div>
+    </header>
+
+    <div class="grid">
+      <div class="card wide">
+        <h2>Trade Outs</h2>
+        <span class="eyebrow" id="toEyebrow">NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT</span>
+        <div class="chartwrap" id="tradeOutWrap"><canvas id="tradeOut"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h2>Expense Trend</h2>
+        <span class="eyebrow" id="evEyebrow">LOADING…</span>
+        <div class="chartwrap"><canvas id="expVar"></canvas></div>
+        <div id="evFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>PSF vs Other Properties</h2>
+        <span class="eyebrow" id="psfEyebrow">LOADING…</span>
+        <div class="chartwrap"><canvas id="psf"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid" id="placeholderGrid"></div>
+
+    <footer id="footer"></footer>
+  </div>
+
+<script>
+/* ============================================================
+   PASSWORD GATE
+   ============================================================ */
+const PASSWORD = "AlignExecs";   // <-- change here to update the gate password
+
+const gate   = document.getElementById("gate");
+const app    = document.getElementById("app");
+const pwInput = document.getElementById("pw");
+const errEl  = document.getElementById("err");
+
+function tryUnlock() {
+  if (pwInput.value === PASSWORD) {
+    gate.style.display = "none";
+    app.style.display = "block";
+    loadDashboard();
+  } else {
+    errEl.textContent = "Incorrect password";
+    pwInput.value = "";
+    pwInput.focus();
+  }
+}
+document.getElementById("unlock").addEventListener("click", tryUnlock);
+pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
+window.addEventListener("load", () => pwInput.focus());
+
+/* ============================================================
+   CHART THEME
+   ============================================================ */
+const C = {
+  amber: "#e0a53f", teal: "#5fb3b3", red: "#d9694f", green: "#6bbf8a",
+  muted: "#8b95a4", line: "#2a323d", text: "#e6e9ef"
+};
+Chart.defaults.color = C.muted;
+Chart.defaults.font.family = '"SF Mono", ui-monospace, Menlo, monospace';
+Chart.defaults.font.size = 11;
+Chart.defaults.borderColor = C.line;
+
+const gridCfg = { color: C.line, drawTicks: false };
+const legendCfg = { labels: { boxWidth: 10, boxHeight: 10, padding: 16,
+  font: { size: 10 } }, position: "top", align: "end" };
+
+/* ============================================================
+   LOAD DATA + RENDER
+   ============================================================ */
+async function loadDashboard() {
+  let d;
+  try {
+    const res = await fetch("metrics.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    d = await res.json();
+  } catch (e) {
+    app.innerHTML = '<div class="loaderr">Could not load metrics.json — check the pipeline has run.</div>';
+    return;
+  }
+
+  // meta + footer
+  const gen = d.meta?.generated_at ? new Date(d.meta.generated_at).toLocaleString() : "—";
+  document.getElementById("metaline").textContent =
+    (d.meta?.portfolio || "Portfolio") + " · updated " + gen;
+  document.getElementById("footer").innerHTML =
+    "Data source: metrics.json (written by email ingestion pipeline). " +
+    (d.meta?.note || "") +
+    "<br>SECURITY: password gate is client-side only and not encryption. " +
+    "Before loading real financials, encrypt metrics.json client-side (AES) and decrypt with the password, so raw data never ships in plaintext.";
+
+  /* ---- 1. TRADE OUTS (line, or empty state) ---- */
+  const to = d.trade_outs;
+  if (to && to.available) {
+    document.getElementById("toEyebrow").textContent = "NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT";
+    new Chart(document.getElementById("tradeOut"), {
+      type: "line",
+      data: {
+        labels: to.labels,
+        datasets: [
+          { label: "New", data: to.new, borderColor: C.amber, backgroundColor: C.amber, tension: .3, borderWidth: 2, pointRadius: 3 },
+          { label: "Renewal", data: to.renewal, borderColor: C.teal, backgroundColor: C.teal, tension: .3, borderWidth: 2, pointRadius: 3 },
+          { label: "Blended", data: to.blended, borderColor: C.muted, backgroundColor: C.muted, tension: .3, borderWidth: 1.5, borderDash: [4,4], pointRadius: 0 }
+        ]
+      },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y}%` } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } }, x: { grid: { display: false } } } }
+    });
+  } else {
+    document.getElementById("toEyebrow").textContent = "AWAITING SOURCE DATA";
+    document.getElementById("tradeOutWrap").innerHTML =
+      '<div class="empty"><div class="dash"></div><div class="big">No trade-out data yet</div>' +
+      '<div class="why">' + (to?.reason || "No data available.") + '</div><div class="dash"></div></div>';
+  }
+
+  /* ---- 2. EXPENSE TREND (multi-line, top movers) ---- */
+  const ev = d.expense_trend;
+  if (ev && ev.available) {
+    document.getElementById("evEyebrow").textContent = ev.property + " · " + ev.period;
+    const palette = [C.amber, C.teal, C.red, C.green, C.muted];
+    new Chart(document.getElementById("expVar"), {
+      type: "line",
+      data: { labels: ev.labels,
+        datasets: ev.series.map((s, i) => ({
+          label: s.name, data: s.data,
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length],
+          tension: .3, borderWidth: 2, pointRadius: 2
+        })) },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg,
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: $${c.parsed.y.toLocaleString()}` } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: v => "$" + (v/1000) + "k" } },
+          x: { grid: { display: false } } } }
+    });
+    if (ev.footnote) document.getElementById("evFoot").textContent = ev.footnote;
+  } else {
+    document.getElementById("evEyebrow").textContent = "AWAITING SOURCE DATA";
+    document.getElementById("expVar").parentElement.innerHTML =
+      '<div class="empty"><div class="dash"></div><div class="big">No expense data yet</div><div class="dash"></div></div>';
+  }
+
+  /* ---- 3. PSF vs PEERS (bar, subject highlighted) ---- */
+  const p = d.psf_vs_peers;
+  if (p && p.available) {
+    document.getElementById("psfEyebrow").textContent =
+      p.metric + " · SUBJECT vs " + (p.labels.length - 1) + " COMPS";
+    const colors = p.labels.map(l => l === p.subject ? C.amber : C.muted);
+    new Chart(document.getElementById("psf"), {
+      type: "bar",
+      data: { labels: p.labels,
+        datasets: [{ label: "$/sqft", data: p.psf, backgroundColor: colors }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => `$${c.parsed.x.toFixed(2)}/sqft` } },
+          annotation: {} },
+        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + v.toFixed(2) } },
+          y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+    });
+  } else {
+    document.getElementById("psfEyebrow").textContent = "AWAITING SOURCE DATA";
+    document.getElementById("psf").parentElement.innerHTML =
+      '<div class="empty"><div class="dash"></div><div class="big">No PSF data yet</div><div class="dash"></div></div>';
+  }
+
+  /* ---- PLACEHOLDER CHARTS (awaiting source feeds) ---- */
+  const grid = document.getElementById("placeholderGrid");
+  if (grid && Array.isArray(d.placeholders) && d.placeholders.length) {
+    // deterministic stub bar heights so cards look intentional, not random each load
+    const stubHeights = [40, 65, 30, 80, 55, 70, 45, 60];
+    let html = '<div class="section-label">Planned Metrics · Awaiting Data Feeds</div>';
+    d.placeholders.forEach(ph => {
+      const bars = stubHeights.map(h => `<i style="height:${h}%"></i>`).join("");
+      html +=
+        '<div class="ph-card">' +
+          '<h3>' + ph.title + '</h3>' +
+          '<div class="src">Source: ' + ph.source + '</div>' +
+          '<div class="stub">' + bars + '</div>' +
+          '<div class="await">■ Awaiting data</div>' +
+        '</div>';
+    });
+    grid.innerHTML = html;
+  }
+}
+</script>
+</body>
+</html>
