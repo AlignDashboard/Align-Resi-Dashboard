@@ -36,9 +36,9 @@
     },
     {
       "period_end": "Jun 2026",
-      "ratio_t12": 55.3,
-      "revenue_t12": 2720066.21,
-      "opex_recoverable_t12": 1505179.62,
+      "ratio_t12": 127.3,
+      "revenue_t12": 29174.0,
+      "opex_recoverable_t12": 37124.67,
       "labels": [
         "Jul",
         "Aug",
@@ -54,18 +54,18 @@
         "Jun"
       ],
       "monthly_ratio": [
-        159.1,
-        145.4,
-        102.3,
-        90.3,
-        47.0,
-        81.4,
-        59.2,
-        43.4,
-        55.3,
-        55.0,
-        40.5,
-        -47.1
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        19.8,
+        -899.6
       ]
     }
   ]
