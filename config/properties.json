@@ -1,15 +1,50 @@
 {
-  "_comment": "Map Yardi/report property codes to display names and a URL-safe slug. Add a line per property. Codes can differ across report types; list every code that appears for a property under 'codes'.",
+  "_comment": "Property master. Every building ID AND consolidation ID maps to its parent property so statements route correctly whether sent per-building or consolidated. 'active' controls which show on the dashboard now (residential first; commercial/development ready for later). NOTE: The Landing building IDs include both 'p000611' (from master list) and 'p0005611' (from actual statement filenames) pending confirmation of the correct code.",
   "properties": [
     {
-      "slug": "palma-north",
-      "name": "Palma North",
-      "codes": ["rspalman"]
+      "slug": "the-landing", "name": "The Landing", "asset_type": "residential", "active": true,
+      "codes": [".Landing", "p000611", "p0005611", "p0005612", "p0005640", "p0005671"]
     },
     {
-      "slug": "the-landing",
-      "name": "The Landing",
-      "codes": ["p0005611"]
-    }
+      "slug": "chorus", "name": "Chorus", "asset_type": "residential", "active": true,
+      "codes": [".Chorus", "p0003872", "p0004764", "p0005215"]
+    },
+    {
+      "slug": "madelon", "name": "Madelon", "asset_type": "residential", "active": true,
+      "codes": ["madelon", "camadelo", "camadret"]
+    },
+    {
+      "slug": "335-third-street", "name": "335 Third Street", "asset_type": "residential", "active": true,
+      "codes": ["rs335"]
+    },
+    {
+      "slug": "palma", "name": "Palma", "asset_type": "residential", "active": true,
+      "codes": [".palma", "rspalman", "rspalmas"]
+    },
+
+    { "slug": "1023-mission", "name": "1023 Mission", "asset_type": "commercial", "active": false, "codes": ["1023070"] },
+    { "slug": "123-mission", "name": "123 Mission", "asset_type": "commercial", "active": false, "codes": ["1230090"] },
+    { "slug": "251-post", "name": "251 Post", "asset_type": "commercial", "active": false, "codes": ["2510150"] },
+    { "slug": "667-mission", "name": "667 Mission", "asset_type": "commercial", "active": false, "codes": ["6670040"] },
+    { "slug": "bellevue", "name": "Bellevue", "asset_type": "commercial", "active": false, "codes": ["bpc0010"] },
+    { "slug": "california-plaza", "name": "California Plaza", "asset_type": "commercial", "active": false, "codes": ["cp00080"] },
+    { "slug": "the-exchange", "name": "The Exchange", "asset_type": "commercial", "active": false, "codes": ["exc00130"] },
+    { "slug": "wood-hollow", "name": "Wood Hollow", "asset_type": "commercial", "active": false, "codes": ["wh00020"] },
+    { "slug": "2101-mission", "name": "2101 Mission", "asset_type": "commercial", "active": false, "codes": ["2101123", "2101121", "2101122"] },
+    { "slug": "burbank-empire", "name": "Burbank Empire", "asset_type": "commercial", "active": false, "codes": ["bec0100", "bec0101", "bec0102"] },
+    { "slug": "walnut-creek-center", "name": "Walnut Creek Center", "asset_type": "commercial", "active": false, "codes": ["WCC0050", "owcc051", "twcc052"] },
+    { "slug": "essex-opco", "name": "Essex OpCo", "asset_type": "commercial", "active": false, "codes": ["esx00149", "esx00145", "esx00146", "esx00147"] },
+    { "slug": "essex-propco", "name": "Essex PropCo", "asset_type": "commercial", "active": false, "codes": ["esx00144", "esx00141", "esx00142", "esx00143"] },
+    { "slug": "livermore", "name": "Livermore", "asset_type": "commercial", "active": false, "codes": ["lm00030", "lm00031", "lm00032", "lm00033"] },
+
+    { "slug": "1335-webster", "name": "1335 Webster", "asset_type": "development", "active": false, "codes": ["dnc1335w"] },
+    { "slug": "15-marina-blvd", "name": "15 Marina Blvd", "asset_type": "development", "active": false, "codes": ["dnc15mar"] },
+    { "slug": "1655-ecr", "name": "1655 ECR", "asset_type": "development", "active": false, "codes": ["dnc1655e"] },
+    { "slug": "3350-mission-st", "name": "3350 Mission St", "asset_type": "development", "active": false, "codes": ["dnc3350m"] },
+    { "slug": "5727-college", "name": "5727 College", "asset_type": "development", "active": false, "codes": ["dnc5727c"] },
+    { "slug": "850-la-playa", "name": "850 La Playa", "asset_type": "development", "active": false, "codes": ["dnc850la"] },
+    { "slug": "align-so-fs", "name": "Align So FS", "asset_type": "development", "active": false, "codes": ["dnccasofs"] },
+    { "slug": "sequoia-living-project", "name": "Sequoia Living Project", "asset_type": "development", "active": false, "codes": ["dncsequi"] },
+    { "slug": "sequoia-living-inc", "name": "Sequoia Living Inc", "asset_type": "development", "active": false, "codes": ["dncsequo"] }
   ]
 }
