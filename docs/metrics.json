@@ -1,24 +1,88 @@
 {
   "meta": {
-    "generated_at": "2026-07-14T00:00:00Z",
+    "generated_at": "2026-07-16T00:18:14.483706+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
   "trade_outs": {
     "available": false,
     "reason": "Awaiting source: AIRM / Yardi Revenue Management + Weekly Leasing Report.",
-    "labels": [], "new": [], "renewal": [], "blended": []
+    "labels": [],
+    "new": [],
+    "renewal": [],
+    "blended": []
   },
   "expense_trend": {
     "available": true,
     "property": "The Landing (p0005611)",
     "basis": "Monthly operating expense, top movers by volatility",
     "period": "Jul 2025 - Jun 2026",
-    "labels": ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"],
+    "labels": [
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun"
+    ],
     "series": [
-      { "name": "Marketing", "data": [8294,14067,1503,7053,6486,20362,1996,8576,10484,10984,7990,-1413] },
-      { "name": "Utilities", "data": [39591,9945,13101,9100,9630,10324,19244,21218,25350,11026,15502,11973] },
-      { "name": "General & Admin", "data": [49883,39075,32454,55218,53491,56912,34976,58538,86617,45521,59164,51952] }
+      {
+        "name": "Marketing",
+        "data": [
+          8294,
+          14067,
+          1503,
+          7053,
+          6486,
+          20362,
+          1996,
+          8576,
+          10484,
+          10984,
+          7990,
+          -1413
+        ]
+      },
+      {
+        "name": "Utilities",
+        "data": [
+          39591,
+          9945,
+          13101,
+          9100,
+          9630,
+          10324,
+          19244,
+          21218,
+          25350,
+          11026,
+          15502,
+          11973
+        ]
+      },
+      {
+        "name": "General & Admin",
+        "data": [
+          49883,
+          39075,
+          32454,
+          55218,
+          53491,
+          56912,
+          34976,
+          58538,
+          86617,
+          45521,
+          59164,
+          51952
+        ]
+      }
     ],
     "footnote": "Real Estate Taxes ($146K/mo) spiked to $419K in Apr 2026 (annual assessment) and Insurance to $37K in Mar; both excluded as one-time items so monthly operating movement stays visible."
   },
@@ -26,22 +90,144 @@
     "available": true,
     "subject": "335 Third Street",
     "metric": "Rent Per Sqft, 30-Day Avg",
-    "labels": ["335 Third Street", "Modera Jack London Sq", "Channel House", "5 Embarcadero W.", "200 2nd St", "1 Embarcadero W #252", "Link Apts Four12", "Modern Bldg JLS", "Portobello Condos", "311 2nd St"],
-    "psf": [4.01, 5.13, 3.90, 3.98, 3.15, 3.59, 4.56, 3.73, 3.16, 3.43],
+    "labels": [
+      "335 Third Street",
+      "Modera Jack London Sq",
+      "Channel House",
+      "5 Embarcadero W.",
+      "200 2nd St",
+      "1 Embarcadero W #252",
+      "Link Apts Four12",
+      "Modern Bldg JLS",
+      "Portobello Condos",
+      "311 2nd St"
+    ],
+    "psf": [
+      4.01,
+      5.13,
+      3.9,
+      3.98,
+      3.15,
+      3.59,
+      4.56,
+      3.73,
+      3.16,
+      3.43
+    ],
     "comps_avg": 3.85
   },
   "placeholders": [
-    { "id": "effVsGross",    "title": "Effective vs. Gross Rent", "source": "Concession Burn-Off",                            "viz": "line" },
-    { "id": "lossToLease",   "title": "Loss to Lease",            "source": "Rent Roll",                                     "viz": "line" },
-    { "id": "tours",         "title": "# of Tours",               "source": "Property Status",                               "viz": "bar"  },
-    { "id": "leads",         "title": "# of Leads",               "source": "Property Status",                               "viz": "bar"  },
-    { "id": "applications",  "title": "# of Applications",        "source": "Property Status · Closing Ratio",               "viz": "bar"  },
-    { "id": "renewals",      "title": "Renewals",                 "source": "Lease Expiration + Renewal Workbook",           "viz": "bar"  },
-    { "id": "expenseRatio",  "title": "Expense Ratio",            "source": "P&L / General Ledger",                          "viz": "line" },
-    { "id": "noiMargin",     "title": "NOI Margin",               "source": "P&L · Budget Variance %",                       "viz": "line" },
-    { "id": "cashOnHand",    "title": "Cash on Hand",             "source": "Balance Sheet / Treasury",                      "viz": "line" },
-    { "id": "mktgPerLease",  "title": "Marketing Spend / Lease",  "source": "Marketing Spend + Leasing Report",              "viz": "bar"  },
-    { "id": "occupancy",     "title": "Occupancy %",              "source": "Property Status",                               "viz": "line" },
-    { "id": "leasedPct",     "title": "Leased %",                 "source": "Property Status",                               "viz": "line" }
-  ]
+    {
+      "id": "effVsGross",
+      "title": "Effective vs. Gross Rent",
+      "source": "Concession Burn-Off",
+      "viz": "line"
+    },
+    {
+      "id": "lossToLease",
+      "title": "Loss to Lease",
+      "source": "Rent Roll",
+      "viz": "line"
+    },
+    {
+      "id": "tours",
+      "title": "# of Tours",
+      "source": "Property Status",
+      "viz": "bar"
+    },
+    {
+      "id": "leads",
+      "title": "# of Leads",
+      "source": "Property Status",
+      "viz": "bar"
+    },
+    {
+      "id": "applications",
+      "title": "# of Applications",
+      "source": "Property Status \u00b7 Closing Ratio",
+      "viz": "bar"
+    },
+    {
+      "id": "renewals",
+      "title": "Renewals",
+      "source": "Lease Expiration + Renewal Workbook",
+      "viz": "bar"
+    },
+    {
+      "id": "noiMargin",
+      "title": "NOI Margin",
+      "source": "P&L \u00b7 Budget Variance %",
+      "viz": "line"
+    },
+    {
+      "id": "cashOnHand",
+      "title": "Cash on Hand",
+      "source": "Balance Sheet / Treasury",
+      "viz": "line"
+    },
+    {
+      "id": "mktgPerLease",
+      "title": "Marketing Spend / Lease",
+      "source": "Marketing Spend + Leasing Report",
+      "viz": "bar"
+    },
+    {
+      "id": "occupancy",
+      "title": "Occupancy %",
+      "source": "Property Status",
+      "viz": "line"
+    },
+    {
+      "id": "leasedPct",
+      "title": "Leased %",
+      "source": "Property Status",
+      "viz": "line"
+    }
+  ],
+  "expense_ratio": {
+    "available": true,
+    "basis": "Recoverable Opex \u00f7 Operating Revenue (T12)",
+    "properties": [
+      {
+        "slug": "palma-north",
+        "name": "Palma North",
+        "ratio_t12": 55.3,
+        "trend_labels": [
+          "Jun 2026"
+        ],
+        "trend_values": [
+          55.3
+        ],
+        "latest_monthly_labels": [
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun"
+        ],
+        "latest_monthly_ratio": [
+          159.1,
+          145.4,
+          102.3,
+          90.3,
+          47.0,
+          81.4,
+          59.2,
+          43.4,
+          55.3,
+          55.0,
+          40.5,
+          -47.1
+        ]
+      }
+    ],
+    "footnote": "Rolling T12 expense ratio per property; one point per monthly statement. Monthly ratios within a statement are volatile on an accrual basis \u2014 the T12 figure is the reliable KPI."
+  }
 }
