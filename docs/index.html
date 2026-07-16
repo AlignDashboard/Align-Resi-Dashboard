@@ -134,6 +134,19 @@
         <span class="eyebrow" id="psfEyebrow">LOADING…</span>
         <div class="chartwrap"><canvas id="psf"></canvas></div>
       </div>
+
+      <div class="card wide">
+        <h2>Expense Ratio</h2>
+        <span class="eyebrow" id="erEyebrow">LOADING…</span>
+        <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:0 0 auto;text-align:center;padding:0 10px;">
+            <div id="erBig" style="font-size:40px;font-weight:700;color:var(--amber);line-height:1;">—</div>
+            <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:6px;">T12 Ratio</div>
+          </div>
+          <div class="chartwrap" style="flex:1 1 340px;height:220px;"><canvas id="expRatio"></canvas></div>
+        </div>
+        <div id="erFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:10px;"></div>
+      </div>
     </div>
 
     <div class="grid" id="placeholderGrid"></div>
@@ -280,6 +293,50 @@ async function loadDashboard() {
     document.getElementById("psfEyebrow").textContent = "AWAITING SOURCE DATA";
     document.getElementById("psf").parentElement.innerHTML =
       '<div class="empty"><div class="dash"></div><div class="big">No PSF data yet</div><div class="dash"></div></div>';
+  }
+
+  /* ---- EXPENSE RATIO (per-property rolling T12) ---- */
+  const er = d.expense_ratio;
+  if (er && er.available && Array.isArray(er.properties) && er.properties.length) {
+    document.getElementById("erEyebrow").textContent = er.basis;
+    // headline = latest T12 of first property (or portfolio if one day added)
+    const first = er.properties[0];
+    document.getElementById("erBig").textContent =
+      (first.ratio_t12 != null ? first.ratio_t12 + "%" : "—");
+    if (er.footnote) document.getElementById("erFoot").textContent = er.footnote;
+
+    const palette = [C.amber, C.teal, C.red, C.green, C.muted];
+    // union of all period labels across properties, chronologically as given
+    const labels = first.trend_labels;
+    const oneMonth = labels.length < 2;
+    new Chart(document.getElementById("expRatio"), {
+      type: oneMonth ? "bar" : "line",
+      data: {
+        labels: oneMonth ? first.latest_monthly_labels : labels,
+        datasets: er.properties.map((p, i) => ({
+          label: p.name,
+          data: oneMonth ? p.latest_monthly_ratio : p.trend_values,
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length],
+          tension: .3, borderWidth: 2, pointRadius: 3,
+        })),
+      },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: er.properties.length > 1 ? legendCfg : { display: false },
+          tooltip: { callbacks: { label: c =>
+            `${c.dataset.label}: ${c.parsed.y == null ? "n/a" : c.parsed.y + "%"}` } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } },
+          x: { grid: { display: false } } } }
+    });
+    // clarify what the chart shows when only one statement exists
+    if (oneMonth) {
+      document.getElementById("erEyebrow").textContent =
+        er.basis + " · " + first.name + " · monthly (T12 trend builds as more statements arrive)";
+    } else {
+      document.getElementById("erEyebrow").textContent = er.basis + " · rolling T12 by statement period";
+    }
+  } else if (document.getElementById("erEyebrow")) {
+    document.getElementById("erEyebrow").textContent = "AWAITING SOURCE DATA";
   }
 
   /* ---- PLACEHOLDER CHARTS (awaiting source feeds) ---- */
