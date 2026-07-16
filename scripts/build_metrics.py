@@ -34,7 +34,8 @@ def load_properties():
     code_to_prop = {}
     for p in cfg["properties"]:
         for c in p["codes"]:
-            code_to_prop[c] = p
+            # normalize codes to lowercase for matching robustness
+            code_to_prop[c.lower()] = p
     return cfg["properties"], code_to_prop
 
 
@@ -93,11 +94,14 @@ def process_manifest():
         mod = importlib.import_module(item["parser"])
         parsed = mod.parse_t12(item["path"])
         code = parsed.get("property_code")
-        prop = code_to_prop.get(code)
+        prop = code_to_prop.get(code.lower()) if code else None
         if not prop:
             print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                   f"add it to config/properties.json; skipping")
             continue
+        if not prop.get("active", True):
+            print(f"[skip] {prop['name']} is inactive (code '{code}'); "
+                  f"stored to history but not shown on dashboard")
         store_expense_ratio(prop, parsed)
         print(f"[ok] stored expense_ratio for {prop['name']} ({parsed['period_end']})")
 
@@ -107,9 +111,11 @@ def process_manifest():
 def build_metrics_json():
     props, _ = load_properties()
 
-    # Assemble per-property expense_ratio series from history
+    # Assemble per-property expense_ratio series from history (active only)
     expense_ratio_props = []
     for p in props:
+        if not p.get("active", True):
+            continue
         fp = DATA / p["slug"] / "expense_ratio.json"
         if not fp.exists():
             continue
