@@ -1,0 +1,20 @@
+{
+  "_comment": "Maps each Drive subfolder name to a report type and the parser module that handles it. Add entries as new report parsers are built. Subfolders without a parser are ignored (logged) until one is added.",
+  "subfolders": [
+    {
+      "drive_folder": "T12 Expenses",
+      "report_type": "t12_statement",
+      "parser": "parse_t12_statement",
+      "file_glob": "*.xlsx",
+      "status": "active"
+    },
+    { "drive_folder": "Rent Roll",                  "report_type": "rent_roll",        "parser": null, "file_glob": "*.xlsx", "status": "pending" },
+    { "drive_folder": "Property Status",            "report_type": "property_status",  "parser": null, "file_glob": "*.xlsx", "status": "pending" },
+    { "drive_folder": "Weekly Leasing Reports",     "report_type": "leasing_report",   "parser": null, "file_glob": "*.xlsx", "status": "pending" },
+    { "drive_folder": "Concession Burnoff",         "report_type": "concession_burnoff","parser": null,"file_glob": "*.xlsx", "status": "pending" },
+    { "drive_folder": "AIRM/Yardi Rev Management",  "report_type": "revenue_mgmt",     "parser": null, "file_glob": "*.xlsx", "status": "pending" },
+    { "drive_folder": "AP Analytics",               "report_type": "ap_analytics",     "parser": null, "file_glob": "*.xlsx", "status": "pending" },
+    { "drive_folder": "Residential AR Analytics",   "report_type": "ar_analytics",     "parser": null, "file_glob": "*.xlsx", "status": "pending" },
+    { "drive_folder": "Workorders/Maintaince",      "report_type": "workorders",       "parser": null, "file_glob": "*.xlsx", "status": "pending" }
+  ]
+}
