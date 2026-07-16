@@ -1,0 +1,47 @@
+name: Update Dashboard Metrics
+
+on:
+  schedule:
+    # Runs daily at 11:00 UTC. Adjust cron as needed.
+    # GitHub cron can be delayed a few minutes; fine for daily/weekly cadence.
+    - cron: "0 11 * * *"
+  workflow_dispatch: {}   # allows manual "Run workflow" from the Actions tab
+
+permissions:
+  contents: write          # needed to commit metrics.json + data/ back
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch reports from Google Drive
+        env:
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: python scripts/fetch_drive.py
+
+      - name: Build metrics
+        run: python scripts/build_metrics.py
+
+      - name: Commit changes
+        run: |
+          git config user.name  "dashboard-bot"
+          git config user.email "actions@github.com"
+          git add data/ docs/metrics.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-update metrics ($(date -u +%Y-%m-%d))"
+            git push
+          fi
