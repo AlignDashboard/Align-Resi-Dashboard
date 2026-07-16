@@ -1,0 +1,15 @@
+{
+  "_comment": "Map Yardi/report property codes to display names and a URL-safe slug. Add a line per property. Codes can differ across report types; list every code that appears for a property under 'codes'.",
+  "properties": [
+    {
+      "slug": "palma-north",
+      "name": "Palma North",
+      "codes": ["rspalman"]
+    },
+    {
+      "slug": "the-landing",
+      "name": "The Landing",
+      "codes": ["p0005611"]
+    }
+  ]
+}
