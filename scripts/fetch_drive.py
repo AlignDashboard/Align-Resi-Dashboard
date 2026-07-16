@@ -66,9 +66,14 @@ def main():
     svc = _service()
     parent = os.environ["GDRIVE_FOLDER_ID"]
 
+    DL_ROOT.mkdir(parents=True, exist_ok=True)
+
     # map subfolder-name -> its Drive id
-    folders = {f["name"]: f["id"] for f in _list_children(svc, parent)
+    all_children = _list_children(svc, parent)
+    folders = {f["name"]: f["id"] for f in all_children
                if f["mimeType"] == "application/vnd.google-apps.folder"}
+    print(f"[info] parent folder contains {len(folders)} subfolder(s): "
+          f"{sorted(folders.keys())}")
 
     FOLDER_MIME = "application/vnd.google-apps.folder"
     manifest = []
@@ -82,6 +87,8 @@ def main():
             continue
         files = [f for f in _list_children(svc, folders[name])
                  if f["mimeType"] != FOLDER_MIME]
+        print(f"[info] '{name}' contains {len(files)} file(s): "
+              f"{[f['name'] for f in files]}")
         for f in files:
             dest = DL_ROOT / entry["report_type"] / f["name"]
             _download(svc, f["id"], dest)
