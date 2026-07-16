@@ -87,12 +87,27 @@ def process_manifest():
     manifest = json.load(open(mpath))
     _, code_to_prop = load_properties()
 
+    # Deterministic order: sort by filename so date-prefixed files process
+    # oldest-to-newest and the newest file wins any same-period collision.
+    manifest.sort(key=lambda x: x["name"])
+
     for item in manifest:
         if item["report_type"] != "t12_statement":
             print(f"[skip] {item['name']} (no accumulator for {item['report_type']} yet)")
             continue
-        mod = importlib.import_module(item["parser"])
-        parsed = mod.parse_t12(item["path"])
+        try:
+            mod = importlib.import_module(item["parser"])
+            parsed = mod.parse_t12(item["path"])
+        except Exception as e:
+            print(f"[error] failed to parse {item['name']}: {e} -- skipping this file")
+            continue
+
+        book = (parsed.get("book") or "").strip().lower()
+        if book and book != "accrual":
+            print(f"[skip] {item['name']} is book '{parsed.get('book')}' -- "
+                  f"only Accrual statements feed the dashboard")
+            continue
+
         code = parsed.get("property_code")
         prop = code_to_prop.get(code.lower()) if code else None
         if not prop:
@@ -103,7 +118,8 @@ def process_manifest():
             print(f"[skip] {prop['name']} is inactive (code '{code}'); "
                   f"stored to history but not shown on dashboard")
         store_expense_ratio(prop, parsed)
-        print(f"[ok] stored expense_ratio for {prop['name']} ({parsed['period_end']})")
+        print(f"[ok] stored expense_ratio for {prop['name']} ({parsed['period_end']}) "
+              f"from code '{code}'")
 
 
 # ---- metrics.json generation ---------------------------------------------
