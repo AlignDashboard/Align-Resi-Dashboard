@@ -38,7 +38,7 @@ jobs:
         run: |
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add data/ docs/metrics.json
+          git add -A data docs/metrics.json 2>/dev/null || git add docs/metrics.json
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
