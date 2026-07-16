@@ -48,6 +48,17 @@ def _property_code(rows):
     return None
 
 
+def _book(rows):
+    """Return the accounting book, e.g. 'Accrual' or 'Cash', from the header
+    rows (a line like 'Book = Accrual ; Tree = align_resbv')."""
+    for r in rows[:6]:
+        cell = str(r[0]) if r and r[0] else ""
+        if "Book" in cell and "=" in cell:
+            part = cell.split("Book")[1].split("=")[1]
+            return part.split(";")[0].strip()
+    return None
+
+
 def _month_labels(rows):
     for r in rows:
         if r[2] and "Jul" in str(r[2]) or (r[2] and any(m in str(r[2]) for m in
@@ -109,6 +120,7 @@ def parse_t12(path):
     return {
         "property": prop,
         "property_code": code,
+        "book": _book(rows),
         "period_end": period_end,
         "labels": labels,
         "revenue_monthly": [round(x, 2) for x in rev],
