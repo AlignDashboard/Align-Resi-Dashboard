@@ -141,6 +141,10 @@ def build_metrics_json():
                         "statement. Monthly ratios within a statement are volatile on an "
                         "accrual basis \u2014 the T12 figure is the reliable KPI.",
         }
+    else:
+        # No property history found. Leave any existing expense_ratio block
+        # untouched rather than wiping it with an empty one.
+        print("[info] no property history yet; leaving existing metrics.json expense_ratio as-is")
 
     from datetime import datetime, timezone
     metrics.setdefault("meta", {})["generated_at"] = datetime.now(timezone.utc).isoformat()
