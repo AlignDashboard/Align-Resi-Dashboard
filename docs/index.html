@@ -61,6 +61,17 @@
   header.top .title a:hover { opacity: .72; }
   header.top .meta { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
 
+  /* ---------- View tabs ---------- */
+  .tabs { display: flex; gap: 2px; margin: -10px 0 22px; border-bottom: 1px solid var(--line); }
+  .tab { background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--muted); font-family: inherit; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; font-weight: 600; padding: 10px 16px; cursor: pointer;
+    margin-bottom: -1px; transition: color .15s, border-color .15s; }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { color: var(--amber); border-bottom-color: var(--amber); }
+  .tab:focus-visible { outline: 1px solid var(--amber); outline-offset: -1px; }
+  .view[hidden] { display: none; }
+
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
   .card.wide { grid-column: 1 / -1; }
@@ -126,6 +137,12 @@
       <div class="meta" id="metaline">loading…</div>
     </header>
 
+    <div class="tabs" role="tablist" aria-label="Dashboard views">
+      <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">View 1</button>
+      <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">View 2</button>
+    </div>
+
+    <div class="view" id="view1" role="tabpanel" aria-labelledby="tabView1" tabindex="0">
     <div class="grid">
       <div class="card wide">
         <h2>Trade Outs</h2>
@@ -166,6 +183,19 @@
     </div>
 
     <div class="grid" id="placeholderGrid"></div>
+    </div><!-- /view1 -->
+
+    <div class="view" id="view2" role="tabpanel" aria-labelledby="tabView2" tabindex="0" hidden>
+      <div class="card wide" style="min-height:300px;">
+        <div class="empty" style="height:260px;">
+          <div class="dash"></div>
+          <div class="big">View 2</div>
+          <div class="why">Nothing here yet. This view is reserved for the next set
+            of metrics.</div>
+          <div class="dash"></div>
+        </div>
+      </div>
+    </div><!-- /view2 -->
 
     <footer id="footer"></footer>
   </div>
@@ -195,6 +225,32 @@ function tryUnlock() {
 document.getElementById("unlock").addEventListener("click", tryUnlock);
 pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
 window.addEventListener("load", () => pwInput.focus());
+
+/* ============================================================
+   VIEW TABS
+   ============================================================ */
+const tabs = Array.from(document.querySelectorAll(".tab"));
+
+function selectTab(tab) {
+  tabs.forEach(t => {
+    const on = t === tab;
+    t.setAttribute("aria-selected", String(on));
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+  });
+}
+
+tabs.forEach(t => t.addEventListener("click", () => selectTab(t)));
+
+// Left/Right arrows move between tabs, per the tablist keyboard convention.
+document.querySelector(".tabs").addEventListener("keydown", e => {
+  const dir = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+  if (!dir) return;
+  e.preventDefault();
+  const next = tabs[(tabs.indexOf(document.activeElement) + dir + tabs.length) % tabs.length];
+  selectTab(next);
+  next.focus();
+});
 
 /* ============================================================
    CHART THEME
