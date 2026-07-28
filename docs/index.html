@@ -154,11 +154,28 @@
 
   /* ---------- The Landing view ---------- */
   .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
-  .kpi { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px;
+    display: block; width: 100%; text-align: left; font-family: inherit; cursor: pointer;
+    position: relative; transition: border-color .15s; }
+  .kpi:hover { border-color: var(--amber); }
+  .kpi:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   .kpi .v { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
   .kpi .v.amber { color: var(--amber); }
   .kpi .k { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-top: 5px; line-height: 1.5; }
   .kpi .s { font-size: 9px; color: var(--muted); margin-top: 3px; letter-spacing: .5px; }
+  /* jump affordance, only on the tiles that link somewhere */
+  .kpi .jump { position: absolute; top: 9px; right: 10px; font-size: 10px; color: var(--muted);
+    opacity: 0; transition: opacity .15s; }
+  .kpi:hover .jump, .kpi:focus-visible .jump { opacity: 1; color: var(--amber); }
+
+  /* brief ring on the card that was jumped to, so the landing spot is obvious */
+  @keyframes cardflash {
+    0%   { box-shadow: 0 0 0 2px var(--amber); }
+    70%  { box-shadow: 0 0 0 2px var(--amber); }
+    100% { box-shadow: 0 0 0 2px transparent; }
+  }
+  .card.flash { animation: cardflash 1.5s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .card.flash { animation-duration: .01s; } }
 
   .inrow { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 10px 0 4px; }
   .inrow label { display: flex; flex-direction: column; gap: 4px; font-size: 9px;
@@ -286,14 +303,14 @@
 
       <div class="kpis" id="lkpis"></div>
 
-      <div class="card wide">
+      <div class="card wide" id="cRentCapture">
         <h2>Rent Capture</h2>
         <span class="eyebrow">MARKET RENT POTENTIAL vs ACCRUED INCOME · CAPTURE RATE &amp; ECONOMIC OCCUPANCY</span>
         <div class="chartwrap"><canvas id="lcCapture"></canvas></div>
         <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cNoi">
         <h2>Expense Load &amp; NOI</h2>
         <span class="eyebrow">MONTHLY NOI MARGIN &amp; OPEX RATIO</span>
         <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
@@ -307,7 +324,7 @@
         <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
       </div>
 
-      <div class="card wide">
+      <div class="card wide" id="cRenewal">
         <div class="card-head">
           <div>
             <h2>Renewal Pipeline — through Q1 2027</h2>
@@ -320,7 +337,7 @@
         <div class="blu-note" id="lrNote"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cHoldover">
         <h2>Holdover Repricing</h2>
         <span class="eyebrow" id="lhEyebrow">EXPIRED LEASES STILL IN PLACE · REPRICE SCENARIO</span>
         <div class="inrow" id="lhInputs"></div>
@@ -328,7 +345,7 @@
         <div class="chartwrap" style="height:190px;"><canvas id="lcHold"></canvas></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cRateOcc">
         <h2>Rate vs Occupancy</h2>
         <span class="eyebrow">TRADE-OFF SCENARIO · CHANGE vs TODAY</span>
         <div class="inrow" id="loInputs"></div>
@@ -350,7 +367,7 @@
         <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cFloorplan">
         <h2>Floorplan Mix</h2>
         <span class="eyebrow" id="lfEyebrow">UNITS BY FLOORPLAN · GAP TO MARKET</span>
         <div class="chartwrap" style="height:280px;"><canvas id="lcFloor"></canvas></div>
@@ -362,7 +379,7 @@
         <div id="lgTbl"></div>
       </div>
 
-      <div class="card wide">
+      <div class="card wide" id="cDelinquency">
         <h2>Delinquency</h2>
         <span class="eyebrow" id="ldEyebrow">RESIDENT BALANCES · AGING</span>
         <div style="display:flex;gap:22px;flex-wrap:wrap;">
@@ -801,24 +818,41 @@ async function loadLanding() {
   };
 
   /* ---- KPI strip ---- */
+  // Each tile jumps to the card that shows the working behind its number.
+  function jumpToCard(id) {
+    const card = document.getElementById(id);
+    if (!card) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    card.classList.remove("flash");
+    void card.offsetWidth;                    // restart the animation on repeat clicks
+    card.classList.add("flash");
+    card.addEventListener("animationend", () => card.classList.remove("flash"), { once: true });
+  }
   (function kpis() {
     const host = document.getElementById("lkpis");
     const ltlCeiling = (L.expense_overview.revenue_compare[0] || {}).saving;
     const tiles = [
-      [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf"],
-      [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling"],
-      [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin)],
-      [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate)],
-      ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.noi_uplift) + " at current assumptions"],
-      [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap"],
-      [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent"],
-      [fm$(L.rate_occ.ttm_value_today), "TTM value today", "at " + fmPct(L.inputs.cap_rate) + " cap"],
+      [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf", "cFloorplan", "floorplan mix — gap to market by plan"],
+      [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "rent capture — loss to lease by month"],
+      [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
+      [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate), "cRentCapture", "rent capture"],
+      ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.noi_uplift) + " at current assumptions", "cRenewal", "renewal pipeline"],
+      [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cHoldover", "holdover repricing"],
+      [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
+      [fm$(L.rate_occ.ttm_value_today), "TTM value today", "at " + fmPct(L.inputs.cap_rate) + " cap", "cRateOcc", "rate vs occupancy"],
     ];
-    tiles.forEach(([v, k, s]) => {
-      const kp = elc("div", "kpi");
+    tiles.forEach(([v, k, s, target, where]) => {
+      const kp = elc("button", "kpi");
+      kp.type = "button";
       kp.appendChild(elc("div", "v amber", v));
       kp.appendChild(elc("div", "k", k));
       kp.appendChild(elc("div", "s", s));
+      const jump = elc("span", "jump", "↓");
+      jump.setAttribute("aria-hidden", "true");
+      kp.appendChild(jump);
+      kp.setAttribute("aria-label", k + ": " + v + ". Jump to " + where + ".");
+      kp.addEventListener("click", () => jumpToCard(target));
       host.appendChild(kp);
     });
   })();
