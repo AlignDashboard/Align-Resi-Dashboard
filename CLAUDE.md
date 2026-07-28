@@ -9,9 +9,10 @@ unless I ask for one.** This is a solo repo with no CI and no required reviews,
 so a PR per change just adds a merge step. Push straight to `main` and tell me
 what changed.
 
-Use a branch and a PR only when I ask, or when a change is large enough that I'd
-want to look it over before it goes live — a redesign, restructuring the data
-pipeline, anything touching `scripts/`.
+Use a branch and a PR **only when I explicitly ask for one.** Do not decide a
+change is big or risky enough to warrant a PR on your own — that call is mine.
+If something seems large enough to be worth reviewing first, say so and let me
+ask for the PR; do not open one preemptively.
 
 ## Layout
 
