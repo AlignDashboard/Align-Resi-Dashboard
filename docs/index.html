@@ -152,6 +152,55 @@
   .ph-card .stub i { flex:1; background: var(--muted); display:block; }
   .ph-card .await { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-top:10px; }
 
+  /* ---------- KPI scorecard ----------
+     Status colors follow the workbook legend exactly:
+     exceeding = green, in range = yellow/amber, below = red. */
+  .sc-state-exceeding { color: var(--green); }
+  .sc-state-in_range  { color: var(--amber); }
+  .sc-state-below     { color: var(--red); }
+
+  .sc-head { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; margin: 4px 0 14px; }
+  /* combined selectors so a state class always wins over the default */
+  .sc-health .big { font-size: 30px; font-weight: 700; line-height: 1; color: var(--text); }
+  .sc-health .big.sc-state-exceeding { color: var(--green); }
+  .sc-health .big.sc-state-in_range  { color: var(--amber); }
+  .sc-health .big.sc-state-below     { color: var(--red); }
+  .sc-health .lbl { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-top: 5px; }
+  .sc-tally { display: flex; gap: 16px; flex-wrap: wrap; }
+  .sc-tally .t { font-size: 11px; letter-spacing: .5px; color: var(--muted); white-space: nowrap; }
+  .sc-tally .t b { font-size: 15px; font-weight: 700; margin-right: 5px; }
+
+  table.sc { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  table.sc th, table.sc td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  table.sc thead th { color: var(--muted); font-size: 9px; letter-spacing: 1px;
+    text-transform: uppercase; font-weight: 600; text-align: center; vertical-align: bottom; }
+  table.sc thead th.metric-col { text-align: left; width: 30%; }
+  table.sc th.prop button { background: none; border: none; font-family: inherit; font-size: 9px;
+    letter-spacing: 1px; text-transform: uppercase; font-weight: 600; color: var(--amber);
+    cursor: pointer; padding: 0; text-decoration: underline dotted; }
+  table.sc th.prop button:hover { color: var(--text); }
+  /* no color here: every .pct also carries an .sc-state-* class, and a more
+     specific selector would beat it and flatten the health signal to grey */
+  table.sc th.prop .pct { display: block; font-size: 9px; font-weight: 400; letter-spacing: 0;
+    margin-top: 3px; text-transform: none; }
+  table.sc tr.grp td { color: var(--amber); font-size: 9px; letter-spacing: 2px;
+    text-transform: uppercase; padding-top: 12px; border-bottom: 1px solid var(--line); }
+  table.sc td.name { color: var(--text); }
+  table.sc td.cell { text-align: center; font-size: 13px; line-height: 1; }
+  table.sc tbody tr:hover td { background: var(--panel-2); }
+
+  /* per-property slice shown at the top of a property view */
+  .sc-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 6px 18px; }
+  .sc-strip .g { grid-column: 1 / -1; font-size: 9px; letter-spacing: 2px; color: var(--amber);
+    text-transform: uppercase; margin-top: 8px; }
+  .sc-strip .m { display: flex; align-items: baseline; gap: 7px; font-size: 10.5px;
+    color: var(--text); border-bottom: 1px solid var(--line); padding: 3px 0; }
+  .sc-strip .m .sym { font-size: 12px; line-height: 1; }
+  .sc-strip .m .nm { color: var(--muted); }
+  .sc-note { font-size: 9px; letter-spacing: .5px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+  .sc-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 9px; letter-spacing: 1px;
+    color: var(--muted); text-transform: uppercase; margin-top: 10px; }
+
   /* ---------- The Landing view ---------- */
   .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
   .kpi { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px;
@@ -257,6 +306,15 @@
 
     <div class="view" id="view1" role="tabpanel" aria-labelledby="tabView1" tabindex="0">
     <div class="grid">
+      <div class="card wide" id="cScorecard">
+        <h2>KPI Scorecard</h2>
+        <span class="eyebrow" id="scEyebrow">PORTFOLIO HEALTH · LOADING…</span>
+        <div class="sc-head" id="scHead"></div>
+        <div style="overflow-x:auto;"><div id="scTable"></div></div>
+        <div class="sc-legend" id="scLegend"></div>
+        <div class="sc-note" id="scNote"></div>
+      </div>
+
       <div class="card wide">
         <h2>Trade Outs</h2>
         <span class="eyebrow" id="toEyebrow">NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT</span>
@@ -300,6 +358,19 @@
 
     <div class="view" id="view2" role="tabpanel" aria-labelledby="tabView2" tabindex="0" hidden>
     <div class="grid">
+
+      <div class="card wide" id="cLandingScorecard">
+        <div class="card-head">
+          <div>
+            <h2>KPI Scorecard — The Landing</h2>
+            <span class="eyebrow" id="lscEyebrow">LOADING…</span>
+          </div>
+          <div class="sc-health" id="lscHealth"></div>
+        </div>
+        <div class="sc-strip" id="lscStrip"></div>
+        <div class="sc-legend" id="lscLegend"></div>
+        <div class="sc-note" id="lscNote"></div>
+      </div>
 
       <div class="kpis" id="lkpis"></div>
 
@@ -723,9 +794,8 @@ async function loadDashboard() {
 }
 
 /* ============================================================
-   THE LANDING — property deep-dive view (data: landing.json)
-   Blue-bordered inputs mirror the workbook's blue "changeable"
-   cells; scenario cards recompute live from unit-level data.
+   SHARED FORMATTERS + DOM HELPERS
+   Used by both the scorecard and the property views.
    ============================================================ */
 const fm$ = n => {                                   // $1.23M / $432k / $512
   const a = Math.abs(n);
@@ -799,6 +869,198 @@ const numOr = (inp, fallback) => {
   return Number.isFinite(v) ? v : fallback;
 };
 
+/* ============================================================
+   KPI SCORECARD (data: scorecard.json)
+   Portfolio matrix on the Portfolio view, and each property's own
+   slice at the top of its view. Status colors come from the
+   workbook legend: exceeding=green, in range=yellow, below=red.
+   Numeric ranges behind the statuses are not published yet, so
+   nothing here invents a band — it reports what the source holds.
+   ============================================================ */
+let SC = null;                       // parsed scorecard.json, shared by both views
+const scPromise = (async () => {
+  try {
+    const res = await fetch("scorecard.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    SC = await res.json();
+  } catch (e) { SC = null; }
+  return SC;
+})();
+
+const SYM = { exceeding: "▲", in_range: "●", below: "▼" };
+const scSymbol = state => {
+  const s = elc("span", "sc-state-" + state, SYM[state] || "–");
+  return s;
+};
+function scLegendInto(host) {
+  if (!host || !SC) return;
+  host.textContent = "";
+  SC.legend.forEach(l => {
+    const item = elc("span");
+    item.appendChild(scSymbol(l.state));
+    item.appendChild(document.createTextNode(" " + l.label));
+    host.appendChild(item);
+  });
+}
+// Colors the headline by the workbook's own semantics rather than an
+// invented numeric band: any below-target metric is red, all-clear with
+// something exceeding is green, otherwise everything is simply in range.
+function scTone(counts) {
+  if (counts.below > 0) return "below";
+  return counts.exceeding > 0 ? "exceeding" : "in_range";
+}
+
+async function renderScorecard() {
+  await scPromise;
+  const eyebrow = document.getElementById("scEyebrow");
+  if (!SC) {
+    eyebrow.textContent = "SCORECARD UNAVAILABLE";
+    document.getElementById("scNote").textContent =
+      "Could not load scorecard.json — run scripts/extract_scorecard.py.";
+    return;
+  }
+  const P = SC.portfolio;
+  eyebrow.textContent = "HEALTH ACROSS " + P.property_count + " PROPERTIES · " +
+    P.metric_count + " KPIs · " + P.scored + " TRACKED CELLS";
+
+  // headline + tally
+  const head = document.getElementById("scHead");
+  head.textContent = "";
+  // Deliberately uncolored: with ranges still to come there is no defined band
+  // that turns 91% into a verdict. The tally beside it and the per-property
+  // percentages carry the color, where worst-state is unambiguous.
+  const hb = elc("div", "sc-health");
+  hb.appendChild(elc("div", "big", fmPct(P.at_or_above, 0)));
+  hb.appendChild(elc("div", "lbl", "of KPIs at or above target"));
+  head.appendChild(hb);
+  const tally = elc("div", "sc-tally");
+  SC.legend.forEach(l => {
+    const key = l.state === "in_range" ? "in_range" : l.state;
+    const t = elc("div", "t");
+    const b = elc("b", "sc-state-" + l.state, String(P.counts[key]));
+    t.appendChild(b);
+    t.appendChild(document.createTextNode(l.label.toLowerCase()));
+    tally.appendChild(t);
+  });
+  head.appendChild(tally);
+
+  // matrix: metrics as rows (grouped), properties as columns
+  const tbl = elc("table", "sc");
+  const thead = elc("thead"), hr = elc("tr");
+  hr.appendChild(Object.assign(elc("th", "metric-col"), { textContent: "KPI" }));
+  SC.properties.forEach(p => {
+    const th = elc("th", "prop");
+    if (p.slug === "the-landing") {           // the one property with its own view today
+      const b = elc("button", null, p.label);
+      b.type = "button";
+      b.title = "Open The Landing view";
+      b.addEventListener("click", () => selectTab(document.getElementById("tabView2")));
+      th.appendChild(b);
+    } else {
+      th.appendChild(document.createTextNode(p.label));
+    }
+    const pct = elc("span", "pct", p.at_or_above === null ? "—" : fmPct(p.at_or_above, 0));
+    pct.classList.add("sc-state-" + scTone(p.counts));
+    pct.title = p.below_metrics.length
+      ? "Below target: " + p.below_metrics.join(", ")
+      : "Nothing below target";
+    th.appendChild(pct);
+    hr.appendChild(th);
+  });
+  thead.appendChild(hr);
+  tbl.appendChild(thead);
+
+  const tbody = elc("tbody");
+  SC.groups.forEach(g => {
+    const gr = elc("tr", "grp");
+    const gtd = elc("td", null, g.name);
+    gtd.colSpan = SC.properties.length + 1;
+    gr.appendChild(gtd);
+    tbody.appendChild(gr);
+    g.metrics.forEach(name => {
+      const tr = elc("tr");
+      tr.appendChild(elc("td", "name", name));
+      SC.properties.forEach(p => {
+        const td = elc("td", "cell");
+        const st = p.statuses[name];
+        td.appendChild(scSymbol(st));
+        td.title = p.label + " · " + name + ": " +
+          ((SC.legend.find(l => l.state === st) || {}).label || "not scored");
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  });
+  tbl.appendChild(tbody);
+  const host = document.getElementById("scTable");
+  host.textContent = "";
+  host.appendChild(tbl);
+
+  scLegendInto(document.getElementById("scLegend"));
+
+  const weakest = P.by_metric.filter(m => m.counts.below > 0)
+    .sort((a, b) => b.counts.below - a.counts.below).slice(0, 3)
+    .map(m => m.name + " (" + m.counts.below + ")");
+  const unmapped = SC.properties.filter(p => !p.slug).map(p => p.label);
+  document.getElementById("scNote").textContent =
+    "Column % is the share of that property's KPIs at or above target; hover a cell for its status. " +
+    (weakest.length ? "Most below-target KPIs: " + weakest.join(", ") + ". " : "") +
+    SC.meta.note +
+    (unmapped.length ? " Not yet in the property master: " + unmapped.join(", ") + "." : "") +
+    " Source: " + SC.meta.source_workbook + ".";
+}
+renderScorecard();
+
+// A property's own slice of the scorecard, for the top of its view.
+function renderPropertyScorecard(slug, ids) {
+  if (!SC) {
+    document.getElementById(ids.eyebrow).textContent = "SCORECARD UNAVAILABLE";
+    return;
+  }
+  const p = SC.properties.find(x => x.slug === slug);
+  if (!p) {
+    document.getElementById(ids.eyebrow).textContent = "NOT ON THE SCORECARD YET";
+    return;
+  }
+  document.getElementById(ids.eyebrow).textContent =
+    p.counts.below === 0
+      ? "ALL " + p.scored + " KPIs AT OR ABOVE TARGET"
+      : p.counts.below + " OF " + p.scored + " KPIs BELOW TARGET";
+
+  const health = document.getElementById(ids.health);
+  health.textContent = "";
+  const big = elc("div", "big", fmPct(p.at_or_above, 0));
+  big.classList.add("sc-state-" + scTone(p.counts));
+  health.appendChild(big);
+  health.appendChild(elc("div", "lbl", "at or above target"));
+
+  const strip = document.getElementById(ids.strip);
+  strip.textContent = "";
+  SC.groups.forEach(g => {
+    strip.appendChild(elc("div", "g", g.name));
+    g.metrics.forEach(name => {
+      const m = elc("div", "m");
+      const st = p.statuses[name];
+      const sym = scSymbol(st);
+      sym.classList.add("sym");
+      m.appendChild(sym);
+      m.appendChild(elc("span", "nm", name));
+      m.title = name + ": " + ((SC.legend.find(l => l.state === st) || {}).label || "not scored");
+      strip.appendChild(m);
+    });
+  });
+
+  scLegendInto(document.getElementById(ids.legend));
+  document.getElementById(ids.note).textContent =
+    (p.below_metrics.length ? "Below target: " + p.below_metrics.join(", ") + ". " : "") +
+    SC.meta.note;
+}
+
+/* ============================================================
+   THE LANDING — property deep-dive view (data: landing.json)
+   Blue-bordered inputs mirror the workbook's blue "changeable"
+   cells; scenario cards recompute live from unit-level data.
+   ============================================================ */
 async function loadLanding() {
   let L;
   try {
@@ -811,6 +1073,13 @@ async function loadLanding() {
       elc("div", "loaderr", "Could not load landing.json — run scripts/extract_landing.py."));
     return;
   }
+  // This property's slice of the KPI scorecard, at the top of its view.
+  await scPromise;
+  renderPropertyScorecard("the-landing", {
+    eyebrow: "lscEyebrow", health: "lscHealth", strip: "lscStrip",
+    legend: "lscLegend", note: "lscNote",
+  });
+
   const mgmtFee = L.inputs.mgmt_fee_pct, units = L.units;
   const shortMo = m => { // "2026-08" -> "Aug 26"
     const [y, mm] = m.split("-");
