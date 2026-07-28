@@ -40,6 +40,13 @@
     --on-amber:   #10130f;
     --grid:       #2a323d;
     --tick:       #8b95a4;
+    /* scorecard status chips: fill behind the value, plus its edge */
+    --fill-exceeding: rgba(107,191,138,.18);
+    --fill-in_range:  rgba(224,165,63,.18);
+    --fill-below:     rgba(217,105,79,.20);
+    --edge-exceeding: rgba(107,191,138,.50);
+    --edge-in_range:  rgba(224,165,63,.50);
+    --edge-below:     rgba(217,105,79,.55);
   }
   :root[data-theme="light"] {
     --ink:        #f4f5f7;
@@ -59,6 +66,12 @@
     --on-amber:   #ffffff;
     --grid:       #dfe3e9;
     --tick:       #5f6a78;
+    --fill-exceeding: rgba(45,117,73,.13);
+    --fill-in_range:  rgba(157,106,22,.13);
+    --fill-below:     rgba(178,63,40,.13);
+    --edge-exceeding: rgba(45,117,73,.42);
+    --edge-in_range:  rgba(157,106,22,.42);
+    --edge-below:     rgba(178,63,40,.45);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--ink); color: var(--text);
@@ -187,16 +200,29 @@
   table.sc tr.grp td { color: var(--amber); font-size: 9px; letter-spacing: 2px;
     text-transform: uppercase; padding-top: 12px; border-bottom: 1px solid var(--line); }
   table.sc td.name { color: var(--text); }
-  table.sc td.cell { text-align: center; font-size: 13px; line-height: 1; }
-  table.sc tbody tr:hover td { background: var(--panel-2); }
+  table.sc td.cell { text-align: center; padding: 3px 6px; }
+  table.sc tbody tr:hover td.name { color: var(--amber); }
+
+  /* Status chip: colored fill with the measured value on top. Sized for the
+     widest realistic value ("100.0%", "$1,240") so columns will not reflow
+     when the numbers arrive to replace the placeholder. */
+  .sc-chip { display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 6px;
+    min-width: 74px; padding: 3px 7px; border: 1px solid transparent; border-radius: 2px;
+    font-size: 10.5px; line-height: 1.35; }
+  .sc-chip .sym { font-size: 11px; line-height: 1; }
+  .sc-chip .val { font-weight: 600; color: var(--text);
+    font-variant-numeric: tabular-nums; margin-left: auto; }
+  .sc-chip .val.pending { color: var(--muted); font-weight: 400; }
+  .sc-chip.sc-state-exceeding { background: var(--fill-exceeding); border-color: var(--edge-exceeding); }
+  .sc-chip.sc-state-in_range  { background: var(--fill-in_range);  border-color: var(--edge-in_range); }
+  .sc-chip.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
 
   /* per-property slice shown at the top of a property view */
   .sc-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 6px 18px; }
   .sc-strip .g { grid-column: 1 / -1; font-size: 9px; letter-spacing: 2px; color: var(--amber);
     text-transform: uppercase; margin-top: 8px; }
-  .sc-strip .m { display: flex; align-items: baseline; gap: 7px; font-size: 10.5px;
-    color: var(--text); border-bottom: 1px solid var(--line); padding: 3px 0; }
-  .sc-strip .m .sym { font-size: 12px; line-height: 1; }
+  .sc-strip .m { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 10.5px; color: var(--text); border-bottom: 1px solid var(--line); padding: 3px 0; }
   .sc-strip .m .nm { color: var(--muted); }
   .sc-note { font-size: 9px; letter-spacing: .5px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
   .sc-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 9px; letter-spacing: 1px;
@@ -961,10 +987,24 @@ const scPromise = (async () => {
 })();
 
 const SYM = { exceeding: "▲", in_range: "●", below: "▼" };
-const scSymbol = state => {
-  const s = elc("span", "sc-state-" + state, SYM[state] || "–");
-  return s;
-};
+const scSymbol = state => elc("span", "sc-state-" + state, SYM[state] || "–");
+
+// Status chip: the fill carries the status, the value sits on top of it.
+// Values are not published yet, so a muted placeholder holds the space.
+const SC_PENDING = "––";
+function scChip(state, value) {
+  const chip = elc("div", "sc-chip sc-state-" + state);
+  const sym = elc("span", "sym", SYM[state] || "–");
+  chip.appendChild(sym);
+  const display = value && value.display != null ? String(value.display) : null;
+  const val = elc("span", "val", display === null ? SC_PENDING : display);
+  if (display === null) val.classList.add("pending");
+  chip.appendChild(val);
+  return chip;
+}
+const scValue = (prop, metric) => (prop.values || {})[metric] || null;
+const scHasValues = sc => sc.properties.some(p =>
+  Object.values(p.values || {}).some(v => v && v.display != null));
 function scLegendInto(host) {
   if (!host || !SC) return;
   host.textContent = "";
@@ -1059,9 +1099,11 @@ async function renderScorecard() {
       SC.properties.forEach(p => {
         const td = elc("td", "cell");
         const st = p.statuses[name];
-        td.appendChild(scSymbol(st));
+        const v = scValue(p, name);
+        td.appendChild(scChip(st, v));
         td.title = p.label + " · " + name + ": " +
-          ((SC.legend.find(l => l.state === st) || {}).label || "not scored");
+          ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
+          (v && v.display != null ? " (" + v.display + ")" : " — value pending");
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -1080,6 +1122,8 @@ async function renderScorecard() {
   const unmapped = SC.properties.filter(p => !p.slug).map(p => p.label);
   document.getElementById("scNote").textContent =
     "Column % is the share of that property's KPIs at or above target; hover a cell for its status. " +
+    (scHasValues(SC) ? "" : "Each cell reserves space for its measured number — \u201c" + SC_PENDING +
+      "\u201d means the value has not been supplied yet, not that the KPI is untracked. ") +
     (weakest.length ? "Most below-target KPIs: " + weakest.join(", ") + ". " : "") +
     SC.meta.note +
     (unmapped.length ? " Not yet in the property master: " + unmapped.join(", ") + "." : "") +
@@ -1117,11 +1161,11 @@ function renderPropertyScorecard(slug, ids) {
     g.metrics.forEach(name => {
       const m = elc("div", "m");
       const st = p.statuses[name];
-      const sym = scSymbol(st);
-      sym.classList.add("sym");
-      m.appendChild(sym);
+      const v = scValue(p, name);
       m.appendChild(elc("span", "nm", name));
-      m.title = name + ": " + ((SC.legend.find(l => l.state === st) || {}).label || "not scored");
+      m.appendChild(scChip(st, v));
+      m.title = name + ": " + ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
+        (v && v.display != null ? " (" + v.display + ")" : " — value pending");
       strip.appendChild(m);
     });
   });
@@ -1129,6 +1173,7 @@ function renderPropertyScorecard(slug, ids) {
   scLegendInto(document.getElementById(ids.legend));
   document.getElementById(ids.note).textContent =
     (p.below_metrics.length ? "Below target: " + p.below_metrics.join(", ") + ". " : "") +
+    (scHasValues(SC) ? "" : "\u201c" + SC_PENDING + "\u201d marks a value not supplied yet. ") +
     SC.meta.note;
 }
 

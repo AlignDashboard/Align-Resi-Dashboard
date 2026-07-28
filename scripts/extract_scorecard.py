@@ -98,6 +98,11 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
         "label": label,
         "slug": SLUGS.get(label),
         "statuses": statuses,
+        # Measured values behind each status. The workbook holds only the
+        # symbol today, so these are empty and the dashboard reserves the
+        # space and shows a placeholder. Fill "raw" with the number and
+        # "display" with the string to print ("94.2%", "$1,240", "12").
+        "values": {m["name"]: {"raw": None, "display": None} for m in metrics},
         "counts": counts,
         "scored": scored,
         # share of scored metrics that are at or above target
