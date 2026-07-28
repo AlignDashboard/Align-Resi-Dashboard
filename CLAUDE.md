@@ -24,6 +24,39 @@ ask for the PR; do not open one preemptively.
 | `config/` | `properties.json` and `report_map.json` — property list and report routing |
 | `data/` | Raw fetched reports, per property |
 
+## Refreshing The Landing
+
+`docs/landing.json` is generated from the analyst workbook, not by the daily
+cron. To refresh with new reports:
+
+1. Paste the new reports into the workbook's grey `Source *` tabs.
+2. **Open it in Excel and let it recalculate, then save.** The extractor reads
+   cached formula results; a workbook saved without recalculating has none, and
+   every derived number would come out null. The extractor detects this and
+   refuses rather than publishing nulls.
+3. `python scripts/extract_landing.py <workbook.xlsx>`
+
+It prints a check table and exits non-zero if anything would put wrong numbers
+on the page — a shifted month axis, a unit count that disagrees with `Inputs`,
+a broken statement tie-out, a renamed anchor label. Nothing is written on
+failure, so the live file keeps the last good data.
+
+`scripts/test_extract_landing.py <workbook.xlsx>` runs the guard tests,
+including deliberately broken workbooks that must be refused.
+
+Which report feeds what (the workbook's own `Data Lineage` tab is authoritative):
+
+| Grey tab | Report | Drive folder |
+| --- | --- | --- |
+| `Source CY25`, `Source Aug25-Jul26` | 12-month accrual statement | T12 Expenses |
+| `Source Rent Roll Jul` / `Jun` | SPV PM Deliverable Package, Rent Roll tab | Rent Roll |
+| `Source Delinquency` | `rs_rp_DelinquencySummaryReport` | Residential AR Analytics |
+| `Lease Detail` | RealPage rate tracker — **typed in, not a grey tab** | Weekly Leasing Reports |
+
+Only the T12 has a parser in `config/report_map.json` today; the rest are
+`pending`, so a Drive-driven refresh still needs those parsers written. Trade-out
+data will not update from the grey tabs at all — `Lease Detail` is hand-entered.
+
 ## Deployment
 
 GitHub Pages serves `docs/` from `main`. Pushing to `main` rebuilds the live
