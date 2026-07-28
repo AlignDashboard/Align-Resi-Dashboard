@@ -6,8 +6,23 @@
 <title>Align Asset Dashboard</title>
 <!-- Chart.js 4.4.1, vendored locally so the page has no CDN dependency -->
 <script src="chart.umd.min.js"></script>
+<script>
+  // Applied before first paint so a stored light preference does not flash dark.
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem("align-theme"); } catch (e) {}
+    if (t !== "light" && t !== "dark") {
+      t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light" : "dark";
+    }
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
 <style>
-  :root {
+  /* Dark is the default; [data-theme="light"] overrides the same roles.
+     Chart series colors live in JS (const C) and are shared by both themes;
+     only chart chrome — grid lines, ticks, legend — is themed. */
+  :root, :root[data-theme="dark"] {
     --ink:        #0e1116;
     --panel:      #161b22;
     --panel-2:    #1c232d;
@@ -19,6 +34,31 @@
     --teal:       #5fb3b3;
     --red:        #d9694f;
     --green:      #6bbf8a;
+    --blue:       #6aa9e9;
+    --blue-soft:  rgba(106,169,233,.13);
+    --gate-glow:  #171d26;
+    --on-amber:   #10130f;
+    --grid:       #2a323d;
+    --tick:       #8b95a4;
+  }
+  :root[data-theme="light"] {
+    --ink:        #f4f5f7;
+    --panel:      #ffffff;
+    --panel-2:    #eef0f3;
+    --line:       #d6dae1;
+    --text:       #1a1f26;
+    --muted:      #5f6a78;
+    --amber:      #9d6a16;
+    --amber-soft: rgba(157,106,22,0.12);
+    --teal:       #2c7676;
+    --red:        #b23f28;
+    --green:      #2d7549;
+    --blue:       #1f6fb8;
+    --blue-soft:  rgba(31,111,184,.09);
+    --gate-glow:  #ffffff;
+    --on-amber:   #ffffff;
+    --grid:       #dfe3e9;
+    --tick:       #5f6a78;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--ink); color: var(--text);
@@ -29,7 +69,7 @@
   /* ---------- Password gate ---------- */
   #gate {
     position: fixed; inset: 0; z-index: 100;
-    background: radial-gradient(circle at 50% 30%, #171d26 0%, var(--ink) 70%);
+    background: radial-gradient(circle at 50% 30%, var(--gate-glow) 0%, var(--ink) 70%);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 22px; padding: 24px;
   }
@@ -45,7 +85,7 @@
   }
   #pw:focus { border-color: var(--amber); }
   #unlock {
-    background: var(--amber); color: #10130f; border: none; padding: 12px 20px;
+    background: var(--amber); color: var(--on-amber); border: none; padding: 12px 20px;
     font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 1px;
     text-transform: uppercase; cursor: pointer;
   }
@@ -63,7 +103,9 @@
   header.top .meta { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
 
   /* ---------- View tabs ---------- */
-  .tabs { display: flex; gap: 2px; margin: -10px 0 22px; border-bottom: 1px solid var(--line); }
+  .tabbar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
+    margin: -10px 0 22px; border-bottom: 1px solid var(--line); }
+  .tabs { display: flex; gap: 2px; }
   .tab { background: none; border: none; border-bottom: 2px solid transparent;
     color: var(--muted); font-family: inherit; font-size: 11px; letter-spacing: 2px;
     text-transform: uppercase; font-weight: 600; padding: 10px 16px; cursor: pointer;
@@ -72,6 +114,15 @@
   .tab[aria-selected="true"] { color: var(--amber); border-bottom-color: var(--amber); }
   .tab:focus-visible { outline: 1px solid var(--amber); outline-offset: -1px; }
   .view[hidden] { display: none; }
+
+  .tmode { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 7px;
+    background: none; border: 1px solid var(--line); color: var(--muted);
+    font-family: inherit; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 600; padding: 6px 11px; margin-bottom: 6px; cursor: pointer;
+    transition: color .15s, border-color .15s; }
+  .tmode:hover { color: var(--amber); border-color: var(--amber); }
+  .tmode:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+  .tmode .glyph { font-size: 12px; line-height: 1; }
 
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
@@ -102,7 +153,6 @@
   .ph-card .await { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-top:10px; }
 
   /* ---------- The Landing view ---------- */
-  :root { --blue: #6aa9e9; --blue-soft: rgba(106,169,233,.13); }
   .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
   .kpi { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px; }
   .kpi .v { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
@@ -178,9 +228,14 @@
       <div class="meta" id="metaline">loading…</div>
     </header>
 
-    <div class="tabs" role="tablist" aria-label="Dashboard views">
-      <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">Portfolio</button>
-      <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
+    <div class="tabbar">
+      <div class="tabs" role="tablist" aria-label="Dashboard views">
+        <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">Portfolio</button>
+        <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
+      </div>
+      <button class="tmode" id="themeToggle" type="button" role="switch" aria-checked="false">
+        <span class="glyph" id="themeGlyph" aria-hidden="true">☾</span><span id="themeLabel">Dark</span>
+      </button>
     </div>
 
     <div class="view" id="view1" role="tabpanel" aria-labelledby="tabView1" tabindex="0">
@@ -385,6 +440,77 @@ document.querySelector(".tabs").addEventListener("keydown", e => {
 });
 
 /* ============================================================
+   LIGHT / DARK MODE
+   Series colors stay constant across themes so a chart keeps its
+   identity; only the chrome (grid, ticks, legend) is re-themed.
+   Chart.js resolves those at build time, so live charts need an
+   explicit restyle rather than just a CSS variable change.
+   ============================================================ */
+const themeBtn   = document.getElementById("themeToggle");
+const themeGlyph = document.getElementById("themeGlyph");
+const themeLabel = document.getElementById("themeLabel");
+
+function chromeColors() {
+  const cs = getComputedStyle(document.documentElement);
+  return { grid: cs.getPropertyValue("--grid").trim(),
+           tick: cs.getPropertyValue("--tick").trim() };
+}
+
+// The neutral grey used for reference lines (blended, capture rate, cumulative)
+// needs a darker value on white or it nearly disappears. Both values are known,
+// so swapping between them is an exact match rather than a guess.
+const MUTED = { dark: "#8b95a4", light: "#5f6a78" };
+const isMutedGrey = v => v === MUTED.dark || v === MUTED.light;
+
+function restyleCharts() {
+  if (typeof Chart === "undefined") return;
+  const { grid, tick } = chromeColors();
+  const muted = MUTED[document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark"];
+  Chart.defaults.color = tick;
+  Chart.defaults.borderColor = grid;
+  gridCfg.color = grid;                       // shared by reference across configs
+  legendCfg.labels.color = tick;
+  C.muted = muted;                            // so charts built later match
+  const swap = v => Array.isArray(v) ? v.map(swap) : (isMutedGrey(v) ? muted : v);
+  document.querySelectorAll("canvas").forEach(cv => {
+    const ch = Chart.getChart(cv);
+    if (!ch || !ch.config) return;
+    // Mutate the raw config, not chart.options: the latter is a resolved proxy,
+    // and assigning objects derived from it back in creates a circular reference
+    // that Chart.js reports as "Recursion detected".
+    const opt = ch.config.options || (ch.config.options = {});
+    Object.values(opt.scales || {}).forEach(sc => {
+      if (sc.grid) sc.grid.color = grid;
+      (sc.ticks || (sc.ticks = {})).color = tick;
+    });
+    const lg = opt.plugins && opt.plugins.legend;
+    if (lg) (lg.labels || (lg.labels = {})).color = tick;
+    const dsets = (ch.config.data && ch.config.data.datasets) || [];
+    dsets.forEach(ds => {
+      ds.borderColor = swap(ds.borderColor);
+      ds.backgroundColor = swap(ds.backgroundColor);
+    });
+    ch.update("none");
+  });
+}
+
+function applyTheme(mode, persist) {
+  document.documentElement.setAttribute("data-theme", mode);
+  const light = mode === "light";
+  themeGlyph.textContent = light ? "☀" : "☾";
+  themeLabel.textContent = light ? "Light" : "Dark";
+  themeBtn.setAttribute("aria-checked", String(light));
+  themeBtn.setAttribute("aria-label",
+    "Theme: " + (light ? "light" : "dark") + ". Switch to " + (light ? "dark" : "light") + " mode.");
+  if (persist) { try { localStorage.setItem("align-theme", mode); } catch (e) {} }
+  restyleCharts();
+}
+
+themeBtn.addEventListener("click", () => {
+  applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light", true);
+});
+
+/* ============================================================
    CHART THEME
    ============================================================ */
 const C = {
@@ -399,6 +525,9 @@ Chart.defaults.borderColor = C.line;
 const gridCfg = { color: C.line, drawTicks: false };
 const legendCfg = { labels: { boxWidth: 10, boxHeight: 10, padding: 16,
   font: { size: 10 } }, position: "top", align: "end" };
+
+// Sync the button and chart chrome with whatever the inline head script applied.
+applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
 
 /* ============================================================
    LOAD DATA + RENDER
