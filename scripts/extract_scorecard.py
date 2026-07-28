@@ -39,19 +39,31 @@ LEGEND = [
 ]
 STATE_BY_SYMBOL = {l["symbol"]: l["state"] for l in LEGEND}
 
-# Scorecard property label -> slug in config/properties.json.
-# Fitzgerald and 2177 Third are on the scorecard but not yet in the property
-# master; they are carried through with slug None so the UI can show them
-# without offering a link to a tab that does not exist.
+# Scorecard property label -> slug in config/properties.json. 2177 Third is on
+# the scorecard but not in the property master, so it maps to None and renders
+# without a link to a view that does not exist. Any slug named here that is
+# missing from the master is reported below and downgraded to None, so this map
+# cannot silently drift out of sync with the config.
 SLUGS = {
     "Chorus": "chorus",
     "Landing": "the-landing",
     "335 Third": "335-third-street",
     "Madelon": "madelon",
-    "Fitzgerald": None,
+    "Fitzgerald": "fitzgerald",
     "Palma": "palma",
     "2177 Third": None,
 }
+
+try:
+    KNOWN_SLUGS = {p["slug"] for p in json.load(open("config/properties.json"))["properties"]}
+except OSError:
+    KNOWN_SLUGS = None                      # run from elsewhere; skip the check
+
+STALE = sorted(s for s in SLUGS.values()
+               if s and KNOWN_SLUGS is not None and s not in KNOWN_SLUGS)
+for label, slug in SLUGS.items():
+    if slug in STALE:
+        SLUGS[label] = None
 
 wb = openpyxl.load_workbook(SRC, data_only=True)
 ws = wb[SHEET]
@@ -146,4 +158,7 @@ print(f"  {len(properties)} properties x {len(metrics)} metrics = {scored_total}
 print("  " + "  ".join(f"{k}={v}" for k, v in total.items()))
 unmapped = [p["label"] for p in properties if not p["slug"]]
 if unmapped:
-    print("  not in config/properties.json: " + ", ".join(unmapped))
+    print("  no property view / not in the master: " + ", ".join(unmapped))
+if STALE:
+    print("  WARNING: slugs mapped here but missing from config/properties.json: "
+          + ", ".join(STALE))

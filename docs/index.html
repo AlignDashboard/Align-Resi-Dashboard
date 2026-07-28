@@ -106,10 +106,11 @@
   .tabbar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
     margin: -10px 0 22px; border-bottom: 1px solid var(--line); }
   .tabs { display: flex; gap: 2px; }
+  .tabs { flex-wrap: wrap; }
   .tab { background: none; border: none; border-bottom: 2px solid transparent;
-    color: var(--muted); font-family: inherit; font-size: 11px; letter-spacing: 2px;
-    text-transform: uppercase; font-weight: 600; padding: 10px 16px; cursor: pointer;
-    margin-bottom: -1px; transition: color .15s, border-color .15s; }
+    color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 1.5px;
+    text-transform: uppercase; font-weight: 600; padding: 10px 11px; cursor: pointer;
+    margin-bottom: -1px; transition: color .15s, border-color .15s; white-space: nowrap; }
   .tab:hover { color: var(--text); }
   .tab[aria-selected="true"] { color: var(--amber); border-bottom-color: var(--amber); }
   .tab:focus-visible { outline: 1px solid var(--amber); outline-offset: -1px; }
@@ -297,6 +298,7 @@
     <div class="tabbar">
       <div class="tabs" role="tablist" aria-label="Dashboard views">
         <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">Portfolio</button>
+        <button class="tab" role="tab" id="tabScorecard" aria-controls="viewScorecard" aria-selected="false" tabindex="-1">Scorecard</button>
         <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
       </div>
       <button class="tmode" id="themeToggle" type="button" role="switch" aria-checked="false">
@@ -306,15 +308,6 @@
 
     <div class="view" id="view1" role="tabpanel" aria-labelledby="tabView1" tabindex="0">
     <div class="grid">
-      <div class="card wide" id="cScorecard">
-        <h2>KPI Scorecard</h2>
-        <span class="eyebrow" id="scEyebrow">PORTFOLIO HEALTH · LOADING…</span>
-        <div class="sc-head" id="scHead"></div>
-        <div style="overflow-x:auto;"><div id="scTable"></div></div>
-        <div class="sc-legend" id="scLegend"></div>
-        <div class="sc-note" id="scNote"></div>
-      </div>
-
       <div class="card wide">
         <h2>Trade Outs</h2>
         <span class="eyebrow" id="toEyebrow">NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT</span>
@@ -355,6 +348,19 @@
 
     <div class="grid" id="placeholderGrid"></div>
     </div><!-- /view1 -->
+
+    <div class="view" id="viewScorecard" role="tabpanel" aria-labelledby="tabScorecard" tabindex="0" hidden>
+    <div class="grid">
+      <div class="card wide" id="cScorecard">
+        <h2>KPI Scorecard</h2>
+        <span class="eyebrow" id="scEyebrow">PORTFOLIO HEALTH · LOADING…</span>
+        <div class="sc-head" id="scHead"></div>
+        <div style="overflow-x:auto;"><div id="scTable"></div></div>
+        <div class="sc-legend" id="scLegend"></div>
+        <div class="sc-note" id="scNote"></div>
+      </div>
+    </div>
+    </div><!-- /viewScorecard -->
 
     <div class="view" id="view2" role="tabpanel" aria-labelledby="tabView2" tabindex="0" hidden>
     <div class="grid">
@@ -464,6 +470,8 @@
     <div class="blu-note" id="lMeta" style="color:var(--muted);margin-top:14px;"></div>
     </div><!-- /view2 -->
 
+    <div id="propPanels"></div>
+
     <footer id="footer"></footer>
   </div>
 
@@ -492,6 +500,71 @@ function tryUnlock() {
 document.getElementById("unlock").addEventListener("click", tryUnlock);
 pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
 window.addEventListener("load", () => pwInput.focus());
+
+/* ============================================================
+   PROPERTY TABS
+   The Landing is the only property with a built-out view. The rest
+   get placeholder tabs so the shape of the dashboard is visible.
+   To fill one in, give it a view like The Landing's and drop it from
+   this list. Slugs match config/properties.json.
+   ============================================================ */
+const PLACEHOLDER_PROPERTIES = [
+  { slug: "chorus",           name: "Chorus" },
+  { slug: "madelon",          name: "Madelon" },
+  { slug: "335-third-street", name: "335 Third St" },
+  { slug: "palma",            name: "Palma" },
+  { slug: "fitzgerald",       name: "Fitzgerald" },
+];
+
+(function buildPropertyTabs() {
+  const tablist = document.querySelector(".tabs");
+  const panels = document.getElementById("propPanels");
+  PLACEHOLDER_PROPERTIES.forEach(p => {
+    const tabId = "tabProp-" + p.slug, viewId = "viewProp-" + p.slug;
+
+    const btn = document.createElement("button");
+    btn.className = "tab";
+    btn.id = tabId;
+    btn.type = "button";
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-controls", viewId);
+    btn.setAttribute("aria-selected", "false");
+    btn.tabIndex = -1;
+    btn.textContent = p.name;
+    tablist.appendChild(btn);
+
+    const view = document.createElement("div");
+    view.className = "view";
+    view.id = viewId;
+    view.setAttribute("role", "tabpanel");
+    view.setAttribute("aria-labelledby", tabId);
+    view.tabIndex = 0;
+    view.hidden = true;
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    const card = document.createElement("div");
+    card.className = "card wide";
+    card.style.minHeight = "300px";
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.style.height = "260px";
+    const dash1 = document.createElement("div"); dash1.className = "dash";
+    const big = document.createElement("div");
+    big.className = "big";
+    big.textContent = p.name;
+    const why = document.createElement("div");
+    why.className = "why";
+    why.textContent = "Placeholder. This property's view has not been built yet — " +
+      "its KPI statuses are on the Scorecard tab in the meantime.";
+    const dash2 = document.createElement("div"); dash2.className = "dash";
+    empty.append(dash1, big, why, dash2);
+    card.appendChild(empty);
+    grid.appendChild(card);
+    view.appendChild(grid);
+    panels.appendChild(view);
+  });
+})();
 
 /* ============================================================
    VIEW TABS
@@ -950,11 +1023,14 @@ async function renderScorecard() {
   hr.appendChild(Object.assign(elc("th", "metric-col"), { textContent: "KPI" }));
   SC.properties.forEach(p => {
     const th = elc("th", "prop");
-    if (p.slug === "the-landing") {           // the one property with its own view today
+    // Link the heading when that property has a tab, built-out or placeholder.
+    const tab = p.slug && (document.getElementById("tabProp-" + p.slug) ||
+      (p.slug === "the-landing" ? document.getElementById("tabView2") : null));
+    if (tab) {
       const b = elc("button", null, p.label);
       b.type = "button";
-      b.title = "Open The Landing view";
-      b.addEventListener("click", () => selectTab(document.getElementById("tabView2")));
+      b.title = "Open the " + p.label + " view";
+      b.addEventListener("click", () => selectTab(tab));
       th.appendChild(b);
     } else {
       th.appendChild(document.createTextNode(p.label));
