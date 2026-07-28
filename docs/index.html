@@ -4,7 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Align Asset Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Chart.js 4.4.1, vendored locally so the page has no CDN dependency -->
+<script src="chart.umd.min.js"></script>
 <style>
   :root {
     --ink:        #0e1116;
@@ -100,6 +101,46 @@
   .ph-card .stub i { flex:1; background: var(--muted); display:block; }
   .ph-card .await { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-top:10px; }
 
+  /* ---------- The Landing view ---------- */
+  :root { --blue: #6aa9e9; --blue-soft: rgba(106,169,233,.13); }
+  .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px; }
+  .kpi .v { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .kpi .v.amber { color: var(--amber); }
+  .kpi .k { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-top: 5px; line-height: 1.5; }
+  .kpi .s { font-size: 9px; color: var(--muted); margin-top: 3px; letter-spacing: .5px; }
+
+  .inrow { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 10px 0 4px; }
+  .inrow label { display: flex; flex-direction: column; gap: 4px; font-size: 9px;
+    letter-spacing: 1px; color: var(--blue); text-transform: uppercase; }
+  input.blu { background: var(--blue-soft); border: 1px solid var(--blue); color: var(--text);
+    font-family: inherit; font-size: 12px; padding: 5px 8px; width: 86px; outline: none; }
+  input.blu:focus { box-shadow: 0 0 0 1px var(--blue); }
+  input.blu::placeholder { color: var(--muted); }
+  .inrow .rst { background: none; border: 1px solid var(--line); color: var(--muted);
+    font-family: inherit; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 10px; cursor: pointer; }
+  .inrow .rst:hover { color: var(--text); border-color: var(--muted); }
+  .blu-note { font-size: 9px; letter-spacing: .5px; color: var(--blue); margin-top: 6px; }
+
+  .statrow { display: flex; gap: 20px; flex-wrap: wrap; margin: 12px 0 4px; }
+  .statrow .st { min-width: 100px; }
+  .statrow .st .v { font-size: 17px; font-weight: 700; color: var(--amber); }
+  .statrow .st .k { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-top: 3px; }
+
+  table.dt { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 10px; }
+  table.dt th { text-align: left; color: var(--muted); font-size: 9px; letter-spacing: 1px;
+    text-transform: uppercase; font-weight: 600; padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); }
+  table.dt td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); color: var(--text); }
+  table.dt td.num, table.dt th.num { text-align: right; }
+  table.dt td.mut { color: var(--muted); }
+  .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
+    border: 1px solid; border-radius: 2px; text-transform: uppercase; }
+  .pill.good  { color: var(--green); border-color: var(--green); }
+  .pill.watch { color: var(--amber); border-color: var(--amber); }
+  .pill.flag  { color: var(--red); border-color: var(--red); }
+  .pill.mut   { color: var(--muted); border-color: var(--line); }
+
   .prop-select { background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
     font-family: inherit; font-size: 11px; letter-spacing: 1px; padding: 6px 10px;
     text-transform: uppercase; cursor: pointer; outline: none; }
@@ -138,8 +179,8 @@
     </header>
 
     <div class="tabs" role="tablist" aria-label="Dashboard views">
-      <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">View 1</button>
-      <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">View 2</button>
+      <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">Portfolio</button>
+      <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
     </div>
 
     <div class="view" id="view1" role="tabpanel" aria-labelledby="tabView1" tabindex="0">
@@ -186,15 +227,98 @@
     </div><!-- /view1 -->
 
     <div class="view" id="view2" role="tabpanel" aria-labelledby="tabView2" tabindex="0" hidden>
-      <div class="card wide" style="min-height:300px;">
-        <div class="empty" style="height:260px;">
-          <div class="dash"></div>
-          <div class="big">View 2</div>
-          <div class="why">Nothing here yet. This view is reserved for the next set
-            of metrics.</div>
-          <div class="dash"></div>
+    <div class="grid">
+
+      <div class="kpis" id="lkpis"></div>
+
+      <div class="card wide">
+        <h2>Rent Capture</h2>
+        <span class="eyebrow">MARKET RENT POTENTIAL vs ACCRUED INCOME · CAPTURE RATE &amp; ECONOMIC OCCUPANCY</span>
+        <div class="chartwrap"><canvas id="lcCapture"></canvas></div>
+        <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card">
+        <h2>Expense Load &amp; NOI</h2>
+        <span class="eyebrow">MONTHLY NOI MARGIN &amp; OPEX RATIO</span>
+        <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
+        <div class="blu-note" id="lcNoiFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card">
+        <h2>Expense Deep Dive</h2>
+        <span class="eyebrow" id="lcExpEyebrow">TTM BY BUCKET · LIKE-FOR-LIKE CHANGE</span>
+        <div class="chartwrap" style="height:250px;"><canvas id="lcExp"></canvas></div>
+        <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
+      </div>
+
+      <div class="card wide">
+        <div class="card-head">
+          <div>
+            <h2>Renewal Pipeline — through Q1 2027</h2>
+            <span class="eyebrow">INCREMENTAL RENT BY MONTH · RECOMPUTED LIVE FROM UNIT LEVEL</span>
+          </div>
+        </div>
+        <div class="inrow" id="lrInputs"></div>
+        <div class="statrow" id="lrStats"></div>
+        <div class="chartwrap" style="height:240px;"><canvas id="lcRenewal"></canvas></div>
+        <div class="blu-note" id="lrNote"></div>
+      </div>
+
+      <div class="card">
+        <h2>Holdover Repricing</h2>
+        <span class="eyebrow" id="lhEyebrow">EXPIRED LEASES STILL IN PLACE · REPRICE SCENARIO</span>
+        <div class="inrow" id="lhInputs"></div>
+        <div class="statrow" id="lhStats"></div>
+        <div class="chartwrap" style="height:190px;"><canvas id="lcHold"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h2>Rate vs Occupancy</h2>
+        <span class="eyebrow">TRADE-OFF SCENARIO · CHANGE vs TODAY</span>
+        <div class="inrow" id="loInputs"></div>
+        <div class="statrow" id="loStats"></div>
+        <div id="loGrid"></div>
+        <div class="blu-note" id="loNote" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card">
+        <h2>New-Lease Trade-Outs</h2>
+        <span class="eyebrow" id="ltEyebrow">EXECUTED LEASES · % OVER PRIOR RENT &amp; CAPTURE vs MARKET</span>
+        <div class="statrow" id="ltStats"></div>
+        <div class="chartwrap" style="height:220px;"><canvas id="lcTrade"></canvas></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Rollover Schedule</h2>
+        <span class="eyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
+        <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h2>Floorplan Mix</h2>
+        <span class="eyebrow" id="lfEyebrow">UNITS BY FLOORPLAN · GAP TO MARKET</span>
+        <div class="chartwrap" style="height:280px;"><canvas id="lcFloor"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h2>Largest Unit Gaps</h2>
+        <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
+        <div id="lgTbl"></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Delinquency</h2>
+        <span class="eyebrow" id="ldEyebrow">RESIDENT BALANCES · AGING</span>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;">
+          <div style="flex:0 0 auto;min-width:170px;" id="ldStats"></div>
+          <div class="chartwrap" style="flex:1 1 260px;height:200px;"><canvas id="lcDelq"></canvas></div>
+          <div style="flex:1 1 300px;" id="ldTbl"></div>
         </div>
       </div>
+
+    </div>
+    <div class="blu-note" id="lMeta" style="color:var(--muted);margin-top:14px;"></div>
     </div><!-- /view2 -->
 
     <footer id="footer"></footer>
@@ -237,10 +361,18 @@ function selectTab(tab) {
     t.setAttribute("aria-selected", String(on));
     t.tabIndex = on ? 0 : -1;
     document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    if (on) maybeLoadLanding(t);
   });
 }
 
 tabs.forEach(t => t.addEventListener("click", () => selectTab(t)));
+
+// The Landing view loads its data lazily on first activation, which also
+// guarantees its canvases are visible (and therefore sized) when built.
+let landingStarted = false;
+function maybeLoadLanding(tab) {
+  if (tab.id === "tabView2" && !landingStarted) { landingStarted = true; loadLanding(); }
+}
 
 // Left/Right arrows move between tabs, per the tablist keyboard convention.
 document.querySelector(".tabs").addEventListener("keydown", e => {
@@ -425,8 +557,8 @@ async function loadDashboard() {
   }
 
   /* ---- PLACEHOLDER CHARTS (awaiting source feeds) ---- */
-  const grid = document.getElementById("placeholderGrid");
-  if (grid && Array.isArray(d.placeholders) && d.placeholders.length) {
+  const phGrid = document.getElementById("placeholderGrid");
+  if (phGrid && Array.isArray(d.placeholders) && d.placeholders.length) {
     // deterministic stub bar heights so cards look intentional, not random each load
     const stubHeights = [40, 65, 30, 80, 55, 70, 45, 60];
     let html = '<div class="section-label">Planned Metrics · Awaiting Data Feeds</div>';
@@ -440,8 +572,455 @@ async function loadDashboard() {
           '<div class="await">■ Awaiting data</div>' +
         '</div>';
     });
-    grid.innerHTML = html;
+    phGrid.innerHTML = html;
   }
+}
+
+/* ============================================================
+   THE LANDING — property deep-dive view (data: landing.json)
+   Blue-bordered inputs mirror the workbook's blue "changeable"
+   cells; scenario cards recompute live from unit-level data.
+   ============================================================ */
+const fm$ = n => {                                   // $1.23M / $432k / $512
+  const a = Math.abs(n);
+  if (a >= 1e6) return (n < 0 ? "-$" : "$") + (a / 1e6).toFixed(2) + "M";
+  if (a >= 1e4) return (n < 0 ? "-$" : "$") + Math.round(a / 1e3).toLocaleString() + "k";
+  return (n < 0 ? "-$" : "$") + Math.round(a).toLocaleString();
+};
+const fmPct = (x, d = 1) => (x * 100).toFixed(d) + "%";
+const elc = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+};
+const statusPill = s => {
+  const map = { GOOD: "good", CURRENT: "good", WATCH: "watch", REVIEW: "watch",
+    FLAG: "flag", PRIORITY: "flag", "AT RISK": "flag", MINOR: "mut" };
+  return elc("span", "pill " + (map[String(s).trim()] || "mut"), s);
+};
+function buildTable(host, heads, rows) {                 // rows: [[text|Node,...],...]
+  host.textContent = "";
+  const t = elc("table", "dt"), tr = elc("tr");
+  heads.forEach(h => tr.appendChild(Object.assign(elc("th", h.num ? "num" : ""), { textContent: h.t })));
+  t.appendChild(tr);
+  rows.forEach(r => {
+    const row = elc("tr");
+    r.forEach((v, i) => {
+      const td = elc("td", heads[i].num ? "num" : "");
+      if (v instanceof Node) td.appendChild(v); else td.textContent = v;
+      if (heads[i].mut) td.classList.add("mut");
+      row.appendChild(td);
+    });
+    t.appendChild(row);
+  });
+  host.appendChild(t);
+}
+function statBlock(host, stats) {                        // [[value, label], ...]
+  host.textContent = "";
+  stats.forEach(([v, k]) => {
+    const st = elc("div", "st");
+    st.appendChild(elc("div", "v", v));
+    st.appendChild(elc("div", "k", k));
+    host.appendChild(st);
+  });
+}
+function inputRow(host, defs, onChange) {                // defs: {key,label,val,ph,step,width}
+  host.textContent = "";
+  const fields = {};
+  defs.forEach(d => {
+    const lab = elc("label", null, d.label);
+    const inp = elc("input", "blu");
+    inp.type = "number"; inp.step = d.step || "any";
+    if (d.val !== null && d.val !== undefined) inp.value = d.val;
+    if (d.ph) inp.placeholder = d.ph;
+    if (d.width) inp.style.width = d.width;
+    inp.addEventListener("input", onChange);
+    lab.prepend(); lab.appendChild(inp);
+    host.appendChild(lab);
+    fields[d.key] = inp;
+  });
+  const rst = elc("button", "rst", "reset");
+  rst.addEventListener("click", () => {
+    defs.forEach(d => { fields[d.key].value = (d.val !== null && d.val !== undefined) ? d.val : ""; });
+    onChange();
+  });
+  host.appendChild(rst);
+  return fields;
+}
+const numOr = (inp, fallback) => {
+  const v = parseFloat(inp.value);
+  return Number.isFinite(v) ? v : fallback;
+};
+
+async function loadLanding() {
+  let L;
+  try {
+    const res = await fetch("landing.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    L = await res.json();
+  } catch (e) {
+    document.getElementById("view2").textContent = "";
+    document.getElementById("view2").appendChild(
+      elc("div", "loaderr", "Could not load landing.json — run scripts/extract_landing.py."));
+    return;
+  }
+  const mgmtFee = L.inputs.mgmt_fee_pct, units = L.units;
+  const shortMo = m => { // "2026-08" -> "Aug 26"
+    const [y, mm] = m.split("-");
+    return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+mm - 1] + " " + y.slice(2);
+  };
+
+  /* ---- KPI strip ---- */
+  (function kpis() {
+    const host = document.getElementById("lkpis");
+    const ltlCeiling = (L.expense_overview.revenue_compare[0] || {}).saving;
+    const tiles = [
+      [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf"],
+      [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling"],
+      [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin)],
+      [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate)],
+      ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.noi_uplift) + " at current assumptions"],
+      [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap"],
+      [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent"],
+      [fm$(L.rate_occ.ttm_value_today), "TTM value today", "at " + fmPct(L.inputs.cap_rate) + " cap"],
+    ];
+    tiles.forEach(([v, k, s]) => {
+      const kp = elc("div", "kpi");
+      kp.appendChild(elc("div", "v amber", v));
+      kp.appendChild(elc("div", "k", k));
+      kp.appendChild(elc("div", "s", s));
+      host.appendChild(kp);
+    });
+  })();
+
+  /* ---- Rent capture ---- */
+  (function rentCapture() {
+    const rc = L.rent_capture;
+    new Chart(document.getElementById("lcCapture"), {
+      data: {
+        labels: rc.months.map(shortMo),
+        datasets: [
+          { type: "bar", label: "Accrued rental income", data: rc.rental_income, backgroundColor: C.teal, order: 2 },
+          { type: "line", label: "Market rent potential", data: rc.market_potential, borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25, order: 1 },
+          { type: "line", label: "Capture rate", data: rc.capture_rate.map(v => v * 100), yAxisID: "y2", borderColor: C.muted, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0, tension: .25, order: 0 },
+        ]
+      },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: { label: c =>
+          c.dataset.yAxisID === "y2" ? `Capture: ${c.parsed.y.toFixed(1)}%` : `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
+          y2: { position: "right", grid: { display: false }, min: 50, max: 110, ticks: { callback: v => v + "%" } },
+          x: { grid: { display: false } } } }
+    });
+    document.getElementById("lcCaptureFoot").textContent =
+      "TTM: potential " + fm$(rc.ttm.market_potential) + " · income " + fm$(rc.ttm.rental_income) +
+      " · capture " + fmPct(rc.ttm.capture_rate) + " · loss to lease " + fmPct(rc.ttm.ltl_pct) +
+      ". Yardi market rent table was revised up sharply from Apr 2026, which widens measured loss to lease.";
+  })();
+
+  /* ---- Expense & NOI ---- */
+  (function noi() {
+    const en = L.expense_noi;
+    new Chart(document.getElementById("lcNoi"), {
+      type: "line",
+      data: { labels: en.months.map(shortMo),
+        datasets: [
+          { label: "NOI margin", data: en.noi_margin.map(v => v * 100), borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: "Opex ratio", data: en.opex_ratio.map(v => v * 100), borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
+        ] },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } }, x: { grid: { display: false } } } }
+    });
+    document.getElementById("lcNoiFoot").textContent =
+      "TTM NOI " + fm$(en.ttm.noi) + " (" + fmPct(en.ttm.noi_margin) + " margin) on revenue " +
+      fm$(en.ttm.revenue) + ". " + en.tax_note;
+  })();
+
+  /* ---- Expense deep dive ---- */
+  (function expenses() {
+    const b = L.expense_overview.buckets.filter(x => x.name !== "Total");
+    const colors = b.map(x => x.status === "FLAG" ? C.red : x.status === "WATCH" ? C.amber : C.green);
+    new Chart(document.getElementById("lcExp"), {
+      type: "bar",
+      data: { labels: b.map(x => x.name), datasets: [{ label: "TTM", data: b.map(x => x.ttm), backgroundColor: colors }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => `TTM ${fm$(c.parsed.x)} · like-for-like ${(b[c.dataIndex].change * 100).toFixed(0)}% · ${b[c.dataIndex].status}` } } },
+        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
+          y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
+    });
+    buildTable(document.getElementById("lcExpTbl"),
+      [{ t: "Opportunity" }, { t: "Saving/yr", num: true }, { t: "Difficulty", mut: true }],
+      L.expense_overview.opportunities.map(o => [o.name, fm$(o.saving), String(o.difficulty).split(" - ")[0]]));
+  })();
+
+  /* ---- Renewal pipeline (live model) ---- */
+  const unitsByKey = {};
+  units.forEach(u => {
+    if (u.status !== "Current") return;
+    (unitsByKey[u.expiry_key] = unitsByKey[u.expiry_key] || []).push(u);
+  });
+  let renewalChart = null;
+  const rAsm = { capRate: L.inputs.cap_rate, mgmt: mgmtFee, makeReady: L.inputs.make_ready_per_moveout, downtime: L.inputs.downtime_months };
+  function renewalCompute(incOv, ret, asm) {
+    const rows = L.renewal.months.map(m => {
+      const inc = (incOv !== null) ? incOv : m.inc;
+      const key = +m.month.replace("-", "");
+      const capped = (unitsByKey[key] || []).reduce((s, u) => s + Math.min(u.inplace * (1 + inc), u.market_assum), 0);
+      const newRent = capped * ret + m.market_var * (1 - ret) + m.market_on;
+      const current = m.inplace_var + m.inplace_on;
+      const moveouts = m.var_units * (1 - ret) + m.on_notice;
+      const oneTime = moveouts * asm.makeReady + (m.market_var * (1 - ret) + m.market_on) * asm.downtime;
+      return { m, incr: newRent - current, moveouts, oneTime };
+    });
+    const incrYr = rows.reduce((s, r) => s + r.incr * 12, 0);
+    const recNOI = incrYr * (1 - asm.mgmt);
+    const oneTime = rows.reduce((s, r) => s + r.oneTime, 0);
+    return { rows, incrYr, recNOI, oneTime,
+      uplift: recNOI / L.renewal.ttm_operating_noi,
+      value: recNOI / asm.capRate, netValue: recNOI / asm.capRate - oneTime };
+  }
+  function renderRenewal() {
+    const inc = rFields.inc.value === "" ? null : numOr(rFields.inc, 0) / 100;
+    const ret = numOr(rFields.ret, 90) / 100;
+    const asm = { capRate: numOr(rFields.cap, 5) / 100, mgmt: numOr(rFields.fee, 2.1) / 100,
+      makeReady: numOr(rFields.mr, 1000), downtime: numOr(rFields.dt, 1) };
+    const r = renewalCompute(inc, ret, asm);
+    statBlock(document.getElementById("lrStats"), [
+      ["+" + fm$(r.incrYr) + "/yr", "incremental rent"],
+      ["+" + fm$(r.recNOI) + "/yr", "recurring NOI"],
+      ["+" + fmPct(r.uplift), "NOI uplift"],
+      [fm$(r.value), "value at cap"],
+      ["-" + fm$(r.oneTime), "one-time costs"],
+      [fm$(r.netValue), "net value at sale"],
+      [r.rows.reduce((s, x) => s + x.moveouts, 0).toFixed(1), "move-outs"],
+    ]);
+    const data = r.rows.map(x => Math.round(x.incr));
+    if (renewalChart) { renewalChart.data.datasets[0].data = data; renewalChart.update(); return; }
+    renewalChart = new Chart(document.getElementById("lcRenewal"), {
+      type: "bar",
+      data: { labels: r.rows.map(x => shortMo(x.m.month)),
+        datasets: [{ label: "Incremental rent / mo", data, backgroundColor: C.amber }] },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => `+${fm$(c.parsed.y)}/mo · ${L.renewal.months[c.dataIndex].expiring} units expiring (${L.renewal.months[c.dataIndex].basis})` } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+          x: { grid: { display: false } } } }
+    });
+  }
+  const rFields = inputRow(document.getElementById("lrInputs"), [
+    { key: "inc", label: "renewal increase %", val: null, ph: "wb 8.3-10.4", step: "0.5" },
+    { key: "ret", label: "retention %", val: 90, step: "5" },
+    { key: "cap", label: "cap rate %", val: +(L.inputs.cap_rate * 100).toFixed(2), step: "0.25" },
+    { key: "fee", label: "mgmt fee %", val: +(mgmtFee * 100).toFixed(2), step: "0.1" },
+    { key: "mr", label: "make-ready $", val: L.inputs.make_ready_per_moveout, step: "250" },
+    { key: "dt", label: "downtime mo", val: L.inputs.downtime_months, step: "0.5", width: "60px" },
+  ], renderRenewal);
+  document.getElementById("lrNote").textContent =
+    "Blue cells are changeable — leave increase blank to use the workbook's per-month basis " +
+    "(statutory cap near-term, policy rate beyond). " + L.renewal.model_note;
+  renderRenewal();
+
+  /* ---- Holdover repricing (live model) ---- */
+  let holdChart = null;
+  function renderHold() {
+    const thr = numOr(hFields.thr, 0) / 100;
+    const incOv = hFields.inc.value === "" ? null : numOr(hFields.inc, 0) / 100;
+    const capRate = numOr(rFields.cap, 5) / 100, fee = numOr(rFields.fee, 2.1) / 100;
+    let scoped = 0, incrMo = 0, gapMo = 0;
+    L.holdovers.units.forEach(u => {
+      if (u.pct_below < thr) return;
+      scoped++; gapMo += u.gap_mo;
+      const inc = incOv !== null ? incOv : u.inc_default;
+      incrMo += Math.min(u.inplace * (1 + inc), u.market) - u.inplace;
+    });
+    const recNOI = incrMo * 12 * (1 - fee);
+    statBlock(document.getElementById("lhStats"), [
+      [String(scoped), "units in scope"],
+      [fm$(gapMo * 12) + "/yr", "gap to market"],
+      ["+" + fm$(recNOI) + "/yr", "recurring NOI"],
+      [fm$(recNOI / capRate), "value at cap"],
+      [fmPct(gapMo ? incrMo / gapMo : 0, 0), "gap captured"],
+    ]);
+    if (holdChart) return;      // distribution is static; stats recompute
+    const d = L.holdovers.distribution.filter(x => x.band !== "Total");
+    holdChart = new Chart(document.getElementById("lcHold"), {
+      type: "bar",
+      data: { labels: d.map(x => x.band),
+        datasets: [{ label: "Annual gap", data: d.map(x => x.gap_yr),
+          backgroundColor: d.map(x => x.flag === "PRIORITY" ? C.red : x.flag === "REVIEW" ? C.amber : C.muted) }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => `${fm$(c.parsed.x)}/yr across ${d[c.dataIndex].units} units · ${d[c.dataIndex].flag}` } } },
+        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+          y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+    });
+  }
+  const hFields = inputRow(document.getElementById("lhInputs"), [
+    { key: "thr", label: "min gap % in scope", val: 0, step: "5" },
+    { key: "inc", label: "increase % override", val: null, ph: "wb 5-25", step: "5" },
+  ], renderHold);
+  document.getElementById("lhEyebrow").textContent =
+    L.holdovers.summary.units + " EXPIRED LEASES STILL IN PLACE · " +
+    fmPct(L.holdovers.summary.cohort_below_mkt) + " BELOW MARKET vs " +
+    fmPct(L.holdovers.summary.property_below_mkt) + " PROPERTY-WIDE";
+  renderHold();
+
+  /* ---- Rate vs occupancy (live model) ---- */
+  function renderRateOcc() {
+    const ro = L.rate_occ;
+    const ltl = numOr(oFields.ltl, ro.scenario_ltl * 100) / 100;
+    const vac = numOr(oFields.vac, ro.scenario_vac * 100) / 100;
+    const capRate = numOr(rFields.cap, 5) / 100, fee = numOr(rFields.fee, 2.1) / 100;
+    const inc = (ro.cur_ltl - ltl) * ro.market_rent_yr - (vac - ro.cur_vacancy) * ro.market_rent_yr;
+    const recNOI = inc * (1 - fee);
+    const extraVacUnits = Math.max(0, (vac - ro.cur_vacancy) * L.meta.units);
+    const net = recNOI / capRate - extraVacUnits * numOr(rFields.mr, 1000);
+    statBlock(document.getElementById("loStats"), [
+      [(inc < 0 ? "-" : "+") + fm$(Math.abs(inc)) + "/yr", "incremental rent"],
+      [(recNOI < 0 ? "-" : "+") + fm$(Math.abs(recNOI)) + "/yr", "recurring NOI"],
+      [fm$(net), "net value change"],
+      [fmPct(ro.breakeven_ltl), "breakeven LTL"],
+    ]);
+  }
+  const oFields = inputRow(document.getElementById("loInputs"), [
+    { key: "ltl", label: "loss to lease → %", val: +(L.rate_occ.scenario_ltl * 100).toFixed(1), step: "1" },
+    { key: "vac", label: "econ vacancy → %", val: +(L.rate_occ.scenario_vac * 100).toFixed(1), step: "0.5" },
+  ], renderRateOcc);
+  (function grid() {
+    const ro = L.rate_occ;
+    buildTable(document.getElementById("loGrid"),
+      [{ t: "LTL \\ Vac" }].concat(ro.grid_vac.map(v => ({ t: fmPct(v), num: true }))),
+      ro.grid_ltl.map((l, i) => [fmPct(l)].concat(ro.grid[i].map(v => {
+        const cell = elc("span", null, fm$(v));
+        cell.style.color = v > 0 ? C.green : v < 0 ? C.red : C.muted;
+        return cell;
+      }))));
+    document.getElementById("loNote").textContent =
+      "Change in annual rental income vs today (LTL " + fmPct(ro.cur_ltl) +
+      ", vacancy " + fmPct(ro.cur_vacancy, 2) + "). Today's TTM value " + fm$(ro.ttm_value_today) + ".";
+  })();
+  renderRateOcc();
+  // rate-occ & holdover valuation follow the renewal card's cap rate / fee inputs
+  ["cap", "fee", "mr"].forEach(k => rFields[k].addEventListener("input", () => { renderHold(); renderRateOcc(); }));
+
+  /* ---- Trade-outs ---- */
+  (function trades() {
+    const ex = L.leasing.leases.filter(l => l.status === "Executed");
+    new Chart(document.getElementById("lcTrade"), {
+      data: { labels: ex.map(l => l.date.slice(5)),
+        datasets: [
+          { type: "bar", label: "Trade-out %", data: ex.map(l => l.tradeout * 100),
+            backgroundColor: ex.map(l => l.tradeout < 0 ? C.red : C.teal) },
+          { type: "line", label: "Capture vs market at signing", data: ex.map(l => l.capture * 100),
+            borderColor: C.amber, borderWidth: 1.5, pointRadius: 2, tension: .2 },
+        ] },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: {
+          title: c => "Unit " + ex[c[0].dataIndex].unit + " · " + ex[c[0].dataIndex].date,
+          label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } },
+          x: { grid: { display: false }, ticks: { font: { size: 8 }, maxRotation: 90, minRotation: 90 } } } }
+    });
+    const s = L.leasing.summary, ra = L.leasing.renewal_activity;
+    statBlock(document.getElementById("ltStats"), [
+      [fmPct(s.wtd_tradeout), "wtd trade-out"],
+      [fmPct(s.capture_at_signing), "capture at signing"],
+      [String(s.executed), "new leases"],
+      [String(ra.renewals_signed), "renewals signed"],
+      ["+" + fmPct(ra.avg_increase, 0), "avg renewal increase"],
+    ]);
+  })();
+
+  /* ---- Rollover schedule ---- */
+  (function rollover() {
+    const r = L.rollover.filter(x => x.units > 0);
+    const labels = r.map(x => x.month.startsWith("Expired") ? "Holdover" : shortMo(x.month));
+    new Chart(document.getElementById("lcRoll"), {
+      data: { labels,
+        datasets: [
+          { type: "bar", label: "Units expiring", data: r.map(x => x.units),
+            backgroundColor: r.map(x => x.month.startsWith("Expired") ? C.red : C.amber) },
+          { type: "line", label: "Cumulative %", data: r.map(x => x.cum_pct * 100), yAxisID: "y2",
+            borderColor: C.muted, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0 },
+        ] },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: {
+          label: c => c.dataset.yAxisID === "y2" ? `Cumulative: ${c.parsed.y.toFixed(0)}%`
+            : `${c.parsed.y} units · ${fm$(r[c.dataIndex].uncaptured)}/mo uncaptured` } } },
+        scales: { y: { grid: gridCfg }, y2: { position: "right", grid: { display: false }, min: 0, max: 100, ticks: { callback: v => v + "%" } },
+          x: { grid: { display: false } } } }
+    });
+  })();
+
+  /* ---- Floorplan mix ---- */
+  (function floorplans() {
+    const f = L.floorplans.rows.slice(0, 12);
+    new Chart(document.getElementById("lcFloor"), {
+      type: "bar",
+      data: { labels: f.map(x => x.plan),
+        datasets: [{ label: "Units", data: f.map(x => x.units),
+          backgroundColor: f.map(x => x.gap_pct >= .3 ? C.red : x.gap_pct >= .2 ? C.amber : C.teal) }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => { const p = f[c.dataIndex];
+            return `${p.units} units · avg ${Math.round(p.avg_sqft)} sf · ${fmPct(p.gap_pct)} below market ($${p.inplace_psf.toFixed(2)} vs $${p.market_psf.toFixed(2)}/sf)`; } } } },
+        scales: { x: { grid: gridCfg }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+    });
+    document.getElementById("lfEyebrow").textContent =
+      "TOP 12 OF " + L.floorplans.rows.length + " FLOORPLANS · COLOR = GAP TO MARKET (RED ≥30%, AMBER ≥20%)";
+  })();
+
+  /* ---- Largest unit gaps ---- */
+  (function gaps() {
+    const top = units.filter(u => u.gap > 0)
+      .sort((a, b) => b.gap - a.gap).slice(0, 12);
+    buildTable(document.getElementById("lgTbl"),
+      [{ t: "Unit" }, { t: "Type", mut: true }, { t: "In-place", num: true }, { t: "Market", num: true },
+       { t: "Gap/yr", num: true }, { t: "Status" }],
+      top.map(u => ["#" + u.unit, u.type, fm$(u.inplace), fm$(u.market),
+        fm$(u.gap * 12), statusPill(u.status === "Holdover" ? "FLAG" : "CURRENT")]));
+    const t = document.getElementById("lgTbl").querySelectorAll(".pill");
+    t.forEach((p, i) => { p.textContent = top[i].status; });
+  })();
+
+  /* ---- Delinquency ---- */
+  (function delq() {
+    const dq = L.delinquency;
+    document.getElementById("ldEyebrow").textContent =
+      "RESIDENT BALANCES AS OF " + dq.as_of + " · NET " + fm$(dq.net) + " AFTER CREDITS";
+    const host = document.getElementById("ldStats");
+    statBlock(host, [
+      [fm$(dq.gross_owed), "gross owed"],
+      [String(dq.units_with_balance) + " / " + String(dq.occupied_units), "units w/ balance"],
+      [fmPct(dq.pct_month_rent), "of monthly rent"],
+      [fm$(dq.retail_balance), "retail balance"],
+    ]);
+    host.querySelectorAll(".st").forEach(st => { st.style.marginBottom = "10px"; });
+    const ag = dq.aging;
+    new Chart(document.getElementById("lcDelq"), {
+      type: "bar",
+      data: { labels: ag.map(a => a.bucket),
+        datasets: [{ label: "Amount", data: ag.map(a => a.amount),
+          backgroundColor: [C.green, C.amber, C.amber, C.red] }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => `${fm$(c.parsed.x)} · ${fmPct(ag[c.dataIndex].pct_owed)} of total · ${ag[c.dataIndex].status}` } } },
+        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+          y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+    });
+    buildTable(document.getElementById("ldTbl"),
+      [{ t: "Unit" }, { t: "Resident", mut: true }, { t: "Owed", num: true }, { t: "Over 90d", num: true }],
+      dq.top.slice(0, 8).map(x => ["#" + x.unit, x.resident, fm$(x.owed), x.over90 ? fm$(x.over90) : "—"]));
+  })();
+
+  /* ---- meta line ---- */
+  document.getElementById("lMeta").textContent =
+    L.meta.property + " · " + L.meta.units + " units · " + L.meta.rentable_sqft.toLocaleString() +
+    " sq ft · rent roll as of " + L.meta.rent_roll_as_of + " · source: " + L.meta.source_workbook +
+    " (rent roll, GL/T12, delinquency — same report types as the Drive pipeline; refresh on command)";
 }
 </script>
 </body>
