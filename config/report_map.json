@@ -1,5 +1,5 @@
 {
-  "_comment": "Maps each Drive subfolder name to a report type and the parser module that handles it. Add entries as new report parsers are built. Subfolders without a parser are ignored (logged) until one is added.",
+  "_comment": "Maps each Drive subfolder name to a report type and the parser module that handles it. Add entries as new report parsers are built. Subfolders without a parser are ignored (logged) until one is added. Rent Roll and Residential AR Analytics now have parsers (parse_rent_roll, parse_delinquency); both expose parse(path) and tie out against the report's own total rows. Weekly Leasing Reports is still pending and trade-out data is hand-entered in the workbook's Lease Detail tab.",
   "subfolders": [
     {
       "drive_folder": "T12 Expenses",
@@ -11,9 +11,9 @@
     {
       "drive_folder": "Rent Roll",
       "report_type": "rent_roll",
-      "parser": null,
+      "parser": "parse_rent_roll",
       "file_glob": "*.xlsx",
-      "status": "pending"
+      "status": "active"
     },
     {
       "drive_folder": "Property Status",
@@ -53,9 +53,9 @@
     {
       "drive_folder": "Residential AR Analytics",
       "report_type": "ar_analytics",
-      "parser": null,
+      "parser": "parse_delinquency",
       "file_glob": "*.xlsx",
-      "status": "pending"
+      "status": "active"
     },
     {
       "drive_folder": "Workorders - Mainentance ",

@@ -79,6 +79,43 @@ def store_expense_ratio(prop, parsed):
     return hist
 
 
+def store_report(prop, parsed, filename, keys):
+    """Write the latest parse of a report to data/<slug>/<filename>.
+
+    One file per property per report, overwritten each run: these reports are
+    point-in-time snapshots, not a series, so history lives in git rather than
+    inside the file.
+    """
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / filename
+    out = {k: parsed.get(k) for k in keys}
+    out["source_file"] = parsed.get("source_file")
+    out["checks"] = parsed.get("checks")
+    json.dump(out, open(fp, "w"), indent=2, default=str)
+    return fp
+
+
+def store_rent_roll(prop, parsed):
+    return store_report(prop, parsed, "rent_roll.json",
+                        ["report_type", "property", "property_code", "as_of",
+                         "totals", "units"])
+
+
+def store_delinquency(prop, parsed):
+    return store_report(prop, parsed, "delinquency.json",
+                        ["report_type", "property", "property_code", "as_of",
+                         "summary", "residents"])
+
+
+# report_type -> what to do with a successful parse
+ACCUMULATORS = {
+    "t12_statement": None,          # handled inline (needs the book/period checks)
+    "rent_roll": store_rent_roll,
+    "ar_analytics": store_delinquency,
+}
+
+
 def process_manifest():
     mpath = pathlib.Path("_downloads/manifest.json")
     if not mpath.exists():
@@ -92,14 +129,27 @@ def process_manifest():
     manifest.sort(key=lambda x: x["name"])
 
     for item in manifest:
-        if item["report_type"] != "t12_statement":
+        if item["report_type"] not in ACCUMULATORS:
             print(f"[skip] {item['name']} (no accumulator for {item['report_type']} yet)")
             continue
         try:
             mod = importlib.import_module(item["parser"])
-            parsed = mod.parse_t12(item["path"])
+            # every parser exposes parse(path); parse_t12 kept as an alias
+            parsed = (mod.parse if hasattr(mod, "parse") else mod.parse_t12)(item["path"])
         except Exception as e:
             print(f"[error] failed to parse {item['name']}: {e} -- skipping this file")
+            continue
+
+        if item["report_type"] != "t12_statement":
+            code = parsed.get("property_code")
+            prop = code_to_prop.get(code.lower()) if code else None
+            if not prop:
+                print(f"[warn] unknown property code '{code}' in {item['name']} -- "
+                      f"add it to config/properties.json; skipping")
+                continue
+            ACCUMULATORS[item["report_type"]](prop, parsed)
+            print(f"[ok] stored {item['report_type']} for {prop['name']} "
+                  f"(as of {parsed.get('as_of') or 'unknown date'})")
             continue
 
         book = (parsed.get("book") or "").strip().lower()

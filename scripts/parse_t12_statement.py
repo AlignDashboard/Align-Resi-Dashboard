@@ -132,6 +132,10 @@ def parse_t12(path):
     }
 
 
+# Uniform entry point so build_metrics can dispatch every parser the same way.
+parse = parse_t12
+
+
 if __name__ == "__main__":
     out = parse_t12(sys.argv[1])
     print(json.dumps(out, indent=2))

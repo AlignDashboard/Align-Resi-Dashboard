@@ -152,6 +152,68 @@ def block(ws, header_row, cols, label_col=2, stop_labels=("total",),
     return out
 
 
+def header_map(ws, spec, search_rows=40, join_rows=2, min_hits=None):
+    """Map canonical field names to column numbers by reading the report header.
+
+    `spec` is {field: regex}. Yardi splits a header across two rows ("Market"
+    above "Rent", "Unit" above "Sq Ft"), so consecutive rows are joined before
+    matching. Returns (fields, header_row). Columns can be inserted, deleted or
+    reordered in the export without breaking the caller.
+    """
+    want = min_hits if min_hits is not None else max(3, len(spec) // 2)
+    best = (None, {}, -1)
+    # Try each candidate row at each join width. A single-row header and a
+    # two-row header ("Market" over "Rent") both occur, and joining one row too
+    # many swallows the section marker underneath, so let the score decide.
+    for width in range(1, max(1, join_rows) + 1):
+        for r in range(1, min(ws.max_row, search_rows) + 1):
+            joined = {}
+            for c in range(1, ws.max_column + 1):
+                parts = [norm(ws.cell(row=rr, column=c).value)
+                         for rr in range(r, min(r + width - 1, ws.max_row) + 1)]
+                joined[c] = " ".join(p for p in parts if p).strip()
+            found = {}
+            for field, pattern in spec.items():
+                for c, text in joined.items():
+                    if c in found.values():
+                        continue
+                    if re.search(pattern, text):
+                        found[field] = c
+                        break
+            # more matches wins; ties go to the narrower join and earlier row
+            if len(found) > best[2]:
+                best = (r + width - 1, found, len(found))
+    header_row, fields, hits = best
+    if hits < want:
+        missing = sorted(set(spec) - set(fields))
+        raise LayoutError(
+            f"{ws.title!r}: could not find the report header — matched only "
+            f"{hits} of {len(spec)} expected columns (missing: {', '.join(missing)}). "
+            "The export layout changed, or this is not the expected report.")
+    return fields, header_row
+
+
+def rows_until(ws, start_row, fields, stop_patterns, label_field, keep=None,
+               max_rows=20000):
+    """Data rows from `start_row` until a row whose label matches a stop pattern.
+
+    Yardi reports end a section with a marker row ("Future Residents/Applicants",
+    "Grand Total"). Reading past one silently mixes sections together, which is
+    exactly how a rent roll grows from 263 units to 269.
+    """
+    out, stopped_at = [], None
+    label_col = fields[label_field]
+    for r in range(start_row, min(ws.max_row, start_row + max_rows) + 1):
+        label = norm(ws.cell(row=r, column=label_col).value)
+        if any(re.search(p, label) for p in stop_patterns):
+            stopped_at = (r, label)
+            break
+        rec = {f: cell(ws, r, c) for f, c in fields.items()}
+        if keep is None or keep(rec):
+            out.append(rec)
+    return out, stopped_at
+
+
 def is_stale(ws_list, probes):
     """True when the workbook's cached formula results are missing.
 
