@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Align Data Tables</title>
+<script>
+  // Applied before first paint; shares the dashboard's stored preference.
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem("align-theme"); } catch (e) {}
+    if (t !== "light" && t !== "dark") {
+      t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light" : "dark";
+    }
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<style>
+  /* Palette mirrors index.html. Kept inline so each page stands alone, the way
+     the dashboard already works — if you retune a colour, change both. */
+  :root, :root[data-theme="dark"] {
+    --ink: #0e1116; --panel: #161b22; --panel-2: #1c232d; --line: #2a323d;
+    --text: #e6e9ef; --muted: #8b95a4; --amber: #e0a53f; --teal: #5fb3b3;
+    --red: #d9694f; --green: #6bbf8a; --blue: #6aa9e9;
+    --gate-glow: #171d26; --on-amber: #10130f; --zebra: rgba(255,255,255,.022);
+  }
+  :root[data-theme="light"] {
+    --ink: #f4f5f7; --panel: #ffffff; --panel-2: #eef0f3; --line: #d6dae1;
+    --text: #1a1f26; --muted: #5f6a78; --amber: #9d6a16; --teal: #2c7676;
+    --red: #b23f28; --green: #2d7549; --blue: #1f6fb8;
+    --gate-glow: #ffffff; --on-amber: #ffffff; --zebra: rgba(0,0,0,.018);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--ink); color: var(--text);
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, monospace;
+    -webkit-font-smoothing: antialiased; }
+
+  /* ---------- gate (same client-side visibility gate as the dashboard) ---------- */
+  #gate { position: fixed; inset: 0; z-index: 100;
+    background: radial-gradient(circle at 50% 30%, var(--gate-glow) 0%, var(--ink) 70%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px; padding: 24px; }
+  #gate h1 { font-size: 15px; letter-spacing: 4px; font-weight: 600; text-transform: uppercase; }
+  #gate .sub { color: var(--muted); font-size: 12px; letter-spacing: 1px; text-align: center;
+    max-width: 340px; line-height: 1.6; }
+  #gate .mark { width: 34px; height: 34px; border: 1px solid var(--amber); position: relative; }
+  #gate .mark::after { content:""; position:absolute; inset:7px; border:1px solid var(--amber); opacity:.4; }
+  .pwrow { display: flex; gap: 8px; }
+  #pw { background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    padding: 12px 14px; font-family: inherit; font-size: 13px; letter-spacing: 2px;
+    width: 220px; outline: none; }
+  #pw:focus { border-color: var(--amber); }
+  #unlock { background: var(--amber); color: var(--on-amber); border: none; padding: 12px 20px;
+    font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; }
+  #err { color: var(--red); font-size: 11px; letter-spacing: 1px; height: 12px; }
+
+  /* ---------- page ---------- */
+  #app { display: none; max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
+  header.top { display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 20px;
+    flex-wrap: wrap; gap: 10px; }
+  header.top .title { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
+  header.top .title span { color: var(--amber); }
+  header.top .right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  a.plain { color: var(--amber); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 600; text-decoration: none; border-bottom: 1px solid transparent; }
+  a.plain:hover { border-bottom-color: var(--amber); }
+  .tmode { display: flex; align-items: center; gap: 7px; background: none;
+    border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 9.5px;
+    letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; padding: 6px 11px;
+    cursor: pointer; }
+  .tmode:hover { color: var(--amber); border-color: var(--amber); }
+
+  .lede { color: var(--muted); font-size: 11px; line-height: 1.7; max-width: 860px; margin-bottom: 18px; }
+  .sources { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+  .src { border: 1px solid var(--line); background: var(--panel); padding: 9px 12px; font-size: 10px;
+    color: var(--muted); line-height: 1.6; }
+  .src b { color: var(--text); font-weight: 600; }
+  .src.bad { border-color: var(--red); color: var(--red); }
+
+  /* contents */
+  nav.toc { border: 1px solid var(--line); background: var(--panel); padding: 14px 16px; margin-bottom: 26px; }
+  nav.toc h2 { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 10px; }
+  nav.toc .grp { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--amber);
+    margin: 10px 0 5px; }
+  nav.toc ul { list-style: none; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 2px 18px; }
+  nav.toc a { color: var(--text); font-size: 10.5px; text-decoration: none; }
+  nav.toc a:hover { color: var(--amber); }
+  nav.toc a .n { color: var(--muted); }
+
+  .grouphead { grid-column: 1/-1; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--amber); margin: 34px 0 4px; display: flex; align-items: center; gap: 14px; }
+  .grouphead::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .tbl { border: 1px solid var(--line); background: var(--panel); margin-bottom: 20px; }
+  .tbl > .head { padding: 13px 15px 11px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .tbl h3 { font-size: 12px; letter-spacing: 1px; font-weight: 600; }
+  .tbl .feeds { font-size: 9.5px; letter-spacing: 1px; color: var(--amber); text-transform: uppercase;
+    margin-top: 4px; }
+  .tbl .note { font-size: 9.5px; color: var(--muted); line-height: 1.6; margin-top: 6px; max-width: 900px; }
+  .tbl .tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tbl .count { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+  .tbl input.flt { background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    font-family: inherit; font-size: 10.5px; padding: 5px 8px; width: 130px; outline: none; }
+  .tbl input.flt:focus { border-color: var(--amber); }
+  .tbl button.csv { background: none; border: 1px solid var(--line); color: var(--muted);
+    font-family: inherit; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 5px 9px; cursor: pointer; }
+  .tbl button.csv:hover { color: var(--amber); border-color: var(--amber); }
+  .scroll { overflow: auto; max-height: 560px; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 10.5px; }
+  thead th { position: sticky; top: 0; z-index: 2; background: var(--panel-2); text-align: left;
+    color: var(--muted); font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  thead th.num { text-align: right; }
+  tbody td { padding: 5px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody td.wrap { white-space: normal; min-width: 260px; color: var(--muted); }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  tbody tr:hover td { background: var(--panel-2); }
+  tbody tr.total td { border-top: 1px solid var(--muted); font-weight: 700; }
+  td.neg { color: var(--red); }
+  .st-exceeding { color: var(--green); }
+  .st-in_range { color: var(--amber); }
+  .st-below { color: var(--red); }
+  .pill { display:inline-block; font-size:8.5px; letter-spacing:1px; padding:1px 6px;
+    border:1px solid; text-transform:uppercase; }
+  .pill.good { color: var(--green); border-color: var(--green); }
+  .pill.watch { color: var(--amber); border-color: var(--amber); }
+  .pill.flag { color: var(--red); border-color: var(--red); }
+  .pill.mut { color: var(--muted); border-color: var(--line); }
+  .empty { padding: 26px 15px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+  footer { margin-top: 34px; color: var(--muted); font-size: 10px; letter-spacing: 1px;
+    line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+
+  <div id="gate">
+    <div class="mark"></div>
+    <h1>Align Data Tables</h1>
+    <div class="sub">Every table behind every chart. Enter the password to view.</div>
+    <div class="pwrow">
+      <input id="pw" type="password" placeholder="PASSWORD" autocomplete="off" />
+      <button id="unlock">Unlock</button>
+    </div>
+    <div id="err"></div>
+  </div>
+
+  <div id="app">
+    <header class="top">
+      <div class="title">ALIGN · <span>DATA TABLES</span></div>
+      <div class="right">
+        <a class="plain" href="index.html">← Dashboard</a>
+        <button class="tmode" id="themeToggle" type="button" role="switch" aria-checked="false">
+          <span id="themeGlyph" aria-hidden="true">☾</span><span id="themeLabel">Dark</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="lede" id="lede">
+      The numbers behind each chart on the dashboard, exactly as the page reads them —
+      no rounding or abbreviation. Each table names the chart it feeds and can be
+      downloaded as CSV. Larger tables have a filter box.
+    </div>
+
+    <div class="sources" id="sources"></div>
+    <nav class="toc" id="toc"><h2>Contents</h2></nav>
+    <div id="tables"></div>
+
+    <footer id="footer"></footer>
+  </div>
+
+<script>
+/* ============================================================
+   GATE  (same client-side visibility gate as the dashboard —
+   deterrence only, not encryption; the source is public)
+   ============================================================ */
+const PASSWORD = "AlignExecs";
+const gate = document.getElementById("gate"), app = document.getElementById("app");
+const pwInput = document.getElementById("pw"), errEl = document.getElementById("err");
+function tryUnlock() {
+  if (pwInput.value === PASSWORD) {
+    gate.style.display = "none";
+    app.style.display = "block";
+    loadAll();
+  } else {
+    errEl.textContent = "Incorrect password";
+    pwInput.value = ""; pwInput.focus();
+  }
+}
+document.getElementById("unlock").addEventListener("click", tryUnlock);
+pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
+window.addEventListener("load", () => pwInput.focus());
+
+/* ============================================================
+   THEME — shares the dashboard's localStorage key
+   ============================================================ */
+const themeBtn = document.getElementById("themeToggle");
+function applyTheme(mode, persist) {
+  document.documentElement.setAttribute("data-theme", mode);
+  const light = mode === "light";
+  document.getElementById("themeGlyph").textContent = light ? "☀" : "☾";
+  document.getElementById("themeLabel").textContent = light ? "Light" : "Dark";
+  themeBtn.setAttribute("aria-checked", String(light));
+  themeBtn.setAttribute("aria-label",
+    "Theme: " + (light ? "light" : "dark") + ". Switch to " + (light ? "dark" : "light") + " mode.");
+  if (persist) { try { localStorage.setItem("align-theme", mode); } catch (e) {} }
+}
+themeBtn.addEventListener("click", () =>
+  applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light", true));
+applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
+
+/* ============================================================
+   FORMATTERS
+   Values are shown at full precision — the point of this page is
+   to see the actual numbers, not the dashboard's abbreviations.
+   ============================================================ */
+const el = (t, c, txt) => { const e = document.createElement(t);
+  if (c) e.className = c; if (txt !== undefined) e.textContent = txt; return e; };
+const isNum = v => typeof v === "number" && isFinite(v);
+const F = {
+  money: v => isNum(v) ? (v < 0 ? "-" : "") + "$" + Math.abs(v).toLocaleString(undefined,
+            { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—",
+  money0: v => isNum(v) ? (v < 0 ? "-" : "") + "$" + Math.abs(v).toLocaleString(undefined,
+            { maximumFractionDigits: 0 }) : "—",
+  num: v => isNum(v) ? v.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—",
+  int: v => isNum(v) ? v.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—",
+  pct: v => isNum(v) ? (v * 100).toFixed(2) + "%" : "—",
+  pct1: v => isNum(v) ? (v * 100).toFixed(1) + "%" : "—",
+  psf: v => isNum(v) ? "$" + v.toFixed(4) : "—",
+  raw: v => (v === null || v === undefined || v === "") ? "—" : String(v),
+};
+const NUMERIC = new Set(["money", "money0", "num", "int", "pct", "pct1", "psf"]);
+
+/* ============================================================
+   TABLE RENDERER
+   ============================================================ */
+let TOC = [];
+function renderTable(host, spec) {
+  const { id, title, feeds, note, cols, rows, filterable, totalRow } = spec;
+  const box = el("div", "tbl");
+  box.id = id;
+
+  const head = el("div", "head");
+  const left = el("div");
+  left.appendChild(el("h3", null, title));
+  if (feeds) left.appendChild(el("div", "feeds", "Feeds: " + feeds));
+  if (note) left.appendChild(el("div", "note", note));
+  head.appendChild(left);
+
+  const tools = el("div", "tools");
+  const count = el("span", "count", rows.length + (rows.length === 1 ? " row" : " rows"));
+  tools.appendChild(count);
+  let flt = null;
+  if (filterable && rows.length > 12) {
+    flt = el("input", "flt");
+    flt.type = "search"; flt.placeholder = "filter…";
+    flt.setAttribute("aria-label", "Filter " + title);
+    tools.appendChild(flt);
+  }
+  const csv = el("button", "csv", "CSV");
+  csv.type = "button";
+  csv.addEventListener("click", () => downloadCSV(title, cols, rows));
+  tools.appendChild(csv);
+  head.appendChild(tools);
+  box.appendChild(head);
+
+  if (!rows.length) {
+    box.appendChild(el("div", "empty", spec.emptyNote || "No rows — this feed has no data yet."));
+    host.appendChild(box);
+    TOC.push({ id, title, group: spec.group, n: 0 });
+    return;
+  }
+
+  const scroll = el("div", "scroll");
+  const table = el("table");
+  const thead = el("thead"), hr = el("tr");
+  cols.forEach(c => {
+    const th = el("th", NUMERIC.has(c.fmt) ? "num" : null, c.label);
+    hr.appendChild(th);
+  });
+  thead.appendChild(hr);
+  table.appendChild(thead);
+
+  const tbody = el("tbody");
+  const draw = (list) => {
+    tbody.textContent = "";
+    list.forEach(r => tbody.appendChild(buildRow(cols, r, r === totalRow)));
+    count.textContent = list.length + (list.length === 1 ? " row" : " rows")
+      + (list.length !== rows.length ? " of " + rows.length : "");
+  };
+  draw(rows);
+  table.appendChild(tbody);
+  scroll.appendChild(table);
+  box.appendChild(scroll);
+
+  if (flt) {
+    flt.addEventListener("input", () => {
+      const q = flt.value.trim().toLowerCase();
+      if (!q) return draw(rows);
+      draw(rows.filter(r => cols.some(c => {
+        const v = r[c.key];
+        return v !== null && v !== undefined && String(v).toLowerCase().includes(q);
+      })));
+    });
+  }
+  host.appendChild(box);
+  TOC.push({ id, title, group: spec.group, n: rows.length });
+}
+
+function buildRow(cols, r, isTotal) {
+  const tr = el("tr", isTotal ? "total" : null);
+  cols.forEach(c => {
+    const v = r[c.key];
+    const numeric = NUMERIC.has(c.fmt);
+    const td = el("td", (numeric ? "num" : "") + (c.wrap ? " wrap" : ""));
+    if (c.fmt === "status") {                       // scorecard symbols
+      td.className = "num";
+      td.appendChild(el("span", "st-" + v, { exceeding: "▲", in_range: "●", below: "▼" }[v] || "–"));
+    } else if (c.fmt === "pill") {
+      const map = { GOOD: "good", CURRENT: "good", WATCH: "watch", REVIEW: "watch", FLAG: "flag",
+                    PRIORITY: "flag", "AT RISK": "flag", MINOR: "mut", Holdover: "flag",
+                    Current: "good", "On notice": "watch", Vacant: "mut", Executed: "good",
+                    Cancelled: "flag", Standard: "mut", "Short term": "watch" };
+      td.appendChild(el("span", "pill " + (map[String(v).trim()] || "mut"), F.raw(v)));
+    } else {
+      td.textContent = (F[c.fmt] || F.raw)(v);
+      if (numeric && isNum(v) && v < 0) td.classList.add("neg");
+    }
+    tr.appendChild(td);
+  });
+  return tr;
+}
+
+function downloadCSV(title, cols, rows) {
+  const esc = v => {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  // raw values, not the display formatting, so the file is usable in Excel
+  const lines = [cols.map(c => esc(c.label)).join(",")];
+  rows.forEach(r => lines.push(cols.map(c => esc(r[c.key])).join(",")));
+  const blob = new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* series-of-arrays -> array-of-objects, for the monthly tables */
+function byMonth(months, series) {
+  return months.map((m, i) => {
+    const row = { month: m };
+    Object.entries(series).forEach(([k, arr]) => { row[k] = arr ? arr[i] : null; });
+    return row;
+  });
+}
+/* {k: v} -> [{key, value}], for scalar blocks */
+function kv(obj, labels) {
+  return Object.entries(obj || {})
+    .filter(([, v]) => typeof v !== "object" || v === null)
+    .map(([k, v]) => ({ key: (labels && labels[k]) || k, value: v }));
+}
+const KVCOLS = [{ key: "key", label: "Field" }, { key: "value", label: "Value", fmt: "raw" }];
+
+/* ============================================================
+   LOAD + BUILD
+   ============================================================ */
+async function grab(name) {
+  try {
+    const res = await fetch(name, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return { ok: true, data: await res.json() };
+  } catch (e) { return { ok: false, error: String(e.message || e) }; }
+}
+
+async function loadAll() {
+  const [M, L, S] = await Promise.all(
+    [grab("metrics.json"), grab("landing.json"), grab("scorecard.json")]);
+
+  const srcHost = document.getElementById("sources");
+  [["metrics.json", M, d => d.meta && d.meta.generated_at],
+   ["landing.json", L, d => d.meta && d.meta.generated_at],
+   ["scorecard.json", S, d => d.meta && d.meta.generated_at]].forEach(([name, r, gen]) => {
+    const box = el("div", "src" + (r.ok ? "" : " bad"));
+    box.appendChild(el("b", null, name));
+    box.appendChild(document.createElement("br"));
+    box.appendChild(document.createTextNode(r.ok
+      ? "generated " + new Date(gen(r.data)).toLocaleString()
+      : "could not load — " + r.error));
+    srcHost.appendChild(box);
+  });
+
+  const host = document.getElementById("tables");
+  const group = name => host.appendChild(el("div", "grouphead", name));
+
+  /* ---------------- PORTFOLIO (metrics.json) ---------------- */
+  if (M.ok) {
+    const d = M.data;
+    group("Portfolio view · metrics.json");
+
+    const to = d.trade_outs || {};
+    renderTable(host, {
+      id: "t-tradeouts", group: "Portfolio", title: "Trade Outs",
+      feeds: "Trade Outs line chart (Portfolio tab)",
+      note: to.available ? null : "Chart shows an empty state. " + (to.reason || ""),
+      emptyNote: "No data. " + (to.reason || ""),
+      cols: [{ key: "label", label: "Period" }, { key: "new", label: "New %", fmt: "pct1" },
+             { key: "renewal", label: "Renewal %", fmt: "pct1" },
+             { key: "blended", label: "Blended %", fmt: "pct1" }],
+      rows: (to.labels || []).map((l, i) => ({ label: l, new: (to.new || [])[i],
+        renewal: (to.renewal || [])[i], blended: (to.blended || [])[i] })),
+    });
+
+    const ev = d.expense_trend || {};
+    renderTable(host, {
+      id: "t-exptrend", group: "Portfolio", title: "Expense Trend",
+      feeds: "Expense Trend multi-line chart",
+      note: [ev.property, ev.period, ev.footnote].filter(Boolean).join(" · "),
+      cols: [{ key: "month", label: "Month" }].concat(
+        (ev.series || []).map(s => ({ key: s.name, label: s.name, fmt: "money" }))),
+      rows: byMonth(ev.labels || [], Object.fromEntries((ev.series || []).map(s => [s.name, s.data])))
+              .map(r => { r.month = r.month; return r; }),
+      filterable: true,
+    });
+
+    const p = d.psf_vs_peers || {};
+    renderTable(host, {
+      id: "t-psf", group: "Portfolio", title: "PSF vs Other Properties",
+      feeds: "PSF vs Other Properties bar chart",
+      note: [p.metric, p.comps_avg != null ? "comps average $" + Number(p.comps_avg).toFixed(2) : null]
+              .filter(Boolean).join(" · "),
+      cols: [{ key: "label", label: "Property" }, { key: "psf", label: "$/sqft", fmt: "psf" },
+             { key: "subject", label: "Subject", fmt: "pill" }],
+      rows: (p.labels || []).map((l, i) => ({ label: l, psf: (p.psf || [])[i],
+        subject: l === p.subject ? "Subject" : "" })),
+    });
+
+    const er = d.expense_ratio || {};
+    (er.properties || []).forEach((pr, i) => {
+      renderTable(host, {
+        id: "t-expratio-" + (pr.slug || i), group: "Portfolio",
+        title: "Expense Ratio — " + (pr.name || pr.slug),
+        feeds: "Expense Ratio chart (property selector)",
+        note: [er.basis, "T12 ratio " + (pr.ratio_t12 != null ? pr.ratio_t12 + "%" : "—"),
+               er.footnote].filter(Boolean).join(" · "),
+        cols: [{ key: "period", label: "Period" }, { key: "value", label: "Ratio %", fmt: "num" }],
+        rows: (pr.trend_labels && pr.trend_labels.length > 1
+          ? pr.trend_labels.map((l, j) => ({ period: l, value: (pr.trend_values || [])[j] }))
+          : (pr.latest_monthly_labels || []).map((l, j) =>
+              ({ period: l, value: (pr.latest_monthly_ratio || [])[j] }))),
+      });
+    });
+
+    renderTable(host, {
+      id: "t-placeholders", group: "Portfolio", title: "Planned Metrics (placeholders)",
+      feeds: "Planned Metrics placeholder cards",
+      cols: [{ key: "title", label: "Metric" }, { key: "source", label: "Source", wrap: true },
+             { key: "viz", label: "Planned viz" }],
+      rows: d.placeholders || [], filterable: true,
+    });
+  }
+
+  /* ---------------- SCORECARD (scorecard.json) ---------------- */
+  if (S.ok) {
+    const d = S.data;
+    group("Scorecard · scorecard.json");
+    const props = d.properties || [];
+
+    renderTable(host, {
+      id: "t-sc-matrix", group: "Scorecard", title: "KPI Scorecard matrix",
+      feeds: "Scorecard tab matrix, and each property's slice",
+      note: d.meta && d.meta.note,
+      cols: [{ key: "group", label: "Group" }, { key: "metric", label: "KPI" }].concat(
+        props.map(p => ({ key: p.label, label: p.label, fmt: "status" }))),
+      rows: (d.metrics || []).map(m => {
+        const row = { group: m.group, metric: m.name };
+        props.forEach(p => { row[p.label] = p.statuses[m.name]; });
+        return row;
+      }),
+      filterable: true,
+    });
+
+    renderTable(host, {
+      id: "t-sc-props", group: "Scorecard", title: "Per-property roll-up",
+      feeds: "Column percentages under each property heading",
+      cols: [{ key: "label", label: "Property" }, { key: "slug", label: "Slug" },
+             { key: "scored", label: "KPIs", fmt: "int" },
+             { key: "exceeding", label: "Exceeding", fmt: "int" },
+             { key: "in_range", label: "In range", fmt: "int" },
+             { key: "below", label: "Below", fmt: "int" },
+             { key: "at_or_above", label: "At/above target", fmt: "pct1" },
+             { key: "below_metrics", label: "Below-target KPIs", wrap: true }],
+      rows: props.map(p => ({ label: p.label, slug: p.slug || "—", scored: p.scored,
+        exceeding: p.counts.exceeding, in_range: p.counts.in_range, below: p.counts.below,
+        at_or_above: p.at_or_above, below_metrics: (p.below_metrics || []).join(", ") || "—" })),
+    });
+
+    renderTable(host, {
+      id: "t-sc-metrics", group: "Scorecard", title: "Per-KPI roll-up",
+      feeds: "\"Most below-target KPIs\" note on the scorecard",
+      cols: [{ key: "group", label: "Group" }, { key: "name", label: "KPI" },
+             { key: "exceeding", label: "Exceeding", fmt: "int" },
+             { key: "in_range", label: "In range", fmt: "int" },
+             { key: "below", label: "Below", fmt: "int" }],
+      rows: ((d.portfolio || {}).by_metric || []).map(m => ({ group: m.group, name: m.name,
+        exceeding: m.counts.exceeding, in_range: m.counts.in_range, below: m.counts.below })),
+      filterable: true,
+    });
+  }
+
+  /* ---------------- THE LANDING (landing.json) ---------------- */
+  if (L.ok) {
+    const d = L.data;
+    group("The Landing · landing.json");
+
+    renderTable(host, {
+      id: "t-l-inputs", group: "The Landing", title: "Inputs & assumptions",
+      feeds: "Every scenario card — these are the defaults the blue inputs start from",
+      cols: KVCOLS, rows: kv(d.inputs),
+    });
+
+    const rc = d.rent_capture || {};
+    renderTable(host, {
+      id: "t-l-capture", group: "The Landing", title: "Rent capture",
+      feeds: "Rent Capture chart (bars, market-rent line, capture-rate line)",
+      note: "Vacancy loss, employee allowance and concessions are stored positive here and "
+          + "plotted as deductions.",
+      cols: [{ key: "month", label: "Month" },
+             { key: "market_potential", label: "Market potential", fmt: "money" },
+             { key: "rental_income", label: "Rental income", fmt: "money" },
+             { key: "loss_to_lease", label: "Loss to lease", fmt: "money" },
+             { key: "vacancy_loss", label: "Vacancy loss", fmt: "money" },
+             { key: "employee_allowance", label: "Employee allow.", fmt: "money" },
+             { key: "concessions", label: "Concessions", fmt: "money" },
+             { key: "ltl_pct", label: "LTL %", fmt: "pct" },
+             { key: "capture_rate", label: "Capture %", fmt: "pct" },
+             { key: "econ_occupancy", label: "Econ occ %", fmt: "pct" }],
+      rows: byMonth(rc.months || [], {
+        market_potential: rc.market_potential, rental_income: rc.rental_income,
+        loss_to_lease: rc.loss_to_lease, vacancy_loss: rc.vacancy_loss,
+        employee_allowance: rc.employee_allowance, concessions: rc.concessions,
+        ltl_pct: rc.ltl_pct, capture_rate: rc.capture_rate, econ_occupancy: rc.econ_occupancy }),
+      filterable: true,
+    });
+    renderTable(host, {
+      id: "t-l-capture-ttm", group: "The Landing", title: "Rent capture — TTM",
+      feeds: "Footnote under the Rent Capture chart", cols: KVCOLS, rows: kv(rc.ttm),
+    });
+
+    const en = d.expense_noi || {};
+    renderTable(host, {
+      id: "t-l-noi", group: "The Landing", title: "Expense load & NOI",
+      feeds: "Expense Load & NOI chart (NOI margin, opex ratio)",
+      note: en.tax_note,
+      cols: [{ key: "month", label: "Month" }, { key: "revenue", label: "Revenue", fmt: "money" },
+             { key: "opex", label: "Opex", fmt: "money" }, { key: "noi", label: "NOI", fmt: "money" },
+             { key: "opex_ratio", label: "Opex ratio", fmt: "pct" },
+             { key: "noi_margin", label: "NOI margin", fmt: "pct" },
+             { key: "controllable", label: "Controllable", fmt: "money" },
+             { key: "non_controllable", label: "Non-controllable", fmt: "money" }],
+      rows: byMonth(en.months || [], { revenue: en.revenue, opex: en.opex, noi: en.noi,
+        opex_ratio: en.opex_ratio, noi_margin: en.noi_margin, controllable: en.controllable,
+        non_controllable: en.non_controllable }),
+      filterable: true,
+    });
+    renderTable(host, {
+      id: "t-l-noi-ttm", group: "The Landing", title: "Expense & NOI — TTM",
+      feeds: "TTM NOI KPI tile and the chart footnote", cols: KVCOLS, rows: kv(en.ttm),
+    });
+
+    const eo = d.expense_overview || {};
+    renderTable(host, {
+      id: "t-l-buckets", group: "The Landing", title: "Expense deep dive — buckets",
+      feeds: "Expense Deep Dive bar chart (bar colour = status)",
+      note: eo.period_note,
+      cols: [{ key: "name", label: "Bucket" }, { key: "p2025", label: "Jan–Jul 2025", fmt: "money" },
+             { key: "p2026", label: "Jan–Jul 2026", fmt: "money" },
+             { key: "change", label: "Change", fmt: "pct1" },
+             { key: "ttm", label: "TTM", fmt: "money" },
+             { key: "per_unit", label: "Per unit", fmt: "money" },
+             { key: "share", label: "% of opex", fmt: "pct1" },
+             { key: "status", label: "Status", fmt: "pill" },
+             { key: "read", label: "Read", wrap: true }],
+      rows: eo.buckets || [],
+      totalRow: (eo.buckets || []).find(b => String(b.name).toLowerCase() === "total"),
+    });
+    renderTable(host, {
+      id: "t-l-opps", group: "The Landing", title: "Expense opportunities",
+      feeds: "Opportunity table under the Expense Deep Dive chart",
+      cols: [{ key: "name", label: "Opportunity" }, { key: "basis", label: "Basis", fmt: "money" },
+             { key: "saving", label: "Annual saving", fmt: "money" },
+             { key: "value", label: "Value at cap", fmt: "money" },
+             { key: "difficulty", label: "Difficulty", wrap: true }],
+      rows: eo.opportunities || [],
+    });
+    renderTable(host, {
+      id: "t-l-revcompare", group: "The Landing", title: "Revenue-side comparison",
+      feeds: "Loss to lease KPI tile (first row is the ceiling shown)",
+      cols: [{ key: "name", label: "Line" }, { key: "saving", label: "Annual", fmt: "money" },
+             { key: "value", label: "Value at cap", fmt: "money" }],
+      rows: eo.revenue_compare || [],
+    });
+
+    const rn = d.renewal || {};
+    renderTable(host, {
+      id: "t-l-renewal", group: "The Landing", title: "Renewal pipeline — by month",
+      feeds: "Renewal Pipeline bar chart and its live scenario model",
+      note: rn.model_note,
+      cols: [{ key: "month", label: "Month" }, { key: "inc", label: "Increase", fmt: "pct" },
+             { key: "ret", label: "Retention", fmt: "pct" },
+             { key: "expiring", label: "Expiring", fmt: "int" },
+             { key: "on_notice", label: "On notice", fmt: "int" },
+             { key: "var_units", label: "Variable units", fmt: "int" },
+             { key: "sqft", label: "Sq ft", fmt: "int" },
+             { key: "inplace_var", label: "In-place (var)", fmt: "money" },
+             { key: "market_var", label: "Market (var)", fmt: "money" },
+             { key: "inplace_on", label: "In-place (notice)", fmt: "money" },
+             { key: "market_on", label: "Market (notice)", fmt: "money" },
+             { key: "basis", label: "Basis of the increase", wrap: true }],
+      rows: rn.months || [],
+    });
+    renderTable(host, {
+      id: "t-l-renewal-rollup", group: "The Landing",
+      title: "Renewal pipeline — workbook roll-up",
+      feeds: "Reference for the recomputed figures on the card",
+      note: "The card recomputes these live from unit level; these are the workbook's own "
+          + "numbers at its default assumptions, kept for comparison.",
+      cols: KVCOLS,
+      rows: kv(rn.workbook_rollup).concat([
+        { key: "ttm_operating_noi", value: rn.ttm_operating_noi },
+        { key: "ftm_value", value: rn.ftm_value }]),
+    });
+
+    const ho = d.holdovers || {};
+    renderTable(host, {
+      id: "t-l-hold-summary", group: "The Landing", title: "Holdovers — summary",
+      feeds: "Holdover Repricing card eyebrow and KPI tile", cols: KVCOLS, rows: kv(ho.summary),
+    });
+    renderTable(host, {
+      id: "t-l-hold-dist", group: "The Landing", title: "Holdovers — gap distribution",
+      feeds: "Holdover Repricing bar chart",
+      cols: [{ key: "band", label: "Gap vs market" }, { key: "units", label: "Units", fmt: "int" },
+             { key: "gap_yr", label: "Annual gap", fmt: "money" },
+             { key: "share", label: "Share of gap", fmt: "pct1" },
+             { key: "flag", label: "Flag", fmt: "pill" }],
+      rows: ho.distribution || [],
+      totalRow: (ho.distribution || []).find(b => String(b.band).toLowerCase() === "total"),
+    });
+    renderTable(host, {
+      id: "t-l-hold-units", group: "The Landing", title: "Holdovers — unit detail",
+      feeds: "Holdover Repricing scenario (threshold and increase inputs)",
+      cols: [{ key: "rank", label: "Rank", fmt: "int" }, { key: "unit", label: "Unit" },
+             { key: "type", label: "Type" }, { key: "sqft", label: "Sq ft", fmt: "int" },
+             { key: "inplace", label: "In-place", fmt: "money0" },
+             { key: "market", label: "Market", fmt: "money0" },
+             { key: "gap_mo", label: "Gap/mo", fmt: "money0" },
+             { key: "gap_yr", label: "Gap/yr", fmt: "money0" },
+             { key: "pct_below", label: "% below", fmt: "pct1" },
+             { key: "expired", label: "Lease expired" },
+             { key: "months_expired", label: "Months", fmt: "int" },
+             { key: "inc_default", label: "Default increase", fmt: "pct1" }],
+      rows: ho.units || [], filterable: true,
+    });
+
+    const ro = d.rate_occ || {};
+    renderTable(host, {
+      id: "t-l-rateocc", group: "The Landing", title: "Rate vs occupancy — scalars",
+      feeds: "Rate vs Occupancy card stats", cols: KVCOLS, rows: kv(ro),
+    });
+    renderTable(host, {
+      id: "t-l-rateocc-grid", group: "The Landing", title: "Rate vs occupancy — scenario grid",
+      feeds: "Rate vs Occupancy grid table",
+      note: "Change in annual rental income versus today. Rows are loss-to-lease targets, "
+          + "columns are economic vacancy levels.",
+      cols: [{ key: "ltl", label: "Loss to lease", fmt: "pct1" }].concat(
+        (ro.grid_vac || []).map((v, i) => ({ key: "v" + i,
+          label: "Vac " + (v * 100).toFixed(2) + "%", fmt: "money0" }))),
+      rows: (ro.grid_ltl || []).map((l, i) => {
+        const row = { ltl: l };
+        (ro.grid_vac || []).forEach((_, j) => { row["v" + j] = (ro.grid[i] || [])[j]; });
+        return row;
+      }),
+    });
+
+    const ls = d.leasing || {};
+    renderTable(host, {
+      id: "t-l-leases", group: "The Landing", title: "New-lease trade-outs — lease detail",
+      feeds: "New-Lease Trade-Outs chart (bars = trade-out, line = capture)",
+      note: "Hand-entered in the workbook from the RealPage rate tracker — this table does not "
+          + "refresh from the grey source tabs.",
+      cols: [{ key: "date", label: "Lease date" }, { key: "unit", label: "Unit" },
+             { key: "sqft", label: "Sq ft", fmt: "int" }, { key: "term", label: "Term (mo)", fmt: "int" },
+             { key: "rent", label: "Lease rent", fmt: "money0" },
+             { key: "psf", label: "$/sqft", fmt: "psf" },
+             { key: "prior", label: "Prior rent", fmt: "money0" },
+             { key: "tradeout", label: "Trade-out", fmt: "pct1" },
+             { key: "term_type", label: "Term type", fmt: "pill" },
+             { key: "capture", label: "Capture", fmt: "pct1" },
+             { key: "status", label: "Status", fmt: "pill" }],
+      rows: ls.leases || [], filterable: true,
+    });
+    renderTable(host, {
+      id: "t-l-lease-summary", group: "The Landing", title: "Leasing — summary",
+      feeds: "Trade-out card stats", cols: KVCOLS, rows: kv(ls.summary),
+    });
+    renderTable(host, {
+      id: "t-l-bands", group: "The Landing", title: "Achieved rate by size band",
+      feeds: "Size-band benchmarks used in the gap analysis",
+      cols: [{ key: "band", label: "Band", fmt: "int" }, { key: "range", label: "Size range" },
+             { key: "leases", label: "Leases", fmt: "int" },
+             { key: "sqft", label: "Sq ft", fmt: "int" },
+             { key: "achieved_psf", label: "Achieved $/sqft", fmt: "psf" }],
+      rows: ls.bands || [],
+    });
+    renderTable(host, {
+      id: "t-l-renewact", group: "The Landing", title: "Renewal activity (tracker snapshot)",
+      feeds: "Trade-out card renewal stats", cols: KVCOLS, rows: kv(ls.renewal_activity),
+    });
+
+    const fp = d.floorplans || {};
+    const fpTotal = Object.assign({ plan: "Total" }, fp.total || {});
+    renderTable(host, {
+      id: "t-l-floorplans", group: "The Landing", title: "Floorplan mix",
+      feeds: "Floorplan Mix bar chart, and the below-market KPI tile",
+      cols: [{ key: "plan", label: "Floorplan" }, { key: "units", label: "Units", fmt: "int" },
+             { key: "sqft", label: "Total sq ft", fmt: "int" },
+             { key: "avg_sqft", label: "Avg sq ft", fmt: "num" },
+             { key: "market", label: "Market rent", fmt: "money0" },
+             { key: "inplace", label: "In-place rent", fmt: "money0" },
+             { key: "gap_mo", label: "Gap/mo", fmt: "money0" },
+             { key: "gap_pct", label: "Gap %", fmt: "pct1" },
+             { key: "market_psf", label: "Market $/sf", fmt: "psf" },
+             { key: "inplace_psf", label: "In-place $/sf", fmt: "psf" }],
+      rows: (fp.rows || []).concat([fpTotal]), totalRow: fpTotal, filterable: true,
+    });
+
+    renderTable(host, {
+      id: "t-l-rollover", group: "The Landing", title: "Rollover schedule",
+      feeds: "Rollover Schedule chart (bars = units, line = cumulative %)",
+      cols: [{ key: "month", label: "Month", wrap: true },
+             { key: "units", label: "Units", fmt: "int" },
+             { key: "pct", label: "% of units", fmt: "pct1" },
+             { key: "sqft", label: "Sq ft", fmt: "int" },
+             { key: "inplace", label: "In-place", fmt: "money0" },
+             { key: "market", label: "Market", fmt: "money0" },
+             { key: "uncaptured", label: "Uncaptured/mo", fmt: "money0" },
+             { key: "cum_units", label: "Cumulative units", fmt: "int" },
+             { key: "cum_pct", label: "Cumulative %", fmt: "pct1" }],
+      rows: d.rollover || [],
+    });
+
+    const dq = d.delinquency || {};
+    renderTable(host, {
+      id: "t-l-delq-summary", group: "The Landing", title: "Delinquency — summary",
+      feeds: "Delinquency card stats and KPI tile", cols: KVCOLS, rows: kv(dq),
+    });
+    renderTable(host, {
+      id: "t-l-delq-aging", group: "The Landing", title: "Delinquency — aging",
+      feeds: "Delinquency aging bar chart",
+      cols: [{ key: "bucket", label: "Bucket" }, { key: "amount", label: "Amount", fmt: "money" },
+             { key: "pct_owed", label: "% of owed", fmt: "pct1" },
+             { key: "pct_rent", label: "% of monthly rent", fmt: "pct" },
+             { key: "status", label: "Status", fmt: "pill" }],
+      rows: dq.aging || [],
+      totalRow: (dq.aging || []).find(a => String(a.bucket).toLowerCase() === "total"),
+    });
+    renderTable(host, {
+      id: "t-l-delq-top", group: "The Landing", title: "Delinquency — largest balances",
+      feeds: "Delinquency table on the card",
+      cols: [{ key: "unit", label: "Unit" }, { key: "resident", label: "Resident" },
+             { key: "owed", label: "Total owed", fmt: "money" },
+             { key: "d30", label: "0–30", fmt: "money" }, { key: "d60", label: "31–60", fmt: "money" },
+             { key: "d90", label: "61–90", fmt: "money" },
+             { key: "over90", label: "Over 90", fmt: "money" }],
+      rows: dq.top || [], filterable: true,
+    });
+
+    renderTable(host, {
+      id: "t-l-units", group: "The Landing", title: "Unit-level gap analysis",
+      feeds: "Largest Unit Gaps table, the renewal pipeline model, and the floorplan roll-up",
+      note: "One row per unit from the rent roll. The renewal model reads status = Current and "
+          + "matches on expiry key; the gap table reads gap > 0.",
+      cols: [{ key: "unit", label: "Unit" }, { key: "type", label: "Type" },
+             { key: "sqft", label: "Sq ft", fmt: "int" },
+             { key: "market", label: "Market rent", fmt: "money0" },
+             { key: "inplace", label: "In-place rent", fmt: "money0" },
+             { key: "gap", label: "Gap/mo", fmt: "money0" },
+             { key: "gap_pct", label: "Gap %", fmt: "pct1" },
+             // an identifier (YYYYMM), so no thousands grouping
+             { key: "expiry_key", label: "Expiry key", fmt: "raw" },
+             { key: "status", label: "Status", fmt: "pill" },
+             { key: "market_assum", label: "Market (at assumption)", fmt: "money" }],
+      rows: d.units || [], filterable: true,
+    });
+
+    renderTable(host, {
+      id: "t-l-meta", group: "The Landing", title: "Source & provenance",
+      feeds: "The line at the foot of The Landing view", cols: KVCOLS, rows: kv(d.meta),
+    });
+  }
+
+  buildTOC();
+  document.getElementById("footer").textContent =
+    "Every table on this page is read from the same JSON the dashboard fetches, so what you "
+    + "see here is what the charts plot. CSV exports carry raw unrounded values. "
+    + "SECURITY: the password gate is client-side only and not encryption — this page exposes "
+    + "the same data as the dashboard, so treat the link the same way.";
+}
+
+function buildTOC() {
+  const toc = document.getElementById("toc");
+  let current = null, ul = null;
+  TOC.forEach(t => {
+    if (t.group !== current) {
+      current = t.group;
+      toc.appendChild(el("div", "grp", current));
+      ul = el("ul");
+      toc.appendChild(ul);
+    }
+    const li = el("li"), a = el("a");
+    a.href = "#" + t.id;
+    a.appendChild(document.createTextNode(t.title + " "));
+    a.appendChild(el("span", "n", "(" + t.n + ")"));
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+}
+</script>
+</body>
+</html>

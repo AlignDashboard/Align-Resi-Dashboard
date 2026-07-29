@@ -129,7 +129,14 @@
   .tab:focus-visible { outline: 1px solid var(--amber); outline-offset: -1px; }
   .view[hidden] { display: none; }
 
-  .tmode { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 7px;
+  .datalink { margin-left: auto; align-self: center; margin-bottom: 6px;
+    color: var(--muted); font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 600; text-decoration: none; border-bottom: 1px solid transparent;
+    transition: color .15s, border-color .15s; white-space: nowrap; }
+  .datalink:hover { color: var(--amber); border-bottom-color: var(--amber); }
+  .datalink:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
+  /* the toggle no longer needs to claim the free space */
+  .tmode { align-self: center; display: flex; align-items: center; gap: 7px;
     background: none; border: 1px solid var(--line); color: var(--muted);
     font-family: inherit; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
     font-weight: 600; padding: 6px 11px; margin-bottom: 6px; cursor: pointer;
@@ -327,6 +334,8 @@
         <button class="tab" role="tab" id="tabScorecard" aria-controls="viewScorecard" aria-selected="false" tabindex="-1">Scorecard</button>
         <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
       </div>
+      <!-- not a .tab: the tab machinery selects on that class -->
+      <a class="datalink" href="data.html">Data tables ↗</a>
       <button class="tmode" id="themeToggle" type="button" role="switch" aria-checked="false">
         <span class="glyph" id="themeGlyph" aria-hidden="true">☾</span><span id="themeLabel">Dark</span>
       </button>
