@@ -1,0 +1,83 @@
+name: Deploy Dashboard
+
+# Publishes docs/ to GitHub Pages from an artifact assembled at run time, so the
+# data files do not have to live in git history to reach the live site.
+#
+# The site shell (HTML, vendored Chart.js) comes from main. The data JSON comes
+# from the `data` branch, which carries a single commit that is replaced on each
+# publish — so only the current data exists anywhere, and nothing accumulates.
+#
+# During migration the `data` branch may not exist yet; in that case whatever
+# JSON is committed in main is used instead, so the site keeps working either
+# way. Once Pages is switched to "GitHub Actions" and the data branch is in use,
+# the copies in main can be removed.
+#
+# ONE MANUAL STEP: Settings -> Pages -> Build and deployment -> Source ->
+# "GitHub Actions". Until that is set, this workflow runs but the live site is
+# still served from the main branch.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+  workflow_run:
+    workflows: ["Update Dashboard Metrics"]
+    types: [completed]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer one win rather than queue behind.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout site shell
+        uses: actions/checkout@v4
+
+      - name: Overlay data from the data branch
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch --depth 1 origin data
+            mkdir -p _data
+            git archive FETCH_HEAD | tar -x -C _data
+            found=0
+            for f in metrics.json landing.json scorecard.json; do
+              if [ -f "_data/$f" ]; then
+                cp "_data/$f" "docs/$f"
+                echo "overlaid docs/$f from the data branch"
+                found=$((found+1))
+              fi
+            done
+            echo "$found file(s) taken from the data branch"
+          else
+            echo "no data branch yet — using the JSON committed in main"
+          fi
+          # Fail loudly rather than deploy a site whose charts cannot load.
+          for f in metrics.json landing.json scorecard.json; do
+            test -s "docs/$f" || { echo "::error::docs/$f is missing or empty"; exit 1; }
+          done
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

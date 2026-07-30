@@ -1,3 +1,11 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+
+# Pipeline outputs with unit- or resident-level detail. These are regenerated
+# from the Drive reports on every run, so there is no reason to commit them —
+# and every reason not to, since git history is forever.
+# (data/*/expense_ratio.json IS tracked: build_metrics reads it back as the
+# accumulated rolling-T12 series, and it holds aggregate ratios only.)
+data/*/rent_roll.json
+data/*/delinquency.json

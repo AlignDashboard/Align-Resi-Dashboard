@@ -60,12 +60,41 @@ data will not update from the grey tabs at all — `Lease Detail` is hand-entere
 ## Deployment
 
 GitHub Pages serves `docs/` from `main`. Pushing to `main` rebuilds the live
-site within a minute or two. There is no build step and no deploy workflow —
-`.github/workflows/update.yml` only regenerates `metrics.json` on a daily cron
-and commits it back.
+site within a minute or two. `.github/workflows/update.yml` regenerates
+`metrics.json` on a daily cron and commits it back.
 
 Changes to `index.html` will not appear until they are on `main`. A hard refresh
 is often needed after a deploy, since the page caches aggressively.
+
+### Keeping data out of git history (migration, not yet active)
+
+Committing the data JSON means every past month's financials stay readable in
+history forever. `.github/workflows/deploy.yml` fixes that: it deploys `docs/`
+to Pages from an artifact assembled at run time, taking the site shell from
+`main` and the data JSON from a `data` branch.
+
+`scripts/publish_data.sh` writes that branch as a **single commit with no
+parent**, force-replacing it each time, so only the current data exists in git —
+verified: three consecutive publishes leave exactly one commit and one
+recoverable version.
+
+**One manual step activates this:** Settings → Pages → Build and deployment →
+Source → **GitHub Actions**. Until that is flipped, the live site is still served
+from `main` and `deploy.yml` is a no-op. `deploy.yml` falls back to the JSON
+committed in `main` when the `data` branch does not exist, so nothing breaks
+mid-migration.
+
+After flipping it, in order:
+
+1. `scripts/publish_data.sh` — create the `data` branch.
+2. Confirm the site still loads, then stop committing data to `main`: drop
+   `docs/*.json` from tracking and change `update.yml` to publish to the `data`
+   branch instead of committing.
+3. `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`, to
+   remove the data already in history. Tested on a throwaway clone: 63 commits →
+   40, every data path gone from every commit, site shell and scripts intact.
+   Read the script's header first — it rewrites history, needs a force-push, and
+   **cannot un-publish anything that was already public.**
 
 ## Notes
 
