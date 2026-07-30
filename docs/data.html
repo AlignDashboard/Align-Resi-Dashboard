@@ -776,7 +776,10 @@ async function loadAll() {
     renderTable(host, {
       id: "t-l-delq-top", group: "The Landing", title: "Delinquency — largest balances",
       feeds: "Delinquency table on the card",
-      cols: [{ key: "unit", label: "Unit" }, { key: "resident", label: "Resident" },
+      note: "Resident names are deliberately not published — a surname beside a unit "
+          + "number and an amount past due is identifiable personal data, and no chart "
+          + "needs it.",
+      cols: [{ key: "unit", label: "Unit" },
              { key: "owed", label: "Total owed", fmt: "money" },
              { key: "d30", label: "0–30", fmt: "money" }, { key: "d60", label: "31–60", fmt: "money" },
              { key: "d90", label: "61–90", fmt: "money" },

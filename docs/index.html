@@ -1594,8 +1594,10 @@ async function loadLanding() {
           y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
     });
     buildTable(document.getElementById("ldTbl"),
-      [{ t: "Unit" }, { t: "Resident", mut: true }, { t: "Owed", num: true }, { t: "Over 90d", num: true }],
-      dq.top.slice(0, 8).map(x => ["#" + x.unit, x.resident, fm$(x.owed), x.over90 ? fm$(x.over90) : "—"]));
+      // no resident name: a surname beside an amount past due is personal data,
+      // and the unit number is enough to act on
+      [{ t: "Unit" }, { t: "Owed", num: true }, { t: "Over 90d", num: true }],
+      dq.top.slice(0, 8).map(x => ["#" + x.unit, fm$(x.owed), x.over90 ? fm$(x.over90) : "—"]));
   })();
 
   /* ---- meta line ---- */

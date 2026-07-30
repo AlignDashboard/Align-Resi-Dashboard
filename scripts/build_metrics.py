@@ -102,8 +102,18 @@ def store_rent_roll(prop, parsed):
                          "totals", "units"])
 
 
+# Fields dropped before anything is written to data/ or published. The parser
+# reads them because the report contains them, but a surname or a Yardi tenant
+# id next to an amount owed is identifiable personal data and nothing on the
+# dashboard needs it.
+PII_FIELDS = ("resident_name", "resident_code")
+
+
 def store_delinquency(prop, parsed):
-    return store_report(prop, parsed, "delinquency.json",
+    scrubbed = dict(parsed)
+    scrubbed["residents"] = [{k: v for k, v in r.items() if k not in PII_FIELDS}
+                             for r in parsed.get("residents", [])]
+    return store_report(prop, scrubbed, "delinquency.json",
                         ["report_type", "property", "property_code", "as_of",
                          "summary", "residents"])
 

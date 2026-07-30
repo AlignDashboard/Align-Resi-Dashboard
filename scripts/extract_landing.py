@@ -206,10 +206,15 @@ def _dq_as_of():
 
 dq_aging_hdr = find_row(dq, "Bucket")
 dq_detail_hdr = find_row(dq, "Unit")
-detail = block(dq, dq_detail_hdr, cols=range(2, 9), stop_on_blank=False, max_rows=200,
-               keep=lambda v: isinstance(v[2], (int, float)) and v[2] > 0
+# Resident names are deliberately NOT extracted. The published JSON sits on a
+# public URL, and a surname next to a unit number and an amount past due is
+# identifiable personal financial data. No chart needs it — the aging bars use
+# amounts only — so the unit number alone identifies the row for anyone who
+# needs to act on it. Column 3 (the name) is skipped in the column list below.
+detail = block(dq, dq_detail_hdr, cols=[2, 4, 5, 6, 7, 8], stop_on_blank=False, max_rows=200,
+               keep=lambda v: isinstance(v[1], (int, float)) and v[1] > 0
                               and not str(v[0]).upper().startswith("NONRES"))
-detail.sort(key=lambda r: -r[2])
+detail.sort(key=lambda r: -r[1])
 data["delinquency"] = {
     "as_of": _dq_as_of(),
     "units_with_balance": scalar(dq, "Units with a balance owed"),
@@ -225,7 +230,7 @@ data["delinquency"] = {
     "total_all": scalar(dq, "TOTAL DELINQUENCY - residential and retail"),
     "aging": [dict(zip(["bucket", "amount", "pct_owed", "pct_rent", "status"], r))
               for r in block(dq, dq_aging_hdr, cols=range(2, 7))],
-    "top": [dict(zip(["unit", "resident", "owed", "d30", "d60", "d90", "over90"],
+    "top": [dict(zip(["unit", "owed", "d30", "d60", "d90", "over90"],
                      [str(r[0])] + r[1:])) for r in detail[:12]],
 }
 
