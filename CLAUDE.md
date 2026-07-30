@@ -73,6 +73,13 @@ is often needed after a deploy, since the page caches aggressively.
   visibility deterrence, not encryption — the source is public and readable. Do
   not treat it as protecting anything. Real financials need client-side
   encryption of `metrics.json` first.
+- `index.html` is the only place the password is entered. Unlocking sets
+  `sessionStorage["align-unlocked"]`; `data.html` requires that marker and
+  redirects to `index.html?next=data.html` without it, so the data tables are
+  not a second way in. The unlock lasts the browser session, not forever. Any
+  new gated page should follow the same pattern rather than adding its own
+  password field — and note the marker is client-side like the gate itself, so
+  it deters, it does not protect.
 - `metrics.json` values flow into the DOM. When rendering anything from it,
   prefer `textContent` / `createElement` over `innerHTML` so pipeline data
   cannot inject markup.

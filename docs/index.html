@@ -516,16 +516,36 @@
    ============================================================ */
 const PASSWORD = "AlignExecs";   // <-- change here to update the gate password
 
+// This page is the only place the password is entered. Unlocking records a
+// marker that data.html reads, so the data tables open without a second
+// prompt — and cannot be opened at all without coming through here first.
+// sessionStorage, not localStorage: the unlock lasts for the browser session
+// rather than forever on the machine.
+const SESSION_KEY = "align-unlocked";
+// Pages data.html may send us back to after unlocking. An allowlist, so the
+// ?next= parameter can never be pointed somewhere else.
+const ALLOWED_NEXT = ["data.html"];
+
 const gate   = document.getElementById("gate");
 const app    = document.getElementById("app");
 const pwInput = document.getElementById("pw");
 const errEl  = document.getElementById("err");
 
+function sessionUnlocked() {
+  try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch (e) { return false; }
+}
+function reveal() {
+  gate.style.display = "none";
+  app.style.display = "block";
+  loadDashboard();
+}
 function tryUnlock() {
   if (pwInput.value === PASSWORD) {
-    gate.style.display = "none";
-    app.style.display = "block";
-    loadDashboard();
+    try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (e) {}
+    // came here from a gated page? go back to it
+    const next = new URLSearchParams(location.search).get("next");
+    if (ALLOWED_NEXT.includes(next)) { location.replace(next); return; }
+    reveal();
   } else {
     errEl.textContent = "Incorrect password";
     pwInput.value = "";
@@ -534,7 +554,7 @@ function tryUnlock() {
 }
 document.getElementById("unlock").addEventListener("click", tryUnlock);
 pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
-window.addEventListener("load", () => pwInput.focus());
+window.addEventListener("load", () => { if (!sessionUnlocked()) pwInput.focus(); });
 
 /* ============================================================
    PROPERTY TABS
@@ -1584,6 +1604,12 @@ async function loadLanding() {
     " sq ft · rent roll as of " + L.meta.rent_roll_as_of + " · source: " + L.meta.source_workbook +
     " (rent roll, GL/T12, delinquency — same report types as the Drive pipeline; refresh on command)";
 }
+
+/* ============================================================
+   Already unlocked this browser session (a reload, or coming back
+   from the data tables)? Skip straight past the gate.
+   ============================================================ */
+if (sessionUnlocked()) reveal();
 </script>
 </body>
 </html>

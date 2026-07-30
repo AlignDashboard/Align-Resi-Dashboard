@@ -46,15 +46,6 @@
     max-width: 340px; line-height: 1.6; }
   #gate .mark { width: 34px; height: 34px; border: 1px solid var(--amber); position: relative; }
   #gate .mark::after { content:""; position:absolute; inset:7px; border:1px solid var(--amber); opacity:.4; }
-  .pwrow { display: flex; gap: 8px; }
-  #pw { background: var(--panel); border: 1px solid var(--line); color: var(--text);
-    padding: 12px 14px; font-family: inherit; font-size: 13px; letter-spacing: 2px;
-    width: 220px; outline: none; }
-  #pw:focus { border-color: var(--amber); }
-  #unlock { background: var(--amber); color: var(--on-amber); border: none; padding: 12px 20px;
-    font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 1px;
-    text-transform: uppercase; cursor: pointer; }
-  #err { color: var(--red); font-size: 11px; letter-spacing: 1px; height: 12px; }
 
   /* ---------- page ---------- */
   #app { display: none; max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
@@ -142,22 +133,21 @@
 </head>
 <body>
 
+  <!-- No password entry here by design: this page is reachable only after
+       unlocking on the dashboard, so it is not a second way in. Without a
+       session unlock it redirects rather than prompting. -->
   <div id="gate">
     <div class="mark"></div>
     <h1>Align Data Tables</h1>
-    <div class="sub">Every table behind every chart. Enter the password to view.</div>
-    <div class="pwrow">
-      <input id="pw" type="password" placeholder="PASSWORD" autocomplete="off" />
-      <button id="unlock">Unlock</button>
-    </div>
-    <div id="err"></div>
+    <div class="sub" id="gateMsg">Checking access…</div>
+    <a class="plain" id="gateLink" href="index.html" style="display:none;">Go to the dashboard →</a>
   </div>
 
   <div id="app">
     <header class="top">
       <div class="title">ALIGN · <span>DATA TABLES</span></div>
       <div class="right">
-        <a class="plain" href="index.html">← Dashboard</a>
+        <a class="plain" id="backLink" href="index.html">← Dashboard</a>
         <button class="tmode" id="themeToggle" type="button" role="switch" aria-checked="false">
           <span id="themeGlyph" aria-hidden="true">☾</span><span id="themeLabel">Dark</span>
         </button>
@@ -179,25 +169,34 @@
 
 <script>
 /* ============================================================
-   GATE  (same client-side visibility gate as the dashboard —
-   deterrence only, not encryption; the source is public)
+   ACCESS
+   The password lives on the dashboard and is entered only there.
+   Unlocking sets a session marker; this page requires it and sends
+   you to the dashboard if it is missing, rather than offering a
+   second prompt. Same client-side visibility gate as before —
+   deterrence, not encryption, since the source is public.
    ============================================================ */
-const PASSWORD = "AlignExecs";
+const SESSION_KEY = "align-unlocked";
 const gate = document.getElementById("gate"), app = document.getElementById("app");
-const pwInput = document.getElementById("pw"), errEl = document.getElementById("err");
-function tryUnlock() {
-  if (pwInput.value === PASSWORD) {
+
+function sessionUnlocked() {
+  try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch (e) { return false; }
+}
+
+function requireUnlock() {
+  if (sessionUnlocked()) {
     gate.style.display = "none";
     app.style.display = "block";
     loadAll();
-  } else {
-    errEl.textContent = "Incorrect password";
-    pwInput.value = ""; pwInput.focus();
+    return;
   }
+  // Send them to the dashboard to unlock, and come back here afterwards.
+  // replace() rather than assign() so Back does not bounce between the two.
+  document.getElementById("gateMsg").textContent =
+    "The dashboard password is needed first. Taking you there…";
+  document.getElementById("gateLink").style.display = "";
+  location.replace("index.html?next=data.html");
 }
-document.getElementById("unlock").addEventListener("click", tryUnlock);
-pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
-window.addEventListener("load", () => pwInput.focus());
 
 /* ============================================================
    THEME — shares the dashboard's localStorage key
@@ -835,6 +834,9 @@ function buildTOC() {
     ul.appendChild(li);
   });
 }
+
+// Decide access last, so every renderer is defined before loadAll runs.
+requireUnlock();
 </script>
 </body>
 </html>
