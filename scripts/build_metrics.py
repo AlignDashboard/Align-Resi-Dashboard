@@ -79,17 +79,35 @@ def store_expense_ratio(prop, parsed):
     return hist
 
 
+# Personal fields stripped from every report before anything is written to
+# disk. Parsers read them because the source reports contain them (the rent roll
+# needs resident_code to tell an occupied unit from a vacant one), but nothing
+# persists them. Scrubbing here rather than per-report means a new parser is
+# covered by default instead of by remembering.
+PII_FIELDS = ("resident_name", "resident_code", "resident", "tenant_name",
+              "tenant", "name")
+
+
+def scrub(obj):
+    """Recursively drop PII keys from dicts and lists."""
+    if isinstance(obj, dict):
+        return {k: scrub(v) for k, v in obj.items() if k not in PII_FIELDS}
+    if isinstance(obj, list):
+        return [scrub(v) for v in obj]
+    return obj
+
+
 def store_report(prop, parsed, filename, keys):
     """Write the latest parse of a report to data/<slug>/<filename>.
 
     One file per property per report, overwritten each run: these reports are
     point-in-time snapshots, not a series, so history lives in git rather than
-    inside the file.
+    inside the file. PII is stripped on the way out — see PII_FIELDS.
     """
     d = DATA / prop["slug"]
     d.mkdir(parents=True, exist_ok=True)
     fp = d / filename
-    out = {k: parsed.get(k) for k in keys}
+    out = {k: scrub(parsed.get(k)) for k in keys}
     out["source_file"] = parsed.get("source_file")
     out["checks"] = parsed.get("checks")
     json.dump(out, open(fp, "w"), indent=2, default=str)
@@ -102,18 +120,8 @@ def store_rent_roll(prop, parsed):
                          "totals", "units"])
 
 
-# Fields dropped before anything is written to data/ or published. The parser
-# reads them because the report contains them, but a surname or a Yardi tenant
-# id next to an amount owed is identifiable personal data and nothing on the
-# dashboard needs it.
-PII_FIELDS = ("resident_name", "resident_code")
-
-
 def store_delinquency(prop, parsed):
-    scrubbed = dict(parsed)
-    scrubbed["residents"] = [{k: v for k, v in r.items() if k not in PII_FIELDS}
-                             for r in parsed.get("residents", [])]
-    return store_report(prop, scrubbed, "delinquency.json",
+    return store_report(prop, parsed, "delinquency.json",
                         ["report_type", "property", "property_code", "as_of",
                          "summary", "residents"])
 

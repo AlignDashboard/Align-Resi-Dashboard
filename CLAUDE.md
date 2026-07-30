@@ -22,7 +22,7 @@ ask for the PR; do not open one preemptively.
 | `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json` |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing |
-| `data/` | Raw fetched reports, per property |
+| `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
 
 ## Refreshing The Landing
 
@@ -95,6 +95,32 @@ After flipping it, in order:
    40, every data path gone from every commit, site shell and scripts intact.
    Read the script's header first — it rewrites history, needs a force-push, and
    **cannot un-publish anything that was already public.**
+
+## Tenant names must not leave the pipeline
+
+The rent roll and delinquency reports arrive with tenant names. Parsers read
+them (the rent roll needs `resident_code` to tell an occupied unit from a vacant
+one) but **nothing may persist them**. `build_metrics.scrub()` strips
+`PII_FIELDS` from every report on the way to disk — centrally, in
+`store_report`, so a new parser is covered by default rather than by remembering.
+
+`scripts/check_no_pii.py` is the check that this holds, and it runs in both
+workflows: `update.yml` will not commit and `deploy.yml` will not publish if it
+fails. Three passes — person-shaped keys in the published JSON, raw reports or
+per-unit output tracked in git, and (with `--source <report.xlsx>`) every real
+name in a source report searched for by word boundary in every published file.
+Run it locally the same way after any change to a parser or the extractor.
+
+Raw reports are gitignored (`_downloads/`, `*.xlsx`, `tests/fixtures/`,
+`data/*/rent_roll.json`, `data/*/delinquency.json`) because they hold everything.
+`data/*/expense_ratio.json` stays tracked: it is aggregate ratios only, and
+`build_metrics` reads it back as the rolling-T12 series.
+
+**Anything the page displays is in a file anyone with the URL can download.**
+There is no "visible on the page but not otherwise accessible" on a static site
+— the page fetches JSON over HTTP. That is why names are dropped from the data
+entirely rather than merely hidden from a table. Displaying them would require
+encrypting the JSON or putting the site behind real auth.
 
 ## Notes
 

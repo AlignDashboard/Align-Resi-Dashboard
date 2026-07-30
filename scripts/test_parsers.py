@@ -196,6 +196,51 @@ loose = parse_delinquency.parse(bad, strict=False)
 ok("strict=False reports instead of raising", bool(loose["problems"]),
    loose["problems"][0][:70] if loose["problems"] else "no problems recorded")
 
+# ---------------------------------------------------- PII must not persist
+# The parsers read tenant names because the reports contain them. Nothing may
+# write them to disk. This asserts the scrub rather than trusting it.
+print("\nPII scrub")
+import build_metrics  # noqa: E402
+
+rr_names = {u["resident_name"] for u in rr["units"] if u.get("resident_name")}
+ok("parser does read tenant names (so the scrub is doing real work)",
+   len(rr_names) > 100, f"{len(rr_names)} names in the parse")
+
+scrubbed = build_metrics.scrub(rr)
+flat = str(scrubbed)
+ok("scrub removes every tenant name",
+   not any(n in flat for n in rr_names),
+   f'{sum(1 for n in rr_names if n in flat)} names survived')
+ok("scrub removes the PII keys",
+   not any(k in flat for k in ("resident_name", "resident_code")))
+ok("scrub keeps the numbers the dashboard needs",
+   scrubbed["totals"]["market_rent"] == 1701103.0 and len(scrubbed["units"]) == 263,
+   f'{len(scrubbed["units"])} units, market {scrubbed["totals"]["market_rent"]:,}')
+ok("occupied flag survives the scrub (derived before it)",
+   sum(1 for u in scrubbed["units"] if u.get("occupied")) > 200,
+   f'{sum(1 for u in scrubbed["units"] if u.get("occupied"))} occupied')
+
+dq_names = {r["resident_name"] for r in dq["residents"] if r.get("resident_name")}
+dq_scrubbed = str(build_medium := build_metrics.scrub(dq))
+ok("scrub removes delinquency names too",
+   not any(n in dq_scrubbed for n in dq_names),
+   f'{len(dq_names)} names in the parse, 0 survive')
+
+# and end to end through the real writer
+tmpdir = tempfile.mkdtemp()
+_orig_data = build_metrics.DATA
+try:
+    import pathlib
+    build_metrics.DATA = pathlib.Path(tmpdir)
+    fp = build_metrics.store_rent_roll({"slug": "t"}, rr)
+    written = open(fp).read()
+    ok("store_rent_roll writes no names",
+       not any(n in written for n in rr_names),
+       os.path.basename(str(fp)))
+finally:
+    build_metrics.DATA = _orig_data
+    shutil.rmtree(tmpdir, ignore_errors=True)
+
 print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
 for n in FAIL:
     print("  failed: " + n)

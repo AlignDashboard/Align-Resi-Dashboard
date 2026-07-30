@@ -9,3 +9,16 @@ __pycache__/
 # accumulated rolling-T12 series, and it holds aggregate ratios only.)
 data/*/rent_roll.json
 data/*/delinquency.json
+
+# Raw reports fetched from Drive. These are the originals and contain tenant
+# names — they must never be committed. The pipeline reads them and throws them
+# away; only scrubbed aggregates are kept.
+_downloads/
+
+# Test fixtures are lifted from the analyst workbook and carry real names.
+tests/fixtures/
+
+# Source workbooks and reports carry everything, including names.
+*.xlsx
+*.xlsm
+*.csv
