@@ -13,8 +13,11 @@ name: Deploy Dashboard
 # the copies in main can be removed.
 #
 # ONE MANUAL STEP: Settings -> Pages -> Build and deployment -> Source ->
-# "GitHub Actions". Until that is set, this workflow runs but the live site is
-# still served from the main branch.
+# "GitHub Actions". Until that is set, this workflow still runs and still creates
+# a real Pages deployment — but GitHub's own branch-based "pages build and
+# deployment" fires on the same push and finishes later, so the branch build is
+# what ends up live. The two only agree because they currently publish the same
+# bytes; they would not once the data comes from the `data` branch.
 
 on:
   push:

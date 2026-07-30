@@ -80,9 +80,18 @@ recoverable version.
 
 **One manual step activates this:** Settings → Pages → Build and deployment →
 Source → **GitHub Actions**. Until that is flipped, the live site is still served
-from `main` and `deploy.yml` is a no-op. `deploy.yml` falls back to the JSON
-committed in `main` when the `data` branch does not exist, so nothing breaks
-mid-migration.
+from `main`. `deploy.yml` falls back to the JSON committed in `main` when the
+`data` branch does not exist, so nothing breaks mid-migration.
+
+`deploy.yml` is *not* dormant before the flip — it is not a no-op. It runs on
+every push, and `deploy-pages` really does create a Pages deployment, which then
+loses a race: GitHub's own `pages build and deployment` also fires on the push
+and finishes ~20s later, so the branch build is what ends up live. Observed on
+`500b0d5`: our deploy reported success at 01:22:36, the branch build deployed at
+01:22:58. Harmless only because both currently publish identical bytes. Once the
+data comes from the `data` branch they would differ, and which one wins would be
+a coin toss — which is the real reason the flip has to happen before step 2
+below, not just a tidiness preference.
 
 After flipping it, in order:
 
