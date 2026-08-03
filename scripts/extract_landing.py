@@ -8,6 +8,7 @@ the workbook's own Data Lineage tab:
     Source CY25 / Aug25-Jul26  <- 12_Month_Statement_<code>_Accrual  (T12 Expenses)
     Source Rent Roll Jul / Jun <- SPV PM Deliverable Package, Rent Roll tab
     Source Delinquency         <- rs_rp_DelinquencySummaryReport
+    Source Renewal Tracker     <- Landing 2025 Renewal Tracker (monthly sheets + MTM tab)
     Lease Detail               <- RealPage rental rate tracker (TYPED IN, not a grey tab)
 
 To refresh: paste the new reports into the grey tabs, let Excel recalculate,
@@ -52,9 +53,12 @@ def check(ok, msg, hard=True):
         (fatal if hard else warn)(msg)
     return ok
 
+# V37 renamed the Holdovers tab to MTM and added MTM Analysis (tracker
+# reconciliation), Scorecard (scored insights) and a Source Renewal Tracker tab.
 REQUIRED_SHEETS = ["Inputs", "Rent Capture", "Expense & NOI", "Expense Overview",
-                   "Delinquency", "Holdovers", "Renewal Pipeline", "Unit Gap Analysis",
-                   "Rate vs Occupancy", "Lease Detail", "Floorplan & Rollover"]
+                   "Delinquency", "MTM", "MTM Analysis", "Renewal Pipeline",
+                   "Unit Gap Analysis", "Rate vs Occupancy", "Lease Detail",
+                   "Floorplan & Rollover", "Scorecard"]
 missing_sheets = [s for s in REQUIRED_SHEETS if s not in wb.sheetnames]
 if missing_sheets:
     print("FATAL: workbook is missing required tabs: " + ", ".join(missing_sheets),
@@ -62,16 +66,19 @@ if missing_sheets:
     sys.exit(2)
 
 inp = wb["Inputs"]; rc = wb["Rent Capture"]; en = wb["Expense & NOI"]
-eo = wb["Expense Overview"]; dq = wb["Delinquency"]; ho = wb["Holdovers"]
-rp = wb["Renewal Pipeline"]; ug = wb["Unit Gap Analysis"]; ro = wb["Rate vs Occupancy"]
-ld = wb["Lease Detail"]; fp = wb["Floorplan & Rollover"]
+eo = wb["Expense Overview"]; dq = wb["Delinquency"]; ho = wb["MTM"]
+ma = wb["MTM Analysis"]; rp = wb["Renewal Pipeline"]; ug = wb["Unit Gap Analysis"]
+ro = wb["Rate vs Occupancy"]; ld = wb["Lease Detail"]; fp = wb["Floorplan & Rollover"]
+sc = wb["Scorecard"]
 
 # ---- stale-workbook guard -------------------------------------------------
 # If Excel has not recalculated, every formula reads None and the whole file
 # would come out null. Fail here rather than publish that.
+# probe the first month column (4 — column 3 is a GL reference in V37); a fixed
+# far-right column would fall past the TTM column as months are added
 missing, total = is_stale(None, [
-    (rc, "Total rental income (accrual basis)", 23),
-    (en, "Total operating expense", 23),
+    (rc, "Total rental income (accrual basis)", 4),
+    (en, "Total operating expense", 4),
     (ho, "Holdover units", 3),
     (inp, "Total units", 3),
 ])
@@ -95,14 +102,21 @@ data["meta"] = {
     "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     "source_workbook": os.path.basename(args.workbook),
     "source_reports": ["12-month accrual statement (T12)", "rent roll",
-                       "delinquency summary", "RealPage rate tracker (typed in)"],
+                       "delinquency summary", "renewal tracker",
+                       "RealPage rate tracker (typed in)"],
     "note": ("Derived from the analyst workbook, which is fed by the same Yardi/RealPage "
              "reports the Drive pipeline collects. Refresh by pasting new reports into "
              "the workbook's grey Source tabs, recalculating in Excel, and re-running "
              "scripts/extract_landing.py."),
 }
 data["inputs"] = {
-    "target_econ_occupancy": scalar(inp, "Target economic occupancy"),
+    # V37 moved the economic-occupancy target to Rate vs Occupancy and keeps a
+    # physical target on Inputs; the scenario cards now run on an incremental
+    # vacancy haircut rather than one-time make-ready/downtime costs.
+    "target_econ_occupancy": scalar(ro, "Target economic occupancy"),
+    "target_phys_occupancy": scalar(inp, "Target physical occupancy"),
+    "incr_vacancy": scalar(inp, "Incremental vacancy applied to new run-rate"),
+    "avg_phys_vacancy_ttm": scalar(inp, "Average physical vacancy, TTM (benchmark)"),
     "yardi_market_psf": scalar(inp, "Yardi market rent $/sqft (weighted)"),
     "inplace_psf": scalar(inp, "In-place rent $/sqft (weighted)"),
     "capture_rate": scalar(inp, "SELECTED capture rate - same unit, market at signing"),
@@ -112,7 +126,7 @@ data["inputs"] = {
     "downtime_months": scalar(inp, "Downtime per move-out (months)"),
     "concession_per_lease": scalar(inp, "Concession per new lease ($)"),
     "leasing_cost_per_lease": scalar(inp, "Leasing and marketing cost per new lease ($)"),
-    "cap_rate": scalar(rp, "Cap rate"),
+    "cap_rate": scalar(rp, "Cap rate", col=3, value_col=4),
 }
 
 # ---- rent capture --------------------------------------------------------
@@ -167,7 +181,22 @@ data["expense_noi"] = {
         "noi_per_unit": scalar(en, "NOI per unit", value_col=en_ttm),
     },
     "tax_note": ("April 2026 real estate tax true-up distorts that month; "
-                 "TTM run-rate for taxes is ~172.5k/mo."),
+                 "TTM run-rate for taxes is ~172.5k/mo. Whether the April entry is a "
+                 "one-off or an under-accrual catch-up is an open question — see the "
+                 "tax-accrual readings."),
+    # V37 adds an explicit open question: is the April posting a one-off
+    # (Reading A) or a catch-up implying a higher run rate (Reading B)?
+    "tax_accrual": {
+        "monthly_accrual": scalar(en, "Monthly accrual in place (GL 510200-0001)"),
+        "april_posting": scalar(en, "April 2026 posting"),
+        "one_time_amount": scalar(en, "One-time amount in April 2026"),
+        "reading_a_opex": scalar(en, "Reading A - April one-off: clean TTM opex"),
+        "reading_a_ratio": scalar(en, "Reading A - clean TTM expense ratio"),
+        "reading_a_noi": scalar(en, "Reading A - clean TTM NOI"),
+        "reading_b_opex": scalar(en, "Reading B - Jul annualised opex"),
+        "reading_b_ratio": scalar(en, "Reading B - Jul annualised expense ratio"),
+        "reading_b_noi": scalar(en, "Reading B - Jul annualised NOI"),
+    },
 }
 
 # ---- expense deep dive --------------------------------------------------
@@ -234,10 +263,39 @@ data["delinquency"] = {
                      [str(r[0])] + r[1:])) for r in detail[:12]],
 }
 
-# ---- holdovers ---------------------------------------------------------
+# V37 tracks unit 531 separately (it is also the rent-override unit on Inputs).
+# The resident's name sits beside the "Resident" label and is deliberately not
+# read — the unit number identifies the case. The balance labels carry their
+# snapshot dates, so they are matched loosely and kept as labels.
+u531_hdr = find_row(dq, "UNIT 531 - COLLECTIONS STATUS", exact=False, required=False)
+if u531_hdr:
+    b1 = find_row(dq, "balance owed,", after=u531_hdr, exact=False)
+    b2 = find_row(dq, "balance owed,", after=b1 + 1, exact=False)
+    data["delinquency"]["unit_531"] = {
+        "status": scalar(dq, "Resident status per Yardi", value_col=4, after=u531_hdr),
+        "memo": scalar(dq, "Delinquency memo from the property", value_col=4,
+                       after=u531_hdr),
+        "balance_prior": {"label": cell(dq, b1, 2), "amount": cell(dq, b1, 4)},
+        "balance_latest": {"label": cell(dq, b2, 2), "amount": cell(dq, b2, 4)},
+        "new_charges_week": scalar(dq, "of which new charges posted in the week",
+                                   value_col=4, after=u531_hdr, exact=False),
+        "paid_week": scalar(dq, "amount paid during the week", value_col=4,
+                            after=u531_hdr, exact=False),
+        "aged_over_30": scalar(dq, "Aged 31-60 / 61-90 / over 90 days",
+                               value_col=4, after=u531_hdr),
+    }
+else:
+    data["delinquency"]["unit_531"] = None
+
+# ---- holdovers (the MTM tab) --------------------------------------------
+# V37 renamed the tab and reworked the repricing model: each unit now carries
+# its own applied increase and a vacate flag (Y = re-lease at market), and the
+# roll-up charges a recurring incremental-vacancy haircut on the new run-rate
+# instead of one-time make-ready/downtime costs.
 ho_dist_hdr = find_row(ho, "Gap versus market")
 ho_unit_hdr = find_row(ho, "Rank")
-ho_units = block(ho, ho_unit_hdr, cols=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16],
+ho_units = block(ho, ho_unit_hdr, cols=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+                                        13, 14, 15, 16, 17, 18, 19, 20],
                  keep=lambda v: isinstance(v[1], (int, float, str)) and v[3] is not None)
 data["holdovers"] = {
     "summary": {"units": scalar(ho, "Holdover units"),
@@ -247,42 +305,157 @@ data["holdovers"] = {
                 "gap_yr": scalar(ho, "Gap, annualised"),
                 "cohort_below_mkt": scalar(ho, "Cohort is below market by"),
                 "property_below_mkt": scalar(ho, "Whole property is below market by"),
+                "worse_than_property": scalar(ho, "Holdovers are worse than the property",
+                                              exact=False),
+                "at_or_above_market": scalar(ho, "Units at or above market"),
                 "share_of_ltl": scalar(ho, "Share of the total loss to lease they represent"),
                 "share_of_units": scalar(ho, "Share of total units at the property")},
     "distribution": [dict(zip(["band", "units", "gap_yr", "share", "flag"], r))
                      for r in block(ho, ho_dist_hdr, cols=range(2, 7))],
     "threshold_default": scalar(ho, "Minimum gap % to include"),
     "units": [dict(zip(["rank", "unit", "type", "sqft", "inplace", "market", "gap_mo",
-                        "gap_yr", "pct_below", "expired", "months_expired", "inc_default"],
-                       [r[0], str(r[1])] + r[2:])) for r in ho_units],
+                        "gap_yr", "pct_below", "expired", "months_expired",
+                        "inplace_psf", "market_psf", "spread_psf",
+                        "inc_applied", "vacate", "new_rent", "incr_mo", "incr_yr"],
+                       [r[0], str(r[1])] + r[2:15]
+                       + [str(r[15]).upper() == "Y"] + r[16:])) for r in ho_units],
     "workbook_reprice": {
+        "units_in_scope": scalar(ho, "Holdover units in scope"),
+        "units_repriced": scalar(ho, "Units repriced in place"),
+        "units_vacating": scalar(ho, "Units vacating"),
         "increase_wtd": scalar(ho, "Weighted average rent increase applied"),
+        "share_of_gap_captured": scalar(ho, "Implied share of the gap captured"),
+        "incremental_yr": scalar(ho, "Incremental rent, annualised"),
+        "less_vacancy": scalar(ho, "Less: incremental vacancy", exact=False),
+        "less_mgmt_fee": scalar(ho, "Less: management fee", exact=False),
         "recurring_noi": scalar(ho, "Recurring additional NOI"),
-        "value": scalar(ho, "NET VALUE AT SALE")},
+        "value": scalar(ho, "NET VALUE AT SALE"),
+        "value_per_unit": scalar(ho, "Value per holdover unit"),
+        "new_lease_discount": scalar(ho, "Discount to Market for new lease",
+                                     col=15, value_col=16),
+        "implied_vacancy": scalar(ho, "Implied Vacancy from this batch",
+                                  col=15, value_col=16, exact=False)},
+    # Three systems disagree about who is month-to-month; the reconciliation
+    # lives on this tab and the counts are worth publishing.
+    "three_systems": {
+        "property_status_report": cell(ho, find_row(ho, "Property Status report",
+                                                    exact=False,
+                                                    after=find_row(ho, "Three systems",
+                                                                   exact=False)), 4),
+        "renewal_tracker_flagged": cell(ho, find_row(ho, "Renewal tracker, units flagged MTM"), 4),
+        "this_model": cell(ho, find_row(ho, "This model, holdovers by rent roll test"), 4),
+        "tracker_mtm_not_holdover": [
+            str(v) for v in series(ho, find_row(ho, "Units the renewal tracker flags MTM",
+                                                exact=False), range(4, 20))
+            if v is not None],
+    },
+}
+
+# ---- MTM analysis (tracker reconciliation) -------------------------------
+# The tab reproduces the renewal tracker's MTM list, which carries resident
+# names. Only the aggregate counts are read; the roster itself is not — names
+# must not reach the published JSON (see check_no_pii.py).
+ma_tot = find_row(ma, "Totals")
+data["mtm_analysis"] = {
+    "source": cell(ma, find_row(ma, "Source:", exact=False), 2),
+    "tracker_total": cell(ma, ma_tot, 3),
+    "status_counts": [dict(zip(["status", "units", "share"], r))
+                      for r in block(ma, ma_tot, cols=range(2, 5),
+                                     keep=lambda v: isinstance(v[1], (int, float)))],
+    "reconciliation": {
+        "tracker_mtm_units": scalar(ma, "Units on the tracker MTM tab", value_col=4),
+        "still_mtm_on_rent_roll": scalar(ma, "still month-to-month on the rent roll",
+                                         value_col=4, exact=False),
+        "not_mtm_lease_running": scalar(ma, "NOT month-to-month", value_col=4,
+                                        after=find_row(ma, "WHAT THE ADDED COLUMN SHOWS"),
+                                        exact=False),
+        "not_found_on_rent_roll": scalar(ma, "not found on the rent roll", value_col=4,
+                                         exact=False),
+        "share_tracker_wrong": scalar(ma, "Share of the tracker list that is wrong",
+                                      value_col=4, exact=False),
+        "holdovers_on_rent_roll": scalar(ma, "Holdovers on the", value_col=4, exact=False),
+        "holdovers_on_tracker": scalar(ma, "appearing on the tracker MTM tab",
+                                       value_col=4, exact=False),
+        "holdovers_missing_from_tracker": scalar(ma, "missing from the tracker MTM tab",
+                                                 value_col=4, exact=False),
+        "share_holdovers_unidentified": scalar(ma, "Share of the holdover cohort not",
+                                               value_col=4, exact=False),
+    },
 }
 
 # ---- renewal pipeline --------------------------------------------------
-rp_hdr = find_row(rp, "Month")
-rp_rows = block(rp, rp_hdr, cols=list(range(2, 15)) + [28],
+# V37 moved this tab's labels to column C, extended the table to Q2 2027 with
+# per-month NOI math, and replaced the one-time lease-up costs with a recurring
+# incremental-vacancy haircut on the new run-rate (see the SCENARIO note on the
+# tab). It also added the offers actually issued and a model-vs-tracker
+# calibration.
+RPC = dict(col=3, value_col=4)          # labels in C, values in D
+rp_hdr = find_row(rp, "Month", col=3)
+rp_rows = block(rp, rp_hdr, cols=list(range(3, 25)) + [26, 27, 28], label_col=3,
                 keep=lambda v: parse_month(v[0]) is not None)
 data["renewal"] = {
     "months": [{"month": parse_month(r[0]), "inc": r[1], "ret": r[2], "expiring": r[3],
                 "on_notice": r[4], "var_units": r[5], "sqft": r[6], "inplace_var": r[7],
                 "market_var": r[8], "inplace_on": r[9], "market_on": r[10],
-                "basis": r[13]} for r in rp_rows],
-    "ttm_operating_noi": scalar(rp, "TTM operating NOI (ex-interest)"),
-    "ftm_value": scalar(rp, "FTM Value (July (adj) NOI x 12 / 5% cap rate)", required=False),
+                "capped_var": r[11], "capped_on": r[12], "renewing": r[13],
+                "moveouts": r[14], "new_rent": r[15], "current_rent": r[16],
+                "incr_mo": r[17], "incr_yr": r[18], "less_vacancy": r[19],
+                "recurring_noi": r[20], "value_at_cap": r[21],
+                "key_from": r[22], "key_to": r[23], "basis": r[24]} for r in rp_rows],
+    "assumptions": {
+        "on_notice_increase": scalar(rp, "On-notice units - renewal increase", **RPC),
+        "on_notice_retention": scalar(rp, "On-notice units - retention rate", **RPC),
+        "make_ready": scalar(rp, "Direct make-ready cost per move-out", exact=False, **RPC),
+        "market_psf_assumption": scalar(rp, "Market rent assumption", exact=False, **RPC),
+        "market_scaling": scalar(rp, "Scaling factor applied to market", exact=False, **RPC),
+    },
+    # the TTM operating NOI moved off this tab; the uplift denominator now
+    # comes from the Expense & NOI TTM block extracted above
+    "ttm_operating_noi": data["expense_noi"]["ttm"]["operating_noi"],
+    "ftm_value": scalar(rp, "FTM Value", exact=False, required=False, **RPC),
     "workbook_rollup": {
-        "incremental_yr": scalar(rp, "Incremental rent, annualised"),
-        "recurring_noi": scalar(rp, "Recurring change in NOI"),
-        "noi_uplift": scalar(rp, "NOI uplift %"),
-        "value_at_cap": scalar(rp, "Value of the recurring NOI change at the cap rate"),
-        "one_time_costs": scalar(rp, "Less: total one-time lease-up costs (not capitalised)"),
-        "net_value": scalar(rp, "Net additional value at sale"),
-        "total_value_at_sale": scalar(rp, "Total Value at Sale", required=False)},
-    "model_note": ("Recomputed live from unit level. One-time lease-up costs on months "
-                   "with on-notice units are approximate (the workbook re-leases those at "
-                   "unit-specific July market rents; variance is under 0.1% of net value)."),
+        "incremental_yr": scalar(rp, "Incremental rent, annualised", **RPC),
+        "less_vacancy": scalar(rp, "Less: incremental vacancy", exact=False, **RPC),
+        "less_mgmt_fee": scalar(rp, "Less: management fee on collected revenue", **RPC),
+        "recurring_noi": scalar(rp, "Recurring change in NOI", **RPC),
+        "value_at_cap": scalar(rp, "Value of the recurring NOI change at the cap rate",
+                               **RPC),
+        "total_value_at_sale": scalar(rp, "Total Value at Sale", exact=False,
+                                      required=False, **RPC)},
+    "scenario_note": cell(rp, find_row(rp, "SCENARIO - stabilised sensitivity",
+                                       col=3, exact=False) + 1, 3),
+    "model_note": ("Recomputed live from unit level. Stabilised sensitivity, not a "
+                   "forecast: every move-out re-leases at the market assumption, and "
+                   "vacancy/downtime are charged as a recurring incremental-vacancy "
+                   "haircut on the new run-rate rather than one-time costs."),
+}
+
+# what is actually being offered, straight from the tracker's monthly sheets
+rp_offers_hdr = find_row(rp, "Month", col=3,
+                         after=find_row(rp, "ACTUAL RENEWAL OFFERS", col=3, exact=False))
+data["renewal"]["offers"] = {
+    "months": [dict(zip(["month", "leases", "current_rent", "offered_rent", "wtd_increase",
+                         "ltl_before", "ltl_after", "gap_surviving"],
+                        [parse_month(r[0])] + r[1:]))
+               for r in block(rp, rp_offers_hdr, cols=range(3, 11), label_col=3,
+                              keep=lambda v: parse_month(v[0]) is not None)],
+    "total": dict(zip(["leases", "current_rent", "offered_rent", "wtd_increase"],
+                      series(rp, find_row(rp, "Total / weighted", col=3), range(4, 8)))),
+    "calibration": {
+        "model_inplace": scalar(rp, "Model: in-place rent on the variab", exact=False, **RPC),
+        "model_renewal_rent": scalar(rp, "Model: renewal rent after", exact=False, **RPC),
+        "model_rate": scalar(rp, "Model: renewal rent after", exact=False,
+                             col=3, value_col=5),
+        "tracker_current": scalar(rp, "Tracker: current rent on the same", exact=False, **RPC),
+        "tracker_offered": scalar(rp, "Tracker: rent actually offered", **RPC),
+        "tracker_rate": scalar(rp, "Tracker: rent actually offered", col=3, value_col=5),
+        "model_above_actual_pts": scalar(rp, "Model above actual, in points",
+                                         col=3, value_col=5),
+        "ratio_actual_to_model": scalar(rp, "Calibration ratio (actual / model)",
+                                        col=3, value_col=5),
+        "implied_rate_on_15pct_policy": scalar(rp, "Implied effective rate on a 15%",
+                                               exact=False, col=3, value_col=5),
+    },
 }
 
 # ---- unit-level gap data ----------------------------------------------
@@ -312,6 +485,8 @@ data["rate_occ"] = {
     "breakeven_ltl": scalar(ro, "Loss to lease required to break even"),
     "scenario_ltl": scalar(ro, "Scenario: loss to lease narrows to"),
     "scenario_vac": scalar(ro, "Scenario: economic vacancy rises to"),
+    "scenario_recurring_noi": scalar(ro, "Recurring change in NOI"),
+    "scenario_net_value": scalar(ro, "Net value change"),
     "ttm_value_today": scalar(ro, "TTM Value Today"),
     "grid_vac": [cell(ro, ro_grid_hdr, c) for c in grid_vac_cols],
     "grid_ltl": [r[0] for r in grid_rows],
@@ -341,11 +516,14 @@ data["leasing"] = {
               for r in block(ld, band_hdr, cols=range(2, 7),
                              keep=lambda v: isinstance(v[0], (int, float)))],
     "renewal_activity": {
+        "tracker_date": scalar(ld, "Tracker snapshot date"),
         "renewals_signed": scalar(ld, "Renewals signed"),
         "new_signed": scalar(ld, "New leases signed"),
+        "renewal_rate_psf": scalar(ld, "Renewal rate, blended ($/sqft)"),
         "avg_increase": scalar(ld, "Average renewal increase"),
         "leased_pct": scalar(ld, "Leased %"),
-        "spread_psf": scalar(ld, "Spread - new lease less renewal ($/sqft)")},
+        "spread_psf": scalar(ld, "Spread - new lease less renewal ($/sqft)"),
+        "renewals_below_new": scalar(ld, "Renewals priced below new leases")},
 }
 
 # ---- floorplans + rollover -------------------------------------------
@@ -365,6 +543,19 @@ data["rollover"] = [dict(zip(["month", "units", "pct", "sqft", "inplace", "marke
                               "uncaptured", "cum_units", "cum_pct"], r))
                     for r in block(fp, roll_hdr, cols=range(2, 11),
                                    keep=lambda v: isinstance(v[1], (int, float)))]
+
+# ---- scored insights (the workbook's own Scorecard tab) -------------------
+# New in V37: a scored read of the data plus the open questions. This is the
+# property-level insights table, not the portfolio KPI scorecard (which stays
+# in docs/scorecard.json from its own workbook).
+sc_hdr = find_row(sc, "Metric")
+sc_flags_hdr = find_row(sc, "Item", after=find_row(sc, "RED FLAGS AND OPEN QUESTIONS"))
+data["insights"] = {
+    "metrics": [dict(zip(["name", "value", "status", "meaning"], r))
+                for r in block(sc, sc_hdr, cols=range(2, 6))],
+    "flags": [dict(zip(["item", "status", "why", "settle"], r))
+              for r in block(sc, sc_flags_hdr, cols=[2, 3, 5, 6])],
+}
 
 # =========================== VALIDATION ===============================
 # Each check guards a way the extraction could go quietly wrong.
@@ -430,30 +621,69 @@ record("executed lease count matches summary",
        f"{len(ex)} executed leases read, summary says {data['leasing']['summary']['executed']}")
 
 # The renewal card recomputes from unit level; if no units match a month's
-# expiry key the card would silently show zero incremental rent.
-by_key = {}
-for u in data["units"]:
-    if u["status"] == "Current":
-        by_key.setdefault(u["expiry_key"], []).append(u)
-empty_months = [m["month"] for m in data["renewal"]["months"]
-                if not by_key.get(int(m["month"].replace("-", "")))]
+# expiry-key window the card would silently show zero incremental rent.
+cur_units = [u for u in data["units"] if u["status"] == "Current"]
+def in_window(m):
+    return [u for u in cur_units if m["key_from"] <= u["expiry_key"] < m["key_to"]]
+empty_months = [m["month"] for m in data["renewal"]["months"] if not in_window(m)]
 record("renewal months resolve to units", not empty_months,
        "no units matched expiry months " + ", ".join(empty_months) if empty_months
        else f"all {len(data['renewal']['months'])} months matched unit rows")
 
-# Reproduce the workbook's own roll-up from the unit-level data we emit.
+# Reproduce the workbook's own roll-up from the unit-level data we emit, using
+# the V37 model: variable pool renews at min(in-place x (1+inc), market at
+# assumption), move-outs and on-notice units re-lease at the market assumption,
+# and a recurring incremental-vacancy haircut applies to the new run-rate.
 mgmt = data["inputs"]["mgmt_fee_pct"]
-incr = 0.0
+vac = data["inputs"]["incr_vacancy"] or 0
+incr = new_run = worst_cap = 0.0
 for m in data["renewal"]["months"]:
-    key = int(m["month"].replace("-", ""))
     capped = sum(min(u["inplace"] * (1 + m["inc"]), u["market_assum"])
-                 for u in by_key.get(key, []))
+                 for u in in_window(m))
+    worst_cap = max(worst_cap, abs(capped - (m["capped_var"] or 0)))
     new = capped * m["ret"] + m["market_var"] * (1 - m["ret"]) + m["market_on"]
     incr += (new - (m["inplace_var"] + m["inplace_on"])) * 12
-wb_incr = data["renewal"]["workbook_rollup"]["incremental_yr"] or 0
+    new_run += new * 12
+wb_ru = data["renewal"]["workbook_rollup"]
+wb_incr = wb_ru["incremental_yr"] or 0
 record("renewal model reproduces workbook",
        abs(incr - wb_incr) < max(1000, abs(wb_incr) * 0.002),
-       f"recomputed incremental rent {incr:,.0f} vs workbook {wb_incr:,.0f}")
+       f"recomputed incremental rent {incr:,.0f} vs workbook {wb_incr:,.0f} "
+       f"(worst per-month cap variance {worst_cap:,.0f})")
+
+month_incr = sum(m["incr_yr"] or 0 for m in data["renewal"]["months"])
+record("renewal months sum to roll-up", abs(month_incr - wb_incr) < 1,
+       f"per-month incremental sums to {month_incr:,.0f} vs roll-up {wb_incr:,.0f}")
+
+rec_noi = (incr - vac * new_run) * (1 - mgmt)
+wb_rec = wb_ru["recurring_noi"] or 0
+record("renewal vacancy haircut reproduces NOI",
+       abs(rec_noi - wb_rec) < max(1000, abs(wb_rec) * 0.002),
+       f"recomputed recurring NOI {rec_noi:,.0f} vs workbook {wb_rec:,.0f} "
+       f"({vac:.1%} vacancy on the new run-rate, then the management fee)")
+
+offers = data["renewal"]["offers"]
+record("renewal offers table read", len(offers["months"]) >= 4
+       and offers["total"]["leases"] == sum(o["leases"] for o in offers["months"]),
+       f"{len(offers['months'])} months, {offers['total']['leases']} offers "
+       "(total row ties to the month rows)")
+
+hr = data["holdovers"]["workbook_reprice"]
+unit_incr = sum(u["incr_yr"] or 0 for u in data["holdovers"]["units"])
+record("holdover unit rows sum to reprice roll-up",
+       abs(unit_incr - (hr["incremental_yr"] or 0)) < 1,
+       f"unit-level incremental sums to {unit_incr:,.0f} vs "
+       f"roll-up {hr['incremental_yr'] or 0:,.0f}")
+n_vac = sum(1 for u in data["holdovers"]["units"] if u["vacate"])
+record("holdover vacate flags match roll-up", n_vac == hr["units_vacating"],
+       f"{n_vac} units flagged Y vs roll-up {hr['units_vacating']}")
+
+record("insights scorecard read",
+       len(data["insights"]["metrics"]) >= 10 and len(data["insights"]["flags"]) >= 3
+       and all(m["status"] in ("GOOD", "WATCH", "FLAG")
+               for m in data["insights"]["metrics"]),
+       f"{len(data['insights']['metrics'])} scored metrics, "
+       f"{len(data['insights']['flags'])} open questions")
 
 nulls = [k for k, v in data["inputs"].items() if v is None]
 record("all inputs resolved", not nulls,

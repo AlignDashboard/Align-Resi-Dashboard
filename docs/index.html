@@ -439,13 +439,14 @@
       <div class="card wide" id="cRenewal">
         <div class="card-head">
           <div>
-            <h2>Renewal Pipeline — through Q1 2027</h2>
+            <h2>Renewal Pipeline — through Q2 2027</h2>
             <span class="eyebrow">INCREMENTAL RENT BY MONTH · RECOMPUTED LIVE FROM UNIT LEVEL</span>
           </div>
         </div>
         <div class="inrow" id="lrInputs"></div>
         <div class="statrow" id="lrStats"></div>
         <div class="chartwrap" style="height:240px;"><canvas id="lcRenewal"></canvas></div>
+        <div class="blu-note" id="lrOffers" style="color:var(--muted);"></div>
         <div class="blu-note" id="lrNote"></div>
       </div>
 
@@ -455,6 +456,7 @@
         <div class="inrow" id="lhInputs"></div>
         <div class="statrow" id="lhStats"></div>
         <div class="chartwrap" style="height:190px;"><canvas id="lcHold"></canvas></div>
+        <div class="blu-note" id="lhNote" style="color:var(--muted);"></div>
       </div>
 
       <div class="card" id="cRateOcc">
@@ -498,6 +500,16 @@
           <div style="flex:0 0 auto;min-width:170px;" id="ldStats"></div>
           <div class="chartwrap" style="flex:1 1 260px;height:200px;"><canvas id="lcDelq"></canvas></div>
           <div style="flex:1 1 300px;" id="ldTbl"></div>
+        </div>
+        <div class="blu-note" id="ldNote" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cInsights">
+        <h2>Insights Scorecard</h2>
+        <span class="eyebrow">WHAT THE DATA SAYS, SCORED · RED FLAGS &amp; OPEN QUESTIONS FOR THE PM</span>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;">
+          <div style="flex:1 1 400px;" id="liTbl"></div>
+          <div style="flex:1 1 400px;" id="liFlags"></div>
         </div>
       </div>
 
@@ -1256,7 +1268,7 @@ async function loadLanding() {
       [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "rent capture — loss to lease by month"],
       [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
       [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate), "cRentCapture", "rent capture"],
-      ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.noi_uplift) + " at current assumptions", "cRenewal", "renewal pipeline"],
+      ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.recurring_noi / L.renewal.ttm_operating_noi) + " at current assumptions", "cRenewal", "renewal pipeline"],
       [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cHoldover", "holdover repricing"],
       [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
       [fm$(L.rate_occ.ttm_value_today), "TTM value today", "at " + fmPct(L.inputs.cap_rate) + " cap", "cRateOcc", "rate vs occupancy"],
@@ -1338,46 +1350,47 @@ async function loadLanding() {
       L.expense_overview.opportunities.map(o => [o.name, fm$(o.saving), String(o.difficulty).split(" - ")[0]]));
   })();
 
-  /* ---- Renewal pipeline (live model) ---- */
-  const unitsByKey = {};
-  units.forEach(u => {
-    if (u.status !== "Current") return;
-    (unitsByKey[u.expiry_key] = unitsByKey[u.expiry_key] || []).push(u);
-  });
+  /* ---- Renewal pipeline (live model) ----
+     V37 model: the variable pool renews at min(in-place x (1+inc), market at
+     assumption); move-outs and on-notice units re-lease at the market
+     assumption; vacancy and downtime are charged as a recurring
+     incremental-vacancy haircut on the new run-rate, not as one-time costs.
+     Months match units on the expiry-key window the workbook publishes. */
+  const curUnits = units.filter(u => u.status === "Current");
+  const unitsInWindow = m => curUnits.filter(u => u.expiry_key >= m.key_from && u.expiry_key < m.key_to);
   let renewalChart = null;
-  const rAsm = { capRate: L.inputs.cap_rate, mgmt: mgmtFee, makeReady: L.inputs.make_ready_per_moveout, downtime: L.inputs.downtime_months };
-  function renewalCompute(incOv, ret, asm) {
+  function renewalCompute(incOv, retOv, asm) {
     const rows = L.renewal.months.map(m => {
       const inc = (incOv !== null) ? incOv : m.inc;
-      const key = +m.month.replace("-", "");
-      const capped = (unitsByKey[key] || []).reduce((s, u) => s + Math.min(u.inplace * (1 + inc), u.market_assum), 0);
+      const ret = (retOv !== null) ? retOv : m.ret;
+      const capped = unitsInWindow(m).reduce((s, u) => s + Math.min(u.inplace * (1 + inc), u.market_assum), 0);
       const newRent = capped * ret + m.market_var * (1 - ret) + m.market_on;
       const current = m.inplace_var + m.inplace_on;
       const moveouts = m.var_units * (1 - ret) + m.on_notice;
-      const oneTime = moveouts * asm.makeReady + (m.market_var * (1 - ret) + m.market_on) * asm.downtime;
-      return { m, incr: newRent - current, moveouts, oneTime };
+      return { m, newRent, incr: newRent - current, moveouts };
     });
     const incrYr = rows.reduce((s, r) => s + r.incr * 12, 0);
-    const recNOI = incrYr * (1 - asm.mgmt);
-    const oneTime = rows.reduce((s, r) => s + r.oneTime, 0);
-    return { rows, incrYr, recNOI, oneTime,
+    const newRun = rows.reduce((s, r) => s + r.newRent * 12, 0);
+    const lessVac = asm.vac * newRun;
+    const recNOI = (incrYr - lessVac) * (1 - asm.mgmt);
+    return { rows, incrYr, lessVac, recNOI,
       uplift: recNOI / L.renewal.ttm_operating_noi,
-      value: recNOI / asm.capRate, netValue: recNOI / asm.capRate - oneTime };
+      value: recNOI / asm.capRate,
+      moveouts: rows.reduce((s, x) => s + x.moveouts, 0) };
   }
   function renderRenewal() {
     const inc = rFields.inc.value === "" ? null : numOr(rFields.inc, 0) / 100;
-    const ret = numOr(rFields.ret, 90) / 100;
+    const ret = rFields.ret.value === "" ? null : numOr(rFields.ret, 60) / 100;
     const asm = { capRate: numOr(rFields.cap, 5) / 100, mgmt: numOr(rFields.fee, 2.1) / 100,
-      makeReady: numOr(rFields.mr, 1000), downtime: numOr(rFields.dt, 1) };
+      vac: numOr(rFields.vac, (L.inputs.incr_vacancy || 0.05) * 100) / 100 };
     const r = renewalCompute(inc, ret, asm);
     statBlock(document.getElementById("lrStats"), [
       ["+" + fm$(r.incrYr) + "/yr", "incremental rent"],
+      ["-" + fm$(r.lessVac) + "/yr", "vacancy haircut"],
       ["+" + fm$(r.recNOI) + "/yr", "recurring NOI"],
       ["+" + fmPct(r.uplift), "NOI uplift"],
       [fm$(r.value), "value at cap"],
-      ["-" + fm$(r.oneTime), "one-time costs"],
-      [fm$(r.netValue), "net value at sale"],
-      [r.rows.reduce((s, x) => s + x.moveouts, 0).toFixed(1), "move-outs"],
+      [r.moveouts.toFixed(1), "move-outs"],
     ]);
     const data = r.rows.map(x => Math.round(x.incr));
     if (renewalChart) { renewalChart.data.datasets[0].data = data; renewalChart.update(); return; }
@@ -1387,41 +1400,60 @@ async function loadLanding() {
         datasets: [{ label: "Incremental rent / mo", data, backgroundColor: C.amber }] },
       options: { maintainAspectRatio: false, responsive: true,
         plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => `+${fm$(c.parsed.y)}/mo · ${L.renewal.months[c.dataIndex].expiring} units expiring (${L.renewal.months[c.dataIndex].basis})` } } },
+          label: c => { const m = L.renewal.months[c.dataIndex];
+            return `+${fm$(c.parsed.y)}/mo · ${m.expiring} units expiring` + (m.basis ? ` (${m.basis})` : ""); } } } },
         scales: { y: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
           x: { grid: { display: false } } } }
     });
   }
   const rFields = inputRow(document.getElementById("lrInputs"), [
-    { key: "inc", label: "renewal increase %", val: null, ph: "wb 8.3-10.4", step: "0.5" },
-    { key: "ret", label: "retention %", val: 90, step: "5" },
+    { key: "inc", label: "renewal increase %", val: null, ph: "wb 6.3-15", step: "0.5" },
+    { key: "ret", label: "retention %", val: null, ph: "wb 70/60", step: "5" },
     { key: "cap", label: "cap rate %", val: +(L.inputs.cap_rate * 100).toFixed(2), step: "0.25" },
     { key: "fee", label: "mgmt fee %", val: +(mgmtFee * 100).toFixed(2), step: "0.1" },
-    { key: "mr", label: "make-ready $", val: L.inputs.make_ready_per_moveout, step: "250" },
-    { key: "dt", label: "downtime mo", val: L.inputs.downtime_months, step: "0.5", width: "60px" },
+    { key: "vac", label: "incr. vacancy %", val: +((L.inputs.incr_vacancy || 0.05) * 100).toFixed(1), step: "0.5" },
   ], renderRenewal);
+  (function offers() {
+    const of = L.renewal.offers || {};
+    if (!of.total) return;
+    const cal = of.calibration || {};
+    document.getElementById("lrOffers").textContent =
+      "Reality check — offers actually issued " + (of.months[0] ? shortMo(of.months[0].month) : "") +
+      "–" + (of.months.length ? shortMo(of.months[of.months.length - 1].month) : "") + ": " +
+      of.total.leases + " renewals at +" + fmPct(of.total.wtd_increase) + " weighted. " +
+      "The model runs " + ((cal.model_above_actual_pts || 0) * 100).toFixed(1) +
+      "pt above the tracker on the overlapping months (calibration ratio " +
+      (cal.ratio_actual_to_model || 0).toFixed(2) + ").";
+  })();
   document.getElementById("lrNote").textContent =
-    "Blue cells are changeable — leave increase blank to use the workbook's per-month basis " +
-    "(statutory cap near-term, policy rate beyond). " + L.renewal.model_note;
+    "Blue cells are changeable — leave increase or retention blank to use the workbook's " +
+    "per-month basis (statutory cap near-term, policy rate beyond). " + L.renewal.model_note;
   renderRenewal();
 
-  /* ---- Holdover repricing (live model) ---- */
+  /* ---- Holdover repricing (live model) ----
+     V37 model: each unit carries the workbook's applied increase and a vacate
+     flag — vacating units re-lease at market, the rest reprice in place capped
+     at market. The same incremental-vacancy haircut as the renewal card applies
+     to the cohort's new run-rate. */
   let holdChart = null;
   function renderHold() {
     const thr = numOr(hFields.thr, 0) / 100;
     const incOv = hFields.inc.value === "" ? null : numOr(hFields.inc, 0) / 100;
     const capRate = numOr(rFields.cap, 5) / 100, fee = numOr(rFields.fee, 2.1) / 100;
-    let scoped = 0, incrMo = 0, gapMo = 0;
+    const vac = numOr(rFields.vac, (L.inputs.incr_vacancy || 0.05) * 100) / 100;
+    let scoped = 0, incrMo = 0, gapMo = 0, newRun = 0;
     L.holdovers.units.forEach(u => {
       if (u.pct_below < thr) return;
       scoped++; gapMo += u.gap_mo;
-      const inc = incOv !== null ? incOv : u.inc_default;
-      incrMo += Math.min(u.inplace * (1 + inc), u.market) - u.inplace;
+      const newRent = u.vacate ? u.market
+        : Math.min(u.inplace * (1 + (incOv !== null ? incOv : u.inc_applied)), u.market);
+      incrMo += newRent - u.inplace; newRun += newRent;
     });
-    const recNOI = incrMo * 12 * (1 - fee);
+    const recNOI = (incrMo - vac * newRun) * 12 * (1 - fee);
     statBlock(document.getElementById("lhStats"), [
       [String(scoped), "units in scope"],
       [fm$(gapMo * 12) + "/yr", "gap to market"],
+      ["+" + fm$(incrMo * 12) + "/yr", "incremental rent"],
       ["+" + fm$(recNOI) + "/yr", "recurring NOI"],
       [fm$(recNOI / capRate), "value at cap"],
       [fmPct(gapMo ? incrMo / gapMo : 0, 0), "gap captured"],
@@ -1442,12 +1474,23 @@ async function loadLanding() {
   }
   const hFields = inputRow(document.getElementById("lhInputs"), [
     { key: "thr", label: "min gap % in scope", val: 0, step: "5" },
-    { key: "inc", label: "increase % override", val: null, ph: "wb 5-25", step: "5" },
+    { key: "inc", label: "increase % override", val: null, ph: "wb per unit", step: "5" },
   ], renderHold);
   document.getElementById("lhEyebrow").textContent =
     L.holdovers.summary.units + " EXPIRED LEASES STILL IN PLACE · " +
     fmPct(L.holdovers.summary.cohort_below_mkt) + " BELOW MARKET vs " +
     fmPct(L.holdovers.summary.property_below_mkt) + " PROPERTY-WIDE";
+  (function mtmNote() {
+    const ts = L.holdovers.three_systems || {}, mr = (L.mtm_analysis || {}).reconciliation || {};
+    if (!ts.this_model) return;
+    document.getElementById("lhNote").textContent =
+      "Three systems disagree on who is month-to-month: the property status report says " +
+      ts.property_status_report + ", the PM's renewal tracker flags " + ts.renewal_tracker_flagged +
+      ", the rent roll test finds " + ts.this_model + ". The tracker identifies only " +
+      mr.holdovers_on_tracker + " of these " + mr.holdovers_on_rent_roll + " holdovers, and " +
+      fmPct(mr.share_tracker_wrong, 0) + " of its own MTM list is no longer month-to-month — " +
+      "worth reconciling with the PM. Vacating units (workbook flag) re-lease at market.";
+  })();
   renderHold();
 
   /* ---- Rate vs occupancy (live model) ---- */
@@ -1459,7 +1502,7 @@ async function loadLanding() {
     const inc = (ro.cur_ltl - ltl) * ro.market_rent_yr - (vac - ro.cur_vacancy) * ro.market_rent_yr;
     const recNOI = inc * (1 - fee);
     const extraVacUnits = Math.max(0, (vac - ro.cur_vacancy) * L.meta.units);
-    const net = recNOI / capRate - extraVacUnits * numOr(rFields.mr, 1000);
+    const net = recNOI / capRate - extraVacUnits * (L.inputs.make_ready_per_moveout || 500);
     statBlock(document.getElementById("loStats"), [
       [(inc < 0 ? "-" : "+") + fm$(Math.abs(inc)) + "/yr", "incremental rent"],
       [(recNOI < 0 ? "-" : "+") + fm$(Math.abs(recNOI)) + "/yr", "recurring NOI"],
@@ -1486,7 +1529,7 @@ async function loadLanding() {
   })();
   renderRateOcc();
   // rate-occ & holdover valuation follow the renewal card's cap rate / fee inputs
-  ["cap", "fee", "mr"].forEach(k => rFields[k].addEventListener("input", () => { renderHold(); renderRateOcc(); }));
+  ["cap", "fee", "vac"].forEach(k => rFields[k].addEventListener("input", () => { renderHold(); renderRateOcc(); }));
 
   /* ---- Trade-outs ---- */
   (function trades() {
@@ -1598,6 +1641,28 @@ async function loadLanding() {
       // and the unit number is enough to act on
       [{ t: "Unit" }, { t: "Owed", num: true }, { t: "Over 90d", num: true }],
       dq.top.slice(0, 8).map(x => ["#" + x.unit, fm$(x.owed), x.over90 ? fm$(x.over90) : "—"]));
+    const u5 = dq.unit_531;
+    if (u5) {
+      document.getElementById("ldNote").textContent =
+        "Unit 531 (also the rent-override unit on Inputs) is tracked separately: " +
+        (u5.balance_latest.label || "latest balance") + " " + fm$(u5.balance_latest.amount) +
+        " (" + fm$(u5.new_charges_week) + " new charges, " + fm$(u5.paid_week) +
+        " paid in the week), " + fm$(u5.aged_over_30) + " aged past 30 days · status " +
+        u5.status + " · PM memo: " + u5.memo + ".";
+    }
+  })();
+
+  /* ---- Insights scorecard (the workbook's own scored read) ---- */
+  (function insights() {
+    const ins = L.insights || {};
+    const fmVal = v => typeof v !== "number" ? String(v)
+      : (Math.abs(v) >= 20 ? String(Math.round(v)) : fmPct(v, Math.abs(v) < 0.02 && v !== 0 ? 2 : 1));
+    buildTable(document.getElementById("liTbl"),
+      [{ t: "Metric" }, { t: "Value", num: true }, { t: "Status" }, { t: "What it means", mut: true }],
+      (ins.metrics || []).map(m => [m.name, fmVal(m.value), statusPill(m.status), m.meaning]));
+    buildTable(document.getElementById("liFlags"),
+      [{ t: "Open question" }, { t: "Status" }, { t: "What would settle it", mut: true }],
+      (ins.flags || []).map(f => [f.item, statusPill(f.status), f.settle]));
   })();
 
   /* ---- meta line ---- */

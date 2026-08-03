@@ -625,6 +625,14 @@ async function loadAll() {
              { key: "market_var", label: "Market (var)", fmt: "money" },
              { key: "inplace_on", label: "In-place (notice)", fmt: "money" },
              { key: "market_on", label: "Market (notice)", fmt: "money" },
+             { key: "renewing", label: "Renewing", fmt: "num" },
+             { key: "moveouts", label: "Move-outs", fmt: "num" },
+             { key: "new_rent", label: "New rent/mo", fmt: "money" },
+             { key: "current_rent", label: "Current rent/mo", fmt: "money" },
+             { key: "incr_yr", label: "Incremental/yr", fmt: "money" },
+             { key: "less_vacancy", label: "Less vacancy", fmt: "money" },
+             { key: "recurring_noi", label: "Recurring NOI", fmt: "money" },
+             { key: "value_at_cap", label: "Value at cap", fmt: "money" },
              { key: "basis", label: "Basis of the increase", wrap: true }],
       rows: rn.months || [],
     });
@@ -632,12 +640,37 @@ async function loadAll() {
       id: "t-l-renewal-rollup", group: "The Landing",
       title: "Renewal pipeline — workbook roll-up",
       feeds: "Reference for the recomputed figures on the card",
-      note: "The card recomputes these live from unit level; these are the workbook's own "
-          + "numbers at its default assumptions, kept for comparison.",
+      note: "Stabilised sensitivity: move-outs re-lease at the market assumption, and "
+          + "vacancy/downtime are charged as a recurring incremental-vacancy haircut on the "
+          + "new run-rate. The card recomputes these live from unit level.",
       cols: KVCOLS,
-      rows: kv(rn.workbook_rollup).concat([
+      rows: kv(rn.workbook_rollup).concat(kv(rn.assumptions)).concat([
         { key: "ttm_operating_noi", value: rn.ttm_operating_noi },
         { key: "ftm_value", value: rn.ftm_value }]),
+    });
+    const of = rn.offers || {};
+    const ofTotal = of.total ? Object.assign({ month: "Total / weighted" }, of.total) : null;
+    renderTable(host, {
+      id: "t-l-offers", group: "The Landing", title: "Renewal offers actually issued",
+      feeds: "The reality-check line under the Renewal Pipeline chart",
+      note: "Straight from the PM's renewal tracker monthly sheets — what is actually being "
+          + "offered, against what the model assumes.",
+      cols: [{ key: "month", label: "Month" }, { key: "leases", label: "Leases", fmt: "int" },
+             { key: "current_rent", label: "Current rent", fmt: "money" },
+             { key: "offered_rent", label: "Offered rent", fmt: "money" },
+             { key: "wtd_increase", label: "Weighted increase", fmt: "pct1" },
+             { key: "ltl_before", label: "LTL before", fmt: "pct1" },
+             { key: "ltl_after", label: "LTL after", fmt: "pct1" },
+             { key: "gap_surviving", label: "Gap surviving", fmt: "pct1" }],
+      rows: (of.months || []).concat(ofTotal ? [ofTotal] : []),
+      totalRow: ofTotal,
+    });
+    renderTable(host, {
+      id: "t-l-calibration", group: "The Landing", title: "Renewal model calibration",
+      feeds: "The calibration ratio quoted on the Renewal Pipeline card",
+      note: "Does a policy rate produce the offers actually issued? Model vs tracker on the "
+          + "overlapping Jul–Oct 2026 months.",
+      cols: KVCOLS, rows: kv(of.calibration),
     });
 
     const ho = d.holdovers || {};
@@ -658,6 +691,8 @@ async function loadAll() {
     renderTable(host, {
       id: "t-l-hold-units", group: "The Landing", title: "Holdovers — unit detail",
       feeds: "Holdover Repricing scenario (threshold and increase inputs)",
+      note: "Vacate = Y means the workbook re-leases that unit at market; the rest reprice "
+          + "in place at the applied increase, capped at market.",
       cols: [{ key: "rank", label: "Rank", fmt: "int" }, { key: "unit", label: "Unit" },
              { key: "type", label: "Type" }, { key: "sqft", label: "Sq ft", fmt: "int" },
              { key: "inplace", label: "In-place", fmt: "money0" },
@@ -667,8 +702,42 @@ async function loadAll() {
              { key: "pct_below", label: "% below", fmt: "pct1" },
              { key: "expired", label: "Lease expired" },
              { key: "months_expired", label: "Months", fmt: "int" },
-             { key: "inc_default", label: "Default increase", fmt: "pct1" }],
+             { key: "inc_applied", label: "Increase applied", fmt: "pct1" },
+             { key: "vacate", label: "Vacates" },
+             { key: "new_rent", label: "New rent", fmt: "money0" },
+             { key: "incr_yr", label: "Incremental/yr", fmt: "money0" }],
       rows: ho.units || [], filterable: true,
+    });
+    renderTable(host, {
+      id: "t-l-hold-reprice", group: "The Landing", title: "Holdovers — workbook reprice roll-up",
+      feeds: "Holdover Repricing card stats at workbook defaults",
+      cols: KVCOLS, rows: kv(ho.workbook_reprice),
+    });
+    const ts = ho.three_systems || {};
+    renderTable(host, {
+      id: "t-l-hold-systems", group: "The Landing", title: "Who is month-to-month? Three systems",
+      feeds: "The reconciliation note on the Holdover Repricing card",
+      note: "Units the tracker flags MTM but the rent roll test does not: "
+          + (ts.tracker_mtm_not_holdover || []).join(", "),
+      cols: KVCOLS,
+      rows: [{ key: "Property Status report, month-to-month leases", value: ts.property_status_report },
+             { key: "Renewal tracker, units flagged MTM", value: ts.renewal_tracker_flagged },
+             { key: "This model, holdovers by rent roll test", value: ts.this_model }],
+    });
+    const mtm = d.mtm_analysis || {};
+    renderTable(host, {
+      id: "t-l-mtm-status", group: "The Landing", title: "Tracker MTM tab — status counts",
+      feeds: "Holdover card reconciliation note",
+      note: (mtm.source || "") + " — aggregate counts only; the tracker's resident roster "
+          + "is deliberately not published.",
+      cols: [{ key: "status", label: "Status" }, { key: "units", label: "Units", fmt: "int" },
+             { key: "share", label: "Share", fmt: "pct1" }],
+      rows: mtm.status_counts || [],
+    });
+    renderTable(host, {
+      id: "t-l-mtm-recon", group: "The Landing", title: "Tracker MTM tab vs rent roll",
+      feeds: "Holdover card reconciliation note",
+      cols: KVCOLS, rows: kv(mtm.reconciliation),
     });
 
     const ro = d.rate_occ || {};
@@ -785,6 +854,50 @@ async function loadAll() {
              { key: "d90", label: "61–90", fmt: "money" },
              { key: "over90", label: "Over 90", fmt: "money" }],
       rows: dq.top || [], filterable: true,
+    });
+    if (dq.unit_531) {
+      const u5 = dq.unit_531;
+      renderTable(host, {
+        id: "t-l-delq-531", group: "The Landing", title: "Delinquency — unit 531 status",
+        feeds: "The unit-531 note under the Delinquency card",
+        note: "Tracked separately because 531 is both the rent-override unit on Inputs and "
+            + "a large balance. The resident's name is deliberately not published.",
+        cols: KVCOLS,
+        rows: [{ key: "status per Yardi", value: u5.status },
+               { key: "PM memo", value: u5.memo },
+               { key: u5.balance_prior.label, value: u5.balance_prior.amount },
+               { key: u5.balance_latest.label, value: u5.balance_latest.amount },
+               { key: "new charges in the week", value: u5.new_charges_week },
+               { key: "paid in the week", value: u5.paid_week },
+               { key: "aged past 30 days", value: u5.aged_over_30 }],
+      });
+    }
+
+    const twx = (d.expense_noi || {}).tax_accrual;
+    if (twx) renderTable(host, {
+      id: "t-l-tax", group: "The Landing", title: "Real estate tax accrual — open question",
+      feeds: "Expense & NOI footnote",
+      note: "Reading A treats the April 2026 posting as a one-off; Reading B treats it as a "
+          + "catch-up implying a higher run rate. Unresolved until the tax bill is seen.",
+      cols: KVCOLS, rows: kv(twx),
+    });
+
+    const ins = d.insights || {};
+    renderTable(host, {
+      id: "t-l-insights", group: "The Landing", title: "Insights scorecard",
+      feeds: "Insights Scorecard card (scored metrics)",
+      cols: [{ key: "name", label: "Metric" }, { key: "value", label: "Value", fmt: "raw" },
+             { key: "status", label: "Status", fmt: "pill" },
+             { key: "meaning", label: "What it means", wrap: true }],
+      rows: ins.metrics || [], filterable: true,
+    });
+    renderTable(host, {
+      id: "t-l-flags", group: "The Landing", title: "Red flags & open questions",
+      feeds: "Insights Scorecard card (right table)",
+      cols: [{ key: "item", label: "Item" }, { key: "status", label: "Status", fmt: "pill" },
+             { key: "why", label: "Why it matters", wrap: true },
+             { key: "settle", label: "What would settle it", wrap: true }],
+      rows: ins.flags || [],
     });
 
     renderTable(host, {

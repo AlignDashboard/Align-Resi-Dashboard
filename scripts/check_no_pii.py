@@ -106,7 +106,9 @@ def harvest_names(source):
     """
     import openpyxl
     wb = openpyxl.load_workbook(source, data_only=True)
-    pat = re.compile(r"resident (last )?name|^name$|tenant name|^tenant$", re.I)
+    # bare "Resident"/"Name" headers appear on the workbook's computed tabs
+    # (Unit Gap Analysis, Delinquency, MTM Analysis), not just the raw reports
+    pat = re.compile(r"resident (last )?name|^name$|tenant name|^tenant$|^resident$", re.I)
     names = set()
     for ws in wb.worksheets:
         for r in range(1, min(ws.max_row, 60) + 1):
@@ -121,11 +123,17 @@ def harvest_names(source):
                         # skip labels/markers and the anonymising asterisk
                         # must contain letters: numeric strings like "0.00"
                         # appear in name columns of summary blocks and would
-                        # otherwise be "found" in every file that has numbers
+                        # otherwise be "found" in every file that has numbers.
+                        # Multi-section sheets put later section headers in the
+                        # same column, so report vocabulary ("Offered rent") is
+                        # rejected — nobody is named Rent.
                         if (2 <= len(v) <= 48 and re.search(r"[A-Za-z]{2}", v)
                                 and not v.lower().startswith(("total", "future resident",
                                                               "summary", "grand total",
-                                                              "current/notice"))):
+                                                              "current/notice"))
+                                and not re.search(r"\b(rent|rate|lease|unit|market|offer|"
+                                                  r"status|term|sq ?ft|balance|owed|notes?)\b",
+                                                  v, re.I)):
                             names.add(v)
     return names
 

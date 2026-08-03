@@ -51,11 +51,21 @@ Which report feeds what (the workbook's own `Data Lineage` tab is authoritative)
 | `Source CY25`, `Source Aug25-Jul26` | 12-month accrual statement | T12 Expenses |
 | `Source Rent Roll Jul` / `Jun` | SPV PM Deliverable Package, Rent Roll tab | Rent Roll |
 | `Source Delinquency` | `rs_rp_DelinquencySummaryReport` | Residential AR Analytics |
+| `Source Renewal Tracker` | Landing 2025 Renewal Tracker (monthly + MTM tabs) | *(no Drive folder yet)* |
 | `Lease Detail` | RealPage rate tracker — **typed in, not a grey tab** | Weekly Leasing Reports |
 
-Only the T12 has a parser in `config/report_map.json` today; the rest are
-`pending`, so a Drive-driven refresh still needs those parsers written. Trade-out
-data will not update from the grey tabs at all — `Lease Detail` is hand-entered.
+T12, Rent Roll and Residential AR Analytics have parsers in
+`config/report_map.json`; the rest are `pending`. The renewal tracker has no
+Drive folder at all, so its grey tab is refreshed by pasting. Trade-out data
+will not update from the grey tabs either — `Lease Detail` is hand-entered.
+
+The workbook was restructured in V37: the `Holdovers` tab became `MTM` (same
+content, per-unit vacate flags added), and `MTM Analysis` (tracker
+reconciliation — its roster carries tenant names, only aggregates are
+extracted), `Scorecard` (scored insights + open questions, published as the
+landing page's Insights card) and `Source Renewal Tracker` are new. The
+renewal/holdover scenario models charge a recurring incremental-vacancy haircut
+on the new run-rate instead of one-time make-ready/downtime costs.
 
 ## Deployment
 
