@@ -468,7 +468,6 @@
         <span class="eyebrow" id="lhEyebrow">EXPIRED LEASES STILL IN PLACE · REPRICE SCENARIO</span>
         <div class="inrow" id="lhInputs"></div>
         <div class="statrow" id="lhStats"></div>
-        <div class="chartwrap" style="height:190px;"><canvas id="lcHold"></canvas></div>
         <div class="blu-note" id="lhNote" style="color:var(--muted);"></div>
       </div>
 
@@ -1372,6 +1371,15 @@ async function loadLanding() {
   /* ---- Rent capture ---- */
   (function rentCapture() {
     const rc = L.rent_capture;
+    // Zoom the money axis to the data instead of anchoring at $0 — income and
+    // potential both live well above $0.9M, and a zero baseline flattens the
+    // loss-to-lease gap the chart exists to show. Floored to a clean $50k tick
+    // just under the lowest plotted value; the footnote discloses the zoom.
+    const yMin = Math.floor(Math.min(...rc.rental_income, ...rc.market_potential) * 0.97 / 5e4) * 5e4;
+    // the capture-rate axis hugs its data too (73–92% today, was fixed 50–110)
+    const capPct = rc.capture_rate.map(v => v * 100);
+    const capMin = Math.floor((Math.min(...capPct) - 3) / 5) * 5;
+    const capMax = Math.ceil((Math.max(...capPct) + 3) / 5) * 5;
     new Chart(document.getElementById("lcCapture"), {
       data: {
         labels: rc.months.map(shortMo),
@@ -1384,14 +1392,16 @@ async function loadLanding() {
       options: { maintainAspectRatio: false, responsive: true,
         plugins: { legend: legendCfg, tooltip: { callbacks: { label: c =>
           c.dataset.yAxisID === "y2" ? `Capture: ${c.parsed.y.toFixed(1)}%` : `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
-        scales: { y: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
-          y2: { position: "right", grid: { display: false }, min: 50, max: 110, ticks: { callback: v => v + "%" } },
+        scales: { y: { grid: gridCfg, min: yMin,
+            ticks: { callback: v => "$" + (v / 1e6).toFixed(2) + "M" } },
+          y2: { position: "right", grid: { display: false }, min: capMin, max: capMax, ticks: { callback: v => v + "%" } },
           x: { grid: { display: false } } } }
     });
     document.getElementById("lcCaptureFoot").textContent =
       "TTM: potential " + fm$(rc.ttm.market_potential) + " · income " + fm$(rc.ttm.rental_income) +
       " · capture " + fmPct(rc.ttm.capture_rate) + " · loss to lease " + fmPct(rc.ttm.ltl_pct) +
-      ". Yardi market rent table was revised up sharply from Apr 2026, which widens measured loss to lease.";
+      ". Yardi market rent table was revised up sharply from Apr 2026, which widens measured loss to lease. " +
+      "Dollar axis starts at " + fm$(yMin) + ", not $0, to make the income-vs-potential gap visible.";
   })();
 
   /* ---- Expense & NOI ---- */
@@ -1516,7 +1526,6 @@ async function loadLanding() {
      flag — vacating units re-lease at market, the rest reprice in place capped
      at market. The same incremental-vacancy haircut as the renewal card applies
      to the cohort's new run-rate. */
-  let holdChart = null;
   function renderHold() {
     const thr = numOr(hFields.thr, 0) / 100;
     const incOv = hFields.inc.value === "" ? null : numOr(hFields.inc, 0) / 100;
@@ -1539,19 +1548,6 @@ async function loadLanding() {
       [fm$(recNOI / capRate), "value at cap"],
       [fmPct(gapMo ? incrMo / gapMo : 0, 0), "gap captured"],
     ]);
-    if (holdChart) return;      // distribution is static; stats recompute
-    const d = L.holdovers.distribution.filter(x => x.band !== "Total");
-    holdChart = new Chart(document.getElementById("lcHold"), {
-      type: "bar",
-      data: { labels: d.map(x => x.band),
-        datasets: [{ label: "Annual gap", data: d.map(x => x.gap_yr),
-          backgroundColor: d.map(x => x.flag === "PRIORITY" ? C.red : x.flag === "REVIEW" ? C.amber : C.muted) }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => `${fm$(c.parsed.x)}/yr across ${d[c.dataIndex].units} units · ${d[c.dataIndex].flag}` } } },
-        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
-          y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
-    });
   }
   const hFields = inputRow(document.getElementById("lhInputs"), [
     { key: "thr", label: "min gap % in scope", val: 0, step: "5" },
