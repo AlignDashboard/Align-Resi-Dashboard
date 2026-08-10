@@ -76,17 +76,37 @@ def main():
           f"{sorted(folders.keys())}")
 
     FOLDER_MIME = "application/vnd.google-apps.folder"
+
+    def contents(folder_name):
+        return [f for f in _list_children(svc, folders[folder_name])
+                if f["mimeType"] != FOLDER_MIME]
+
     manifest = []
+    # Folders the config does not mention at all — a report dropped in one of
+    # these is invisible to the pipeline, so say so rather than ignore it.
+    unmapped = sorted(set(folders) - {e["drive_folder"] for e in cfg["subfolders"]})
+    for name in unmapped:
+        files = contents(name)
+        print(f"[warn] '{name}' is not in report_map.json — "
+              f"{len(files)} file(s) ignored: {[f['name'] for f in files]}")
+
     for entry in cfg["subfolders"]:
         name = entry["drive_folder"]
         if entry.get("status") != "active":
-            print(f"[skip] '{name}' (no parser yet)")
+            # List it anyway. Skipping silently means a report can sit in a
+            # pending folder for weeks with nothing in the log to show it, and
+            # the filename usually carries the property code.
+            if name in folders:
+                files = contents(name)
+                print(f"[skip] '{name}' (no parser yet) — {len(files)} file(s) "
+                      f"waiting: {[f['name'] for f in files]}")
+            else:
+                print(f"[skip] '{name}' (no parser yet, folder absent)")
             continue
         if name not in folders:
             print(f"[warn] subfolder '{name}' not found in Drive parent")
             continue
-        files = [f for f in _list_children(svc, folders[name])
-                 if f["mimeType"] != FOLDER_MIME]
+        files = contents(name)
         print(f"[info] '{name}' contains {len(files)} file(s): "
               f"{[f['name'] for f in files]}")
         for f in files:
