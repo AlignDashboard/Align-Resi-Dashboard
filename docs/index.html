@@ -346,6 +346,16 @@
 
     <div class="view" id="view1" role="tabpanel" aria-labelledby="tabView1" tabindex="0">
     <div class="grid">
+      <!-- same full matrix as the Scorecard tab, rendered by the same code -->
+      <div class="card wide" id="cPortfolioScorecard">
+        <h2>KPI Scorecard</h2>
+        <span class="eyebrow" id="poscEyebrow">PORTFOLIO HEALTH · LOADING…</span>
+        <div class="sc-head" id="poscHead"></div>
+        <div style="overflow-x:auto;"><div id="poscTable"></div></div>
+        <div class="sc-legend" id="poscLegend"></div>
+        <div class="sc-note" id="poscNote"></div>
+      </div>
+
       <div class="card wide">
         <h2>Trade Outs</h2>
         <span class="eyebrow" id="toEyebrow">NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT</span>
@@ -1118,12 +1128,14 @@ function scTone(counts) {
   return counts.exceeding > 0 ? "exceeding" : "in_range";
 }
 
-async function renderScorecard() {
+// Renders the full matrix into one set of mount points. Called for both the
+// Scorecard tab and the top of the Portfolio view — same data, same code.
+async function renderScorecard(ids) {
   await scPromise;
-  const eyebrow = document.getElementById("scEyebrow");
+  const eyebrow = document.getElementById(ids.eyebrow);
   if (!SC) {
     eyebrow.textContent = "SCORECARD UNAVAILABLE";
-    document.getElementById("scNote").textContent =
+    document.getElementById(ids.note).textContent =
       "Could not load scorecard.json — run scripts/extract_scorecard.py.";
     return;
   }
@@ -1132,7 +1144,7 @@ async function renderScorecard() {
     P.metric_count + " KPIs · " + P.scored + " TRACKED CELLS";
 
   // headline + tally
-  const head = document.getElementById("scHead");
+  const head = document.getElementById(ids.head);
   head.textContent = "";
   // Deliberately uncolored: with ranges still to come there is no defined band
   // that turns 91% into a verdict. The tally beside it and the per-property
@@ -1206,17 +1218,17 @@ async function renderScorecard() {
     });
   });
   tbl.appendChild(tbody);
-  const host = document.getElementById("scTable");
+  const host = document.getElementById(ids.table);
   host.textContent = "";
   host.appendChild(tbl);
 
-  scLegendInto(document.getElementById("scLegend"));
+  scLegendInto(document.getElementById(ids.legend));
 
   const weakest = P.by_metric.filter(m => m.counts.below > 0)
     .sort((a, b) => b.counts.below - a.counts.below).slice(0, 3)
     .map(m => m.name + " (" + m.counts.below + ")");
   const unmapped = SC.properties.filter(p => !p.slug).map(p => p.label);
-  document.getElementById("scNote").textContent =
+  document.getElementById(ids.note).textContent =
     "Column % is the share of that property's KPIs at or above target; hover a cell for its status. " +
     (scHasValues(SC) ? "" : "Each cell reserves space for its measured number — \u201c" + SC_PENDING +
       "\u201d means the value has not been supplied yet, not that the KPI is untracked. ") +
@@ -1225,7 +1237,11 @@ async function renderScorecard() {
     (unmapped.length ? " Not yet in the property master: " + unmapped.join(", ") + "." : "") +
     " Source: " + SC.meta.source_workbook + ".";
 }
-renderScorecard();
+// the Scorecard tab and the top of the Portfolio view carry the same matrix
+renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
+                  legend: "scLegend", note: "scNote" });
+renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
+                  legend: "poscLegend", note: "poscNote" });
 // property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
 scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
 
