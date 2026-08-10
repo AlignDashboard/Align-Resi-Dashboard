@@ -196,6 +196,51 @@ loose = parse_delinquency.parse(bad, strict=False)
 ok("strict=False reports instead of raising", bool(loose["problems"]),
    loose["problems"][0][:70] if loose["problems"] else "no problems recorded")
 
+# ------------------------------------------- multi-property delinquency file
+# Palma arrives as one export covering rspalman and rspalmas. The parser used to
+# read only the first section and then compare it against the file's Grand Total,
+# which spans both — a $150 gap that made it refuse a perfectly good report.
+print("\nmulti-property delinquency")
+MULTI = os.path.join(FIX, "delinquency_palma_multi.xlsx")
+if not os.path.exists(MULTI):
+    print("  SKIP  fixture missing — run scripts/make_multi_fixture.py " + MULTI)
+else:
+    m = parse_delinquency.parse(MULTI)          # strict: must not raise
+    ok("both property codes found", m["property_codes"] == ["rspalman", "rspalmas"],
+       str(m["property_codes"]))
+    ok("top-level property left unset for a multi-property file",
+       m["property"] is None and m["property_code"] is None,
+       "so no caller can file a combined total under one of them")
+    ok("one section per property", len(m["sections"]) == 2,
+       f'{len(m["sections"])} sections')
+    north = next(x for x in m["sections"] if x["property_code"] == "rspalman")
+    south = next(x for x in m["sections"] if x["property_code"] == "rspalmas")
+    ok("Palma North ties to its own Total row",
+       north["summary"]["net"] == -20486.36, f'{north["summary"]["net"]:,.2f}')
+    ok("Palma South ties to its own Total row",
+       south["summary"]["net"] == -150.0, f'{south["summary"]["net"]:,.2f}')
+    ok("North aging matches the report",
+       [north["summary"]["aging"][k] for k in ("d0_30", "d31_60", "d61_90", "over90")]
+       == [14989.88, 259.29, 10345.54, 11846.64], str(north["summary"]["aging"]))
+    ok("combined net ties to the Grand Total", m["summary"]["net"] == -20636.36,
+       f'{m["summary"]["net"]:,.2f}')
+    ok("prepayment-heavy property still reports positive aging",
+       m["summary"]["gross_owed"] == 37441.35 and m["summary"]["net"] < 0,
+       f'gross {m["summary"]["gross_owed"]:,.2f} on a net credit of {m["summary"]["net"]:,.2f}')
+    ok("every tie-out passes on the real layout", all(c["ok"] for c in m["checks"]),
+       ", ".join(c["check"] for c in m["checks"] if not c["ok"]) or "all")
+
+    # negative: break one section's own Total row. The Grand Total still agrees
+    # with the sum of the rows, so only the per-section check can catch this.
+    bad = copy(MULTI)
+    wb = openpyxl.load_workbook(bad)
+    ws = wb["Report1"]
+    ws.cell(row=14, column=12, value=-99999)
+    wb.save(bad)
+    raises("a broken section Total is refused", lambda: parse_delinquency.parse(bad),
+           needle="section rspalman")
+
+
 # ---------------------------------------------------- PII must not persist
 # The parsers read tenant names because the reports contain them. Nothing may
 # write them to disk. This asserts the scrub rather than trusting it.
