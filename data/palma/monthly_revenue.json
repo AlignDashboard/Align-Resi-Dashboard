@@ -1,0 +1,16 @@
+{
+  "revenue_month": 261317.82,
+  "basis": "GL 4999-9999 total operating revenue, latest reported month per code",
+  "codes": {
+    "rspalman": {
+      "month": "Jun",
+      "revenue": 264726.32,
+      "period_end": "Jun 2026"
+    },
+    "rspalmas": {
+      "month": "Jun",
+      "revenue": -3408.5,
+      "period_end": "Jun 2026"
+    }
+  }
+}
