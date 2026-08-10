@@ -67,6 +67,33 @@ landing page's Insights card) and `Source Renewal Tracker` are new. The
 renewal/holdover scenario models charge a recurring incremental-vacancy haircut
 on the new run-rate instead of one-time make-ready/downtime costs.
 
+## Refreshing The KPI Scorecard
+
+`docs/scorecard.json` comes from the KPI scorecard workbook, in two steps that
+must run **in this order**:
+
+1. `python scripts/extract_scorecard.py <KPI_Scorecard.xlsx>` — the grid's
+   hand-set symbols, the metric groups, and (since v10) the published target
+   ranges and the Palma lease-up overrides. **This resets every measured value
+   to null**, which is why it goes first.
+2. `python scripts/populate_scorecard.py --from-landing` — fills the measured
+   numbers a report can actually answer and re-derives those cells' status from
+   the published band, keeping the workbook's original symbol in
+   `status_workbook`. Re-runnable and idempotent; it rebuilds the per-property
+   counts and the portfolio roll-up so the matrix, health chart and tally cannot
+   drift apart.
+
+A delinquency report answers exactly two of the 28 KPIs: `Total Deliquency`
+(gross resident AR over one month's billed rent — the report alone does not
+carry the rent, so pass `--monthly-rent` when working from a raw report) and
+`Split Between 30/60/90` (share of AR aged 60+ days). `POs over 30 days` and
+`# of invoices processed` are accounts *payable* and a resident AR report cannot
+speak to them.
+
+The v10 legend made the in-range band white — no colour indicator — and
+`extract_scorecard.py` fails loudly if the workbook's legend fills change again,
+rather than publishing stale semantics.
+
 ## Deployment
 
 GitHub Pages serves `docs/` from `main`. Pushing to `main` rebuilds the live

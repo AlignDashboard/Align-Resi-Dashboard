@@ -245,6 +245,8 @@ with open(OUT, "w") as f:
 
 import os
 print(f"wrote {OUT} ({os.path.getsize(OUT)} bytes)")
+print("  NOTE: every measured value is now null. Re-run "
+      "scripts/populate_scorecard.py to put the measured numbers back.")
 print(f"  {len(properties)} properties x {len(metrics)} metrics = {scored_total} scored cells")
 print("  " + "  ".join(f"{k}={v}" for k, v in total.items()))
 unmapped = [p["label"] for p in properties if not p["slug"]]
