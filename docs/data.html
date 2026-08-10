@@ -532,6 +532,30 @@ async function loadAll() {
       filterable: true,
     });
 
+    const measuredRows = [];
+    props.forEach(p => Object.entries(p.values || {}).forEach(([kpi, v]) => {
+      if (!v || v.display == null) return;
+      const src = (p.status_source || {})[kpi];
+      measuredRows.push({ property: p.label, kpi, value: v.display,
+        status: src === "unscored" ? "not graded" : p.statuses[kpi],
+        was: (p.status_workbook || {})[kpi] || "—",
+        band: src === "unscored" ? "—"
+          : ((d.thresholds || {})[kpi] || {})[p.statuses[kpi]] || "—" });
+    }));
+    renderTable(host, {
+      id: "t-sc-measured", group: "Scorecard", title: "Measured KPI values",
+      feeds: "The numbers printed inside the scorecard cells",
+      note: "Written by scripts/populate_scorecard.py from the underlying report. Where a "
+          + "band applies, the status is derived from the measurement rather than set by "
+          + "hand — \"workbook had\" is the symbol the grid carried before. Everything else "
+          + "on the grid still shows \"––\" because no report has supplied it yet.",
+      emptyNote: "No measured values yet — run scripts/populate_scorecard.py.",
+      cols: [{ key: "property", label: "Property" }, { key: "kpi", label: "KPI" },
+             { key: "value", label: "Measured" }, { key: "status", label: "Status" },
+             { key: "was", label: "Workbook had" }, { key: "band", label: "Band it falls in" }],
+      rows: measuredRows,
+    });
+
     renderTable(host, {
       id: "t-sc-overrides", group: "Scorecard", title: "Lease-up overrides (Palma North/South)",
       feeds: "The override note on the Palma tab's scorecard card",

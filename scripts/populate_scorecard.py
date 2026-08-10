@@ -12,7 +12,11 @@ Which KPIs a delinquency report can actually answer:
   Total Deliquency          gross resident AR / one month's billed rent
                             (needs the monthly rent too — a delinquency report
                             alone does not carry it, see --monthly-rent)
-  Split Between 30/60/90    share of total AR aged 60+ days
+  Split Between 30/60/90    the report's three past-due buckets, printed as
+                            31-60 / 61-90 / over-90 dollars. Reported, not
+                            graded: a distribution has no single direction it can
+                            be good or bad in, so the cell gets no status and no
+                            colour (see UNSCORED in extract_scorecard.py).
 
 "POs over 30 days" and "# of invoices processed" are accounts *payable*; a
 resident AR report cannot speak to them and they are left alone.
@@ -74,15 +78,23 @@ def classify(value, t):
     return "in_range" if value >= red else "below"
 
 
+# the three past-due buckets, in the order they are printed
+SPLIT_LABELS = ["31-60", "61-90", "90+"]
+
+
 def facts_from_landing(path="docs/landing.json"):
     d = json.load(open(path))["delinquency"]
     ag = {a["bucket"]: a["amount"] for a in d["aging"]}
-    sixty = sum(v for k, v in ag.items()
-                if "61" in k or "over 90" in k.lower())
+    def bucket(*needles):
+        for k, v in ag.items():
+            if any(n in k.lower() for n in needles):
+                return v
+        return None
     return {
         "as_of": d.get("as_of"),
         "gross_owed": d.get("gross_owed"),
-        "aged_60_plus": sixty,
+        "split": [bucket("31 - 60", "31-60"), bucket("61 - 90", "61-90"),
+                  bucket("over 90")],
         # the workbook computes this ratio itself, so use it rather than
         # re-deriving the denominator
         "total_delinq_pct": d.get("pct_month_rent"),
@@ -94,28 +106,37 @@ def facts_from_report(path, monthly_rent):
     import parse_delinquency
     parsed = parse_delinquency.parse(path)
     s = parsed["summary"]
-    sixty = (s["aging"]["d61_90"] or 0) + (s["aging"]["over90"] or 0)
+    a = s["aging"]
     gross = s["gross_owed"]
     return {
         "as_of": parsed.get("as_of"),
         "gross_owed": gross,
-        "aged_60_plus": sixty,
+        "split": [a.get("d31_60"), a.get("d61_90"), a.get("over90")],
         "total_delinq_pct": (gross / monthly_rent) if monthly_rent else None,
         "source": os.path.basename(path),
     }
 
 
 def measurements(f):
-    """{kpi: (value, why-it-is-missing)} for the KPIs a delinquency report covers."""
+    """{kpi: (value, display, why-it-is-missing)}.
+
+    `value` is what gets classified against the band; an unscored KPI has a
+    display but no classifiable value, which is why the two are separate.
+    """
     out = {}
     if f.get("total_delinq_pct") is not None:
-        out[KPI_TOTAL] = (f["total_delinq_pct"], None)
+        v = f["total_delinq_pct"]
+        out[KPI_TOTAL] = (v, pct1(v), None)
     else:
-        out[KPI_TOTAL] = (None, "needs one month's billed rent — pass --monthly-rent")
-    if f.get("gross_owed"):
-        out[KPI_SPLIT] = (f["aged_60_plus"] / f["gross_owed"], None)
+        out[KPI_TOTAL] = (None, None,
+                          "needs one month's billed rent — pass --monthly-rent")
+
+    parts = f.get("split") or []
+    if len(parts) == 3 and all(p is not None for p in parts):
+        # xx/yy/zz in whole dollars, the report's own figures
+        out[KPI_SPLIT] = (None, "/".join(f"{p:,.0f}" for p in parts), None)
     else:
-        out[KPI_SPLIT] = (None, "report has no gross AR balance to divide by")
+        out[KPI_SPLIT] = (None, None, "report has no 30/60/90 aging buckets")
     return out
 
 
@@ -184,32 +205,49 @@ def main():
 
     print(f"source: {facts['source']}  ·  as of {facts['as_of']}  ·  "
           f"property: {prop['label']}")
-    print(f"{'KPI':26} {'measured':>10}  {'band says':<11} {'workbook had':<11} action")
-    print("-" * 78)
+    print(f"{'KPI':26} {'measured':>18}  {'band says':<11} {'workbook had':<11} action")
+    print("-" * 86)
 
+    unscored = set(sc.get("unscored") or [])
     changed, filled = [], 0
-    for kpi, (value, why) in measurements(facts).items():
+    for kpi, (value, display, why) in measurements(facts).items():
         if kpi not in prop["statuses"]:
-            print(f"{kpi:26} {'—':>10}  not on this scorecard")
+            print(f"{kpi:26} {'—':>18}  not on this scorecard")
             continue
         was = prop["statuses"].get(kpi)
-        if value is None:
-            print(f"{kpi:26} {'—':>10}  {'—':<11} {str(was):<11} skipped: {why}")
+        if display is None:
+            print(f"{kpi:26} {'—':>18}  {'—':<11} {str(was):<11} skipped: {why}")
             continue
-        band = classify(value, thresholds.get(kpi))
-        prop["values"][kpi] = {"raw": round(value, 6), "display": pct1(value)}
+
+        rec = {"raw": round(value, 6) if value is not None else None,
+               "display": display}
+        if kpi == KPI_SPLIT:
+            rec["parts"] = facts["split"]
+            rec["parts_labels"] = SPLIT_LABELS
+        prop["values"][kpi] = rec
         filled += 1
+
+        if kpi in unscored:
+            # reported, not graded: leave the status null so the cell shows the
+            # figures with no symbol, no colour, and no place in the counts
+            prop["statuses"][kpi] = None
+            prop.setdefault("status_source", {})[kpi] = "unscored"
+            print(f"{kpi:26} {display:>18}  {'—':<11} {str(was):<11} "
+                  f"reported, not graded")
+            continue
+
+        band = classify(value, thresholds.get(kpi))
         # keep the workbook's own symbol beside the derived one
         if band and band != was:
             prop.setdefault("status_workbook", {})[kpi] = was
             prop.setdefault("status_source", {})[kpi] = "measured"
             prop["statuses"][kpi] = band
-            changed.append((kpi, was, band, value))
+            changed.append((kpi, was, band, display))
             action = f"RESTATED {was} -> {band}"
         else:
             prop.setdefault("status_source", {})[kpi] = "measured"
             action = "confirms the workbook"
-        print(f"{kpi:26} {pct1(value):>10}  {str(band):<11} {str(was):<11} {action}")
+        print(f"{kpi:26} {display:>18}  {str(band):<11} {str(was):<11} {action}")
 
     recompute(sc)
 
@@ -234,7 +272,7 @@ def main():
         print("\n  the measurement disagreed with the hand-set symbol:")
         for kpi, was, now, v in changed:
             t = thresholds.get(kpi, {})
-            print(f"    {kpi}: {was} -> {now}  ({pct1(v)}; "
+            print(f"    {kpi}: {was} -> {now}  ({v}; "
                   f"exceeding {t.get('exceeding')}, in range {t.get('in_range')}, "
                   f"below {t.get('below')})")
 

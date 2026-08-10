@@ -43,6 +43,13 @@ LEGEND = [
 ]
 STATE_BY_SYMBOL = {l["symbol"]: l["state"] for l in LEGEND}
 
+# KPIs that report a figure rather than a grade. A distribution has no single
+# direction it can be good or bad in — the ranges sheet says as much in its own
+# basis note for this one ("A distribution cannot be scored") — so the cell
+# carries its numbers and no status at all: no symbol, no colour, and it is
+# excluded from the at-or-above-target counts rather than inflating them.
+UNSCORED = {"Split Between 30/60/90"}
+
 # Scorecard property label -> slug in config/properties.json. 2177 Third is on
 # the scorecard but not in the property master, so it maps to None and renders
 # without a link to a view that does not exist. Any slug named here that is
@@ -94,7 +101,10 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
     statuses, counts = {}, {"exceeding": 0, "in_range": 0, "below": 0, "missing": 0}
     for i, m in enumerate(metrics):
         sym = ws.cell(row=row, column=FIRST_METRIC_COL + i).value
-        state = STATE_BY_SYMBOL.get(str(sym).strip()) if sym else None
+        if m["name"] in UNSCORED:
+            state = None            # reported, not graded — see UNSCORED above
+        else:
+            state = STATE_BY_SYMBOL.get(str(sym).strip()) if sym else None
         statuses[m["name"]] = state
         counts[state or "missing"] += 1
     scored = counts["exceeding"] + counts["in_range"] + counts["below"]
@@ -219,6 +229,8 @@ data = {
                  "four of their KPIs are scored against the lease-up overrides."),
     },
     "legend": LEGEND,
+    # reported, not graded: no status, no colour, not counted in "scored"
+    "unscored": sorted(UNSCORED & {m["name"] for m in metrics}),
     "groups": [{"name": g, "metrics": [m["name"] for m in metrics if m["group"] == g]}
                for g in dict.fromkeys(m["group"] for m in metrics)],
     "metrics": [{"name": m["name"], "group": m["group"]} for m in metrics],

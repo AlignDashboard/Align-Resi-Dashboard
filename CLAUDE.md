@@ -83,12 +83,21 @@ must run **in this order**:
    counts and the portfolio roll-up so the matrix, health chart and tally cannot
    drift apart.
 
-A delinquency report answers exactly two of the 28 KPIs: `Total Deliquency`
-(gross resident AR over one month's billed rent — the report alone does not
-carry the rent, so pass `--monthly-rent` when working from a raw report) and
-`Split Between 30/60/90` (share of AR aged 60+ days). `POs over 30 days` and
-`# of invoices processed` are accounts *payable* and a resident AR report cannot
-speak to them.
+A delinquency report answers exactly two of the 28 KPIs:
+
+- `Total Deliquency` — gross resident AR over one month's billed rent, graded
+  against the published band. The report alone does not carry the rent, so pass
+  `--monthly-rent` when working from a raw report.
+- `Split Between 30/60/90` — the report's three past-due buckets printed as
+  `31-60/61-90/90+` in dollars. **Reported, not graded:** a distribution has no
+  single direction it can be good or bad in (the ranges sheet says as much in
+  its own basis note), so the cell carries no symbol and no colour and is left
+  out of the at-or-above-target counts. The `UNSCORED` set in
+  `extract_scorecard.py` is what marks it, and `docs/scorecard.json` publishes
+  the list as `unscored` so the page can render those cells plainly.
+
+`POs over 30 days` and `# of invoices processed` are accounts *payable* and a
+resident AR report cannot speak to them.
 
 The v10 legend made the in-range band white — no colour indicator — and
 `extract_scorecard.py` fails loudly if the workbook's legend fills change again,

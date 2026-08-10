@@ -242,6 +242,9 @@
   .sc-chip.sc-state-exceeding { background: var(--fill-exceeding); border-color: var(--edge-exceeding); }
   .sc-chip.sc-state-in_range  { background: var(--fill-in_range);  border-color: var(--edge-in_range); }
   .sc-chip.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
+  /* reported, not graded: no fill, no edge, no symbol — just the figures */
+  .sc-chip.sc-unscored { background: transparent; border-color: transparent; }
+  .sc-chip.sc-unscored .val { margin-left: 0; }
 
   /* per-property slice shown at the top of a property view */
   .sc-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 6px 18px; }
@@ -1112,17 +1115,33 @@ const SYM = { exceeding: "▲", in_range: "●", below: "▼" };
 const scSymbol = state => elc("span", "sc-state-" + state, SYM[state] || "–");
 
 // Status chip: the fill carries the status, the value sits on top of it.
-// Values are not published yet, so a muted placeholder holds the space.
+// Where a value has not been supplied yet, a muted placeholder holds the space.
+//
+// An unscored KPI (scorecard.json "unscored" — a distribution has no direction
+// it can be good or bad in) gets neither symbol nor colour: just its figures.
 const SC_PENDING = "––";
-function scChip(state, value) {
-  const chip = elc("div", "sc-chip sc-state-" + state);
-  const sym = elc("span", "sym", SYM[state] || "–");
-  chip.appendChild(sym);
+const scUnscoredSet = () => new Set((SC && SC.unscored) || []);
+function scChip(state, value, unscored) {
+  const chip = elc("div", "sc-chip" + (unscored ? " sc-unscored" : " sc-state-" + state));
+  if (!unscored) chip.appendChild(elc("span", "sym", SYM[state] || "–"));
   const display = value && value.display != null ? String(value.display) : null;
   const val = elc("span", "val", display === null ? SC_PENDING : display);
   if (display === null) val.classList.add("pending");
   chip.appendChild(val);
   return chip;
+}
+// What a cell says on hover, for both the matrix and the property strips.
+function scCellTitle(name, st, v, unscored, prefix) {
+  const head = (prefix ? prefix + " · " : "") + name + ": ";
+  if (unscored) {
+    const parts = v && v.parts, labels = v && v.parts_labels;
+    const detail = (parts && labels && parts.length === labels.length)
+      ? labels.map((l, i) => l + " $" + Math.round(parts[i]).toLocaleString()).join(" · ")
+      : (v && v.display != null ? String(v.display) : "value pending");
+    return head + "reported, not graded — " + detail;
+  }
+  return head + ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
+    scBand(name, st) + (v && v.display != null ? " — " + v.display : " — value pending");
 }
 const scValue = (prop, metric) => (prop.values || {})[metric] || null;
 // The band behind a status, now that the workbook publishes its ranges —
@@ -1237,8 +1256,10 @@ async function renderScorecard(ids) {
     return;
   }
   const P = SC.portfolio;
+  const nUn = (SC.unscored || []).length;
   eyebrow.textContent = "HEALTH ACROSS " + P.property_count + " PROPERTIES · " +
-    P.metric_count + " KPIs · " + P.scored + " TRACKED CELLS";
+    (P.metric_count - nUn) + " SCORED KPIs" + (nUn ? " + " + nUn + " REPORTED" : "") +
+    " · " + P.scored + " GRADED CELLS";
 
   // headline + tally
   const head = document.getElementById(ids.head);
@@ -1266,6 +1287,7 @@ async function renderScorecard(ids) {
   // packed into batches of at most MAX_COLS columns and each batch starts a
   // fresh set of property rows below the previous one. Batching on group
   // boundaries keeps a group's KPIs together instead of splitting them.
+  const unscored = scUnscoredSet();
   const MAX_COLS = 8;
   const batches = [];
   SC.groups.forEach(g => {
@@ -1337,11 +1359,9 @@ async function renderScorecard(ids) {
         const td = elc("td", "cell");
         const st = p.statuses[name];
         const v = scValue(p, name);
-        td.appendChild(scChip(st, v));
-        td.title = p.label + " · " + name + ": " +
-          ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
-          scBand(name, st) +
-          (v && v.display != null ? " — " + v.display : " — value pending");
+        const un = unscored.has(name);
+        td.appendChild(scChip(st, v, un));
+        td.title = scCellTitle(name, st, v, un, p.label);
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -1364,6 +1384,9 @@ async function renderScorecard(ids) {
     "hover a cell for its status. " +
     (scHasValues(SC) ? "" : "Each cell reserves space for its measured number — \u201c" + SC_PENDING +
       "\u201d means the value has not been supplied yet, not that the KPI is untracked. ") +
+    (nUn ? (SC.unscored || []).join(", ") + " is reported, not graded — a distribution " +
+      "has no single direction it can be good or bad in, so it carries no status and " +
+      "is left out of the percentages. " : "") +
     (weakest.length ? "Most below-target KPIs: " + weakest.join(", ") + ". " : "") +
     SC.meta.note +
     (unmapped.length ? " Not yet in the property master: " + unmapped.join(", ") + "." : "") +
@@ -1402,17 +1425,17 @@ function renderPropertyScorecard(slug, ids) {
 
   const strip = document.getElementById(ids.strip);
   strip.textContent = "";
+  const unscored = scUnscoredSet();
   SC.groups.forEach(g => {
     strip.appendChild(elc("div", "g", g.name));
     g.metrics.forEach(name => {
       const m = elc("div", "m");
       const st = p.statuses[name];
       const v = scValue(p, name);
+      const un = unscored.has(name);
       m.appendChild(elc("span", "nm", name));
-      m.appendChild(scChip(st, v));
-      m.title = name + ": " + ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
-        scBand(name, st) +
-        (v && v.display != null ? " — " + v.display : " — value pending");
+      m.appendChild(scChip(st, v, un));
+      m.title = scCellTitle(name, st, v, un);
       strip.appendChild(m);
     });
   });
