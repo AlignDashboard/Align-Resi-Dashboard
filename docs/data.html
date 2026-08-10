@@ -704,7 +704,7 @@ async function loadAll() {
     const ho = d.holdovers || {};
     renderTable(host, {
       id: "t-l-hold-summary", group: "The Landing", title: "Holdovers — summary",
-      feeds: "Holdover Repricing card eyebrow and KPI tile", cols: KVCOLS, rows: kv(ho.summary),
+      feeds: "Holdover Units KPI tile (the repricing card was removed)", cols: KVCOLS, rows: kv(ho.summary),
     });
     renderTable(host, {
       id: "t-l-hold-dist", group: "The Landing", title: "Holdovers — gap distribution",
@@ -718,7 +718,7 @@ async function loadAll() {
     });
     renderTable(host, {
       id: "t-l-hold-units", group: "The Landing", title: "Holdovers — unit detail",
-      feeds: "Holdover Repricing scenario (threshold and increase inputs)",
+      feeds: "Workbook reference — the repricing card was removed from the page",
       note: "Vacate = Y means the workbook re-leases that unit at market; the rest reprice "
           + "in place at the applied increase, capped at market.",
       cols: [{ key: "rank", label: "Rank", fmt: "int" }, { key: "unit", label: "Unit" },
@@ -738,13 +738,13 @@ async function loadAll() {
     });
     renderTable(host, {
       id: "t-l-hold-reprice", group: "The Landing", title: "Holdovers — workbook reprice roll-up",
-      feeds: "Holdover Repricing card stats at workbook defaults",
+      feeds: "Workbook reference — the repricing card was removed from the page",
       cols: KVCOLS, rows: kv(ho.workbook_reprice),
     });
     const ts = ho.three_systems || {};
     renderTable(host, {
       id: "t-l-hold-systems", group: "The Landing", title: "Who is month-to-month? Three systems",
-      feeds: "The reconciliation note on the Holdover Repricing card",
+      feeds: "Workbook reference — tracker-vs-rent-roll reconciliation",
       note: "Units the tracker flags MTM but the rent roll test does not: "
           + (ts.tracker_mtm_not_holdover || []).join(", "),
       cols: KVCOLS,
@@ -755,7 +755,7 @@ async function loadAll() {
     const mtm = d.mtm_analysis || {};
     renderTable(host, {
       id: "t-l-mtm-status", group: "The Landing", title: "Tracker MTM tab — status counts",
-      feeds: "Holdover card reconciliation note",
+      feeds: "Workbook reference — tracker-vs-rent-roll reconciliation",
       note: (mtm.source || "") + " — aggregate counts only; the tracker's resident roster "
           + "is deliberately not published.",
       cols: [{ key: "status", label: "Status" }, { key: "units", label: "Units", fmt: "int" },
@@ -764,7 +764,7 @@ async function loadAll() {
     });
     renderTable(host, {
       id: "t-l-mtm-recon", group: "The Landing", title: "Tracker MTM tab vs rent roll",
-      feeds: "Holdover card reconciliation note",
+      feeds: "Workbook reference — tracker-vs-rent-roll reconciliation",
       cols: KVCOLS, rows: kv(mtm.reconciliation),
     });
 

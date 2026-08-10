@@ -463,14 +463,6 @@
         <div class="blu-note" id="lrNote"></div>
       </div>
 
-      <div class="card" id="cHoldover">
-        <h2>Holdover Repricing</h2>
-        <span class="eyebrow" id="lhEyebrow">EXPIRED LEASES STILL IN PLACE · REPRICE SCENARIO</span>
-        <div class="inrow" id="lhInputs"></div>
-        <div class="statrow" id="lhStats"></div>
-        <div class="blu-note" id="lhNote" style="color:var(--muted);"></div>
-      </div>
-
       <div class="card" id="cRateOcc">
         <h2>Rate vs Occupancy</h2>
         <span class="eyebrow">TRADE-OFF SCENARIO · CHANGE vs TODAY</span>
@@ -499,7 +491,7 @@
         <div class="chartwrap" style="height:280px;"><canvas id="lcFloor"></canvas></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cGaps">
         <h2>Largest Unit Gaps</h2>
         <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
         <div id="lgTbl"></div>
@@ -1349,7 +1341,7 @@ async function loadLanding() {
       [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
       [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate), "cRentCapture", "rent capture"],
       ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.recurring_noi / L.renewal.ttm_operating_noi) + " at current assumptions", "cRenewal", "renewal pipeline"],
-      [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cHoldover", "holdover repricing"],
+      [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cGaps", "largest unit gaps"],
       [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
       [fm$(L.rate_occ.ttm_value_today), "TTM value today", "at " + fmPct(L.inputs.cap_rate) + " cap", "cRateOcc", "rate vs occupancy"],
     ];
@@ -1521,55 +1513,6 @@ async function loadLanding() {
     "per-month basis (statutory cap near-term, policy rate beyond). " + L.renewal.model_note;
   renderRenewal();
 
-  /* ---- Holdover repricing (live model) ----
-     V37 model: each unit carries the workbook's applied increase and a vacate
-     flag — vacating units re-lease at market, the rest reprice in place capped
-     at market. The same incremental-vacancy haircut as the renewal card applies
-     to the cohort's new run-rate. */
-  function renderHold() {
-    const thr = numOr(hFields.thr, 0) / 100;
-    const incOv = hFields.inc.value === "" ? null : numOr(hFields.inc, 0) / 100;
-    const capRate = numOr(rFields.cap, 5) / 100, fee = numOr(rFields.fee, 2.1) / 100;
-    const vac = numOr(rFields.vac, (L.inputs.incr_vacancy || 0.05) * 100) / 100;
-    let scoped = 0, incrMo = 0, gapMo = 0, newRun = 0;
-    L.holdovers.units.forEach(u => {
-      if (u.pct_below < thr) return;
-      scoped++; gapMo += u.gap_mo;
-      const newRent = u.vacate ? u.market
-        : Math.min(u.inplace * (1 + (incOv !== null ? incOv : u.inc_applied)), u.market);
-      incrMo += newRent - u.inplace; newRun += newRent;
-    });
-    const recNOI = (incrMo - vac * newRun) * 12 * (1 - fee);
-    statBlock(document.getElementById("lhStats"), [
-      [String(scoped), "units in scope"],
-      [fm$(gapMo * 12) + "/yr", "gap to market"],
-      ["+" + fm$(incrMo * 12) + "/yr", "incremental rent"],
-      ["+" + fm$(recNOI) + "/yr", "recurring NOI"],
-      [fm$(recNOI / capRate), "value at cap"],
-      [fmPct(gapMo ? incrMo / gapMo : 0, 0), "gap captured"],
-    ]);
-  }
-  const hFields = inputRow(document.getElementById("lhInputs"), [
-    { key: "thr", label: "min gap % in scope", val: 0, step: "5" },
-    { key: "inc", label: "increase % override", val: null, ph: "wb per unit", step: "5" },
-  ], renderHold);
-  document.getElementById("lhEyebrow").textContent =
-    L.holdovers.summary.units + " EXPIRED LEASES STILL IN PLACE · " +
-    fmPct(L.holdovers.summary.cohort_below_mkt) + " BELOW MARKET vs " +
-    fmPct(L.holdovers.summary.property_below_mkt) + " PROPERTY-WIDE";
-  (function mtmNote() {
-    const ts = L.holdovers.three_systems || {}, mr = (L.mtm_analysis || {}).reconciliation || {};
-    if (!ts.this_model) return;
-    document.getElementById("lhNote").textContent =
-      "Three systems disagree on who is month-to-month: the property status report says " +
-      ts.property_status_report + ", the PM's renewal tracker flags " + ts.renewal_tracker_flagged +
-      ", the rent roll test finds " + ts.this_model + ". The tracker identifies only " +
-      mr.holdovers_on_tracker + " of these " + mr.holdovers_on_rent_roll + " holdovers, and " +
-      fmPct(mr.share_tracker_wrong, 0) + " of its own MTM list is no longer month-to-month — " +
-      "worth reconciling with the PM. Vacating units (workbook flag) re-lease at market.";
-  })();
-  renderHold();
-
   /* ---- Rate vs occupancy (live model) ---- */
   function renderRateOcc() {
     const ro = L.rate_occ;
@@ -1605,8 +1548,8 @@ async function loadLanding() {
       ", vacancy " + fmPct(ro.cur_vacancy, 2) + "). Today's TTM value " + fm$(ro.ttm_value_today) + ".";
   })();
   renderRateOcc();
-  // rate-occ & holdover valuation follow the renewal card's cap rate / fee inputs
-  ["cap", "fee", "vac"].forEach(k => rFields[k].addEventListener("input", () => { renderHold(); renderRateOcc(); }));
+  // rate-occ valuation follows the renewal card's cap rate / fee inputs
+  ["cap", "fee", "vac"].forEach(k => rFields[k].addEventListener("input", renderRateOcc));
 
   /* ---- Trade-outs ---- */
   (function trades() {
