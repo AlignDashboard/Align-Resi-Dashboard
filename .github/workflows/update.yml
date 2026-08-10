@@ -34,6 +34,18 @@ jobs:
       - name: Build metrics
         run: python scripts/build_metrics.py
 
+      # The measured KPI values have to be filled here, not locally: the reports
+      # only exist on this runner. build_metrics has just written the scrubbed
+      # data/<slug>/delinquency.json that this reads.
+      - name: Fill measured KPI values into the scorecard
+        run: |
+          set -euo pipefail
+          for f in data/*/delinquency.json; do
+            [ -e "$f" ] || continue
+            slug=$(basename "$(dirname "$f")")
+            python scripts/populate_scorecard.py --from-pipeline "$slug"
+          done
+
       - name: Refuse to commit if personal data leaked into the output
         run: python scripts/check_no_pii.py
 
@@ -41,7 +53,8 @@ jobs:
         run: |
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A data docs/metrics.json 2>/dev/null || git add docs/metrics.json
+          git add -A data docs/metrics.json docs/scorecard.json 2>/dev/null \
+            || git add docs/metrics.json docs/scorecard.json
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else

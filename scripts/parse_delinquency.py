@@ -122,7 +122,7 @@ def _pick_sheet(wb):
     return wb[wb.sheetnames[0]]
 
 
-def _summarise(residents):
+def summarise(residents):
     """The aging summary for one set of resident rows."""
     res = [r for r in residents if r["residential"]]
     ret = [r for r in residents if not r["residential"]]
@@ -206,8 +206,8 @@ def parse(path, strict=True):
     sections, grand_row = _read_sections(ws, fields, header_row)
     residents = [r for s in sections for r in s["residents"]]
     for s in sections:
-        s["summary"] = _summarise(s["residents"])
-    summary = _summarise(residents)
+        s["summary"] = summarise(s["residents"])
+    summary = summarise(residents)
     stopped = (grand_row["row"], "grand total") if grand_row else (
         (sections[-1]["total_row"], "section total")
         if sections and sections[-1]["total_row"] else None)
@@ -293,9 +293,13 @@ def parse(path, strict=True):
         "columns": {k: v for k, v in sorted(fields.items(), key=lambda kv: kv[1])},
         "residents": residents,
         "summary": summary,
-        # per-property breakdown; one entry for a single-property export
+        # per-property breakdown; one entry for a single-property export.
+        # Carries its own rows so a caller can regroup them — several codes can
+        # belong to one property in config/properties.json (rspalman/rspalmas
+        # are both Palma), and the dashboard shows one column per property.
         "sections": [{"property": s["property"], "property_code": s["code"],
-                      "summary": s["summary"], "rows": len(s["residents"])}
+                      "summary": s["summary"], "rows": len(s["residents"]),
+                      "residents": s["residents"]}
                      for s in sections],
         "checks": checks,
         "problems": problems,

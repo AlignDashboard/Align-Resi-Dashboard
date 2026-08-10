@@ -159,15 +159,51 @@ def process_manifest():
             continue
 
         if item["report_type"] != "t12_statement":
-            code = parsed.get("property_code")
-            prop = code_to_prop.get(code.lower()) if code else None
-            if not prop:
-                print(f"[warn] unknown property code '{code}' in {item['name']} -- "
-                      f"add it to config/properties.json; skipping")
+            # One export can cover several property codes (Palma arrives as
+            # rspalman + rspalmas). Group the sections by the property they
+            # resolve to, so each property gets one record built from its own
+            # rows rather than the file's combined total.
+            groups = {}                      # slug -> (prop, [section, ...])
+            for sec in parsed.get("sections") or []:
+                c = (sec.get("property_code") or "").lower()
+                p = code_to_prop.get(c)
+                if not p:
+                    print(f"[warn] unknown property code '{sec.get('property_code')}' "
+                          f"in {item['name']} -- add it to config/properties.json; "
+                          f"that section is skipped")
+                    continue
+                groups.setdefault(p["slug"], (p, []))[1].append(sec)
+
+            if not groups:
+                # no sections (an older single-property parser shape)
+                code = parsed.get("property_code")
+                prop = code_to_prop.get(code.lower()) if code else None
+                if not prop:
+                    print(f"[warn] unknown property code '{code}' in {item['name']} -- "
+                          f"add it to config/properties.json; skipping")
+                    continue
+                ACCUMULATORS[item["report_type"]](prop, parsed)
+                print(f"[ok] stored {item['report_type']} for {prop['name']} "
+                      f"(as of {parsed.get('as_of') or 'unknown date'})")
                 continue
-            ACCUMULATORS[item["report_type"]](prop, parsed)
-            print(f"[ok] stored {item['report_type']} for {prop['name']} "
-                  f"(as of {parsed.get('as_of') or 'unknown date'})")
+
+            for slug, (prop, secs) in groups.items():
+                rows = [r for s in secs for r in (s.get("residents") or [])]
+                one = dict(parsed)
+                one["property"] = prop["name"]
+                one["property_code"] = secs[0].get("property_code")
+                one["property_codes"] = [s.get("property_code") for s in secs]
+                one["residents"] = rows
+                one["sections"] = [{k: v for k, v in s.items() if k != "residents"}
+                                   for s in secs]
+                if len(secs) > 1 and hasattr(mod, "summarise"):
+                    one["summary"] = mod.summarise(rows)
+                elif len(secs) == 1:
+                    one["summary"] = secs[0].get("summary") or parsed.get("summary")
+                ACCUMULATORS[item["report_type"]](prop, one)
+                codes = "+".join(c for c in one["property_codes"] if c)
+                print(f"[ok] stored {item['report_type']} for {prop['name']} "
+                      f"from {codes} (as of {parsed.get('as_of') or 'unknown date'})")
             continue
 
         book = (parsed.get("book") or "").strip().lower()

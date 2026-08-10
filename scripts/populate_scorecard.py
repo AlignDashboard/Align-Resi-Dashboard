@@ -102,6 +102,31 @@ def facts_from_landing(path="docs/landing.json"):
     }
 
 
+def facts_from_pipeline(slug, monthly_rent=None):
+    """data/<slug>/delinquency.json, as build_metrics writes it from Drive.
+
+    Already scrubbed of names. The delinquency report carries no rent, so the
+    Total Deliquency ratio needs --monthly-rent; without it that KPI is left
+    alone rather than guessed at.
+    """
+    path = os.path.join("data", slug, "delinquency.json")
+    if not os.path.exists(path):
+        return None
+    d = json.load(open(path))
+    s = d.get("summary") or {}
+    a = s.get("aging") or {}
+    gross = s.get("gross_owed")
+    return {
+        "as_of": d.get("as_of"),
+        "gross_owed": gross,
+        "split": [a.get("d31_60"), a.get("d61_90"), a.get("over90")],
+        "total_delinq_pct": (gross / monthly_rent) if (gross and monthly_rent) else None,
+        "source": f"{d.get('source_file') or path}"
+                  + (f" ({'+'.join(c for c in d.get('property_codes') or [] if c)})"
+                     if d.get("property_codes") else ""),
+    }
+
+
 def facts_from_report(path, monthly_rent):
     import parse_delinquency
     parsed = parse_delinquency.parse(path)
@@ -183,18 +208,30 @@ def main():
     ap.add_argument("--delinquency", help="a delinquency report to parse")
     ap.add_argument("--from-landing", action="store_true",
                     help="use docs/landing.json's delinquency block (The Landing)")
+    ap.add_argument("--from-pipeline", metavar="SLUG",
+                    help="use data/<SLUG>/delinquency.json, as the Drive pipeline wrote it")
     ap.add_argument("--property", default="the-landing", help="property slug to fill")
     ap.add_argument("--monthly-rent", type=float,
                     help="one month's billed rent, for the Total Deliquency ratio")
     ap.add_argument("--out", default=OUT)
     a = ap.parse_args()
 
-    if not (a.delinquency or a.from_landing):
-        sys.exit("give either --delinquency <report.xlsx> or --from-landing")
+    if not (a.delinquency or a.from_landing or a.from_pipeline):
+        sys.exit("give one of --delinquency <report.xlsx>, --from-landing, "
+                 "--from-pipeline <slug>")
 
-    facts = (facts_from_report(a.delinquency, a.monthly_rent) if a.delinquency
-             else facts_from_landing())
-    slug = "the-landing" if a.from_landing else a.property
+    if a.from_pipeline:
+        slug = a.from_pipeline
+        facts = facts_from_pipeline(slug, a.monthly_rent)
+        if facts is None:
+            print(f"no data/{slug}/delinquency.json — nothing to fill for {slug}")
+            return
+    elif a.delinquency:
+        facts = facts_from_report(a.delinquency, a.monthly_rent)
+        slug = a.property
+    else:
+        facts = facts_from_landing()
+        slug = "the-landing"
 
     sc = json.load(open(a.out))
     prop = next((p for p in sc["properties"] if p["slug"] == slug), None)
