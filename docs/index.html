@@ -183,7 +183,18 @@
   .sc-state-in_range  { color: var(--muted); }
   .sc-state-below     { color: var(--red); }
 
-  .sc-head { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; margin: 4px 0 14px; }
+  /* headline and tally at the left, the per-property health chart at the right */
+  .sc-topline { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;
+    margin: 4px 0 14px; }
+  .sc-head { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start;
+    flex: 1 1 320px; }
+  .sc-chart { flex: 0 0 auto; width: 320px; height: 190px; margin-left: auto; }
+  /* The matrix is wider than a narrow viewport. A grid item defaults to
+     min-width:auto, so without this the card refuses to shrink below the
+     table's min-content width and the whole page scrolls sideways instead of
+     the table scrolling inside its own box. */
+  #cScorecard, #cPortfolioScorecard { min-width: 0; }
+  .sc-scroll { overflow-x: auto; min-width: 0; }
   /* combined selectors so a state class always wins over the default */
   .sc-health .big { font-size: 30px; font-weight: 700; line-height: 1; color: var(--text); }
   .sc-health .big.sc-state-exceeding { color: var(--green); }
@@ -215,10 +226,6 @@
     letter-spacing: 1px; text-transform: uppercase; font-weight: 600; color: var(--amber);
     cursor: pointer; padding: 0; text-decoration: underline dotted; text-align: left; }
   table.sc .prop button:hover { color: var(--text); }
-  /* no color here: every .pct also carries an .sc-state-* class, and a more
-     specific selector would beat it and flatten the health signal to grey */
-  table.sc .prop .pct { display: block; font-size: 9px; font-weight: 400; letter-spacing: 0;
-    margin-top: 3px; text-transform: none; }
   table.sc td.cell { text-align: center; padding: 3px 6px; }
   table.sc tbody tr:hover td { background: var(--panel-2); }
 
@@ -359,8 +366,11 @@
       <div class="card wide" id="cPortfolioScorecard">
         <h2>KPI Scorecard</h2>
         <span class="eyebrow" id="poscEyebrow">PORTFOLIO HEALTH · LOADING…</span>
-        <div class="sc-head" id="poscHead"></div>
-        <div style="overflow-x:auto;"><div id="poscTable"></div></div>
+        <div class="sc-topline">
+          <div class="sc-head" id="poscHead"></div>
+          <div class="sc-chart"><canvas id="poscChart"></canvas></div>
+        </div>
+        <div class="sc-scroll"><div id="poscTable"></div></div>
         <div class="sc-legend" id="poscLegend"></div>
         <div class="sc-note" id="poscNote"></div>
       </div>
@@ -411,8 +421,12 @@
       <div class="card wide" id="cScorecard">
         <h2>KPI Scorecard</h2>
         <span class="eyebrow" id="scEyebrow">PORTFOLIO HEALTH · LOADING…</span>
-        <div class="sc-head" id="scHead"></div>
-        <div style="overflow-x:auto;"><div id="scTable"></div></div>
+        <!-- the canvas sits outside #scHead, which the renderer clears -->
+        <div class="sc-topline">
+          <div class="sc-head" id="scHead"></div>
+          <div class="sc-chart"><canvas id="scChart"></canvas></div>
+        </div>
+        <div class="sc-scroll"><div id="scTable"></div></div>
         <div class="sc-legend" id="scLegend"></div>
         <div class="sc-note" id="scNote"></div>
       </div>
@@ -694,13 +708,23 @@ const PLACEHOLDER_PROPERTIES = [
 const tabs = Array.from(document.querySelectorAll(".tab"));
 
 function selectTab(tab) {
+  let shown = null;
   tabs.forEach(t => {
     const on = t === tab;
     t.setAttribute("aria-selected", String(on));
     t.tabIndex = on ? 0 : -1;
-    document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
-    if (on) maybeLoadLanding(t);
+    const view = document.getElementById(t.getAttribute("aria-controls"));
+    view.hidden = !on;
+    if (on) { shown = view; maybeLoadLanding(t); }
   });
+  // A canvas built inside a hidden view has zero size, so anything already
+  // built in the view now becoming visible has to be measured again.
+  if (shown && typeof Chart !== "undefined") {
+    shown.querySelectorAll("canvas").forEach(cv => {
+      const ch = Chart.getChart(cv);
+      if (ch) ch.resize();
+    });
+  }
 }
 
 tabs.forEach(t => t.addEventListener("click", () => selectTab(t)));
@@ -1128,6 +1152,79 @@ function scTone(counts) {
   return counts.exceeding > 0 ? "exceeding" : "in_range";
 }
 
+// Writes each property's at-or-above percentage in a column past the bars. These
+// figures used to sit under the property names, so they have to stay readable
+// without hovering. Colour is read at draw time so the theme toggle's
+// chart.update() picks up the new palette.
+const scBarLabels = {
+  id: "scBarLabels",
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    const data = chart.data.datasets[0].data;
+    ctx.save();
+    ctx.font = "600 9px " + Chart.defaults.font.family;
+    ctx.fillStyle = getComputedStyle(document.documentElement)
+      .getPropertyValue("--text").trim() || "#e6e9ef";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+      if (data[i] === null || data[i] === undefined) return;
+      ctx.fillText(Math.round(data[i]) + "%", chart.chartArea.right + 6, bar.y);
+    });
+    ctx.restore();
+  }
+};
+
+// Per-property share of KPIs at or above target, ranked — the number that used
+// to sit under each property name in the matrix.
+//
+// Each bar runs the full 0-100%: teal is the share at or above target, red the
+// share below it. Colouring whole bars by worst-state instead (the old
+// per-property tint) painted six of seven red, because one below-target KPI out
+// of 28 was enough — this way the red is as long as the problem actually is,
+// and no threshold has to be invented to decide what counts as bad.
+function scHealthChart(canvasId) {
+  const cv = canvasId && document.getElementById(canvasId);
+  if (!cv || typeof Chart === "undefined") return;
+  const props = SC.properties.slice()
+    .sort((a, b) => (b.at_or_above === null ? -1 : b.at_or_above)
+                  - (a.at_or_above === null ? -1 : a.at_or_above));
+  const pct = props.map(p => p.at_or_above === null ? null : p.at_or_above * 100);
+  const prev = Chart.getChart(cv);
+  if (prev) prev.destroy();
+  new Chart(cv, {
+    type: "bar",
+    data: { labels: props.map(p => p.label),
+      datasets: [
+        { label: "At or above target", data: pct, backgroundColor: C.teal,
+          borderWidth: 0, barPercentage: .78, categoryPercentage: .92 },
+        { label: "Below target", data: pct.map(v => v === null ? null : 100 - v),
+          backgroundColor: C.red, borderWidth: 0, barPercentage: .78, categoryPercentage: .92 },
+      ] },
+    options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+      layout: { padding: { right: 34 } },        // room for the value column
+      plugins: {
+        legend: { display: true, position: "top", align: "end",
+          labels: { boxWidth: 8, boxHeight: 8, padding: 8, font: { size: 8.5 } } },
+        tooltip: { callbacks: {
+          label: c => {
+            const p = props[c.dataIndex];
+            const n = Math.round(c.parsed.x / 100 * p.scored);
+            return c.dataset.label + ": " + Math.round(c.parsed.x) + "% (" + n + " of " +
+              p.scored + " KPIs)";
+          },
+          afterBody: c => {
+            const p = props[c[0].dataIndex];
+            return p.below_metrics.length ? "Below: " + p.below_metrics.join(", ") : "";
+          } } } },
+      scales: {
+        x: { stacked: true, min: 0, max: 100, grid: gridCfg,
+          ticks: { callback: v => v + "%", font: { size: 8.5 }, maxTicksLimit: 3 } },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } } } },
+    plugins: [scBarLabels],
+  });
+}
+
 // Renders the full matrix into one set of mount points. Called for both the
 // Scorecard tab and the top of the Portfolio view — same data, same code.
 async function renderScorecard(ids) {
@@ -1181,9 +1278,13 @@ async function renderScorecard(ids) {
     }
   });
 
-  // Row header: the property, linked to its view, with its health percentage.
+  // Row header: just the property, linked to its view. The health percentage
+  // that used to sit under the name is now the chart at the top right.
   function scPropCell(p) {
     const td = elc("td", "prop");
+    td.title = p.label + " — " + (p.below_metrics.length
+      ? "below target: " + p.below_metrics.join(", ")
+      : "nothing below target");
     // Link the label when that property has a tab, built-out or placeholder.
     const tab = p.slug && (document.getElementById("tabProp-" + p.slug) ||
       (p.slug === "the-landing" ? document.getElementById("tabView2") : null));
@@ -1196,14 +1297,10 @@ async function renderScorecard(ids) {
     } else {
       td.appendChild(document.createTextNode(p.label));
     }
-    const pct = elc("span", "pct", p.at_or_above === null ? "—" : fmPct(p.at_or_above, 0));
-    pct.classList.add("sc-state-" + scTone(p.counts));
-    pct.title = p.below_metrics.length
-      ? "Below target: " + p.below_metrics.join(", ")
-      : "Nothing below target";
-    td.appendChild(pct);
     return td;
   }
+
+  scHealthChart(ids.chart);
 
   const host = document.getElementById(ids.table);
   host.textContent = "";
@@ -1263,7 +1360,8 @@ async function renderScorecard(ids) {
     .map(m => m.name + " (" + m.counts.below + ")");
   const unmapped = SC.properties.filter(p => !p.slug).map(p => p.label);
   document.getElementById(ids.note).textContent =
-    "Column % is the share of that property's KPIs at or above target; hover a cell for its status. " +
+    "The chart ranks each property by the share of its KPIs at or above target; " +
+    "hover a cell for its status. " +
     (scHasValues(SC) ? "" : "Each cell reserves space for its measured number — \u201c" + SC_PENDING +
       "\u201d means the value has not been supplied yet, not that the KPI is untracked. ") +
     (weakest.length ? "Most below-target KPIs: " + weakest.join(", ") + ". " : "") +
@@ -1273,9 +1371,9 @@ async function renderScorecard(ids) {
 }
 // the Scorecard tab and the top of the Portfolio view carry the same matrix
 renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
-                  legend: "scLegend", note: "scNote" });
+                  legend: "scLegend", note: "scNote", chart: "scChart" });
 renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
-                  legend: "poscLegend", note: "poscNote" });
+                  legend: "poscLegend", note: "poscNote", chart: "poscChart" });
 // property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
 scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
 
