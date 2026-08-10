@@ -2,26 +2,28 @@
 """Build docs/scorecard.json — the KPI health scorecard.
 
 Reads the "KPI (Flipped Axis)" sheet of the KPI scorecard workbook, which
-carries one more metric than the MVP sheet and defines the metric groups in
-its merged header row.
+defines the metric groups in its merged header row, and (since v10) the
+"KPI Target Ranges" sheet, which publishes the numeric bands behind each
+status plus the lease-up overrides for Palma North/South.
 
-Statuses today are the literal symbols the workbook holds (set by hand).
-The numeric ranges that decide green/yellow/red are not in the workbook yet;
-when they arrive, add them under "thresholds" and compute "status" from the
-measured value. The dashboard reads status only, so it will not need changing.
+Statuses are still the literal symbols the workbook holds (set by hand);
+the ranges are published alongside them under "thresholds" so the dashboard
+can show what each symbol means, not yet to recompute the symbols.
 
 Usage: python scripts/extract_scorecard.py <path-to-KPI_Scorecard.xlsx>
 """
 import datetime
 import json
+import re
 import sys
 
 import openpyxl
 from openpyxl.utils import get_column_letter
 
-SRC = sys.argv[1] if len(sys.argv) > 1 else "KPI_Scorecard_Formatted_V4.xlsx"
+SRC = sys.argv[1] if len(sys.argv) > 1 else "KPI_Scorecard_Formatted_v10.xlsx"
 OUT = "docs/scorecard.json"
 SHEET = "KPI (Flipped Axis)"
+RANGES_SHEET = "KPI Target Ranges"
 
 HEADER_GROUP_ROW = 7
 HEADER_METRIC_ROW = 8
@@ -29,11 +31,13 @@ FIRST_DATA_ROW = 9
 FIRST_METRIC_COL = 3          # C
 
 # From the workbook's own legend cells (C4/G4/K4) — do not re-invent these.
+# v10 changed the in-range band to white: it carries no color indicator, only
+# the ● symbol. The dashboard renders it clear/neutral for the same reason.
 LEGEND = [
     {"symbol": "▲", "state": "exceeding", "label": "Exceeding KPI target range",
      "color": "green", "xlsx_fill": "FF00B050"},
     {"symbol": "●", "state": "in_range", "label": "In KPI target range",
-     "color": "yellow", "xlsx_fill": "FFFFC000"},
+     "color": "none", "xlsx_fill": "FFFFFFFF"},
     {"symbol": "▼", "state": "below", "label": "Below KPI target range",
      "color": "red", "xlsx_fill": "FFFF0000"},
 ]
@@ -110,6 +114,83 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
         "below_metrics": [m["name"] for m in metrics if statuses[m["name"]] == "below"],
     })
 
+# ---- target ranges (new in v10) ----------------------------------------
+# The ranges sheet spells each KPI slightly differently in two places
+# ("Total Deliquency" on the grid, "Total Delinquency" here; "# of work
+# orders" vs "# of open work orders"). Thresholds are keyed by the GRID's
+# metric names, since that is what the dashboard renders.
+def _norm(s):
+    return re.sub(r"\s+", " ", str(s)).strip().casefold()
+
+ALIASES = {                                   # ranges-sheet name -> grid name
+    "total delinquency": "Total Deliquency",
+    "# of open work orders": "# of work orders",
+    "open eliseai tasks": "Open Elise Tasks",
+}
+GRID_BY_NORM = {_norm(m["name"]): m["name"] for m in metrics}
+
+thresholds, leaseup_overrides = {}, []
+if RANGES_SHEET in wb.sheetnames:
+    rs = wb[RANGES_SHEET]
+
+    def find(label, col, after=1):
+        for r in range(after, rs.max_row + 1):
+            if _norm(rs.cell(row=r, column=col).value or "") == _norm(label):
+                return r
+        raise SystemExit(f"FATAL: no '{label}' row on {RANGES_SHEET!r} — layout moved")
+
+    hdr = find("Category", 2)
+    category = None
+    for r in range(hdr + 1, rs.max_row + 1):
+        kpi = rs.cell(row=r, column=3).value
+        if not kpi:
+            if rs.cell(row=r, column=2).value:      # a section below the table
+                break
+            continue
+        category = str(rs.cell(row=r, column=2).value or category or "").strip() or category
+        name = ALIASES.get(_norm(kpi)) or GRID_BY_NORM.get(_norm(kpi)) or str(kpi).strip()
+        thresholds[name] = {
+            "group": category,
+            "how": rs.cell(row=r, column=4).value,
+            "direction": rs.cell(row=r, column=5).value,
+            "exceeding": rs.cell(row=r, column=6).value,
+            "in_range": rs.cell(row=r, column=7).value,
+            "below": rs.cell(row=r, column=8).value,
+            "green_cutoff": rs.cell(row=r, column=9).value,
+            "red_cutoff": rs.cell(row=r, column=10).value,
+            "basis": rs.cell(row=r, column=11).value,
+        }
+
+    ov_hdr = find("KPI", 3, after=find("Lease-up overrides", 2))
+    for r in range(ov_hdr + 1, rs.max_row + 1):
+        kpi = rs.cell(row=r, column=3).value
+        if not kpi:
+            break
+        leaseup_overrides.append({
+            "kpi": ALIASES.get(_norm(kpi)) or GRID_BY_NORM.get(_norm(kpi)) or str(kpi).strip(),
+            "approach": rs.cell(row=r, column=4).value,
+            "exceeding": rs.cell(row=r, column=5).value,
+            "in_range": rs.cell(row=r, column=6).value,
+            "below": rs.cell(row=r, column=7).value,
+        })
+
+    unmatched = sorted(set(thresholds) - {m["name"] for m in metrics})
+    if unmatched:
+        print("  WARNING: ranges for KPIs not on the grid: " + ", ".join(unmatched))
+    missing = sorted({m["name"] for m in metrics} - set(thresholds))
+    if missing:
+        print("  WARNING: grid KPIs with no published range: " + ", ".join(missing))
+
+# ---- legend drift guard --------------------------------------------------
+# The LEGEND above mirrors the workbook's legend cells; if the workbook
+# changes its colors again, fail loudly rather than publish stale semantics.
+for cell_ref, expect in (("C4", "FF00B050"), ("G4", "FFFFFFFF"), ("K4", "FFFF0000")):
+    f = ws[cell_ref].fill
+    got = f.fgColor.rgb if f.patternType else None
+    if got != expect:
+        raise SystemExit(f"FATAL: legend cell {cell_ref} fill is {got}, expected {expect} — "
+                         "the workbook legend changed; update LEGEND to match")
+
 # ---- portfolio roll-up ----
 total = {"exceeding": 0, "in_range": 0, "below": 0, "missing": 0}
 for p in properties:
@@ -132,8 +213,10 @@ data = {
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "source_workbook": SRC.split("/")[-1],
         "source_sheet": SHEET,
-        "note": ("Statuses are set by hand in the workbook. The numeric ranges behind "
-                 "green/yellow/red are not published yet — see \"thresholds\"."),
+        "note": ("Statuses are set by hand in the workbook. The numeric bands behind "
+                 "each status are published under \"thresholds\"; in-range carries no "
+                 "color indicator, by design. Palma North/South are in lease-up and "
+                 "four of their KPIs are scored against the lease-up overrides."),
     },
     "legend": LEGEND,
     "groups": [{"name": g, "metrics": [m["name"] for m in metrics if m["group"] == g]}
@@ -148,10 +231,13 @@ data = {
         "at_or_above": round((total["exceeding"] + total["in_range"]) / scored_total, 4) if scored_total else None,
         "by_metric": by_metric,
     },
-    # Placeholder for the ranges that will define each status. Expected shape:
-    #   {"Leased %": {"green": [0.95, null], "yellow": [0.90, 0.95], "red": [null, 0.90],
-    #                 "unit": "pct", "direction": "higher_is_better"}}
-    "thresholds": None,
+    # Keyed by the grid's metric names. Each entry: group, how (measurement),
+    # direction, the three display bands, the numeric green/red cutoffs, and
+    # the sourcing rationale.
+    "thresholds": thresholds or None,
+    # Palma North/South are in lease-up; these KPIs are scored against
+    # different bands there (see each entry's "approach").
+    "leaseup_overrides": leaseup_overrides or None,
 }
 
 with open(OUT, "w") as f:

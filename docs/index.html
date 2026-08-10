@@ -40,12 +40,14 @@
     --on-amber:   #10130f;
     --grid:       #2a323d;
     --tick:       #8b95a4;
-    /* scorecard status chips: fill behind the value, plus its edge */
+    /* scorecard status chips: fill behind the value, plus its edge.
+       in-range is deliberately clear — the workbook's v10 legend made the
+       in-range band white, carrying no color indicator */
     --fill-exceeding: rgba(107,191,138,.18);
-    --fill-in_range:  rgba(224,165,63,.18);
+    --fill-in_range:  transparent;
     --fill-below:     rgba(217,105,79,.20);
     --edge-exceeding: rgba(107,191,138,.50);
-    --edge-in_range:  rgba(224,165,63,.50);
+    --edge-in_range:  transparent;
     --edge-below:     rgba(217,105,79,.55);
   }
   :root[data-theme="light"] {
@@ -67,10 +69,10 @@
     --grid:       #dfe3e9;
     --tick:       #5f6a78;
     --fill-exceeding: rgba(45,117,73,.13);
-    --fill-in_range:  rgba(157,106,22,.13);
+    --fill-in_range:  transparent;
     --fill-below:     rgba(178,63,40,.13);
     --edge-exceeding: rgba(45,117,73,.42);
-    --edge-in_range:  rgba(157,106,22,.42);
+    --edge-in_range:  transparent;
     --edge-below:     rgba(178,63,40,.45);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -175,16 +177,17 @@
 
   /* ---------- KPI scorecard ----------
      Status colors follow the workbook legend exactly:
-     exceeding = green, in range = yellow/amber, below = red. */
+     exceeding = green, below = red, and (since v10) in range = clear —
+     no color indicator, just the neutral ● symbol. */
   .sc-state-exceeding { color: var(--green); }
-  .sc-state-in_range  { color: var(--amber); }
+  .sc-state-in_range  { color: var(--muted); }
   .sc-state-below     { color: var(--red); }
 
   .sc-head { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; margin: 4px 0 14px; }
   /* combined selectors so a state class always wins over the default */
   .sc-health .big { font-size: 30px; font-weight: 700; line-height: 1; color: var(--text); }
   .sc-health .big.sc-state-exceeding { color: var(--green); }
-  .sc-health .big.sc-state-in_range  { color: var(--amber); }
+  .sc-health .big.sc-state-in_range  { color: var(--text); }   /* in range = no indicator */
   .sc-health .big.sc-state-below     { color: var(--red); }
   .sc-health .lbl { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-top: 5px; }
   .sc-tally { display: flex; gap: 16px; flex-wrap: wrap; }
@@ -575,11 +578,14 @@ window.addEventListener("load", () => { if (!sessionUnlocked()) pwInput.focus();
    To fill one in, give it a view like The Landing's and drop it from
    this list. Slugs match config/properties.json.
    ============================================================ */
+// Scorecard slices to render on property tabs once scorecard.json loads
+// (filled by buildPropertyTabs, consumed in the scorecard section below).
+const propScorecardMounts = [];
 const PLACEHOLDER_PROPERTIES = [
   { slug: "chorus",           name: "Chorus" },
   { slug: "madelon",          name: "Madelon" },
   { slug: "335-third-street", name: "335 Third St" },
-  { slug: "palma",            name: "Palma" },
+  { slug: "palma",            name: "Palma", scorecard: true },
   { slug: "fitzgerald",       name: "Fitzgerald" },
 ];
 
@@ -610,6 +616,42 @@ const PLACEHOLDER_PROPERTIES = [
 
     const grid = document.createElement("div");
     grid.className = "grid";
+
+    // Properties flagged for it get their scorecard slice above the
+    // placeholder, same card as The Landing's. Rendered once scorecard.json
+    // arrives (renderPropertyScorecard reads the shared SC).
+    if (p.scorecard) {
+      const ids = {
+        eyebrow: "psc-" + p.slug + "-eyebrow", health: "psc-" + p.slug + "-health",
+        strip: "psc-" + p.slug + "-strip", legend: "psc-" + p.slug + "-legend",
+        note: "psc-" + p.slug + "-note",
+      };
+      const sc = document.createElement("div");
+      sc.className = "card wide";
+      const head = document.createElement("div");
+      head.className = "card-head";
+      const hleft = document.createElement("div");
+      const h2 = document.createElement("h2");
+      h2.textContent = "KPI Scorecard — " + p.name;
+      const eyebrow = document.createElement("span");
+      eyebrow.className = "eyebrow"; eyebrow.id = ids.eyebrow; eyebrow.textContent = "LOADING…";
+      hleft.append(h2, eyebrow);
+      const health = document.createElement("div");
+      health.className = "sc-health"; health.id = ids.health;
+      head.append(hleft, health);
+      const strip = document.createElement("div");
+      strip.className = "sc-strip"; strip.id = ids.strip;
+      const legend = document.createElement("div");
+      legend.className = "sc-legend"; legend.id = ids.legend;
+      const note = document.createElement("div");
+      note.className = "sc-note"; note.id = ids.note;
+      sc.append(head, strip, legend, note);
+      grid.appendChild(sc);
+      // scPromise is declared further down the script — record the mount and
+      // let the scorecard section render it once the JSON arrives
+      propScorecardMounts.push({ slug: p.slug, ids });
+    }
+
     const card = document.createElement("div");
     card.className = "card wide";
     card.style.minHeight = "300px";
@@ -622,8 +664,11 @@ const PLACEHOLDER_PROPERTIES = [
     big.textContent = p.name;
     const why = document.createElement("div");
     why.className = "why";
-    why.textContent = "Placeholder. This property's view has not been built yet — " +
-      "its KPI statuses are on the Scorecard tab in the meantime.";
+    why.textContent = p.scorecard
+      ? "Placeholder. This property's full view has not been built yet — " +
+        "its KPI scorecard slice is above."
+      : "Placeholder. This property's view has not been built yet — " +
+        "its KPI statuses are on the Scorecard tab in the meantime.";
     const dash2 = document.createElement("div"); dash2.className = "dash";
     empty.append(dash1, big, why, dash2);
     card.appendChild(empty);
@@ -1013,9 +1058,11 @@ const numOr = (inp, fallback) => {
    KPI SCORECARD (data: scorecard.json)
    Portfolio matrix on the Portfolio view, and each property's own
    slice at the top of its view. Status colors come from the
-   workbook legend: exceeding=green, in range=yellow, below=red.
-   Numeric ranges behind the statuses are not published yet, so
-   nothing here invents a band — it reports what the source holds.
+   workbook legend: exceeding=green, below=red, and in range=clear
+   (v10 made the in-range band white — no color indicator).
+   The numeric bands behind each status are published under
+   "thresholds" and shown in cell tooltips; statuses themselves are
+   still the workbook's hand-set symbols.
    ============================================================ */
 let SC = null;                       // parsed scorecard.json, shared by both views
 const scPromise = (async () => {
@@ -1044,6 +1091,13 @@ function scChip(state, value) {
   return chip;
 }
 const scValue = (prop, metric) => (prop.values || {})[metric] || null;
+// The band behind a status, now that the workbook publishes its ranges —
+// "In KPI target range (95.0% – 98.9%)" instead of the bare label.
+function scBand(metric, state) {
+  const t = (SC.thresholds || {})[metric];
+  const band = t && { exceeding: t.exceeding, in_range: t.in_range, below: t.below }[state];
+  return band ? " (" + band + ")" : "";
+}
 const scHasValues = sc => sc.properties.some(p =>
   Object.values(p.values || {}).some(v => v && v.display != null));
 function scLegendInto(host) {
@@ -1144,7 +1198,8 @@ async function renderScorecard() {
         td.appendChild(scChip(st, v));
         td.title = p.label + " · " + name + ": " +
           ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
-          (v && v.display != null ? " (" + v.display + ")" : " — value pending");
+          scBand(name, st) +
+          (v && v.display != null ? " — " + v.display : " — value pending");
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -1171,6 +1226,8 @@ async function renderScorecard() {
     " Source: " + SC.meta.source_workbook + ".";
 }
 renderScorecard();
+// property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
+scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
 
 // A property's own slice of the scorecard, for the top of its view.
 function renderPropertyScorecard(slug, ids) {
@@ -1206,14 +1263,22 @@ function renderPropertyScorecard(slug, ids) {
       m.appendChild(elc("span", "nm", name));
       m.appendChild(scChip(st, v));
       m.title = name + ": " + ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
-        (v && v.display != null ? " (" + v.display + ")" : " — value pending");
+        scBand(name, st) +
+        (v && v.display != null ? " — " + v.display : " — value pending");
       strip.appendChild(m);
     });
   });
 
   scLegendInto(document.getElementById(ids.legend));
+  // Palma North/South are in lease-up: four KPIs are scored against the
+  // workbook's lease-up overrides rather than the stabilised bands.
+  const ov = slug === "palma" && SC.leaseup_overrides
+    ? "Lease-up overrides apply here: " +
+      SC.leaseup_overrides.map(o => o.kpi + " (" + String(o.approach || "").toLowerCase().replace(/\.$/, "") + ")").join("; ") + ". "
+    : "";
   document.getElementById(ids.note).textContent =
     (p.below_metrics.length ? "Below target: " + p.below_metrics.join(", ") + ". " : "") +
+    ov +
     (scHasValues(SC) ? "" : "\u201c" + SC_PENDING + "\u201d marks a value not supplied yet. ") +
     SC.meta.note;
 }
