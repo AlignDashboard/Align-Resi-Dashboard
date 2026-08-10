@@ -253,8 +253,10 @@ def main():
 
     meas = sc.setdefault("measured", {})
     meas[slug] = {"source": facts["source"], "as_of": facts["as_of"],
+                  # keyed on display, not raw: an unscored KPI has figures to
+                  # show but no single number to classify
                   "kpis": sorted(k for k in measurements(facts)
-                                 if prop["values"].get(k, {}).get("raw") is not None)}
+                                 if prop["values"].get(k, {}).get("display") is not None)}
     sc["meta"]["note"] = (sc["meta"]["note"].split(" Measured values")[0] +
                           " Measured values, where present, are computed from the "
                           "underlying report and their status is derived from the "

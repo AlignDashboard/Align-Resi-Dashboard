@@ -1,0 +1,59 @@
+name: Inspect Drive Reports
+
+# Manual only. Downloads every report in the Drive parent — including folders
+# that have no parser yet — and prints each file's STRUCTURE to the log so a new
+# export can be understood without the file leaving the runner.
+#
+# It commits nothing and publishes nothing. scripts/inspect_report.py redacts
+# any column sitting under a person-name header, so what reaches the log is
+# labels, property codes, counts and sums. Never point this at anything whose
+# structure you would not be happy to read in a build log.
+
+on:
+  workflow_dispatch:
+    inputs:
+      delinquency_probe:
+        description: "Also run the delinquency tie-out probe"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --quiet openpyxl google-api-python-client google-auth
+
+      - name: Fetch every report, parsed or not
+        env:
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: python scripts/fetch_drive.py --all
+
+      - name: Inspect the delinquency reports
+        if: ${{ inputs.delinquency_probe }}
+        run: |
+          shopt -s nullglob
+          files=(_downloads/ar_analytics/*.xlsx)
+          if [ ${#files[@]} -eq 0 ]; then echo "no delinquency report present"; exit 0; fi
+          python scripts/inspect_report.py --delinquency "${files[@]}"
+
+      - name: Inspect everything else that arrived
+        run: |
+          shopt -s nullglob
+          files=(_downloads/_pending/*/*.xlsx _downloads/rent_roll/*.xlsx)
+          if [ ${#files[@]} -eq 0 ]; then echo "nothing else waiting"; exit 0; fi
+          python scripts/inspect_report.py "${files[@]}"
+
+      - name: Refuse to leave a raw report behind
+        if: always()
+        run: rm -rf _downloads && echo "downloads removed"

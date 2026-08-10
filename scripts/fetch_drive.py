@@ -17,6 +17,7 @@ import os
 import io
 import json
 import pathlib
+import sys
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -62,6 +63,10 @@ def _download(svc, file_id, dest):
 
 
 def main():
+    # --all also downloads folders that have no parser yet, into
+    # _downloads/_pending/<folder>/. For inspecting a new report format; the
+    # daily pipeline never passes it, so nothing unparsed reaches the build.
+    fetch_pending = "--all" in sys.argv
     cfg = json.load(open("config/report_map.json"))
     svc = _service()
     parent = os.environ["GDRIVE_FOLDER_ID"]
@@ -100,6 +105,11 @@ def main():
                 files = contents(name)
                 print(f"[skip] '{name}' (no parser yet) — {len(files)} file(s) "
                       f"waiting: {[f['name'] for f in files]}")
+                if fetch_pending:
+                    for f in files:
+                        dest = DL_ROOT / "_pending" / name / f["name"]
+                        _download(svc, f["id"], dest)
+                        print(f"[ok] downloaded (unparsed) {name}/{f['name']}")
             else:
                 print(f"[skip] '{name}' (no parser yet, folder absent)")
             continue
