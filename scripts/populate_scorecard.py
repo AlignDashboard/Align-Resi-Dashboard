@@ -116,11 +116,30 @@ def facts_from_pipeline(slug, monthly_rent=None):
     s = d.get("summary") or {}
     a = s.get("aging") or {}
     gross = s.get("gross_owed")
+
+    # Denominator: an explicit --monthly-rent wins; otherwise the latest month's
+    # operating revenue that build_metrics derived from the property's T12
+    # statements (GL 4999-9999 — total operating revenue rather than billed
+    # rent alone, so the basis is recorded alongside the number).
+    denom, denom_note = monthly_rent, "--monthly-rent"
+    if not denom:
+        mrpath = os.path.join("data", slug, "monthly_revenue.json")
+        if os.path.exists(mrpath):
+            mr = json.load(open(mrpath))
+            if (mr.get("revenue_month") or 0) > 0:
+                denom = mr["revenue_month"]
+                months = sorted({c.get("month") for c in (mr.get("codes") or {}).values()})
+                denom_note = (f"{mr['revenue_month']:,.0f}/mo operating revenue "
+                              f"({'+'.join(sorted(mr.get('codes') or {}))}, "
+                              f"{'/'.join(m for m in months if m)}; {mr.get('basis')})")
+
     return {
         "as_of": d.get("as_of"),
         "gross_owed": gross,
         "split": [a.get("d31_60"), a.get("d61_90"), a.get("over90")],
-        "total_delinq_pct": (gross / monthly_rent) if (gross and monthly_rent) else None,
+        "total_delinq_pct": (gross / denom) if (gross and denom) else None,
+        "denominator": denom,
+        "denominator_note": denom_note if denom else None,
         "source": f"{d.get('source_file') or path}"
                   + (f" ({'+'.join(c for c in d.get('property_codes') or [] if c)})"
                      if d.get("property_codes") else ""),
@@ -294,6 +313,8 @@ def main():
                   # show but no single number to classify
                   "kpis": sorted(k for k in measurements(facts)
                                  if prop["values"].get(k, {}).get("display") is not None)}
+    if facts.get("denominator_note"):
+        meas[slug]["denominator"] = facts["denominator_note"]
     sc["meta"]["note"] = (sc["meta"]["note"].split(" Measured values")[0] +
                           " Measured values, where present, are computed from the "
                           "underlying report and their status is derived from the "

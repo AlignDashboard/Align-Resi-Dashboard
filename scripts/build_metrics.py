@@ -79,6 +79,46 @@ def store_expense_ratio(prop, parsed):
     return hist
 
 
+def store_monthly_revenue(prop, t12_parses):
+    """data/<slug>/monthly_revenue.json — the latest month's total operating
+    revenue, summed across this property's codes (Palma = rspalman + rspalmas).
+
+    This exists to give ratio KPIs a denominator: the scorecard's Total
+    Deliquency is gross resident AR over one month's billed rent, and a
+    delinquency report does not carry the rent. The nearest thing the pipeline
+    holds is GL 4999-9999, which is total operating revenue rather than billed
+    rent alone — close, and honest as long as the basis is recorded.
+
+    Per code, only the statement with the latest period end counts (the Drive
+    folder often holds superseded copies of the same statement).
+    """
+    latest = {}                          # code -> parse with the newest period
+    for p in t12_parses:
+        c = p["property_code"]
+        if c not in latest or period_key(p["period_end"]) > period_key(latest[c]["period_end"]):
+            latest[c] = p
+    codes = {}
+    for c, p in sorted(latest.items()):
+        # last month with a non-zero value; a statement can end on an empty month
+        rev = p["revenue_monthly"]
+        idx = max((i for i, v in enumerate(rev) if v), default=None)
+        if idx is None:
+            continue
+        codes[c] = {"month": p["labels"][idx], "revenue": rev[idx],
+                    "period_end": p["period_end"]}
+    out = {
+        "revenue_month": round(sum(v["revenue"] for v in codes.values()), 2),
+        "basis": "GL 4999-9999 total operating revenue, latest reported month per code",
+        "codes": codes,
+    }
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    json.dump(out, open(d / "monthly_revenue.json", "w"), indent=2)
+    print(f"[ok] stored monthly_revenue for {prop['name']}: "
+          f"{out['revenue_month']:,.2f}/mo across {'+'.join(codes) or 'no codes'}")
+    return out
+
+
 # Personal fields stripped from every report before anything is written to
 # disk. Parsers read them because the source reports contain them (the rent roll
 # needs resident_code to tell an occupied unit from a vacant one), but nothing
@@ -145,6 +185,8 @@ def process_manifest():
     # Deterministic order: sort by filename so date-prefixed files process
     # oldest-to-newest and the newest file wins any same-period collision.
     manifest.sort(key=lambda x: x["name"])
+
+    t12_by_slug = {}                 # slug -> (prop, [t12 parse, ...])
 
     for item in manifest:
         if item["report_type"] not in ACCUMULATORS:
@@ -224,6 +266,11 @@ def process_manifest():
         store_expense_ratio(prop, parsed)
         print(f"[ok] stored expense_ratio for {prop['name']} ({parsed['period_end']}) "
               f"from code '{code}'")
+        t12_by_slug.setdefault(prop["slug"], (prop, []))[1].append(parsed)
+
+    # One month's operating revenue per property, for the ratio KPIs.
+    for slug, (prop, parses) in t12_by_slug.items():
+        store_monthly_revenue(prop, parses)
 
 
 # ---- metrics.json generation ---------------------------------------------
