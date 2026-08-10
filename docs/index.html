@@ -1340,7 +1340,7 @@ async function loadLanding() {
       [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "rent capture — loss to lease by month"],
       [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
       [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate), "cRentCapture", "rent capture"],
-      ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.recurring_noi / L.renewal.ttm_operating_noi) + " at current assumptions", "cRenewal", "renewal pipeline"],
+      ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.recurring_noi / L.renewal.ttm_operating_noi) + " at workbook assumptions", "cRenewal", "renewal pipeline"],
       [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cGaps", "largest unit gaps"],
       [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
       [fm$(L.rate_occ.ttm_value_today), "TTM value today", "at " + fmPct(L.inputs.cap_rate) + " cap", "cRateOcc", "rate vs occupancy"],
@@ -1473,7 +1473,8 @@ async function loadLanding() {
       ["+" + fm$(r.recNOI) + "/yr", "recurring NOI"],
       ["+" + fmPct(r.uplift), "NOI uplift"],
       [fm$(r.value), "value at cap"],
-      [r.moveouts.toFixed(1), "move-outs"],
+      // whole units: a fractional move-out is an artefact of the retention rate
+      [String(Math.round(r.moveouts)), "move-outs"],
     ]);
     const data = r.rows.map(x => Math.round(x.incr));
     if (renewalChart) { renewalChart.data.datasets[0].data = data; renewalChart.update(); return; }
@@ -1490,8 +1491,10 @@ async function loadLanding() {
     });
   }
   const rFields = inputRow(document.getElementById("lrInputs"), [
-    { key: "inc", label: "renewal increase %", val: null, ph: "wb 6.3-15", step: "0.5" },
-    { key: "ret", label: "retention %", val: null, ph: "wb 70/60", step: "5" },
+    // The card opens on a flat 10% / 50% policy case rather than the workbook's
+    // per-month basis. Clearing either box falls back to that basis per month.
+    { key: "inc", label: "renewal increase %", val: 10, ph: "wb 6.3-15", step: "0.5" },
+    { key: "ret", label: "retention %", val: 50, ph: "wb 70/60", step: "5" },
     { key: "cap", label: "cap rate %", val: +(L.inputs.cap_rate * 100).toFixed(2), step: "0.25" },
     { key: "fee", label: "mgmt fee %", val: +(mgmtFee * 100).toFixed(2), step: "0.1" },
     { key: "vac", label: "incr. vacancy %", val: +((L.inputs.incr_vacancy || 0.05) * 100).toFixed(1), step: "0.5" },
@@ -1509,8 +1512,9 @@ async function loadLanding() {
       (cal.ratio_actual_to_model || 0).toFixed(2) + ").";
   })();
   document.getElementById("lrNote").textContent =
-    "Blue cells are changeable — leave increase or retention blank to use the workbook's " +
-    "per-month basis (statutory cap near-term, policy rate beyond). " + L.renewal.model_note;
+    "Blue cells are changeable — opens on a flat 10% increase at 50% retention; clear " +
+    "either box to fall back to the workbook's per-month basis (statutory cap near-term, " +
+    "policy rate beyond). " + L.renewal.model_note;
   renderRenewal();
 
   /* ---- Rate vs occupancy (live model) ---- */
