@@ -34,6 +34,16 @@ CODE = re.compile(r"\b(p\d{6,7}|rs\d{3}|rspalma[ns]|camadel\w*|camadret|"
 TOTALISH = re.compile(r"^\s*(grand )?total\b|^\s*subtotal\b", re.I)
 REDACTED = "<redacted>"
 
+# Property names from the master, so a report that spells the property out in
+# words instead of carrying a Yardi code can still be attributed.
+try:
+    import json as _json
+    PROPERTY_NAMES = sorted(
+        {p["name"] for p in _json.load(open("config/properties.json"))["properties"]}
+        | {"Palma North", "Palma South"}, key=len, reverse=True)
+except Exception:                                          # noqa: BLE001
+    PROPERTY_NAMES = []
+
 
 def name_columns(ws, search_rows=25):
     """Columns sitting under a person-name header, plus the header row it found."""
@@ -70,13 +80,28 @@ def inspect(path):
               f"   name column(s) redacted: "
               f"{sorted(CL(c) for c in redact) or 'none found'}")
 
-        codes = set()
+        codes, names_seen = set(), set()
         for row in ws.iter_rows():
             for c in row:
                 if isinstance(c.value, str) and c.column not in redact:
                     for m in CODE.findall(c.value):
                         codes.add(m)
+                    for pname in PROPERTY_NAMES:
+                        if re.search(r"\b" + re.escape(pname) + r"\b", c.value, re.I):
+                            names_seen.add(pname)
         print(f"      property code(s) seen: {sorted(codes) or 'NONE'}")
+        print(f"      property name(s) seen: {sorted(names_seen) or 'NONE'}")
+
+        # Rows above the header often carry the report title and the property it
+        # was run for, and a header can span two rows — so show the top of the
+        # sheet, name columns still redacted.
+        print("      top of sheet:")
+        for r in range(1, min(ws.max_row, 6) + 1):
+            cells = [f"{CL(c)}={show(ws.cell(row=r, column=c).value, c in redact)}"
+                     for c in range(1, ws.max_column + 1)
+                     if ws.cell(row=r, column=c).value is not None]
+            if cells:
+                print(f"        r{r}: " + " | ".join(cells))
 
         # the header row, then a few data rows, then anything total-shaped
         if hdr_row:
