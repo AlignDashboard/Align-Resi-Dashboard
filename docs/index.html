@@ -194,24 +194,33 @@
   .sc-tally .t { font-size: 11px; letter-spacing: .5px; color: var(--muted); white-space: nowrap; }
   .sc-tally .t b { font-size: 15px; font-weight: 700; margin-right: 5px; }
 
+  /* Properties are rows and KPIs are columns, as in the workbook. The KPI
+     columns are split into batches that fit the page width, each batch a
+     block of property rows below the previous one (see MAX_COLS in the JS). */
+  .sc-block + .sc-block { margin-top: 20px; }
   table.sc { width: 100%; border-collapse: collapse; font-size: 10.5px; }
   table.sc th, table.sc td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
   table.sc thead th { color: var(--muted); font-size: 9px; letter-spacing: 1px;
     text-transform: uppercase; font-weight: 600; text-align: center; vertical-align: bottom; }
-  table.sc thead th.metric-col { text-align: left; width: 30%; }
-  table.sc th.prop button { background: none; border: none; font-family: inherit; font-size: 9px;
+  /* group band sitting above the KPIs it covers */
+  table.sc thead th.grp { color: var(--amber); letter-spacing: 2px; padding-bottom: 8px; }
+  /* KPI names head columns now, so they wrap instead of running off the page.
+     Named sc-kpi, not kpi: .kpi is the dashboard's KPI tile (display:block),
+     which would turn every header cell into a stacked block. */
+  table.sc thead th.sc-kpi { white-space: normal; font-size: 8.5px; letter-spacing: .5px;
+    line-height: 1.35; width: 94px; min-width: 94px; }
+  table.sc .prop-col { text-align: left; width: 150px; min-width: 150px; }
+  table.sc td.prop { text-align: left; color: var(--text); vertical-align: middle; }
+  table.sc .prop button { background: none; border: none; font-family: inherit; font-size: 9.5px;
     letter-spacing: 1px; text-transform: uppercase; font-weight: 600; color: var(--amber);
-    cursor: pointer; padding: 0; text-decoration: underline dotted; }
-  table.sc th.prop button:hover { color: var(--text); }
+    cursor: pointer; padding: 0; text-decoration: underline dotted; text-align: left; }
+  table.sc .prop button:hover { color: var(--text); }
   /* no color here: every .pct also carries an .sc-state-* class, and a more
      specific selector would beat it and flatten the health signal to grey */
-  table.sc th.prop .pct { display: block; font-size: 9px; font-weight: 400; letter-spacing: 0;
+  table.sc .prop .pct { display: block; font-size: 9px; font-weight: 400; letter-spacing: 0;
     margin-top: 3px; text-transform: none; }
-  table.sc tr.grp td { color: var(--amber); font-size: 9px; letter-spacing: 2px;
-    text-transform: uppercase; padding-top: 12px; border-bottom: 1px solid var(--line); }
-  table.sc td.name { color: var(--text); }
   table.sc td.cell { text-align: center; padding: 3px 6px; }
-  table.sc tbody tr:hover td.name { color: var(--amber); }
+  table.sc tbody tr:hover td { background: var(--panel-2); }
 
   /* Status chip: colored fill with the measured value on top. Sized for the
      widest realistic value ("100.0%", "$1,240") so columns will not reflow
@@ -1155,13 +1164,27 @@ async function renderScorecard(ids) {
   });
   head.appendChild(tally);
 
-  // matrix: metrics as rows (grouped), properties as columns
-  const tbl = elc("table", "sc");
-  const thead = elc("thead"), hr = elc("tr");
-  hr.appendChild(Object.assign(elc("th", "metric-col"), { textContent: "KPI" }));
-  SC.properties.forEach(p => {
-    const th = elc("th", "prop");
-    // Link the heading when that property has a tab, built-out or placeholder.
+  // Matrix in the workbook's own orientation: properties are rows, KPIs are
+  // columns. 28 KPI columns will not fit across the page, so the groups are
+  // packed into batches of at most MAX_COLS columns and each batch starts a
+  // fresh set of property rows below the previous one. Batching on group
+  // boundaries keeps a group's KPIs together instead of splitting them.
+  const MAX_COLS = 8;
+  const batches = [];
+  SC.groups.forEach(g => {
+    const last = batches[batches.length - 1];
+    if (last && last.cols + g.metrics.length <= MAX_COLS) {
+      last.groups.push(g);
+      last.cols += g.metrics.length;
+    } else {
+      batches.push({ groups: [g], cols: g.metrics.length });
+    }
+  });
+
+  // Row header: the property, linked to its view, with its health percentage.
+  function scPropCell(p) {
+    const td = elc("td", "prop");
+    // Link the label when that property has a tab, built-out or placeholder.
     const tab = p.slug && (document.getElementById("tabProp-" + p.slug) ||
       (p.slug === "the-landing" ? document.getElementById("tabView2") : null));
     if (tab) {
@@ -1169,32 +1192,51 @@ async function renderScorecard(ids) {
       b.type = "button";
       b.title = "Open the " + p.label + " view";
       b.addEventListener("click", () => selectTab(tab));
-      th.appendChild(b);
+      td.appendChild(b);
     } else {
-      th.appendChild(document.createTextNode(p.label));
+      td.appendChild(document.createTextNode(p.label));
     }
     const pct = elc("span", "pct", p.at_or_above === null ? "—" : fmPct(p.at_or_above, 0));
     pct.classList.add("sc-state-" + scTone(p.counts));
     pct.title = p.below_metrics.length
       ? "Below target: " + p.below_metrics.join(", ")
       : "Nothing below target";
-    th.appendChild(pct);
-    hr.appendChild(th);
-  });
-  thead.appendChild(hr);
-  tbl.appendChild(thead);
+    td.appendChild(pct);
+    return td;
+  }
 
-  const tbody = elc("tbody");
-  SC.groups.forEach(g => {
-    const gr = elc("tr", "grp");
-    const gtd = elc("td", null, g.name);
-    gtd.colSpan = SC.properties.length + 1;
-    gr.appendChild(gtd);
-    tbody.appendChild(gr);
-    g.metrics.forEach(name => {
+  const host = document.getElementById(ids.table);
+  host.textContent = "";
+  batches.forEach(batch => {
+    const tbl = elc("table", "sc");
+    const thead = elc("thead");
+
+    // group band across the KPIs it covers, as the workbook heads them
+    const gr = elc("tr");
+    gr.appendChild(elc("th", "prop-col"));
+    batch.groups.forEach(g => {
+      const th = elc("th", "grp", g.name);
+      th.colSpan = g.metrics.length;
+      gr.appendChild(th);
+    });
+    thead.appendChild(gr);
+
+    // KPI names, and the flat list of them for the body rows
+    const hr = elc("tr");
+    hr.appendChild(Object.assign(elc("th", "prop-col"), { textContent: "Property" }));
+    const names = [];
+    batch.groups.forEach(g => g.metrics.forEach(name => {
+      names.push(name);
+      hr.appendChild(elc("th", "sc-kpi", name));
+    }));
+    thead.appendChild(hr);
+    tbl.appendChild(thead);
+
+    const tbody = elc("tbody");
+    SC.properties.forEach(p => {
       const tr = elc("tr");
-      tr.appendChild(elc("td", "name", name));
-      SC.properties.forEach(p => {
+      tr.appendChild(scPropCell(p));
+      names.forEach(name => {
         const td = elc("td", "cell");
         const st = p.statuses[name];
         const v = scValue(p, name);
@@ -1207,11 +1249,12 @@ async function renderScorecard(ids) {
       });
       tbody.appendChild(tr);
     });
+    tbl.appendChild(tbody);
+
+    const block = elc("div", "sc-block");
+    block.appendChild(tbl);
+    host.appendChild(block);
   });
-  tbl.appendChild(tbody);
-  const host = document.getElementById(ids.table);
-  host.textContent = "";
-  host.appendChild(tbl);
 
   scLegendInto(document.getElementById(ids.legend));
 
