@@ -1,0 +1,28 @@
+{
+  "_comment": "Daily counts from the EliseAI 'Leasing AI Daily Report' emails to dashboard@alignrealestate.com. COUNTS ONLY, extracted by hand from each email: the emails list prospects by name with email and phone, and none of that may persist anywhere in this repo (see CLAUDE.md, tenant/prospect names must not leave the pipeline). A section absent from an email means zero that day - EliseAI omits empty sections. 'escalations_open' is the length of the escalations list, which reads as currently-open items rather than that day's new ones.",
+  "property_label_in_email": "335 3rd Street",
+  "days": [
+    {
+      "date": "2026-08-05",
+      "new_leads": 3,
+      "tours_today": 1,
+      "tours_booked_since_yesterday": 0,
+      "applications": 0,
+      "cancelled_leads": 1,
+      "unsubscribed": 0,
+      "escalations_open": 6,
+      "pending_knowledge": 2
+    },
+    {
+      "date": "2026-08-13",
+      "new_leads": 1,
+      "tours_today": 1,
+      "tours_booked_since_yesterday": 1,
+      "applications": 0,
+      "cancelled_leads": 1,
+      "unsubscribed": 0,
+      "escalations_open": 0,
+      "pending_knowledge": 4
+    }
+  ]
+}

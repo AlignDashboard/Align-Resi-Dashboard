@@ -63,6 +63,13 @@
       "parser": null,
       "file_glob": "*.xlsx",
       "status": "pending"
+    },
+    {
+      "drive_folder": "EliseAI Reports",
+      "report_type": "eliseai_weekly",
+      "parser": null,
+      "file_glob": "*.xlsx",
+      "status": "pending"
     }
   ]
 }

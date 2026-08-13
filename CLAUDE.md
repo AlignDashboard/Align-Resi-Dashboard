@@ -99,6 +99,31 @@ A delinquency report answers exactly two of the 28 KPIs:
 `POs over 30 days` and `# of invoices processed` are accounts *payable* and a
 resident AR report cannot speak to them.
 
+### EliseAI leasing data
+
+Two feeds, per the owner's design: the **weekly EliseAI report** (an attachment,
+filed into the Drive `EliseAI Reports` folder — registered in `report_map.json`,
+parser pending until the first file shows its format) is the baseline; the
+**"Leasing AI Daily Report" emails** to `dashboard@alignrealestate.com` are the
+daily updates.
+
+The daily emails list prospects **by name with email and phone**. Only counts
+leave the mailbox: they are extracted (by hand, via the Gmail connector — CI has
+no mailbox access) into `data/<slug>/eliseai_daily.json`, and
+`scripts/populate_eliseai.py` fills the scorecard from that series:
+
+- `# of Tours/Leads/Applications` — the latest day's tours/leads/apps as a
+  `T/L/A` triple, **value only**: the published band is tours per available unit
+  per *month*, so a single day is shown but never graded.
+- `Open Elise Tasks` — the email's "Review N pieces of pending knowledge" count,
+  graded. This assumes pending-knowledge items are what the KPI means by open
+  tasks (`OPEN_TASKS_FROM_KNOWLEDGE` in the script turns it off).
+
+A section absent from a daily email means zero that day — EliseAI omits empty
+sections. `populate_eliseai.py --add '{"date":...,"tours_today":1,...}'`
+records a new day and refills in one step. Run it after `extract_scorecard.py`,
+like the other populate step.
+
 The v10 legend made the in-range band white — no colour indicator — and
 `extract_scorecard.py` fails loudly if the workbook's legend fills change again,
 rather than publishing stale semantics.
