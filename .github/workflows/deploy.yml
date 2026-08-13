@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     steps:
       - name: Checkout site shell
         uses: actions/checkout@v4
@@ -84,6 +84,20 @@ jobs:
         with:
           path: docs
 
+      # deploy-pages retries its *polling*, but the initial "create deployment"
+      # call gets one shot — a 500 there fails the run outright, and the action's
+      # own error says to re-run later (observed 2026-08-13). One more attempt
+      # turns a brief Pages outage into a slower deploy rather than a failed one.
       - name: Deploy
         id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Wait before retrying the deploy
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+
+      - name: Deploy (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
