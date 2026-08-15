@@ -34,6 +34,17 @@
       "unsubscribed": 0,
       "escalations_open": 5,
       "pending_knowledge": 4
+    },
+    {
+      "date": "2026-08-15",
+      "new_leads": 4,
+      "tours_today": 0,
+      "tours_booked_since_yesterday": 3,
+      "applications": 0,
+      "cancelled_leads": 1,
+      "unsubscribed": 1,
+      "escalations_open": 4,
+      "pending_knowledge": 4
     }
   ]
 }
