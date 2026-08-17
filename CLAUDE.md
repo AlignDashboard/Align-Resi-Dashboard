@@ -112,9 +112,10 @@ leave the mailbox: they are extracted (by hand, via the Gmail connector — CI h
 no mailbox access) into `data/<slug>/eliseai_daily.json`, and
 `scripts/populate_eliseai.py` fills the scorecard from that series:
 
-- `# of Tours/Leads/Applications` — the latest day's tours/leads/apps as a
-  `T/L/A` triple, **value only**: the published band is tours per available unit
-  per *month*, so a single day is shown but never graded.
+- `# of Tours/Leads/Applications` — tours/leads/apps summed over the trailing
+  7 days (ending at the latest recorded day) as a `T/L/A` triple, **value
+  only**: the published band is tours per available unit per *month*, so a
+  week's totals are shown but never graded. Days with no email count as zero.
 - `Open Elise Tasks` — the email's "Review N pieces of pending knowledge" count,
   graded. This assumes pending-knowledge items are what the KPI means by open
   tasks (`OPEN_TASKS_FROM_KNOWLEDGE` in the script turns it off).

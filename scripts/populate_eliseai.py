@@ -7,11 +7,14 @@ and are never persisted; see the series file's own comment).
 
 What a daily email can honestly answer:
 
-  # of Tours/Leads/Applications   the latest day's tours/leads/applications as a
-                                  T/L/A triple. VALUE ONLY — the published band
-                                  grades tours per available unit per MONTH, and
-                                  a single day cannot be held to a monthly band,
-                                  so the workbook's hand-set symbol stays.
+  # of Tours/Leads/Applications   tours/leads/applications summed over the
+                                  trailing 7 days (ending at the latest recorded
+                                  day; days with no email in the window count as
+                                  zero) as a T/L/A triple. VALUE ONLY — the
+                                  published band grades tours per available unit
+                                  per MONTH, and a week cannot be held to a
+                                  monthly band, so the workbook's hand-set
+                                  symbol stays.
   Open Elise Tasks                the email's "Review N pieces of pending
                                   knowledge" count, graded against the band.
                                   ASSUMPTION: pending-knowledge items are the
@@ -34,6 +37,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from populate_scorecard import OUT, classify, recompute  # noqa: E402
@@ -41,6 +45,10 @@ from populate_scorecard import OUT, classify, recompute  # noqa: E402
 KPI_TLA = "# of Tours/Leads/Applications"
 KPI_TASKS = "Open Elise Tasks"
 OPEN_TASKS_FROM_KNOWLEDGE = True
+# T/L/A sums this many trailing days. Open Elise Tasks stays the latest day's
+# snapshot: it is a currently-open count, not a per-day flow, and summing a
+# stock over a week would count the same open items several times.
+WINDOW_DAYS = 7
 
 # every count a day can carry; absent = zero (EliseAI omits empty sections)
 DAY_FIELDS = ("new_leads", "tours_today", "tours_booked_since_yesterday",
@@ -97,21 +105,30 @@ def main():
 
     print(f"EliseAI daily for {prop['label']}, latest {latest['date']}")
 
+    latest_day = date.fromisoformat(latest["date"])
+    window_start = latest_day - timedelta(days=WINDOW_DAYS - 1)
+    window = [d for d in ser["days"]
+              if window_start <= date.fromisoformat(d["date"]) <= latest_day]
+
     filled = []
     if KPI_TLA in prop["statuses"]:
-        t, l, ap_ = (latest.get("tours_today") or 0, latest.get("new_leads") or 0,
-                     latest.get("applications") or 0)
+        t = sum(d.get("tours_today") or 0 for d in window)
+        l = sum(d.get("new_leads") or 0 for d in window)
+        ap_ = sum(d.get("applications") or 0 for d in window)
         prop["values"][KPI_TLA] = {
             "raw": None,
             "display": f"{t}/{l}/{ap_}",
             "parts": [t, l, ap_],
             "parts_labels": ["tours", "leads", "apps"],
+            "window": f"{window_start.isoformat()}..{latest_day.isoformat()}",
         }
-        # value only: the band is tours per available unit per month, and one
-        # day's counts cannot be graded against it — the hand-set symbol stays
+        # value only: the band is tours per available unit per month, and a
+        # 7-day window cannot be graded against it — the hand-set symbol stays
         prop.setdefault("status_source", {})[KPI_TLA] = "value_only"
         filled.append(KPI_TLA)
-        print(f"  {KPI_TLA}: {t}/{l}/{ap_} (tours/leads/apps, {latest['date']}) — "
+        print(f"  {KPI_TLA}: {t}/{l}/{ap_} (tours/leads/apps, 7-day totals "
+              f"{window_start.isoformat()}..{latest_day.isoformat()}, "
+              f"{len(window)} day(s) recorded) — "
               f"value only, symbol unchanged ({prop['statuses'][KPI_TLA]})")
 
     if OPEN_TASKS_FROM_KNOWLEDGE and KPI_TASKS in prop["statuses"]:
@@ -136,8 +153,11 @@ def main():
                           "prospect roster is never persisted)",
         "eliseai_as_of": latest["date"],
         "eliseai_kpis": filled,
-        "eliseai_basis": "latest day's counts; the T/L/A cell is ungraded because "
-                         "the band is monthly per-available-unit",
+        "eliseai_basis": f"T/L/A summed over the trailing {WINDOW_DAYS} days "
+                         f"({window_start.isoformat()}..{latest_day.isoformat()}, "
+                         f"{len(window)} day(s) recorded); open tasks are the "
+                         "latest day's snapshot. The T/L/A cell is ungraded "
+                         "because the band is monthly per-available-unit",
     })
 
     with open(a.out, "w") as f:

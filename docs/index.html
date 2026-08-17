@@ -1141,7 +1141,10 @@ function scCellTitle(name, st, v, unscored, prefix) {
     return head + "reported, not graded — " + detail;
   }
   return head + ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
-    scBand(name, st) + (v && v.display != null ? " — " + v.display : " — value pending");
+    scBand(name, st) +
+    (v && v.display != null
+      ? " — " + v.display + (v.window ? " (7-day totals, " + v.window + ")" : "")
+      : " — value pending");
 }
 const scValue = (prop, metric) => (prop.values || {})[metric] || null;
 // The band behind a status, now that the workbook publishes its ranges —
