@@ -125,9 +125,52 @@ sections. `populate_eliseai.py --add '{"date":...,"tours_today":1,...}'`
 records a new day and refills in one step. Run it after `extract_scorecard.py`,
 like the other populate step.
 
+**Pass `received_at` — the email's own arrival time — with every `--add`**
+(`{"date":"2026-08-17","received_at":"2026-08-17T15:37:21Z",...}`). That
+timestamp is what the scorecard reports as "data last updated"; without it the
+page falls back to the report date, which cannot show a feed that has stopped
+arriving. The script warns when it is missing and refuses a malformed one.
+
 The v10 legend made the in-range band white — no colour indicator — and
 `extract_scorecard.py` fails loudly if the workbook's legend fills change again,
 rather than publishing stale semantics.
+
+### "Data last updated" — arrival, not coverage
+
+The scorecard head carries the newest **arrival** time across the feeds behind
+its measured cells: when an email landed in the mailbox, or when a report landed
+in Drive. This is deliberately not `as_of`, the period the data covers — a
+report can be about July and have arrived this morning, or be dated today and
+have sat unfetched for a week, and only the arrival time can show a feed that
+has stopped running. Both are published, per feed, under `measured[slug]`:
+
+| Field | Meaning |
+| --- | --- |
+| `received_at` / `eliseai_received_at` | when it arrived (ISO-8601, UTC) |
+| `as_of` / `eliseai_as_of` | the period the data describes |
+| `received_what` / `eliseai_received_what` | which feed it came from, for the tooltip |
+
+Where each arrival comes from:
+
+- **EliseAI dailies** — the email's mailbox arrival, recorded per day in
+  `data/<slug>/eliseai_daily.json`. For a hand-forwarded email this is when the
+  forward arrived, so it can run later than EliseAI's own send time.
+- **Drive reports** — `fetch_drive.py` reads Drive's `createdTime`/`modifiedTime`
+  and puts the later of the two in the manifest as `landed_at`;
+  `build_metrics.store_report` writes it into `data/<slug>/*.json`, and
+  `populate_scorecard.py --from-pipeline` publishes it.
+- **The analyst workbook** — `landing.json`'s own `generated_at`, since the
+  workbook is refreshed by hand and has no arrival of its own.
+- **A report run by hand** — no arrival time exists, so pass
+  `populate_scorecard.py --received-at <ISO-8601>` to record one. Without it the
+  page falls back to the as-of date **and says so on hover** rather than
+  presenting a coverage date as a freshness date. Palma's current row is this
+  case: it was filled from a report handed over directly, before Drive arrival
+  times were captured.
+
+Past `SC_STALE_DAYS` (3, in `index.html`) the timestamp turns red: the daily
+EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
+"Feed arrival times" table lists every feed's arrival beside its as-of date.
 
 ## Deployment
 

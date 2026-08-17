@@ -149,6 +149,11 @@ def store_report(prop, parsed, filename, keys):
     fp = d / filename
     out = {k: scrub(parsed.get(k)) for k in keys}
     out["source_file"] = parsed.get("source_file")
+    # When the file landed in Drive, set by process_manifest from the manifest.
+    # This is the dashboard's "data last updated" for a Drive-fed report, and is
+    # deliberately separate from as_of, the period the report covers. Absent for
+    # a report parsed from a local path rather than pulled from Drive.
+    out["landed_at"] = parsed.get("landed_at")
     out["checks"] = parsed.get("checks")
     json.dump(out, open(fp, "w"), indent=2, default=str)
     return fp
@@ -199,6 +204,11 @@ def process_manifest():
         except Exception as e:
             print(f"[error] failed to parse {item['name']}: {e} -- skipping this file")
             continue
+
+        # carry Drive's arrival time onto the parse, so store_report can record
+        # when the report landed rather than only what period it covers. Set
+        # before the multi-section split below, which copies the parse.
+        parsed["landed_at"] = item.get("landed_at")
 
         if item["report_type"] != "t12_statement":
             # One export can cover several property codes (Palma arrives as

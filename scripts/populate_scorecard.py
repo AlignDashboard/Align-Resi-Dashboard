@@ -43,6 +43,7 @@ Usage:
       --monthly-rent 812000
 """
 import argparse
+from datetime import datetime
 import json
 import os
 import sys
@@ -83,7 +84,8 @@ SPLIT_LABELS = ["31-60", "61-90", "90+"]
 
 
 def facts_from_landing(path="docs/landing.json"):
-    d = json.load(open(path))["delinquency"]
+    doc = json.load(open(path))
+    d = doc["delinquency"]
     ag = {a["bucket"]: a["amount"] for a in d["aging"]}
     def bucket(*needles):
         for k, v in ag.items():
@@ -99,6 +101,10 @@ def facts_from_landing(path="docs/landing.json"):
         # re-deriving the denominator
         "total_delinq_pct": d.get("pct_month_rent"),
         "source": "workbook Source Delinquency tab, via docs/landing.json",
+        # the workbook is refreshed by hand, so its "arrival" is when the
+        # analyst last extracted it — landing.json's own generated_at
+        "received_at": (doc.get("meta") or {}).get("generated_at"),
+        "received_what": "analyst workbook extract",
     }
 
 
@@ -135,6 +141,10 @@ def facts_from_pipeline(slug, monthly_rent=None):
 
     return {
         "as_of": d.get("as_of"),
+        # when the report landed in Drive, recorded by build_metrics from the
+        # fetch manifest. None for data/ written before that was captured.
+        "received_at": d.get("landed_at"),
+        "received_what": "report in the Drive Residential AR Analytics folder",
         "gross_owed": gross,
         "split": [a.get("d31_60"), a.get("d61_90"), a.get("over90")],
         "total_delinq_pct": (gross / denom) if (gross and denom) else None,
@@ -158,6 +168,10 @@ def facts_from_report(path, monthly_rent):
         "split": [a.get("d31_60"), a.get("d61_90"), a.get("over90")],
         "total_delinq_pct": (gross / monthly_rent) if monthly_rent else None,
         "source": os.path.basename(path),
+        # a report handed to the script directly did not come through Drive, so
+        # there is no arrival time to record unless --received-at supplies one
+        "received_at": None,
+        "received_what": "report supplied by hand",
     }
 
 
@@ -230,6 +244,11 @@ def main():
     ap.add_argument("--from-pipeline", metavar="SLUG",
                     help="use data/<SLUG>/delinquency.json, as the Drive pipeline wrote it")
     ap.add_argument("--property", default="the-landing", help="property slug to fill")
+    ap.add_argument("--received-at", metavar="ISO8601",
+                    help="when this report actually arrived (e.g. 2026-08-10T14:05:00Z). "
+                         "Overrides the arrival the source carries; needed for a "
+                         "report handed over by hand, which has none of its own. "
+                         "The scorecard shows it as the data's last-updated time.")
     ap.add_argument("--monthly-rent", type=float,
                     help="one month's billed rent, for the Total Deliquency ratio")
     ap.add_argument("--out", default=OUT)
@@ -252,6 +271,15 @@ def main():
         facts = facts_from_landing()
         slug = "the-landing"
 
+    if a.received_at:
+        try:
+            datetime.fromisoformat(a.received_at.replace("Z", "+00:00"))
+        except ValueError:
+            sys.exit(f"--received-at {a.received_at!r} is not an ISO-8601 timestamp "
+                     f"(want e.g. 2026-08-10T14:05:00Z)")
+        facts["received_at"] = a.received_at
+        facts["received_what"] = facts.get("received_what") or "report supplied by hand"
+
     sc = json.load(open(a.out))
     prop = next((p for p in sc["properties"] if p["slug"] == slug), None)
     if not prop:
@@ -261,6 +289,12 @@ def main():
 
     print(f"source: {facts['source']}  ·  as of {facts['as_of']}  ·  "
           f"property: {prop['label']}")
+    if facts.get("received_at"):
+        print(f"arrived: {facts['received_at']}"
+              + (f" ({facts['received_what']})" if facts.get("received_what") else ""))
+    else:
+        print("arrived: unknown — no arrival time on this source; the scorecard "
+              "will fall back to the as-of date. Pass --received-at to record one.")
     print(f"{'KPI':26} {'measured':>18}  {'band says':<11} {'workbook had':<11} action")
     print("-" * 86)
 
@@ -309,6 +343,10 @@ def main():
 
     meas = sc.setdefault("measured", {})
     meas[slug] = {"source": facts["source"], "as_of": facts["as_of"],
+                  # arrival time, not coverage date: what the page reports as
+                  # "data last updated". None when the source carries none.
+                  "received_at": facts.get("received_at"),
+                  "received_what": facts.get("received_what"),
                   # keyed on display, not raw: an unscored KPI has figures to
                   # show but no single number to classify
                   "kpis": sorted(k for k in measurements(facts)

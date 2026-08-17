@@ -205,6 +205,19 @@
   .sc-tally .t { font-size: 11px; letter-spacing: .5px; color: var(--muted); white-space: nowrap; }
   .sc-tally .t b { font-size: 15px; font-weight: 700; margin-right: 5px; }
 
+  /* When the underlying feeds last arrived — an email landing in the mailbox or
+     a report landing in Drive. Deliberately not the as-of date: a fresh-looking
+     as-of on a stale feed is exactly the thing this is here to expose. Cursor is
+     help because the detail per feed lives in the tooltip. */
+  .sc-updated { font-size: 11px; letter-spacing: .3px; color: var(--muted);
+    white-space: nowrap; cursor: help; align-self: flex-start; }
+  .sc-updated .lbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    display: block; margin-bottom: 4px; }
+  .sc-updated .when { font-size: 13px; font-weight: 600; color: var(--text); }
+  /* Past the staleness threshold the timestamp itself carries the warning. */
+  .sc-updated.stale .when { color: var(--red); }
+  .sc-updated .age { margin-left: 6px; }
+
   /* Properties are rows and KPIs are columns, as in the workbook. The KPI
      columns are split into batches that fit the page width, each batch a
      block of property rows below the previous one (see MAX_COLS in the JS). */
@@ -1156,6 +1169,94 @@ function scBand(metric, state) {
 }
 const scHasValues = sc => sc.properties.some(p =>
   Object.values(p.values || {}).some(v => v && v.display != null));
+
+/* ---- "data last updated": when the feeds behind the measured cells arrived ----
+   Arrival, not coverage. `received_at` is when an email landed in the mailbox or
+   a report landed in Drive; `as_of` is the period the data describes. A report
+   can be about July and have arrived this morning, or be dated today and have
+   sat unfetched for a week — so the two are published separately and this reads
+   the arrival, falling back to as_of only when a source carries no arrival time
+   (and saying so when it does).
+   The daily EliseAI feed should keep the newest arrival inside a day or two;
+   past this many days something has stopped running. */
+const SC_STALE_DAYS = 3;
+// measured[slug] holds one plain feed (source/as_of/received_at) and optionally
+// an eliseai_-prefixed one. Read both rather than assuming a single feed.
+const SC_FEED_PREFIXES = [
+  { prefix: "", fallbackWhat: "report" },
+  { prefix: "eliseai_", fallbackWhat: "EliseAI daily email" },
+];
+function scFeeds() {
+  const out = [];
+  const measured = (SC && SC.measured) || {};
+  Object.keys(measured).forEach(slug => {
+    const m = measured[slug] || {};
+    const prop = (SC.properties || []).find(p => p.slug === slug);
+    SC_FEED_PREFIXES.forEach(({ prefix, fallbackWhat }) => {
+      // a prefix is present only if that feed filled something
+      const kpis = m[prefix + "kpis"];
+      if (!kpis || !kpis.length) return;
+      const recv = m[prefix + "received_at"] || null;
+      const asOf = m[prefix + "as_of"] || null;
+      // an arrival stamp is a full timestamp; as_of is a plain date. Parse the
+      // date as local noon so a timezone shift cannot slide it a day backwards.
+      const when = recv ? new Date(recv) : (asOf ? new Date(asOf + "T12:00:00") : null);
+      out.push({
+        slug,
+        label: (prop && prop.label) || slug,
+        when: when && !isNaN(when) ? when : null,
+        exact: !!recv,                       // false = fell back to the as-of date
+        what: m[prefix + "received_what"] || fallbackWhat,
+        kpis,
+      });
+    });
+  });
+  return out.sort((a, b) => (b.when ? b.when.getTime() : 0) - (a.when ? a.when.getTime() : 0));
+}
+// "3 hours ago" / "2 days ago" — plain relative age for the freshness read.
+function scAgo(when, now) {
+  const mins = Math.round((now - when) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + (mins === 1 ? " minute ago" : " minutes ago");
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return hrs + (hrs === 1 ? " hour ago" : " hours ago");
+  const days = Math.round(hrs / 24);
+  return days + (days === 1 ? " day ago" : " days ago");
+}
+// The freshness line for the scorecard head. `slug` limits it to one property's
+// feeds, for a property view; omitted, it covers every feed on the scorecard.
+function scUpdatedEl(slug) {
+  const feeds = scFeeds().filter(f => (slug ? f.slug === slug : true) && f.when);
+  if (!feeds.length) return null;
+  const now = new Date();
+  const newest = feeds[0];
+  const stale = (now - newest.when) / 86400000 > SC_STALE_DAYS;
+
+  const el = elc("div", "sc-updated" + (stale ? " stale" : ""));
+  el.appendChild(elc("span", "lbl", "data last updated"));
+  const when = elc("span", "when",
+    newest.when.toLocaleString([], { month: "short", day: "numeric", year: "numeric",
+                                     hour: "numeric", minute: "2-digit" }));
+  el.appendChild(when);
+  el.appendChild(elc("span", "age", "· " + scAgo(newest.when, now)));
+
+  // Per-feed detail on hover: one line each, so a single stale feed hiding
+  // behind a fresh headline is still visible.
+  el.title = feeds.map(f =>
+    f.label + " — " + f.what + ": " +
+    f.when.toLocaleString([], { month: "short", day: "numeric", year: "numeric",
+                                hour: "numeric", minute: "2-digit" }) +
+    " (" + scAgo(f.when, now) + ")" +
+    (f.exact ? "" : " — no arrival time recorded for this source, showing its " +
+                    "report date instead") +
+    " · fills " + f.kpis.join(", ")
+  ).join("\n") +
+    "\n\nWhen the underlying data arrived — an email landing in the mailbox or a " +
+    "report landing in Drive — not the period it covers." +
+    (stale ? "\n\nThe newest feed is more than " + SC_STALE_DAYS +
+             " days old; the daily update may have stopped running." : "");
+  return el;
+}
 function scLegendInto(host) {
   if (!host || !SC) return;
   host.textContent = "";
@@ -1284,6 +1385,8 @@ async function renderScorecard(ids) {
     tally.appendChild(t);
   });
   head.appendChild(tally);
+  const upd = scUpdatedEl();
+  if (upd) head.appendChild(upd);
 
   // Matrix in the workbook's own orientation: properties are rows, KPIs are
   // columns. 28 KPI columns will not fit across the page, so the groups are
@@ -1425,6 +1528,9 @@ function renderPropertyScorecard(slug, ids) {
   big.classList.add("sc-state-" + scTone(p.counts));
   health.appendChild(big);
   health.appendChild(elc("div", "lbl", "at or above target"));
+  // this property's own feeds only — the portfolio head carries the rest
+  const upd = scUpdatedEl(slug);
+  if (upd) health.appendChild(upd);
 
   const strip = document.getElementById(ids.strip);
   strip.textContent = "";

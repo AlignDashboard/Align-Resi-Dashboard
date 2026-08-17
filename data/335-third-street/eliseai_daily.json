@@ -11,7 +11,8 @@
       "cancelled_leads": 1,
       "unsubscribed": 0,
       "escalations_open": 6,
-      "pending_knowledge": 2
+      "pending_knowledge": 2,
+      "received_at": "2026-08-05T23:32:14Z"
     },
     {
       "date": "2026-08-13",
@@ -22,7 +23,8 @@
       "cancelled_leads": 1,
       "unsubscribed": 0,
       "escalations_open": 0,
-      "pending_knowledge": 4
+      "pending_knowledge": 4,
+      "received_at": "2026-08-13T16:49:56Z"
     },
     {
       "date": "2026-08-14",
@@ -33,7 +35,8 @@
       "cancelled_leads": 1,
       "unsubscribed": 0,
       "escalations_open": 5,
-      "pending_knowledge": 4
+      "pending_knowledge": 4,
+      "received_at": "2026-08-14T15:37:38Z"
     },
     {
       "date": "2026-08-15",
@@ -44,7 +47,8 @@
       "cancelled_leads": 1,
       "unsubscribed": 1,
       "escalations_open": 4,
-      "pending_knowledge": 4
+      "pending_knowledge": 4,
+      "received_at": "2026-08-15T15:37:24Z"
     },
     {
       "date": "2026-08-16",
@@ -55,7 +59,8 @@
       "cancelled_leads": 2,
       "unsubscribed": 0,
       "escalations_open": 3,
-      "pending_knowledge": 4
+      "pending_knowledge": 4,
+      "received_at": "2026-08-16T15:37:36Z"
     },
     {
       "date": "2026-08-17",
@@ -66,7 +71,9 @@
       "cancelled_leads": 0,
       "unsubscribed": 0,
       "escalations_open": 5,
-      "pending_knowledge": 4
+      "pending_knowledge": 4,
+      "received_at": "2026-08-17T15:37:21Z"
     }
-  ]
+  ],
+  "_comment_received_at": "'received_at' is when the email landed in the dashboard@alignrealestate.com mailbox (UTC), which is what the page reports as the data's last-updated time - distinct from 'date', the day the counts describe. For an email forwarded in by hand rather than sent straight from EliseAI, this is when the forward arrived, so it can run later than EliseAI's own send time (2026-08-05 and 2026-08-13 are both forwards). No sender address is stored."
 }

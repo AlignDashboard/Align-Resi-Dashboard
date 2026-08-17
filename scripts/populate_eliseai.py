@@ -37,7 +37,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from populate_scorecard import OUT, classify, recompute  # noqa: E402
@@ -65,13 +65,31 @@ def load_series(slug):
     return json.load(open(p)) if os.path.exists(p) else None
 
 
+def parse_received(ts):
+    """An ISO-8601 arrival stamp -> datetime. Accepts a trailing 'Z'."""
+    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
+
 def add_day(slug, day_json):
     day = json.loads(day_json)
     if "date" not in day:
         sys.exit("--add needs at least {\"date\": \"YYYY-MM-DD\"}")
-    unknown = sorted(set(day) - set(DAY_FIELDS) - {"date"})
+    unknown = sorted(set(day) - set(DAY_FIELDS) - {"date", "received_at"})
     if unknown:
-        sys.exit(f"unknown count field(s) {unknown}; allowed: {list(DAY_FIELDS)}")
+        sys.exit(f"unknown count field(s) {unknown}; allowed: "
+                 f"{list(DAY_FIELDS)} plus received_at")
+    if day.get("received_at"):
+        # the page's "data last updated" is this timestamp, so a malformed one
+        # should fail here rather than render as an invalid date on the page
+        try:
+            parse_received(day["received_at"])
+        except ValueError:
+            sys.exit(f"received_at {day['received_at']!r} is not an ISO-8601 "
+                     f"timestamp (want e.g. 2026-08-17T15:37:21Z)")
+    else:
+        print("[warn] no received_at given — the scorecard's last-updated date "
+              "will fall back to the report date for this day. Pass the email's "
+              "arrival time to record when it actually landed.")
     for k in DAY_FIELDS:
         day.setdefault(k, 0)
     ser = load_series(slug) or {"days": []}
@@ -153,6 +171,10 @@ def main():
                           "prospect roster is never persisted)",
         "eliseai_as_of": latest["date"],
         "eliseai_kpis": filled,
+        # when the newest email actually landed in the mailbox — this is what the
+        # page reports as "data last updated", not the day the counts describe
+        "eliseai_received_at": latest.get("received_at"),
+        "eliseai_received_what": "Leasing AI Daily Report email",
         "eliseai_basis": f"T/L/A summed over the trailing {WINDOW_DAYS} days "
                          f"({window_start.isoformat()}..{latest_day.isoformat()}, "
                          f"{len(window)} day(s) recorded); open tasks are the "

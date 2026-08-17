@@ -41,7 +41,11 @@ def _list_children(svc, parent_id, mime=None):
     while True:
         resp = svc.files().list(
             q=q, spaces="drive",
-            fields="nextPageToken, files(id, name, mimeType)",
+            # createdTime/modifiedTime are what the dashboard reports as "data
+            # last updated" for a Drive-fed report — when the file landed in the
+            # folder, as distinct from the period the report covers.
+            fields=("nextPageToken, files(id, name, mimeType, "
+                    "createdTime, modifiedTime)"),
             pageToken=token,
             includeItemsFromAllDrives=True, supportsAllDrives=True,
         ).execute()
@@ -122,10 +126,19 @@ def main():
         for f in files:
             dest = DL_ROOT / entry["report_type"] / f["name"]
             _download(svc, f["id"], dest)
+            # landed_at: when this report showed up in Drive. createdTime is the
+            # arrival; modifiedTime is later only if someone edited it in place,
+            # and an edited report is newer data, so take the later of the two.
+            landed_at = max(x for x in (f.get("createdTime"), f.get("modifiedTime")) if x) \
+                if (f.get("createdTime") or f.get("modifiedTime")) else None
             manifest.append({"report_type": entry["report_type"],
                              "parser": entry["parser"],
-                             "path": str(dest), "name": f["name"]})
-            print(f"[ok] downloaded {name}/{f['name']}")
+                             "path": str(dest), "name": f["name"],
+                             "landed_at": landed_at,
+                             "drive_created_time": f.get("createdTime"),
+                             "drive_modified_time": f.get("modifiedTime")})
+            print(f"[ok] downloaded {name}/{f['name']}"
+                  + (f" (landed in Drive {landed_at})" if landed_at else ""))
 
     json.dump(manifest, open("_downloads/manifest.json", "w"), indent=2)
     print(f"\n{len(manifest)} file(s) downloaded.")
