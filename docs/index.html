@@ -245,18 +245,20 @@
   /* Status chip: colored fill with the measured value on top. Sized for the
      widest realistic value ("100.0%", "$1,240") so columns will not reflow
      when the numbers arrive to replace the placeholder. */
-  .sc-chip { display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 6px;
+  .sc-chip { display: inline-flex; align-items: baseline; justify-content: center; gap: 6px;
     min-width: 74px; padding: 3px 7px; border: 1px solid transparent; border-radius: 2px;
     font-size: 10.5px; line-height: 1.35; }
+  /* Centred under the column title. The value used to be pushed right to sit
+     beside the status glyph; with the glyph gone it is the only thing in the
+     chip, so it centres instead of hanging off one edge. */
   .sc-chip .val { font-weight: 600; color: var(--text);
-    font-variant-numeric: tabular-nums; margin-left: auto; }
+    font-variant-numeric: tabular-nums; text-align: center; }
   .sc-chip .val.pending { color: var(--muted); font-weight: 400; }
   .sc-chip.sc-state-exceeding { background: var(--fill-exceeding); border-color: var(--edge-exceeding); }
   .sc-chip.sc-state-in_range  { background: var(--fill-in_range);  border-color: var(--edge-in_range); }
   .sc-chip.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
   /* reported, not graded: no fill, no edge — just the figures */
   .sc-chip.sc-unscored { background: transparent; border-color: transparent; }
-  .sc-chip.sc-unscored .val { margin-left: 0; }
 
   /* Legend swatch: the same fills the chips use, since colour alone carries
      the status now. In range shows as a clear box with a faint outline —
