@@ -117,9 +117,12 @@
   tbody tr:hover td { background: var(--panel-2); }
   tbody tr.total td { border-top: 1px solid var(--muted); font-weight: 700; }
   td.neg { color: var(--red); }
-  .st-exceeding { color: var(--green); }
-  .st-in_range { color: var(--muted); }   /* v10: in range carries no color indicator */
-  .st-below { color: var(--red); }
+  /* Scorecard status: colour only, no symbols. In range stays a clear box —
+     v10: in range carries no color indicator. */
+  .st-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px;
+    vertical-align: -1px; border: 1px solid var(--line); background: transparent; }
+  .st-swatch.st-exceeding { background: var(--green); border-color: var(--green); opacity: .55; }
+  .st-swatch.st-below     { background: var(--red);   border-color: var(--red);   opacity: .55; }
   .pill { display:inline-block; font-size:8.5px; letter-spacing:1px; padding:1px 6px;
     border:1px solid; text-transform:uppercase; }
   .pill.good { color: var(--green); border-color: var(--green); }
@@ -320,9 +323,9 @@ function buildRow(cols, r, isTotal) {
     const v = r[c.key];
     const numeric = NUMERIC.has(c.fmt);
     const td = el("td", (numeric ? "num" : "") + (c.wrap ? " wrap" : ""));
-    if (c.fmt === "status") {                       // scorecard symbols
+    if (c.fmt === "status") {                       // scorecard status: colour only
       td.className = "num";
-      td.appendChild(el("span", "st-" + v, { exceeding: "▲", in_range: "●", below: "▼" }[v] || "–"));
+      td.appendChild(el("span", "st-swatch st-" + v));
     } else if (c.fmt === "pill") {
       const map = { GOOD: "good", CURRENT: "good", WATCH: "watch", REVIEW: "watch", FLAG: "flag",
                     PRIORITY: "flag", "AT RISK": "flag", MINOR: "mut", Holdover: "flag",
@@ -524,9 +527,9 @@ async function loadAll() {
       cols: [{ key: "group", label: "Group" }, { key: "kpi", label: "KPI" },
              { key: "how", label: "How to measure", wrap: true },
              { key: "direction", label: "Direction" },
-             { key: "exceeding", label: "▲ Exceeding" },
-             { key: "in_range", label: "● In range" },
-             { key: "below", label: "▼ Below" },
+             { key: "exceeding", label: "Exceeding" },
+             { key: "in_range", label: "In range" },
+             { key: "below", label: "Below" },
              { key: "basis", label: "Basis / rationale", wrap: true }],
       rows: Object.entries(d.thresholds || {}).map(([kpi, t]) => Object.assign({ kpi }, t)),
       filterable: true,
@@ -599,9 +602,9 @@ async function loadAll() {
       note: "Palma North and Palma South are in lease-up; these KPIs are scored against "
           + "these bands there instead of the stabilised ones.",
       cols: [{ key: "kpi", label: "KPI" }, { key: "approach", label: "Override approach", wrap: true },
-             { key: "exceeding", label: "▲ Exceeding" },
-             { key: "in_range", label: "● In range" },
-             { key: "below", label: "▼ Below" }],
+             { key: "exceeding", label: "Exceeding" },
+             { key: "in_range", label: "In range" },
+             { key: "below", label: "Below" }],
       rows: d.leaseup_overrides || [],
     });
   }

@@ -178,7 +178,7 @@
   /* ---------- KPI scorecard ----------
      Status colors follow the workbook legend exactly:
      exceeding = green, below = red, and (since v10) in range = clear —
-     no color indicator, just the neutral ● symbol. */
+     no color indicator. Status is carried by color alone — no symbols. */
   .sc-state-exceeding { color: var(--green); }
   .sc-state-in_range  { color: var(--muted); }
   .sc-state-below     { color: var(--red); }
@@ -248,16 +248,23 @@
   .sc-chip { display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 6px;
     min-width: 74px; padding: 3px 7px; border: 1px solid transparent; border-radius: 2px;
     font-size: 10.5px; line-height: 1.35; }
-  .sc-chip .sym { font-size: 11px; line-height: 1; }
   .sc-chip .val { font-weight: 600; color: var(--text);
     font-variant-numeric: tabular-nums; margin-left: auto; }
   .sc-chip .val.pending { color: var(--muted); font-weight: 400; }
   .sc-chip.sc-state-exceeding { background: var(--fill-exceeding); border-color: var(--edge-exceeding); }
   .sc-chip.sc-state-in_range  { background: var(--fill-in_range);  border-color: var(--edge-in_range); }
   .sc-chip.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
-  /* reported, not graded: no fill, no edge, no symbol — just the figures */
+  /* reported, not graded: no fill, no edge — just the figures */
   .sc-chip.sc-unscored { background: transparent; border-color: transparent; }
   .sc-chip.sc-unscored .val { margin-left: 0; }
+
+  /* Legend swatch: the same fills the chips use, since colour alone carries
+     the status now. In range shows as a clear box with a faint outline —
+     "no colour indicator" needs something to point at in a legend. */
+  .sc-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px;
+    vertical-align: -1px; border: 1px solid var(--line); }
+  .sc-swatch.sc-state-exceeding { background: var(--fill-exceeding); border-color: var(--edge-exceeding); }
+  .sc-swatch.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
 
   /* per-property slice shown at the top of a property view */
   .sc-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 6px 18px; }
@@ -1124,19 +1131,21 @@ const scPromise = (async () => {
   return SC;
 })();
 
-const SYM = { exceeding: "▲", in_range: "●", below: "▼" };
-const scSymbol = state => elc("span", "sc-state-" + state, SYM[state] || "–");
+// Colour swatch for the legend — status is carried by colour alone, no
+// symbols, so the legend shows the same fill the chips use. In range is
+// deliberately a clear swatch (v10: no colour indicator).
+const scSwatch = state => elc("span", "sc-swatch sc-state-" + state);
 
-// Status chip: the fill carries the status, the value sits on top of it.
-// Where a value has not been supplied yet, a muted placeholder holds the space.
+// Status chip: the fill alone carries the status — no symbol. The value sits
+// on top of it; where a value has not been supplied yet, a muted placeholder
+// holds the space.
 //
 // An unscored KPI (scorecard.json "unscored" — a distribution has no direction
-// it can be good or bad in) gets neither symbol nor colour: just its figures.
+// it can be good or bad in) gets no colour either: just its figures.
 const SC_PENDING = "––";
 const scUnscoredSet = () => new Set((SC && SC.unscored) || []);
 function scChip(state, value, unscored) {
   const chip = elc("div", "sc-chip" + (unscored ? " sc-unscored" : " sc-state-" + state));
-  if (!unscored) chip.appendChild(elc("span", "sym", SYM[state] || "–"));
   const display = value && value.display != null ? String(value.display) : null;
   const val = elc("span", "val", display === null ? SC_PENDING : display);
   if (display === null) val.classList.add("pending");
@@ -1262,7 +1271,7 @@ function scLegendInto(host) {
   host.textContent = "";
   SC.legend.forEach(l => {
     const item = elc("span");
-    item.appendChild(scSymbol(l.state));
+    item.appendChild(scSwatch(l.state));
     item.appendChild(document.createTextNode(" " + l.label));
     host.appendChild(item);
   });
