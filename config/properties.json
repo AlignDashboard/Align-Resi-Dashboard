@@ -45,7 +45,14 @@
       "active": true,
       "codes": [
         "rs335"
-      ]
+      ],
+      "quarantine": {
+        "report_types": [
+          "t12_statement"
+        ],
+        "since": "2026-08-19",
+        "reason": "The 12_Month_Statement_rs335_accrual.xlsx in Drive does not carry this building's figures. 335 Third is newly built and has not signed a lease, so it has almost no revenue, but the statement posts $2,426,361.69 of T12 operating revenue and $615,605.65 in Jun 2026 alone. Its monthly expense ratios also match Palma North's at a two-month offset -- seven of the eight overlapping months agree to 0.1pp -- which two different properties do not do. Re-export the statement from Yardi and lift this to re-enable it."
+      }
     },
     {
       "slug": "palma",

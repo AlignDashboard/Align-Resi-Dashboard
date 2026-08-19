@@ -39,6 +39,20 @@ def load_properties():
     return cfg["properties"], code_to_prop
 
 
+def quarantined(prop, report_type):
+    """True when a property's source for this report type is known to be wrong.
+
+    A report that reaches the pipeline is normally trusted -- the parsers tie
+    out against the report's own totals, which catches a misread file but not a
+    file that is internally consistent and about the wrong building. That is a
+    judgement about provenance, so it is recorded in config/properties.json with
+    its reason rather than inferred here, and the affected figures are dropped
+    instead of published while the source is corrected.
+    """
+    q = prop.get("quarantine") or {}
+    return report_type in (q.get("report_types") or [])
+
+
 # ---- period ordering ------------------------------------------------------
 
 _MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -289,12 +303,20 @@ def process_manifest():
                     print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                           f"add it to config/properties.json; skipping")
                     continue
+                if quarantined(prop, item["report_type"]):
+                    print(f"[quarantined] {item['name']} -> {prop['name']}: "
+                          f"{prop['quarantine']['reason']}")
+                    continue
                 ACCUMULATORS[item["report_type"]](prop, parsed)
                 print(f"[ok] stored {item['report_type']} for {prop['name']} "
                       f"(as of {parsed.get('as_of') or 'unknown date'})")
                 continue
 
             for slug, (prop, secs) in groups.items():
+                if quarantined(prop, item["report_type"]):
+                    print(f"[quarantined] {item['name']} -> {prop['name']}: "
+                          f"{prop['quarantine']['reason']}")
+                    continue
                 rows = [r for s in secs for r in (s.get("residents") or [])]
                 one = dict(parsed)
                 one["property"] = prop["name"]
@@ -324,6 +346,10 @@ def process_manifest():
         if not prop:
             print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                   f"add it to config/properties.json; skipping")
+            continue
+        if quarantined(prop, item["report_type"]):
+            print(f"[quarantined] {item['name']} -> {prop['name']}: "
+                  f"{prop['quarantine']['reason']}")
             continue
         if not prop.get("active", True):
             print(f"[skip] {prop['name']} is inactive (code '{code}'); "
