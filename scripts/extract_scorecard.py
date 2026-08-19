@@ -54,20 +54,19 @@ UNSCORED = {"Split Between 30/60/90"}
 # working sheet and carries properties the dashboard does not report on; each
 # one published adds a column of hand-set symbols to the matrix and another
 # property to the portfolio roll-up, with no measured value behind any of it.
-EXCLUDED_PROPERTIES = {"Fitzgerald"}
+EXCLUDED_PROPERTIES = {"Fitzgerald", "2177 Third"}
 
-# Scorecard property label -> slug in config/properties.json. 2177 Third is on
-# the scorecard but not in the property master, so it maps to None and renders
-# without a link to a view that does not exist. Any slug named here that is
-# missing from the master is reported below and downgraded to None, so this map
-# cannot silently drift out of sync with the config.
+# Scorecard property label -> slug in config/properties.json. Any slug named
+# here that is missing from the master is reported below and downgraded to
+# None, so this map cannot silently drift out of sync with the config. A
+# property that maps to None still renders, just without a link to a property
+# view that does not exist.
 SLUGS = {
     "Chorus": "chorus",
     "Landing": "the-landing",
     "335 Third": "335-third-street",
     "Madelon": "madelon",
     "Palma": "palma",
-    "2177 Third": None,
 }
 
 try:
