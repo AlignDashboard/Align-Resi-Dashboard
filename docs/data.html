@@ -20,12 +20,14 @@
   /* Palette mirrors index.html. Kept inline so each page stands alone, the way
      the dashboard already works — if you retune a colour, change both. */
   :root, :root[data-theme="dark"] {
+    --target-wash: #3a2f14;
     --ink: #0e1116; --panel: #161b22; --panel-2: #1c232d; --line: #2a323d;
     --text: #e6e9ef; --muted: #8b95a4; --amber: #e0a53f; --teal: #5fb3b3;
     --red: #d9694f; --green: #6bbf8a; --blue: #6aa9e9;
     --gate-glow: #171d26; --on-amber: #10130f; --zebra: rgba(255,255,255,.022);
   }
   :root[data-theme="light"] {
+    --target-wash: #fdf1d8;
     --ink: #f4f5f7; --panel: #ffffff; --panel-2: #eef0f3; --line: #d6dae1;
     --text: #1a1f26; --muted: #5f6a78; --amber: #9d6a16; --teal: #2c7676;
     --red: #b23f28; --green: #2d7549; --blue: #1f6fb8;
@@ -116,6 +118,16 @@
   tbody tr:nth-child(even) td { background: var(--zebra); }
   tbody tr:hover td { background: var(--panel-2); }
   tbody tr.total td { border-top: 1px solid var(--muted); font-weight: 700; }
+  /* The row a dashboard cell linked to. Overrides the zebra and hover rules,
+     which also set td backgrounds, so the landing spot stays obvious while the
+     table is read. */
+  tbody tr.row-target td,
+  tbody tr.row-target:hover td { background: var(--target-wash); }
+  tbody tr.row-target td:first-child { box-shadow: inset 3px 0 0 var(--amber); }
+  @media (prefers-reduced-motion: no-preference) {
+    tbody tr.row-target td { animation: rowLand 1.1s ease-out 1; }
+  }
+  @keyframes rowLand { from { background: var(--amber); } }
   td.neg { color: var(--red); }
   /* Scorecard status: colour only, no symbols. In range stays a clear box —
      v10: in range carries no color indicator. */
@@ -198,7 +210,13 @@ function requireUnlock() {
   document.getElementById("gateMsg").textContent =
     "The dashboard password is needed first. Taking you there…";
   document.getElementById("gateLink").style.display = "";
-  location.replace("index.html?next=data.html");
+  // Carry the fragment across the unlock round-trip, or a deep link from the
+  // dashboard would land at the top of the page. It travels as its own
+  // parameter: ?next= stays a fixed allowlisted value rather than growing a
+  // caller-supplied tail.
+  const at = decodeURIComponent((location.hash || "").slice(1));
+  location.replace("index.html?next=data.html"
+    + (/^[A-Za-z0-9_-]+$/.test(at) ? "&at=" + at : ""));
 }
 
 /* ============================================================
@@ -245,8 +263,18 @@ const NUMERIC = new Set(["money", "money0", "num", "int", "pct", "pct1", "psf"])
    TABLE RENDERER
    ============================================================ */
 let TOC = [];
+// Row anchors for deep links from the dashboard. The dashboard builds the same
+// id from the same two strings, so the two must slugify identically -- keep this
+// in step with SC_ROW_ID in index.html.
+function slugPart(s) {
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+function scRowId(property, kpi) {
+  return "r-sc-measured--" + slugPart(property) + "--" + slugPart(kpi);
+}
+
 function renderTable(host, spec) {
-  const { id, title, feeds, note, cols, rows, filterable, totalRow } = spec;
+  const { id, title, feeds, note, cols, rows, filterable, totalRow, rowId } = spec;
   const box = el("div", "tbl");
   box.id = id;
 
@@ -294,7 +322,7 @@ function renderTable(host, spec) {
   const tbody = el("tbody");
   const draw = (list) => {
     tbody.textContent = "";
-    list.forEach(r => tbody.appendChild(buildRow(cols, r, r === totalRow)));
+    list.forEach(r => tbody.appendChild(buildRow(cols, r, r === totalRow, rowId)));
     count.textContent = list.length + (list.length === 1 ? " row" : " rows")
       + (list.length !== rows.length ? " of " + rows.length : "");
   };
@@ -317,8 +345,10 @@ function renderTable(host, spec) {
   TOC.push({ id, title, group: spec.group, n: rows.length });
 }
 
-function buildRow(cols, r, isTotal) {
+function buildRow(cols, r, isTotal, rowId) {
   const tr = el("tr", isTotal ? "total" : null);
+  // set on redraw too, so a filtered table keeps its deep-link targets
+  if (rowId) { const rid = rowId(r); if (rid) tr.id = rid; }
   cols.forEach(c => {
     const v = r[c.key];
     const numeric = NUMERIC.has(c.fmt);
@@ -557,6 +587,7 @@ async function loadAll() {
              { key: "value", label: "Measured" }, { key: "status", label: "Status" },
              { key: "was", label: "Workbook had" }, { key: "band", label: "Band it falls in" }],
       rows: measuredRows,
+      rowId: r => scRowId(r.property, r.kpi),
     });
 
     // When each feed behind the measured cells arrived, as opposed to the period
@@ -1018,12 +1049,28 @@ async function loadAll() {
   }
 
   buildTOC();
+  focusHashTarget();
   document.getElementById("footer").textContent =
     "Every table on this page is read from the same JSON the dashboard fetches, so what you "
     + "see here is what the charts plot. CSV exports carry raw unrounded values. "
     + "SECURITY: the password gate is client-side only and not encryption — this page exposes "
     + "the same data as the dashboard, so treat the link the same way.";
 }
+
+/* A scorecard cell on the dashboard links to the row of "Measured KPI values"
+   behind its number. Land on that row rather than at the top of a 30-row table:
+   the browser cannot do it itself, since the row is built by loadAll long after
+   it has given up on the fragment. */
+function focusHashTarget() {
+  const id = decodeURIComponent((location.hash || "").slice(1));
+  if (!id) return;
+  const target = document.getElementById(id);
+  if (!target) return;
+  document.querySelectorAll(".row-target").forEach(n => n.classList.remove("row-target"));
+  target.classList.add("row-target");
+  target.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+window.addEventListener("hashchange", focusHashTarget);
 
 function buildTOC() {
   const toc = document.getElementById("toc");

@@ -254,6 +254,14 @@
   .sc-chip .val { font-weight: 600; color: var(--text);
     font-variant-numeric: tabular-nums; text-align: center; }
   .sc-chip .val.pending { color: var(--muted); font-weight: 400; }
+  /* A measured value links to the row it came from on the data tables page.
+     Kept deliberately quiet: 35 of these sit in one grid, so an underline on
+     every one would read as noise rather than as an affordance. The dotted rule
+     appears on hover and focus, and the chip's own fill still carries status. */
+  .sc-chip a.src-link { color: inherit; text-decoration: none;
+    border-bottom: 1px dotted transparent; }
+  .sc-chip a.src-link:hover { border-bottom-color: currentColor; }
+  .sc-chip a.src-link:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
   .sc-chip.sc-state-exceeding { background: var(--fill-exceeding); border-color: var(--edge-exceeding); }
   .sc-chip.sc-state-in_range  { background: var(--fill-in_range);  border-color: var(--edge-in_range); }
   .sc-chip.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
@@ -607,8 +615,16 @@ function tryUnlock() {
   if (pwInput.value === PASSWORD) {
     try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (e) {}
     // came here from a gated page? go back to it
-    const next = new URLSearchParams(location.search).get("next");
-    if (ALLOWED_NEXT.includes(next)) { location.replace(next); return; }
+    const q = new URLSearchParams(location.search);
+    const next = q.get("next");
+    if (ALLOWED_NEXT.includes(next)) {
+      // data.html hands its fragment over as ?at= when it bounces someone here
+      // to unlock. Restore it so a deep link survives the round trip; the
+      // pattern keeps it to a plain anchor name.
+      const at = q.get("at") || "";
+      location.replace(next + (/^[A-Za-z0-9_-]+$/.test(at) ? "#" + at : ""));
+      return;
+    }
     reveal();
   } else {
     errEl.textContent = "Incorrect password";
@@ -1145,12 +1161,34 @@ const scSwatch = state => elc("span", "sc-swatch sc-state-" + state);
 // it can be good or bad in) gets no colour either: just its figures.
 const SC_PENDING = "––";
 const scUnscoredSet = () => new Set((SC && SC.unscored) || []);
-function scChip(state, value, unscored) {
+// Anchor of the row on the data tables page that this number came from. Every
+// cell carrying a value has exactly one row in "Measured KPI values" -- both
+// sides key it off the same property label and KPI name, so this must slugify
+// identically to scRowId in data.html.
+function SC_ROW_ID(propLabel, kpi) {
+  const part = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return "r-sc-measured--" + part(propLabel) + "--" + part(kpi);
+}
+// A measured value is a link to its source row; a pending "––" is not, since
+// there is no row behind it yet. propLabel is omitted where the caller has no
+// property in hand, and the value then renders plain rather than linking wrong.
+function scChip(state, value, unscored, propLabel, kpi) {
   const chip = elc("div", "sc-chip" + (unscored ? " sc-unscored" : " sc-state-" + state));
   const display = value && value.display != null ? String(value.display) : null;
   const val = elc("span", "val", display === null ? SC_PENDING : display);
-  if (display === null) val.classList.add("pending");
-  chip.appendChild(val);
+  if (display === null) {
+    val.classList.add("pending");
+    chip.appendChild(val);
+    return chip;
+  }
+  if (propLabel && kpi) {
+    const a = elc("a", "src-link");
+    a.href = "data.html#" + SC_ROW_ID(propLabel, kpi);
+    a.appendChild(val);
+    chip.appendChild(a);
+  } else {
+    chip.appendChild(val);
+  }
   return chip;
 }
 // What a cell says on hover, for both the matrix and the property strips.
@@ -1165,21 +1203,27 @@ function scCellTitle(name, st, v, unscored, prefix, srcKind) {
       " — reported, not graded against " + (scBand(name, st).trim() || "the band") +
       "; the colour is the workbook's own status" +
       ((SC.legend.find(l => l.state === st) || {}).label
-        ? " (" + (SC.legend.find(l => l.state === st) || {}).label.toLowerCase() + ")" : "");
+        ? " (" + (SC.legend.find(l => l.state === st) || {}).label.toLowerCase() + ")" : "")
+      + SC_SRC_HINT;
   }
   if (unscored) {
     const parts = v && v.parts, labels = v && v.parts_labels;
     const detail = (parts && labels && parts.length === labels.length)
       ? labels.map((l, i) => l + " $" + Math.round(parts[i]).toLocaleString()).join(" · ")
       : (v && v.display != null ? String(v.display) : "value pending");
-    return head + "reported, not graded — " + detail;
+    return head + "reported, not graded — " + detail +
+      (v && v.display != null ? SC_SRC_HINT : "");
   }
   return head + ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
     scBand(name, st) +
     (v && v.display != null
-      ? " — " + v.display + (v.window ? " (7-day totals, " + v.window + ")" : "")
+      ? " — " + v.display + (v.window ? " (7-day totals, " + v.window + ")" : "") + SC_SRC_HINT
       : " — value pending");
 }
+// Appended to the tooltip of any cell whose number links onward.
+const SC_SRC_HINT = "\n\nClick the value to see where it came from: its row in " +
+  "Measured KPI values on the data tables page, with the feed, the band and the " +
+  "status the workbook carried before.";
 const scValue = (prop, metric) => (prop.values || {})[metric] || null;
 // The band behind a status, now that the workbook publishes its ranges —
 // "In KPI target range (95.0% – 98.9%)" instead of the bare label.
@@ -1488,7 +1532,7 @@ async function renderScorecard(ids) {
         const st = p.statuses[name];
         const v = scValue(p, name);
         const un = unscored.has(name);
-        td.appendChild(scChip(st, v, un));
+        td.appendChild(scChip(st, v, un, p.label, name));
         td.title = scCellTitle(name, st, v, un, p.label, (p.status_source || {})[name]);
         tr.appendChild(td);
       });
@@ -1565,7 +1609,7 @@ function renderPropertyScorecard(slug, ids) {
       const v = scValue(p, name);
       const un = unscored.has(name);
       m.appendChild(elc("span", "nm", name));
-      m.appendChild(scChip(st, v, un));
+      m.appendChild(scChip(st, v, un, p.label, name));
       m.title = scCellTitle(name, st, v, un, null, (p.status_source || {})[name]);
       strip.appendChild(m);
     });
