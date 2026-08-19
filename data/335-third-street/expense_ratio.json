@@ -5,6 +5,9 @@
       "ratio_t12": 60.6,
       "revenue_t12": 2426361.69,
       "opex_recoverable_t12": 1469237.14,
+      "source_codes": [
+        "rs335"
+      ],
       "labels": [
         "Jul",
         "Aug",

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-08-19T21:01:14.633163+00:00",
+    "generated_at": "2026-08-19T21:04:02.999072+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -230,12 +230,12 @@
       {
         "slug": "palma",
         "name": "Palma",
-        "ratio_t12": 127.3,
+        "ratio_t12": 56.1,
         "trend_labels": [
           "Jun 2026"
         ],
         "trend_values": [
-          127.3
+          56.1
         ],
         "latest_monthly_labels": [
           "Jul",
@@ -252,18 +252,18 @@
           "Jun"
         ],
         "latest_monthly_ratio": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          19.8,
-          -899.6
+          159.1,
+          145.4,
+          102.3,
+          90.3,
+          47.0,
+          81.4,
+          59.2,
+          43.4,
+          55.3,
+          55.0,
+          38.8,
+          -36.0
         ]
       }
     ],
