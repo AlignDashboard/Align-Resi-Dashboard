@@ -1,5 +1,5 @@
 {
-  "_comment": "Property master. Every building ID AND consolidation ID maps to its parent property so statements route correctly whether sent per-building or consolidated. 'active' controls which show on the dashboard now (residential first; commercial/development ready for later). NOTE: The Landing building IDs include both 'p000611' (from master list) and 'p0005611' (from actual statement filenames) pending confirmation of the correct code. Fitzgerald is on the KPI scorecard and active on the dashboard, but its Yardi codes are not yet known \u2014 'codes' is empty, so no statements route to it until they are added.",
+  "_comment": "Property master. Every building ID AND consolidation ID maps to its parent property so statements route correctly whether sent per-building or consolidated. 'active' controls which show on the dashboard now (residential first; commercial/development ready for later). NOTE: The Landing building IDs include both 'p000611' (from master list) and 'p0005611' (from actual statement filenames) pending confirmation of the correct code.",
   "properties": [
     {
       "slug": "the-landing",
@@ -64,13 +64,6 @@
         "rspalman",
         "rspalmas"
       ]
-    },
-    {
-      "slug": "fitzgerald",
-      "name": "Fitzgerald",
-      "asset_type": "residential",
-      "active": true,
-      "codes": []
     },
     {
       "slug": "1023-mission",

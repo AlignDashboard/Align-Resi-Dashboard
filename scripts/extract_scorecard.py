@@ -50,6 +50,12 @@ STATE_BY_SYMBOL = {l["symbol"]: l["state"] for l in LEGEND}
 # excluded from the at-or-above-target counts rather than inflating them.
 UNSCORED = {"Split Between 30/60/90"}
 
+# Rows on the workbook's grid that are not published. The grid is the analyst's
+# working sheet and carries properties the dashboard does not report on; each
+# one published adds a column of hand-set symbols to the matrix and another
+# property to the portfolio roll-up, with no measured value behind any of it.
+EXCLUDED_PROPERTIES = {"Fitzgerald"}
+
 # Scorecard property label -> slug in config/properties.json. 2177 Third is on
 # the scorecard but not in the property master, so it maps to None and renders
 # without a link to a view that does not exist. Any slug named here that is
@@ -60,7 +66,6 @@ SLUGS = {
     "Landing": "the-landing",
     "335 Third": "335-third-street",
     "Madelon": "madelon",
-    "Fitzgerald": "fitzgerald",
     "Palma": "palma",
     "2177 Third": None,
 }
@@ -98,6 +103,9 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
     if not label:
         continue
     label = str(label).strip()
+    if label in EXCLUDED_PROPERTIES:
+        print(f"[skip] {label} — excluded from the dashboard (EXCLUDED_PROPERTIES)")
+        continue
     statuses, counts = {}, {"exceeding": 0, "in_range": 0, "below": 0, "missing": 0}
     for i, m in enumerate(metrics):
         sym = ws.cell(row=row, column=FIRST_METRIC_COL + i).value
