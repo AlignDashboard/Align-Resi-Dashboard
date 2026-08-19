@@ -1155,8 +1155,19 @@ function scChip(state, value, unscored) {
   return chip;
 }
 // What a cell says on hover, for both the matrix and the property strips.
-function scCellTitle(name, st, v, unscored, prefix) {
+function scCellTitle(name, st, v, unscored, prefix, srcKind) {
   const head = (prefix ? prefix + " · " : "") + name + ": ";
+  // value_only: a figure was measured but the band cannot grade it (a count
+  // triple against a per-unit band, or a basis still unconfirmed). Say so —
+  // otherwise the tooltip reads as though the number earned the status, when
+  // the colour is really still the workbook's hand-set one.
+  if (srcKind === "value_only" && v && v.display != null) {
+    return head + v.display + (v.window ? " (7-day totals, " + v.window + ")" : "") +
+      " — reported, not graded against " + (scBand(name, st).trim() || "the band") +
+      "; the colour is the workbook's own status" +
+      ((SC.legend.find(l => l.state === st) || {}).label
+        ? " (" + (SC.legend.find(l => l.state === st) || {}).label.toLowerCase() + ")" : "");
+  }
   if (unscored) {
     const parts = v && v.parts, labels = v && v.parts_labels;
     const detail = (parts && labels && parts.length === labels.length)
@@ -1196,6 +1207,7 @@ const SC_STALE_DAYS = 3;
 const SC_FEED_PREFIXES = [
   { prefix: "", fallbackWhat: "report" },
   { prefix: "eliseai_", fallbackWhat: "EliseAI daily email" },
+  { prefix: "bldg_", fallbackWhat: "EliseAI building metrics export" },
 ];
 function scFeeds() {
   const out = [];
@@ -1478,7 +1490,7 @@ async function renderScorecard(ids) {
         const v = scValue(p, name);
         const un = unscored.has(name);
         td.appendChild(scChip(st, v, un));
-        td.title = scCellTitle(name, st, v, un, p.label);
+        td.title = scCellTitle(name, st, v, un, p.label, (p.status_source || {})[name]);
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -1555,7 +1567,7 @@ function renderPropertyScorecard(slug, ids) {
       const un = unscored.has(name);
       m.appendChild(elc("span", "nm", name));
       m.appendChild(scChip(st, v, un));
-      m.title = scCellTitle(name, st, v, un);
+      m.title = scCellTitle(name, st, v, un, null, (p.status_source || {})[name]);
       strip.appendChild(m);
     });
   });

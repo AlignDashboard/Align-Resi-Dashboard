@@ -565,7 +565,8 @@ async function loadAll() {
     const arrivalRows = [];
     Object.entries(d.measured || {}).forEach(([slug, m]) => {
       const label = (props.find(p => p.slug === slug) || {}).label || slug;
-      [["", "report"], ["eliseai_", "EliseAI daily email"]].forEach(([pre, dflt]) => {
+      [["", "report"], ["eliseai_", "EliseAI daily email"],
+       ["bldg_", "EliseAI building metrics export"]].forEach(([pre, dflt]) => {
         const kpis = m[pre + "kpis"];
         if (!kpis || !kpis.length) return;
         const recv = m[pre + "received_at"];

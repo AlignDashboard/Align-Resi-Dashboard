@@ -135,6 +135,49 @@ The v10 legend made the in-range band white — no colour indicator — and
 `extract_scorecard.py` fails loudly if the workbook's legend fills change again,
 rather than publishing stale semantics.
 
+### The building-metrics export
+
+`scripts/populate_building_metrics.py <export.csv>` fills the scorecard from
+EliseAI's **building metrics export** (`metricsbuilding<YYYYMMDD>.csv`, 79
+columns per property). This is a *third* EliseAI feed, distinct from the two
+above: the weekly funnel report and the daily emails.
+
+It fills nine KPIs where the export column means what the KPI means — Leased %
+(from `100 − Exposure Rate`, which matches the KPI's definition better than
+`Occupancy Rate`), Trade-out %, Closing Ratio, # of Renewals, % Increase, Total
+Deliquency, AI Containment Rate, Avg First Response Time, and the T/L/A triple.
+
+Four rules keep it from overwriting better data or asserting what it cannot:
+
+1. **It never takes a cell another feed owns.** The Landing's and Palma's
+   delinquency come from the workbook and the Drive AR report, whose bases are
+   known and tie out; the export's delinquency basis is unstated and disagrees
+   sharply (Landing: 11.2% in the export vs 4.6% published). 335 Third's T/L/A
+   comes from the daily emails, which carry a known 7-day window and a real
+   arrival time. `owned_by_other_feeds()` reads `measured[slug]` to find them,
+   so a new feed is excluded by default rather than by remembering.
+2. **`# of Tours/Leads/Applications` is an `xx/yy/zz` triple** — tours / leads /
+   applications — and is **value only**, like the daily fill: the published band
+   is tours per available unit per *month*, which cannot grade a count triple.
+   The per-unit figure is recorded in `bldg_basis` for reference.
+3. **A property in lease-up is not graded on stabilised bands.** Under 50%
+   occupancy (`LEASEUP_OCCUPANCY_UNDER`), the occupancy- and rent-derived cells
+   in `LEASEUP_UNGRADED` are filled but left ungraded — otherwise an unopened
+   building scores red for not having opened. Automation and response-time KPIs
+   still grade normally, since they are about conversation handling.
+4. **Implausible cells are skipped, loudly.** Chorus reports +119.78% executed
+   rent increase against −3.74% offered, so `% Increase` is skipped there and
+   Trade-out falls back to `New Lease Trade-Out` alone, recorded in the basis.
+
+Two things to confirm before trusting it further: the export **states its period
+nowhere inside the file** (only the filename carries a date), yet trade-out,
+closing ratio and renewal rate are all defined on a trailing-3-month basis; and
+**`AI Response Time` has no unit** — assumed seconds, which is why Avg First
+Response Time is published value-only (`RESPONSE_IS_SECONDS`).
+
+Run it after `extract_scorecard.py` and after `populate_eliseai.py`. `--dry-run`
+reports without writing; `--received-at` records a real arrival time.
+
 ### "Data last updated" — arrival, not coverage
 
 The scorecard head carries the newest **arrival** time across the feeds behind
@@ -146,9 +189,13 @@ has stopped running. Both are published, per feed, under `measured[slug]`:
 
 | Field | Meaning |
 | --- | --- |
-| `received_at` / `eliseai_received_at` | when it arrived (ISO-8601, UTC) |
-| `as_of` / `eliseai_as_of` | the period the data describes |
-| `received_what` / `eliseai_received_what` | which feed it came from, for the tooltip |
+| `received_at` / `eliseai_received_at` / `bldg_received_at` | when it arrived (ISO-8601, UTC) |
+| `as_of` / `eliseai_as_of` / `bldg_as_of` | the period the data describes |
+| `received_what` / `eliseai_received_what` / `bldg_received_what` | which feed it came from, for the tooltip |
+
+The page enumerates these families from `SC_FEED_PREFIXES` in `index.html` (and
+the matching list in `data.html`), so **a new feed needs its prefix added there**
+or its arrival will not show up on the page or in the arrivals table.
 
 Where each arrival comes from:
 
