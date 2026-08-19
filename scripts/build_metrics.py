@@ -54,26 +54,86 @@ def period_key(label):
 
 # ---- accumulation ---------------------------------------------------------
 
-def store_expense_ratio(prop, parsed):
-    """Append/replace one rolling-T12 point for this property, keyed by period_end."""
+def latest_per_code(t12_parses):
+    """One statement per building code. The Drive folder often holds superseded
+    copies of the same statement, so keep the newest period per code, and on a
+    tie the last one processed -- the manifest is filename-sorted, so that is
+    the newest copy of a period the folder holds more than once.
+    """
+    latest = {}
+    for p in t12_parses:
+        c = p["property_code"]
+        if (c not in latest
+                or period_key(p["period_end"]) >= period_key(latest[c]["period_end"])):
+            latest[c] = p
+    return latest
+
+
+def store_expense_ratio(prop, t12_parses):
+    """Append/replace this property's rolling-T12 points, keyed by period_end.
+
+    A property can report under several building codes (Palma = rspalman +
+    rspalmas). The ratio describes the property, so the codes are summed before
+    it is taken. Storing one code's statement as the property's point published
+    a single building as if it were the whole: Palma's ratio read 127.3% off
+    Palma South alone, whose lease-up revenue is near zero, while Palma North
+    was billing $264k that month and was not in the figure at all.
+    """
+    # Grouped by period, so codes are only ever summed with each other when
+    # they cover the same twelve months. Codes reporting different periods
+    # yield a point each rather than nothing -- "source_codes" is then what
+    # shows the point speaks for part of the property.
+    by_period = {}
+    for code, p in sorted(latest_per_code(t12_parses).items()):
+        by_period.setdefault(p["period_end"], []).append((code, p))
+
     d = DATA / prop["slug"]
     d.mkdir(parents=True, exist_ok=True)
     fp = d / "expense_ratio.json"
     hist = json.load(open(fp)) if fp.exists() else {"points": []}
 
-    point = {
-        "period_end": parsed["period_end"],
-        "ratio_t12": parsed["expense_ratio_t12"],
-        "revenue_t12": parsed["revenue_t12"],
-        "opex_recoverable_t12": parsed["opex_recoverable_t12"],
-        # keep the latest statement's monthly detail too
-        "labels": parsed["labels"],
-        "monthly_ratio": parsed["expense_ratio_monthly"],
-    }
-    # replace if same period already stored, else append
-    hist["points"] = [p for p in hist["points"]
-                      if p["period_end"] != point["period_end"]]
-    hist["points"].append(point)
+    for period_end, group in by_period.items():
+        codes = [c for c, _ in group]
+        rev_t12 = sum(p["revenue_t12"] for _, p in group)
+        opex_t12 = sum(p["opex_recoverable_t12"] for _, p in group)
+
+        # The monthly detail sums position by position, so the month columns
+        # have to line up. They do for one period end; if that ever stops
+        # holding, say so and publish the leading code's detail unsummed rather
+        # than adding March to April.
+        labels = group[0][1]["labels"]
+        mismatched = next((c for c, p in group[1:] if p["labels"] != labels), None)
+        if mismatched:
+            print(f"[warn] {prop['name']} {period_end}: code '{mismatched}' has "
+                  f"different month labels than '{codes[0]}' -- monthly detail "
+                  f"is from '{codes[0]}' alone for this period")
+            monthly = group[0][1]["expense_ratio_monthly"]
+        else:
+            rev_m = [sum(p["revenue_monthly"][i] for _, p in group) for i in range(12)]
+            opex_m = [sum(p["opex_recoverable_monthly"][i] for _, p in group)
+                      for i in range(12)]
+            monthly = [round(100 * opex_m[i] / rev_m[i], 1) if rev_m[i] else None
+                       for i in range(12)]
+
+        point = {
+            "period_end": period_end,
+            "ratio_t12": round(100 * opex_t12 / rev_t12, 1) if rev_t12 else None,
+            "revenue_t12": round(rev_t12, 2),
+            "opex_recoverable_t12": round(opex_t12, 2),
+            # Which building codes the point was built from. Without this a
+            # point cannot be told apart from one stored against the wrong
+            # property, which is how a statement for 335 Third sat in Palma's
+            # series as an "Apr 2026" point until the figures were compared.
+            "source_codes": codes,
+            "labels": labels,
+            "monthly_ratio": monthly,
+        }
+        # replace if same period already stored, else append
+        hist["points"] = [p for p in hist["points"] if p["period_end"] != period_end]
+        hist["points"].append(point)
+        print(f"[ok] stored expense_ratio for {prop['name']} ({period_end}) "
+              f"from {'+'.join(codes)}")
+
     hist["points"].sort(key=lambda p: period_key(p["period_end"]))
     json.dump(hist, open(fp, "w"), indent=2)
     return hist
@@ -92,13 +152,8 @@ def store_monthly_revenue(prop, t12_parses):
     Per code, only the statement with the latest period end counts (the Drive
     folder often holds superseded copies of the same statement).
     """
-    latest = {}                          # code -> parse with the newest period
-    for p in t12_parses:
-        c = p["property_code"]
-        if c not in latest or period_key(p["period_end"]) > period_key(latest[c]["period_end"]):
-            latest[c] = p
     codes = {}
-    for c, p in sorted(latest.items()):
+    for c, p in sorted(latest_per_code(t12_parses).items()):
         # last month with a non-zero value; a statement can end on an empty month
         rev = p["revenue_monthly"]
         idx = max((i for i, v in enumerate(rev) if v), default=None)
@@ -273,13 +328,15 @@ def process_manifest():
         if not prop.get("active", True):
             print(f"[skip] {prop['name']} is inactive (code '{code}'); "
                   f"stored to history but not shown on dashboard")
-        store_expense_ratio(prop, parsed)
-        print(f"[ok] stored expense_ratio for {prop['name']} ({parsed['period_end']}) "
+        print(f"[ok] parsed T12 for {prop['name']} ({parsed['period_end']}) "
               f"from code '{code}'")
         t12_by_slug.setdefault(prop["slug"], (prop, []))[1].append(parsed)
 
-    # One month's operating revenue per property, for the ratio KPIs.
+    # Both of these describe the property as a whole, so they are stored once
+    # per property from all of its statements rather than once per file -- a
+    # per-file call let the last code processed overwrite the others.
     for slug, (prop, parses) in t12_by_slug.items():
+        store_expense_ratio(prop, parses)
         store_monthly_revenue(prop, parses)
 
 
