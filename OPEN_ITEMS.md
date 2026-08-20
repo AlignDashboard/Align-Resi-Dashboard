@@ -1,6 +1,6 @@
 # Open Items
 
-State as of 2026-08-20, HEAD `e0ac9bc`. IDs are stable — when an item closes, move
+State as of 2026-08-20, HEAD `2971d57`. IDs are stable — when an item closes, move
 it to *Closed* rather than renumbering, so "A3" means the same thing next week.
 
 **Live and uncertain** marks an item where the dashboard is publishing something
@@ -21,9 +21,9 @@ first: everything else is a gap, but these are assertions.
 | --- | --- | --- | --- |
 | B2′ | Owner says the unit is **days** — now published as "35–37 days", value-only. That reading is implausible for an AI's first response, so worth an eyeball against a fresh export before anyone acts on it | Grading Avg First Response Time | contained — value-only, basis on hover |
 | B3 | What does EliseAI count as an "open task"? | Open Elise Tasks is mapped to the daily email's "Review N pieces of pending knowledge" (`OPEN_TASKS_FROM_KNOWLEDGE`). Flat at 4 for eight consecutive days while `escalations_open` moved 0→5→4→3→5→9→5→2 like a live queue should | **yes** — graded green at the band edge (green is ≤ 4) off an assumption |
-| B6 | The bands for Trade-out %, Closing Ratio and # of Renewals are written for a trailing-3-month basis, but the export grading them is trailing-1-month (owner, 2026-08-20) — a volatile month swings the grade more than the bands assume. Either re-band for 1 month or accept the noise | How much a single month can move those three grades | **yes** — three KPIs graded on a shorter basis than their bands assume |
 | B4 | Which delinquency basis is right for The Landing — the export's 11.2% or the workbook's 4.6%? | Whether the export can ever own that cell. The workbook wins today and the export is skipped there | no — the tie-out basis is the one published |
 | B5 | Does the export really see 3 of 37 units leased at 335 Third? | Its Leased % of 8.1% is exactly 3/37, but no lease has been signed | no — filled but ungraded under the lease-up rule |
+| B6 | The bands for Trade-out %, Closing Ratio and # of Renewals are written for a trailing-3-month basis, but the export grading them is trailing-1-month (owner, 2026-08-20) — a volatile month swings the grade more than the bands assume. Either re-band for 1 month or accept the noise | How much a single month can move those three grades | **yes** — three KPIs graded on a shorter basis than their bands assume |
 
 ## C · Drive housekeeping (surfaced by the pipeline logs)
 
@@ -72,7 +72,9 @@ lease); the Jun 2026 statement is dummy data. The quarantine now carries
 `through_period: Jul 2026`, so the dummy stays blocked and the first real
 statement flows automatically, like Palma's. A2: `bldg_received_at` backfilled
 with the fill's commit time (2026-08-19T19:33:19Z) — the CSV was handed over in
-chat, never landed in a mailbox or Drive, so that is its honest arrival. B1: the
+chat and never hit the mailbox; a copy has since surfaced in the Drive EliseAI
+Reports folder (see D8), but pending folders capture no arrival time, so the
+commit time stands as when it reached the pipeline. B1: the
 export is a snapshot on the filename's date; rate KPIs trail 1 month (spawned
 B6). B2: unit is days per the owner — published as such, value-only, flagged as
 implausible (B2′). C1: `Delinquency` folder registered as a second
