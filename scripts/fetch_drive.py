@@ -13,6 +13,7 @@ report_type to tag them with. Subfolders with status != "active" are skipped
 (they have no parser yet) but logged so you can see what's waiting.
 """
 
+import fnmatch
 import os
 import io
 import json
@@ -129,8 +130,19 @@ def main():
             print(f"[warn] subfolder '{name}' not found in Drive parent")
             continue
         files = contents(name)
-        print(f"[info] '{name}' contains {len(files)} file(s): "
+        # file_glob splits a folder that holds more than one kind of file:
+        # EliseAI Reports carries both the weekly funnel .xlsx and the
+        # building-metrics .csv, each with its own report_type entry.
+        glob = entry.get("file_glob") or "*"
+        skipped = [f["name"] for f in files if not fnmatch.fnmatch(f["name"], glob)]
+        files = [f for f in files if fnmatch.fnmatch(f["name"], glob)]
+        print(f"[info] '{name}' ({glob}) contains {len(files)} file(s): "
               f"{[f['name'] for f in files]}")
+        if skipped:
+            # a file that matches no entry's glob must stay visible in the log,
+            # or it can sit in the folder for weeks with nothing to show for it
+            print(f"[note] '{name}': {len(skipped)} file(s) outside this "
+                  f"entry's glob: {skipped}")
         for f in files:
             dest = DL_ROOT / entry["report_type"] / f["name"]
             _download(svc, f["id"], dest)

@@ -13,7 +13,8 @@ first: everything else is a gap, but these are assertions.
 | --- | --- | --- | --- |
 | A3 | Send `…rs335_accrual.xlsx` and `…rspalman_Accrual (3).xlsx` — **or** let me add a header dump to the pipeline log, which needs nothing from you | The two-month offset. The two statements' monthly ratios match at +2 months, so one has the wrong period, and the T12 parser's month columns are hardcoded (`MONTHS_COLS`) with the header found by first-row-containing-a-month | **yes** — Palma's 56.1% ratio and its delinquency denominator ride on these periods |
 | A4 | Supply a market-survey export for the PSF chart (subject + comps, 30-day avg rent/sqft — the RealPage market survey or the AIRM feed both carry it). Owner confirmed the $4.01 is old | A live PSF card. The chart now says "hand-entered, date unknown — likely stale" on its face until a feed exists | contained — the staleness is disclosed on the card |
-| A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** Remaining: owner is updating the gmail-filing script (C3) so weeklies land in `Weekly Leasing Reports`; parser is D1, in progress — the inspect workflow can now read `_Unsorted`, so the Aug 18 file's structure is obtainable today | D1 | no |
+| A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** The funnel parser is live for both the `EliseAI Reports` and `Weekly Leasing Reports` folders, so the weeklies parse wherever the gmail-filing fix (C3) lands them. The Aug 18 file parses the day it moves out of `_Unsorted` | C3 only | no |
+| A6 | Which property does the concession burn-off export cover? The file says only "For Selected Properties" — no code, no name (20 units, −$54,990 recurring concessions as of 08/10). Parsed and tied out every run, but stored nowhere until this is answered: guessing would file one building's concessions under another | Concession Load % and the Effective-vs-Gross-Rent card | no — nothing publishes from it yet |
 
 ## B · Blocked on an answer from EliseAI
 
@@ -37,16 +38,17 @@ first: everything else is a gap, but these are assertions.
 Registered in `report_map.json` as `pending`. Each needs one sample file to write
 against; none is blocked on anything else.
 
+A parser cannot be truthfully written without a sample file; these folders have
+never held one. The day a first file lands, the fetch log lists it (`[skip] …
+file(s) waiting`) and the inspect workflow can dump its structure.
+
 | # | Drive folder |
 | --- | --- |
-| D1 | Weekly Leasing Reports (see A5, C2) |
-| D2 | EliseAI Reports — the weekly funnel baseline. **Structure obtained** from the 2026-08-20 inspect run: sheets Comm by Week / Comm to Date / Comm by Month / by Month+Channel / by Month+Channel+Source; columns include Prospects Engaged, Appointments Scheduled, AI Scheduled, Lead-to-Appointment/Show/Application/Lease rates, Number of Leases, PropertyId. Comm to Date shows 335 Third at 0 leases since service start (2026-01-01), corroborating B5 |
+| D1 | Weekly Leasing Reports — the folder's intended content, the RealPage rate tracker behind the workbook's `Lease Detail` tab, has never appeared (the funnel exports that pass through are D2's, and parse). Ties to C2 |
 | D3 | Property Status |
-| D4 | Concession Burnoff |
 | D5 | AIRM - Yardi Rev Management |
 | D6 | AP Analytics |
 | D7 | `Workorders - Mainentance ` (note the typo and trailing space in the folder name) |
-| D8 | EliseAI building-metrics CSV — `metrics-building-2026-08-19.csv` appeared in the Drive `EliseAI Reports` folder (2026-08-20 run log). Wiring `populate_building_metrics.py` into the pipeline from there gets real Drive arrival times and removes the hand-off step. Note the CSV naming changed from `metricsbuilding<YYYYMMDD>.csv` |
 
 ## E · Keeping data out of git history
 
@@ -66,6 +68,19 @@ Documented in CLAUDE.md and built but not activated. Strictly ordered.
 | F2 | The shared scorecard note prints on every property card, including the line about Palma's lease-up overrides, which reads oddly on Chorus. Can be scoped per property |
 
 ## Closed
+
+2026-08-20 (parser round) — D2: `parse_leasing_funnel` live for the `EliseAI
+Reports` and `Weekly Leasing Reports` folders; per-community aggregates to
+`data/<slug>/leasing_funnel.json`, portfolio-vs-communities tie-out, refusals
+tested. D4: `parse_concession_burnoff` live — as-of, unit count and money
+totals tied out against the report's own total row, names never emitted; stored
+nowhere until A6 settles attribution. D8: the building-metrics CSV is fetched
+from Drive (file_glob now honoured, so the CSV and the funnel xlsx in one
+folder route separately) and `update.yml` runs `populate_building_metrics.py`
+on the newest one with Drive's `landed_at` as the arrival — the A2 hand-off
+step is gone. Exports' property labels route through `aliases` in
+`config/properties.json`. Guard tests: `scripts/test_funnel_and_concessions.py`
+(19 checks, fixture-free).
 
 2026-08-20 (owner round) — A1: no real T12 exists for 335 Third (new build, no
 lease); the Jun 2026 statement is dummy data. The quarantine now carries

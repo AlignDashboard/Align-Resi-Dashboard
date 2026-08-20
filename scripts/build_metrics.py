@@ -33,8 +33,10 @@ def load_properties():
     cfg = json.load(open("config/properties.json"))
     code_to_prop = {}
     for p in cfg["properties"]:
-        for c in p["codes"]:
-            # normalize codes to lowercase for matching robustness
+        # aliases are the names third-party exports use where Yardi would use a
+        # code ("335 3rd Street"); both route the same way
+        for c in list(p["codes"]) + list(p.get("aliases") or []):
+            # normalize to lowercase for matching robustness
             code_to_prop[c.lower()] = p
     return cfg["properties"], code_to_prop
 
@@ -250,11 +252,40 @@ def store_delinquency(prop, parsed):
                          "summary", "residents"])
 
 
+def store_leasing_funnel(prop, parsed):
+    """data/<slug>/leasing_funnel.json — this community's funnel series.
+
+    The parse arrives through the multi-section router, so the community's own
+    fields sit in sections[0]; lift them to the top so the stored file reads as
+    one property's report. Aggregate counts and rates only — the export carries
+    no person-level data at all (verified by the inspector on two exports).
+    """
+    sec = (parsed.get("sections") or [{}])[0]
+    flat = dict(parsed)
+    for k in ("community", "property_id", "service_start", "to_date", "by_month"):
+        flat[k] = sec.get(k)
+    return store_report(prop, flat, "leasing_funnel.json",
+                        ["report_type", "property", "property_code", "community",
+                         "property_id", "as_of", "service_start", "to_date",
+                         "by_month"])
+
+
+def store_concessions(prop, parsed):
+    """data/<slug>/concessions.json — aggregates only, per the repo rule that
+    committed files carry no unit-level detail. The per-unit rows stay in the
+    parse for tie-outs but are not persisted."""
+    return store_report(prop, parsed, "concessions.json",
+                        ["report_type", "as_of", "coverage", "unit_count",
+                         "totals"])
+
+
 # report_type -> what to do with a successful parse
 ACCUMULATORS = {
     "t12_statement": None,          # handled inline (needs the book/period checks)
     "rent_roll": store_rent_roll,
     "ar_analytics": store_delinquency,
+    "leasing_funnel": store_leasing_funnel,
+    "concession_burnoff": store_concessions,
 }
 
 
@@ -310,6 +341,15 @@ def process_manifest():
                 code = parsed.get("property_code")
                 prop = code_to_prop.get(code.lower()) if code else None
                 if not prop:
+                    if parsed.get("unattributed"):
+                        # the file itself names no property (the concession
+                        # burn-off says only "For Selected Properties"), so
+                        # this is an export-settings problem, not a config one
+                        print(f"[warn] {item['name']} names no property "
+                              f"({parsed.get('coverage')!r}) -- parsed and tied "
+                              f"out, but stored nowhere until the owner settles "
+                              f"which property the export covers")
+                        continue
                     print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                           f"add it to config/properties.json; skipping")
                     continue

@@ -105,11 +105,14 @@ resident AR report cannot speak to them.
 
 ### EliseAI leasing data
 
-Two feeds, per the owner's design: the **weekly EliseAI report** (an attachment,
-filed into the Drive `EliseAI Reports` folder — registered in `report_map.json`,
-parser pending until the first file shows its format) is the baseline; the
-**"Leasing AI Daily Report" emails** to `dashboard@alignrealestate.com` are the
-daily updates.
+Two feeds, per the owner's design: the **weekly EliseAI funnel report**
+(`leasing_funnel_report_YYYY-MM-DD.xlsx`, filed into Drive — parsed by
+`parse_leasing_funnel` from either the `EliseAI Reports` or `Weekly Leasing
+Reports` folder into `data/<slug>/leasing_funnel.json`, aggregates only, with a
+portfolio-vs-communities tie-out) is the baseline; the **"Leasing AI Daily
+Report" emails** to `dashboard@alignrealestate.com` are the daily updates.
+Exports name properties in their own labels ("335 3rd Street"), which route
+through each property's `aliases` in `config/properties.json`.
 
 The daily emails list prospects **by name with email and phone**. Only counts
 leave the mailbox: they are extracted (by hand, via the Gmail connector — CI has
@@ -184,7 +187,18 @@ the figure is published in days but stays value-only rather than graded until
 a fresh export makes sense of it.
 
 Run it after `extract_scorecard.py` and after `populate_eliseai.py`. `--dry-run`
-reports without writing; `--received-at` records a real arrival time.
+reports without writing; `--received-at` records a real arrival time. The CSV
+now lands in the Drive `EliseAI Reports` folder and `update.yml` runs this
+script on the newest one automatically, passing Drive's `landed_at` as the
+arrival — the hand-off step only exists for a CSV that never reached Drive.
+
+The **concession burn-off export** (Drive `Concession Burnoff` folder) parses
+via `parse_concession_burnoff` — as-of date, unit count and money totals, tied
+out against the report's own total row; resident names are read only to tell a
+data row from the total row and never emitted. The export says only "For
+Selected Properties", naming no property, so until the owner settles which
+building it covers the parse is logged and stored nowhere — attribution by
+guesswork would file one building's concessions under another.
 
 ### "Data last updated" — arrival, not coverage
 

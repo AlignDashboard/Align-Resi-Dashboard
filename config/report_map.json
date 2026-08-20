@@ -24,6 +24,14 @@
     },
     {
       "drive_folder": "Weekly Leasing Reports",
+      "report_type": "leasing_funnel",
+      "parser": "parse_leasing_funnel",
+      "file_glob": "leasing_funnel_report*.xlsx",
+      "status": "active",
+      "_comment": "The EliseAI weekly funnel parses from here too, so it works wherever the gmail filing lands it. The pending entry below is for this folder's intended content -- the RealPage rate tracker -- which has never yet arrived."
+    },
+    {
+      "drive_folder": "Weekly Leasing Reports",
       "report_type": "leasing_report",
       "parser": null,
       "file_glob": "*.xlsx",
@@ -32,9 +40,9 @@
     {
       "drive_folder": "Concession Burnoff",
       "report_type": "concession_burnoff",
-      "parser": null,
+      "parser": "parse_concession_burnoff",
       "file_glob": "*.xlsx",
-      "status": "pending"
+      "status": "active"
     },
     {
       "drive_folder": "AIRM - Yardi Rev Management",
@@ -74,10 +82,18 @@
     },
     {
       "drive_folder": "EliseAI Reports",
-      "report_type": "eliseai_weekly",
+      "report_type": "leasing_funnel",
+      "parser": "parse_leasing_funnel",
+      "file_glob": "leasing_funnel_report*.xlsx",
+      "status": "active"
+    },
+    {
+      "drive_folder": "EliseAI Reports",
+      "report_type": "bldg_metrics_csv",
       "parser": null,
-      "file_glob": "*.xlsx",
-      "status": "pending"
+      "file_glob": "*.csv",
+      "status": "active",
+      "_comment": "The building-metrics CSV. No parse/accumulate step -- update.yml runs populate_building_metrics.py on the newest one after the scorecard fill, passing Drive's landed_at as the arrival time."
     }
   ]
 }

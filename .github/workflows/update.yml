@@ -46,6 +46,32 @@ jobs:
             python scripts/populate_scorecard.py --from-pipeline "$slug"
           done
 
+      # The building-metrics CSV lands in the Drive EliseAI Reports folder and
+      # needs no parse/accumulate step: populate_building_metrics fills the
+      # scorecard from it directly. Drive's landed_at rides along as the
+      # arrival time, so "data last updated" reflects when the export actually
+      # arrived rather than when someone handed it over. Runs after the
+      # delinquency fill so the never-take-an-owned-cell rule sees the other
+      # feeds' claims.
+      - name: Fill the scorecard from the building-metrics export
+        run: |
+          python - <<'EOF'
+          import json, pathlib, subprocess, sys
+          folder = pathlib.Path("_downloads/bldg_metrics_csv")
+          csvs = sorted(folder.glob("*.csv")) if folder.exists() else []
+          if not csvs:
+              print("no building-metrics CSV this run"); sys.exit(0)
+          newest = csvs[-1]
+          landed = next((e.get("landed_at")
+                         for e in json.load(open("_downloads/manifest.json"))
+                         if e.get("name") == newest.name), None)
+          cmd = [sys.executable, "scripts/populate_building_metrics.py", str(newest)]
+          if landed:
+              cmd += ["--received-at", landed]
+          print("running:", " ".join(cmd))
+          sys.exit(subprocess.call(cmd))
+          EOF
+
       - name: Refuse to commit if personal data leaked into the output
         run: python scripts/check_no_pii.py
 

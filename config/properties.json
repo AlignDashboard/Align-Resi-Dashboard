@@ -1,5 +1,5 @@
 {
-  "_comment": "Property master. Every building ID AND consolidation ID maps to its parent property so statements route correctly whether sent per-building or consolidated. 'active' controls which show on the dashboard now (residential first; commercial/development ready for later). NOTE: The Landing building IDs include both 'p000611' (from master list) and 'p0005611' (from actual statement filenames) pending confirmation of the correct code.",
+  "_comment": "Property master. Every building ID AND consolidation ID maps to its parent property so statements route correctly whether sent per-building or consolidated. 'active' controls which show on the dashboard now (residential first; commercial/development ready for later). NOTE: The Landing building IDs include both 'p000611' (from master list) and 'p0005611' (from actual statement filenames) pending confirmation of the correct code. 'aliases' are the names third-party exports use for a property (EliseAI says '335 3rd Street', Yardi says rs335); reports that carry a name instead of a code route through them.",
   "properties": [
     {
       "slug": "the-landing",
@@ -13,6 +13,9 @@
         "p0005612",
         "p0005640",
         "p0005671"
+      ],
+      "aliases": [
+        "The Landing"
       ]
     },
     {
@@ -25,6 +28,9 @@
         "p0003872",
         "p0004764",
         "p0005215"
+      ],
+      "aliases": [
+        "Chorus"
       ]
     },
     {
@@ -36,6 +42,10 @@
         "madelon",
         "camadelo",
         "camadret"
+      ],
+      "aliases": [
+        "The Madelon",
+        "Madelon"
       ]
     },
     {
@@ -53,7 +63,10 @@
         "through_period": "Jul 2026",
         "since": "2026-08-19",
         "reason": "Owner confirmed 2026-08-20: 335 Third is newly built with no signed lease, so no real T12 exists yet -- the Jun 2026 statement filed under rs335 is dummy data (it posts $2.4M of T12 revenue, and its monthly ratios match Palma North's at a two-month offset). Statements ending after Jul 2026 flow automatically, like Palma's, so nothing needs lifting when real data starts."
-      }
+      },
+      "aliases": [
+        "335 3rd Street"
+      ]
     },
     {
       "slug": "palma",
@@ -64,6 +77,9 @@
         ".palma",
         "rspalman",
         "rspalmas"
+      ],
+      "aliases": [
+        "Palma"
       ]
     },
     {

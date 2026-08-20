@@ -118,9 +118,10 @@ def num(row, key):
 
 
 def as_of_from_name(path):
-    """metricsbuilding20260819.csv -> 2026-08-19. The export states its period
-    nowhere inside the file, so the filename is the only date available."""
-    m = re.search(r"(20\d{2})(\d{2})(\d{2})", os.path.basename(path))
+    """metricsbuilding20260819.csv or metrics-building-2026-08-19.csv ->
+    2026-08-19 (EliseAI changed the naming between exports). The export states
+    its period nowhere inside the file, so the filename is the only date."""
+    m = re.search(r"(20\d{2})-?(\d{2})-?(\d{2})", os.path.basename(path))
     return f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else None
 
 
