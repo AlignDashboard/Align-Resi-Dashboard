@@ -40,12 +40,13 @@ against; none is blocked on anything else.
 | # | Drive folder |
 | --- | --- |
 | D1 | Weekly Leasing Reports (see A5, C2) |
-| D2 | EliseAI Reports — the weekly funnel baseline |
+| D2 | EliseAI Reports — the weekly funnel baseline. **Structure obtained** from the 2026-08-20 inspect run: sheets Comm by Week / Comm to Date / Comm by Month / by Month+Channel / by Month+Channel+Source; columns include Prospects Engaged, Appointments Scheduled, AI Scheduled, Lead-to-Appointment/Show/Application/Lease rates, Number of Leases, PropertyId. Comm to Date shows 335 Third at 0 leases since service start (2026-01-01), corroborating B5 |
 | D3 | Property Status |
 | D4 | Concession Burnoff |
 | D5 | AIRM - Yardi Rev Management |
 | D6 | AP Analytics |
 | D7 | `Workorders - Mainentance ` (note the typo and trailing space in the folder name) |
+| D8 | EliseAI building-metrics CSV — `metrics-building-2026-08-19.csv` appeared in the Drive `EliseAI Reports` folder (2026-08-20 run log). Wiring `populate_building_metrics.py` into the pipeline from there gets real Drive arrival times and removes the hand-off step. Note the CSV naming changed from `metricsbuilding<YYYYMMDD>.csv` |
 
 ## E · Keeping data out of git history
 
