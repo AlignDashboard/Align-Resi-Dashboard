@@ -105,24 +105,29 @@ def make_burnoff(path, break_tie_out=False, move_header=False):
     ws.append([None, "Type", None, None, "Date", "Date", "Recurring",
                "Concessions", "Concessions", "End Date", "Term", "Rent", "Rent", "Month"])
     ws.append([None, None, None, None, None, None, "Concessions", None, "Remaining"])
-    ws.append(["Some Section Heading"])            # text row, no unit, no money
-    rows = [
-        # numeric money
-        ["101", "A1", FAKE_NAMES[0].split()[0], FAKE_NAMES[0].split()[1],
-         "2026-05-01", "2026-05-01", -1500.0, -1500.0, -1000.0,
-         "2027-04-30", 12, 2800.0, 2650.0, 0],
-        # money as text, MTM term, dash placeholder
-        ["202", "B2", FAKE_NAMES[1].split()[0], FAKE_NAMES[1].split()[1],
-         "2026-06-15", "2026-06-15", "(2,400.00)", "(2,400.00)", "(2,200.00)",
-         "2027-06-14", "MTM", "$3,600", "3,400.00", "-"],
-    ]
-    for r in rows:
-        ws.append(r)
+    # section 1: labeled with a property alias, mixed numeric/text money
+    ws.append(["The Landing"])                     # heading row -> section label
+    ws.append(["101", "A1", FAKE_NAMES[0].split()[0], FAKE_NAMES[0].split()[1],
+               "2026-05-01", "2026-05-01", -1500.0, -1500.0, -1000.0,
+               "2027-04-30", 12, 2800.0, 2650.0, 0])
+    ws.append(["202", "B2", FAKE_NAMES[1].split()[0], FAKE_NAMES[1].split()[1],
+               "2026-06-15", "2026-06-15", "(2,400.00)", "(2,400.00)", "(2,200.00)",
+               "2027-06-14", "MTM", "$3,600", "3,400.00", "-"])
     ws.append(["303", "C3", None, None, None, None,   # unit label, no figures
                None, None, None, None, None, "-", "-", "-"])
-    total_g = -3900.0 + (100 if break_tie_out else 0)
-    ws.append([None, None, None, None, None, None, total_g,
+    ws.append([None, None, None, None, None, None, -3900.0,   # subtotal
                -3900.0, -3200.0, None, None, 6400.0, 6050.0, 0])
+    # section 2: another property block
+    ws.append(["Palma"])
+    ws.append(["B12", "S1", FAKE_NAMES[0].split()[0], FAKE_NAMES[0].split()[1],
+               "2026-07-01", "2026-07-01", -1833.0, -1833.0, -1833.0,
+               "2027-06-30", 12, 2500.0, 2450.0, 0])
+    ws.append([None, None, None, None, None, None, -1833.0,   # subtotal
+               -1833.0, -1833.0, None, None, 2500.0, 2450.0, 0])
+    # grand total across both sections
+    total_g = -5733.0 + (100 if break_tie_out else 0)
+    ws.append([None, None, None, None, None, None, total_g,
+               -5733.0, -5033.0, None, None, 8900.0, 8500.0, 0])
     wb.save(path)
 
 
@@ -179,14 +184,29 @@ def main():
     make_burnoff(cpath)
     c = pcb.parse(str(cpath))
     check("as_of from A3", c["as_of"] == "2026-08-10", c["as_of"])
-    check("unattributed flag", c["unattributed"] is True and c["property_code"] is None)
-    check("unit count excludes total, section and empty rows", c["unit_count"] == 2)
-    u202 = next(u for u in c["units"] if u["unit"] == "202")
+    check("sections are labeled, so not unattributed", c["unattributed"] is False)
+    check("unit count excludes total, section and empty rows", c["unit_count"] == 3)
+    check("two sections with their heading labels",
+          [s["label"] for s in c["sections"]] == ["The Landing", "Palma"])
+    all_units = [u for s in c["sections"] for u in s["units"]]
+    u202 = next(u for u in all_units if u["unit"] == "202")
     check("text money parsed", u202["recurring_concessions"] == -2400.0
           and u202["market_rent"] == 3600.0 and u202["lease_term"] == "MTM")
+    check("per-section and grand tie-outs all ok", all(k["ok"] for k in c["checks"]))
+    check("section labels route through aliases",
+          all(code_to_prop.get(s["label"].lower()) for s in c["sections"]))
+    one = dict(c); one["sections"] = [c["sections"][0]]
+    bm.store_concessions(code_to_prop["the landing"], one)
+    landed = json.loads((bm.DATA / "the-landing" / "concessions.json").read_text())
+    check("stored aggregate only, no unit rows",
+          "units" not in landed and landed["unit_count"] == 2
+          and landed["totals"]["recurring_concessions"] == -3900.0)
+    blob2 = json.dumps(landed)
+    check("no resident name in the stored file",
+          all(n.split()[0] not in blob2 for n in FAKE_NAMES))
     check("totals tie out", all(k["ok"] for k in c["checks"]) and
-          c["totals"]["recurring_concessions"] == -3900.0)
-    blob = json.dumps(c)
+          c["totals"]["recurring_concessions"] == -5733.0)
+    blob = json.dumps({k: v for k, v in c.items() if k != "sections"})
     check("no resident name in the parse output",
           all(n.split()[0] not in blob and n.split()[1] not in blob for n in FAKE_NAMES))
 

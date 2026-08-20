@@ -273,10 +273,16 @@ def store_leasing_funnel(prop, parsed):
 def store_concessions(prop, parsed):
     """data/<slug>/concessions.json — aggregates only, per the repo rule that
     committed files carry no unit-level detail. The per-unit rows stay in the
-    parse for tie-outs but are not persisted."""
-    return store_report(prop, parsed, "concessions.json",
-                        ["report_type", "as_of", "coverage", "unit_count",
-                         "totals"])
+    parse for tie-outs but are not persisted. The export carries one section
+    per property block; the routed section's own figures sit in sections[0]."""
+    sec = (parsed.get("sections") or [{}])[0]
+    flat = dict(parsed)
+    for k in ("label", "unit_count", "totals"):
+        if k in sec:
+            flat[k] = sec[k]
+    return store_report(prop, flat, "concessions.json",
+                        ["report_type", "as_of", "coverage", "label",
+                         "unit_count", "totals"])
 
 
 # report_type -> what to do with a successful parse

@@ -14,7 +14,7 @@ first: everything else is a gap, but these are assertions.
 | A3 | Send `…rs335_accrual.xlsx` and `…rspalman_Accrual (3).xlsx` — **or** let me add a header dump to the pipeline log, which needs nothing from you | The two-month offset. The two statements' monthly ratios match at +2 months, so one has the wrong period, and the T12 parser's month columns are hardcoded (`MONTHS_COLS`) with the header found by first-row-containing-a-month | **yes** — Palma's 56.1% ratio and its delinquency denominator ride on these periods |
 | A4 | Supply a market-survey export for the PSF chart (subject + comps, 30-day avg rent/sqft — the RealPage market survey or the AIRM feed both carry it). Owner confirmed the $4.01 is old | A live PSF card. The chart now says "hand-entered, date unknown — likely stale" on its face until a feed exists | contained — the staleness is disclosed on the card |
 | A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** The funnel parser is live for both the `EliseAI Reports` and `Weekly Leasing Reports` folders, so the weeklies parse wherever the gmail-filing fix (C3) lands them. The Aug 18 file parses the day it moves out of `_Unsorted` | C3 only | no |
-| A6 | Which property does the concession burn-off export cover? The file says only "For Selected Properties" — no code, no name (20 units, −$54,990 recurring concessions as of 08/10). Parsed and tied out every run, but stored nowhere until this is answered: guessing would file one building's concessions under another | Concession Load % and the Effective-vs-Gross-Rent card | no — nothing publishes from it yet |
+| A6 | Which property does the concession burn-off export cover? The file says only "For Selected Properties" — no code, no name (−$54,990 recurring concessions as of 08/10). Parsed and tied out every run, but stored nowhere until this is answered: guessing would file one building's concessions under another. (The real export also carries money as text — the parser coerces it as of `7f3dbe0`) | Concession Load % and the Effective-vs-Gross-Rent card | no — nothing publishes from it yet |
 
 ## B · Blocked on an answer from EliseAI
 
@@ -85,11 +85,10 @@ step is gone. Exports' property labels route through `aliases` in
 2026-08-20 (owner round) — A1: no real T12 exists for 335 Third (new build, no
 lease); the Jun 2026 statement is dummy data. The quarantine now carries
 `through_period: Jul 2026`, so the dummy stays blocked and the first real
-statement flows automatically, like Palma's. A2: `bldg_received_at` backfilled
-with the fill's commit time (2026-08-19T19:33:19Z) — the CSV was handed over in
-chat and never hit the mailbox; a copy has since surfaced in the Drive EliseAI
-Reports folder (see D8), but pending folders capture no arrival time, so the
-commit time stands as when it reached the pipeline. B1: the
+statement flows automatically, like Palma's. A2: superseded by the real thing —
+with D8 wired, the pipeline refilled the feed from the Drive copy and
+`bldg_received_at` is now the CSV's true Drive arrival, 2026-08-19T19:20:41Z
+(the commit-time backfill had been 13 minutes late). B1: the
 export is a snapshot on the filename's date; rate KPIs trail 1 month (spawned
 B6). B2: unit is days per the owner — published as such, value-only, flagged as
 implausible (B2′). C1: `Delinquency` folder registered as a second
