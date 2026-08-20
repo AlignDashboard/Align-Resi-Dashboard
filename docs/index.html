@@ -655,7 +655,7 @@ const PLACEHOLDER_PROPERTIES = [
   { slug: "chorus",           name: "Chorus" },
   { slug: "madelon",          name: "Madelon" },
   { slug: "335-third-street", name: "335 Third St" },
-  { slug: "palma",            name: "Palma", scorecard: true },
+  { slug: "palma",            name: "Palma" },
 ];
 
 (function buildPropertyTabs() {
@@ -686,10 +686,11 @@ const PLACEHOLDER_PROPERTIES = [
     const grid = document.createElement("div");
     grid.className = "grid";
 
-    // Properties flagged for it get their scorecard slice above the
-    // placeholder, same card as The Landing's. Rendered once scorecard.json
-    // arrives (renderPropertyScorecard reads the shared SC).
-    if (p.scorecard) {
+    // Every property gets its own scorecard slice above the placeholder, the
+    // same card The Landing has. Rendered once scorecard.json arrives
+    // (renderPropertyScorecard reads the shared SC, and says so plainly if the
+    // property is not on the grid at all).
+    {
       const ids = {
         eyebrow: "psc-" + p.slug + "-eyebrow", health: "psc-" + p.slug + "-health",
         strip: "psc-" + p.slug + "-strip", legend: "psc-" + p.slug + "-legend",
@@ -733,11 +734,8 @@ const PLACEHOLDER_PROPERTIES = [
     big.textContent = p.name;
     const why = document.createElement("div");
     why.className = "why";
-    why.textContent = p.scorecard
-      ? "Placeholder. This property's full view has not been built yet — " +
-        "its KPI scorecard slice is above."
-      : "Placeholder. This property's view has not been built yet — " +
-        "its KPI statuses are on the Scorecard tab in the meantime.";
+    why.textContent = "Placeholder. This property's full view has not been " +
+      "built yet — its KPI scorecard slice is above.";
     const dash2 = document.createElement("div"); dash2.className = "dash";
     empty.append(dash1, big, why, dash2);
     card.appendChild(empty);
