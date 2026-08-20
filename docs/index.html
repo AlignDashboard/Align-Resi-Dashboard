@@ -254,6 +254,8 @@
   .sc-chip .val { font-weight: 600; color: var(--text);
     font-variant-numeric: tabular-nums; text-align: center; }
   .sc-chip .val.pending { color: var(--muted); font-weight: 400; }
+  /* Reported, but no band could grade it — legible, visibly not a result. */
+  .sc-chip .val.ungraded { color: var(--muted); font-weight: 500; }
   /* A measured value links to the row it came from on the data tables page.
      Kept deliberately quiet: 35 of these sit in one grid, so an underline on
      every one would read as noise rather than as an affordance. The dotted rule
@@ -266,7 +268,7 @@
   .sc-chip.sc-state-in_range  { background: var(--fill-in_range);  border-color: var(--edge-in_range); }
   .sc-chip.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
   /* reported, not graded: no fill, no edge — just the figures */
-  .sc-chip.sc-unscored { background: transparent; border-color: transparent; }
+  .sc-chip.sc-ungraded { background: transparent; border-color: transparent; }
 
   /* Legend swatch: the same fills the chips use, since colour alone carries
      the status now. In range shows as a clear box with a faint outline —
@@ -284,6 +286,9 @@
     font-size: 10.5px; color: var(--text); border-bottom: 1px solid var(--line); padding: 3px 0; }
   .sc-strip .m .nm { color: var(--muted); }
   .sc-note { font-size: 9px; letter-spacing: .5px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+  .sc-legend .sc-legend-note .val { font-variant-numeric: tabular-nums; }
+  .sc-legend .sc-legend-note .val.ungraded { color: var(--muted); font-weight: 500; }
+  .sc-legend .sc-legend-note .val.pending { color: var(--muted); font-weight: 400; }
   .sc-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 9px; letter-spacing: 1px;
     color: var(--muted); text-transform: uppercase; margin-top: 10px; }
 
@@ -1172,8 +1177,13 @@ function SC_ROW_ID(propLabel, kpi) {
 // A measured value is a link to its source row; a pending "––" is not, since
 // there is no row behind it yet. propLabel is omitted where the caller has no
 // property in hand, and the value then renders plain rather than linking wrong.
-function scChip(state, value, unscored, propLabel, kpi) {
-  const chip = elc("div", "sc-chip" + (unscored ? " sc-unscored" : " sc-state-" + state));
+function scChip(state, value, unscored, propLabel, kpi, srcKind) {
+  // Colour means graded: a report supplied the number and the published band
+  // could place it. Everything else -- a hand-set symbol with no measurement
+  // behind it, a figure the band cannot grade, a distribution -- shows its
+  // contents with no fill. What is coloured is exactly what the tally counts.
+  const isGraded = srcKind === "measured" && !unscored;
+  const chip = elc("div", "sc-chip" + (isGraded ? " sc-state-" + state : " sc-ungraded"));
   const display = value && value.display != null ? String(value.display) : null;
   const val = elc("span", "val", display === null ? SC_PENDING : display);
   if (display === null) {
@@ -1181,6 +1191,9 @@ function scChip(state, value, unscored, propLabel, kpi) {
     chip.appendChild(val);
     return chip;
   }
+  // A reported-but-ungraded figure must not pass for a graded in-range one:
+  // in range carries no fill by design, so without this the two are identical.
+  if (!isGraded) val.classList.add("ungraded");
   if (propLabel && kpi) {
     const a = elc("a", "src-link");
     a.href = "data.html#" + SC_ROW_ID(propLabel, kpi);
@@ -1214,11 +1227,19 @@ function scCellTitle(name, st, v, unscored, prefix, srcKind) {
     return head + "reported, not graded — " + detail +
       (v && v.display != null ? SC_SRC_HINT : "");
   }
+  if (!v || v.display == null) {
+    // Nothing measured. Do not read the workbook's hand-set symbol back as
+    // though it were a status: the cell is deliberately blank, and saying "in
+    // KPI target range" here is the assertion the blank is there to withdraw.
+    const wb = (SC.legend.find(l => l.state === st) || {}).label;
+    return head + "no report has supplied this yet" +
+      (wb ? ". The workbook's grid has it hand-set as \u201c" + wb.toLowerCase() +
+            "\u201d; that is kept in the data but is not shown as a status and " +
+            "is not counted in the tally." : "");
+  }
   return head + ((SC.legend.find(l => l.state === st) || {}).label || "not scored") +
     scBand(name, st) +
-    (v && v.display != null
-      ? " — " + v.display + (v.window ? " (7-day totals, " + v.window + ")" : "") + SC_SRC_HINT
-      : " — value pending");
+    " — " + v.display + (v.window ? " (7-day totals, " + v.window + ")" : "") + SC_SRC_HINT;
 }
 // Appended to the tooltip of any cell whose number links onward.
 const SC_SRC_HINT = "\n\nClick the value to see where it came from: its row in " +
@@ -1332,6 +1353,15 @@ function scLegendInto(host) {
     item.appendChild(document.createTextNode(" " + l.label));
     host.appendChild(item);
   });
+  // The workbook's legend covers the three graded states only. Most of the grid
+  // is in neither, so say what a cell with no fill means rather than leaving a
+  // reader to guess whether it is in range or simply unmeasured.
+  const extra = elc("span", "sc-legend-note");
+  extra.appendChild(elc("span", "val ungraded", "0.0%"));
+  extra.appendChild(document.createTextNode(" reported, not graded · "));
+  extra.appendChild(elc("span", "val pending", SC_PENDING));
+  extra.appendChild(document.createTextNode(" awaiting a feed"));
+  host.appendChild(extra);
 }
 // Colors the headline by the workbook's own semantics rather than an
 // invented numeric band: any below-target metric is red, all-clear with
@@ -1383,7 +1413,10 @@ function scHealthChart(canvasId) {
   if (prev) prev.destroy();
   new Chart(cv, {
     type: "bar",
-    data: { labels: props.map(p => p.label),
+    // The graded count rides on the label: a property with two graded cells can
+    // otherwise sort above one with seven on a bare percentage, and read as the
+    // stronger of the two.
+    data: { labels: props.map(p => p.label + (p.scored ? "  (" + p.scored + ")" : "  (0)")),
       datasets: [
         { label: "At or above target", data: pct, backgroundColor: C.teal,
           borderWidth: 0, barPercentage: .78, categoryPercentage: .92 },
@@ -1426,10 +1459,15 @@ async function renderScorecard(ids) {
     return;
   }
   const P = SC.portfolio;
-  const nUn = (SC.unscored || []).length;
+  // Coverage, not just the score: the percentage is taken over graded cells
+  // only, so how many cells that is out of the whole grid belongs beside it.
+  // Without this the headline moving is indistinguishable from performance
+  // moving, when most of the grid is simply still waiting for a feed.
+  const cov = P.coverage || {};
   eyebrow.textContent = "HEALTH ACROSS " + P.property_count + " PROPERTIES · " +
-    (P.metric_count - nUn) + " SCORED KPIs" + (nUn ? " + " + nUn + " REPORTED" : "") +
-    " · " + P.scored + " GRADED CELLS";
+    P.scored + " OF " + cov.total + " KPI CELLS GRADED" +
+    (cov.reported_ungraded ? " · " + cov.reported_ungraded + " REPORTED, NOT GRADED" : "") +
+    (cov.awaiting ? " · " + cov.awaiting + " AWAITING A FEED" : "");
 
   // headline + tally
   const head = document.getElementById(ids.head);
@@ -1438,8 +1476,8 @@ async function renderScorecard(ids) {
   // that turns 91% into a verdict. The tally beside it and the per-property
   // percentages carry the color, where worst-state is unambiguous.
   const hb = elc("div", "sc-health");
-  hb.appendChild(elc("div", "big", fmPct(P.at_or_above, 0)));
-  hb.appendChild(elc("div", "lbl", "of KPIs at or above target"));
+  hb.appendChild(elc("div", "big", P.at_or_above == null ? "—" : fmPct(P.at_or_above, 0)));
+  hb.appendChild(elc("div", "lbl", "of graded KPIs at or above target"));
   head.appendChild(hb);
   const tally = elc("div", "sc-tally");
   SC.legend.forEach(l => {
@@ -1532,7 +1570,7 @@ async function renderScorecard(ids) {
         const st = p.statuses[name];
         const v = scValue(p, name);
         const un = unscored.has(name);
-        td.appendChild(scChip(st, v, un, p.label, name));
+        td.appendChild(scChip(st, v, un, p.label, name, (p.status_source || {})[name]));
         td.title = scCellTitle(name, st, v, un, p.label, (p.status_source || {})[name]);
         tr.appendChild(td);
       });
@@ -1551,11 +1589,19 @@ async function renderScorecard(ids) {
     .sort((a, b) => b.counts.below - a.counts.below).slice(0, 3)
     .map(m => m.name + " (" + m.counts.below + ")");
   const unmapped = SC.properties.filter(p => !p.slug).map(p => p.label);
+  const nUn = (SC.unscored || []).length;
   document.getElementById(ids.note).textContent =
-    "The chart ranks each property by the share of its KPIs at or above target; " +
-    "hover a cell for its status. " +
-    (scHasValues(SC) ? "" : "Each cell reserves space for its measured number — \u201c" + SC_PENDING +
-      "\u201d means the value has not been supplied yet, not that the KPI is untracked. ") +
+    "The chart ranks each property by the share of its GRADED KPIs at or above " +
+    "target, with that count in brackets after its name — two graded cells and " +
+    "seven are not the same evidence for a percentage. Hover a cell for its " +
+    "status. A cell carries a colour, and counts, only " +
+    "where a report has supplied the number and the published band could place it — " +
+    cov.graded + " of " + cov.total + " cells. " +
+    "\u201c" + SC_PENDING + "\u201d marks the " + cov.awaiting + " still awaiting a feed, " +
+    "and a figure in grey is one no band can grade. The workbook's hand-set symbol is " +
+    "kept in the data for every cell but is not treated as a result: counting it had " +
+    "the portfolio reading 90% at or above target off cells no report had ever " +
+    "measured. " +
     (nUn ? (SC.unscored || []).join(", ") + " is reported, not graded — a distribution " +
       "has no single direction it can be good or bad in, so it carries no status and " +
       "is left out of the percentages. " : "") +
@@ -1584,16 +1630,20 @@ function renderPropertyScorecard(slug, ids) {
     return;
   }
   document.getElementById(ids.eyebrow).textContent =
-    p.counts.below === 0
-      ? "ALL " + p.scored + " KPIs AT OR ABOVE TARGET"
-      : p.counts.below + " OF " + p.scored + " KPIs BELOW TARGET";
+    p.scored === 0
+      ? "NO KPI MEASURED YET · " + ((p.coverage || {}).total || 0) + " CELLS AWAITING A FEED"
+      : p.counts.below === 0
+        ? "ALL " + p.scored + " GRADED KPIs AT OR ABOVE TARGET"
+        : p.counts.below + " OF " + p.scored + " GRADED KPIs BELOW TARGET";
 
   const health = document.getElementById(ids.health);
   health.textContent = "";
-  const big = elc("div", "big", fmPct(p.at_or_above, 0));
-  big.classList.add("sc-state-" + scTone(p.counts));
+  const big = elc("div", "big", p.at_or_above == null ? "—" : fmPct(p.at_or_above, 0));
+  if (p.scored) big.classList.add("sc-state-" + scTone(p.counts));
   health.appendChild(big);
-  health.appendChild(elc("div", "lbl", "at or above target"));
+  health.appendChild(elc("div", "lbl", p.scored
+    ? "at or above target · " + p.scored + " of " + ((p.coverage || {}).total || 0) + " graded"
+    : "nothing measured yet"));
   // this property's own feeds only — the portfolio head carries the rest
   const upd = scUpdatedEl(slug);
   if (upd) health.appendChild(upd);
@@ -1609,7 +1659,7 @@ function renderPropertyScorecard(slug, ids) {
       const v = scValue(p, name);
       const un = unscored.has(name);
       m.appendChild(elc("span", "nm", name));
-      m.appendChild(scChip(st, v, un, p.label, name));
+      m.appendChild(scChip(st, v, un, p.label, name, (p.status_source || {})[name]));
       m.title = scCellTitle(name, st, v, un, null, (p.status_source || {})[name]);
       strip.appendChild(m);
     });

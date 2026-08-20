@@ -135,6 +135,7 @@
     vertical-align: -1px; border: 1px solid var(--line); background: transparent; }
   .st-swatch.st-exceeding { background: var(--green); border-color: var(--green); opacity: .55; }
   .st-swatch.st-below     { background: var(--red);   border-color: var(--red);   opacity: .55; }
+  .st-none { color: var(--muted); }
   .pill { display:inline-block; font-size:8.5px; letter-spacing:1px; padding:1px 6px;
     border:1px solid; text-transform:uppercase; }
   .pill.good { color: var(--green); border-color: var(--green); }
@@ -355,7 +356,10 @@ function buildRow(cols, r, isTotal, rowId) {
     const td = el("td", (numeric ? "num" : "") + (c.wrap ? " wrap" : ""));
     if (c.fmt === "status") {                       // scorecard status: colour only
       td.className = "num";
-      td.appendChild(el("span", "st-swatch st-" + v));
+      // No status at all is not the same as in range, which is a clear box by
+      // design — without this the ungraded cells are indistinguishable from it.
+      if (v === null || v === undefined) td.appendChild(el("span", "st-none", "—"));
+      else td.appendChild(el("span", "st-swatch st-" + v));
     } else if (c.fmt === "pill") {
       const map = { GOOD: "good", CURRENT: "good", WATCH: "watch", REVIEW: "watch", FLAG: "flag",
                     PRIORITY: "flag", "AT RISK": "flag", MINOR: "mut", Holdover: "flag",
@@ -508,15 +512,43 @@ async function loadAll() {
     group("Scorecard · scorecard.json");
     const props = d.properties || [];
 
+    // A cell is graded only where a report supplied the number and the band
+    // could place it -- the same test the dashboard colours by.
+    const isGraded = (p, kpi) => ((p.status_source || {})[kpi]) === "measured";
+
     renderTable(host, {
       id: "t-sc-matrix", group: "Scorecard", title: "KPI Scorecard matrix",
       feeds: "Scorecard tab matrix, and each property's slice",
-      note: d.meta && d.meta.note,
+      note: "Graded cells only, matching the dashboard: a status appears where a "
+          + "report supplied the number and the published band could place it. "
+          + "Blank means no measurement, or one no band can grade. The workbook's "
+          + "own hand-set grid is the next table down.",
       cols: [{ key: "group", label: "Group" }, { key: "metric", label: "KPI" }].concat(
         props.map(p => ({ key: p.label, label: p.label, fmt: "status" }))),
       rows: (d.metrics || []).map(m => {
         const row = { group: m.group, metric: m.name };
-        props.forEach(p => { row[p.label] = p.statuses[m.name]; });
+        props.forEach(p => { row[p.label] = isGraded(p, m.name) ? p.statuses[m.name] : null; });
+        return row;
+      }),
+      filterable: true,
+    });
+
+    renderTable(host, {
+      id: "t-sc-workbook", group: "Scorecard", title: "Workbook grid (hand-set, ungraded)",
+      feeds: "Nothing on the dashboard — kept for reference",
+      note: "Every status as the analyst set it by hand in the KPI workbook, "
+          + "including the cells no report has supplied. This is what the dashboard "
+          + "used to colour and count, which had the portfolio reporting 90% at or "
+          + "above target off cells that had never been measured. Retained because "
+          + "it is a real record of the analyst's read — just not evidence.",
+      cols: [{ key: "group", label: "Group" }, { key: "metric", label: "KPI" }].concat(
+        props.map(p => ({ key: p.label, label: p.label }))),
+      rows: (d.metrics || []).map(m => {
+        const row = { group: m.group, metric: m.name };
+        props.forEach(p => {
+          const st = p.statuses[m.name];
+          row[p.label] = (st || "—") + (isGraded(p, m.name) ? " (graded)" : "");
+        });
         return row;
       }),
       filterable: true,
@@ -531,10 +563,18 @@ async function loadAll() {
              { key: "in_range", label: "In range", fmt: "int" },
              { key: "below", label: "Below", fmt: "int" },
              { key: "at_or_above", label: "At/above target", fmt: "pct1" },
+             { key: "reported_ungraded", label: "Reported, not graded", fmt: "int" },
+             { key: "awaiting", label: "Awaiting a feed", fmt: "int" },
              { key: "below_metrics", label: "Below-target KPIs", wrap: true }],
+      note: "\"KPIs\" is the graded count the percentage is taken over, not the "
+          + "28 cells in the row. The last two columns are the rest of the row, so "
+          + "the three add up to every cell.",
       rows: props.map(p => ({ label: p.label, slug: p.slug || "—", scored: p.scored,
         exceeding: p.counts.exceeding, in_range: p.counts.in_range, below: p.counts.below,
-        at_or_above: p.at_or_above, below_metrics: (p.below_metrics || []).join(", ") || "—" })),
+        at_or_above: p.at_or_above,
+        reported_ungraded: (p.coverage || {}).reported_ungraded,
+        awaiting: (p.coverage || {}).awaiting,
+        below_metrics: (p.below_metrics || []).join(", ") || "—" })),
     });
 
     renderTable(host, {

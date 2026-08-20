@@ -105,7 +105,7 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
     if label in EXCLUDED_PROPERTIES:
         print(f"[skip] {label} — excluded from the dashboard (EXCLUDED_PROPERTIES)")
         continue
-    statuses, counts = {}, {"exceeding": 0, "in_range": 0, "below": 0, "missing": 0}
+    statuses = {}
     for i, m in enumerate(metrics):
         sym = ws.cell(row=row, column=FIRST_METRIC_COL + i).value
         if m["name"] in UNSCORED:
@@ -113,8 +113,6 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
         else:
             state = STATE_BY_SYMBOL.get(str(sym).strip()) if sym else None
         statuses[m["name"]] = state
-        counts[state or "missing"] += 1
-    scored = counts["exceeding"] + counts["in_range"] + counts["below"]
     properties.append({
         "label": label,
         "slug": SLUGS.get(label),
@@ -124,11 +122,11 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
         # space and shows a placeholder. Fill "raw" with the number and
         # "display" with the string to print ("94.2%", "$1,240", "12").
         "values": {m["name"]: {"raw": None, "display": None} for m in metrics},
-        "counts": counts,
-        "scored": scored,
-        # share of scored metrics that are at or above target
-        "at_or_above": round((counts["exceeding"] + counts["in_range"]) / scored, 4) if scored else None,
-        "below_metrics": [m["name"] for m in metrics if statuses[m["name"]] == "below"],
+        # counts, scored, at_or_above, below_metrics and coverage are all filled
+        # by recompute below, from the cells that carry a measurement. Straight
+        # out of this script that is none of them, which is the honest answer:
+        # the workbook's symbols are hand-set, and until a report supplies a
+        # number there is nothing to grade.
     })
 
 # ---- target ranges (new in v10) ----------------------------------------
@@ -208,23 +206,6 @@ for cell_ref, expect in (("C4", "FF00B050"), ("G4", "FFFFFFFF"), ("K4", "FFFF000
         raise SystemExit(f"FATAL: legend cell {cell_ref} fill is {got}, expected {expect} — "
                          "the workbook legend changed; update LEGEND to match")
 
-# ---- portfolio roll-up ----
-total = {"exceeding": 0, "in_range": 0, "below": 0, "missing": 0}
-for p in properties:
-    for k in total:
-        total[k] += p["counts"][k]
-scored_total = total["exceeding"] + total["in_range"] + total["below"]
-
-# Per-metric roll-up: which KPIs are weakest across the portfolio.
-by_metric = []
-for m in metrics:
-    c = {"exceeding": 0, "in_range": 0, "below": 0}
-    for p in properties:
-        s = p["statuses"][m["name"]]
-        if s in c:
-            c[s] += 1
-    by_metric.append({"name": m["name"], "group": m["group"], "counts": c})
-
 data = {
     "meta": {
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -233,7 +214,11 @@ data = {
         "note": ("Statuses are set by hand in the workbook. The numeric bands behind "
                  "each status are published under \"thresholds\"; in-range carries no "
                  "color indicator, by design. Palma North/South are in lease-up and "
-                 "four of their KPIs are scored against the lease-up overrides."),
+                 "four of their KPIs are scored against the lease-up overrides. "
+                 "A cell carries a colour and counts toward the tally only where a "
+                 "report has supplied a number and the published band could grade "
+                 "it; the workbook's hand-set symbol is kept in \"statuses\" and in "
+                 "\"status_workbook\" but is not treated as a result."),
     },
     "legend": LEGEND,
     # reported, not graded: no status, no colour, not counted in "scored"
@@ -242,14 +227,8 @@ data = {
                for g in dict.fromkeys(m["group"] for m in metrics)],
     "metrics": [{"name": m["name"], "group": m["group"]} for m in metrics],
     "properties": properties,
-    "portfolio": {
-        "property_count": len(properties),
-        "metric_count": len(metrics),
-        "counts": total,
-        "scored": scored_total,
-        "at_or_above": round((total["exceeding"] + total["in_range"]) / scored_total, 4) if scored_total else None,
-        "by_metric": by_metric,
-    },
+    # filled by recompute below, off the same definition the populate scripts use
+    "portfolio": {},
     # Keyed by the grid's metric names. Each entry: group, how (measurement),
     # direction, the three display bands, the numeric green/red cutoffs, and
     # the sourcing rationale.
@@ -259,15 +238,25 @@ data = {
     "leaseup_overrides": leaseup_overrides or None,
 }
 
+# One definition of what counts, shared with the populate scripts rather than
+# repeated here — see populate_scorecard.graded.
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from populate_scorecard import recompute
+recompute(data)
+
 with open(OUT, "w") as f:
     json.dump(data, f, separators=(",", ":"))
 
-import os
+pf = data["portfolio"]
+cov = pf["coverage"]
 print(f"wrote {OUT} ({os.path.getsize(OUT)} bytes)")
 print("  NOTE: every measured value is now null. Re-run "
       "scripts/populate_scorecard.py to put the measured numbers back.")
-print(f"  {len(properties)} properties x {len(metrics)} metrics = {scored_total} scored cells")
-print("  " + "  ".join(f"{k}={v}" for k, v in total.items()))
+print(f"  {len(properties)} properties x {len(metrics)} metrics = {cov['total']} cells")
+print(f"  graded {cov['graded']}  ·  reported not graded {cov['reported_ungraded']}"
+      f"  ·  awaiting a feed {cov['awaiting']}")
+print("  " + "  ".join(f"{k}={v}" for k, v in pf["counts"].items()))
 unmapped = [p["label"] for p in properties if not p["slug"]]
 if unmapped:
     print("  no property view / not in the master: " + ", ".join(unmapped))

@@ -198,29 +198,69 @@ def measurements(f):
     return out
 
 
+def graded(p, names):
+    """The cells whose status was derived from a measurement.
+
+    These are the only cells the dashboard colours and the only ones the tally
+    counts. A cell the workbook coloured by hand but no report has ever supplied
+    is not a result: counting those had the portfolio reporting 90% at or above
+    target off 105 cells that had never been measured, and a property with no
+    feed at all scoring a clean 100%.
+
+    The workbook's own symbol is still published, in "statuses" and in
+    "status_workbook" — it is the analyst's opinion, kept, but not evidence.
+    """
+    src = p.get("status_source") or {}
+    return [n for n in names if src.get(n) == "measured"]
+
+
+def coverage_of(p, names):
+    """How much of a property's row is actually reported, in three parts that
+    add up to every cell: graded, reported but not gradeable (a count triple
+    against a per-unit band, an unconfirmed basis, a distribution), and nothing
+    yet."""
+    vals = p.get("values") or {}
+    g = set(graded(p, names))
+    reported = {n for n in names
+                if (vals.get(n) or {}).get("display") is not None}
+    return {"graded": len(g),
+            "reported_ungraded": len(reported - g),
+            "awaiting": len(set(names) - reported - g),
+            "total": len(names)}
+
+
 def recompute(sc):
     """Rebuild every derived figure from the per-property status maps."""
     names = [m["name"] for m in sc["metrics"]]
     for p in sc["properties"]:
-        counts = {"exceeding": 0, "in_range": 0, "below": 0, "missing": 0}
-        for n in names:
-            counts[p["statuses"].get(n) or "missing"] += 1
-        scored = counts["exceeding"] + counts["in_range"] + counts["below"]
+        counts = {"exceeding": 0, "in_range": 0, "below": 0}
+        for n in graded(p, names):
+            st = p["statuses"].get(n)
+            if st in counts:
+                counts[st] += 1
+        scored = sum(counts.values())
         p["counts"] = counts
         p["scored"] = scored
         p["at_or_above"] = (round((counts["exceeding"] + counts["in_range"]) / scored, 4)
                             if scored else None)
-        p["below_metrics"] = [n for n in names if p["statuses"].get(n) == "below"]
+        p["below_metrics"] = [n for n in graded(p, names)
+                              if p["statuses"].get(n) == "below"]
+        p["coverage"] = coverage_of(p, names)
 
-    total = {"exceeding": 0, "in_range": 0, "below": 0, "missing": 0}
+    total = {"exceeding": 0, "in_range": 0, "below": 0}
+    cover = {"graded": 0, "reported_ungraded": 0, "awaiting": 0, "total": 0}
     for p in sc["properties"]:
         for k in total:
             total[k] += p["counts"][k]
-    scored_total = total["exceeding"] + total["in_range"] + total["below"]
+        for k in cover:
+            cover[k] += p["coverage"][k]
+    scored_total = sum(total.values())
     by_metric = []
     for m in sc["metrics"]:
         c = {"exceeding": 0, "in_range": 0, "below": 0}
         for p in sc["properties"]:
+            if m["name"] not in graded(p, names):
+                continue
             s = p["statuses"].get(m["name"])
             if s in c:
                 c[s] += 1
@@ -232,6 +272,7 @@ def recompute(sc):
         "scored": scored_total,
         "at_or_above": (round((total["exceeding"] + total["in_range"]) / scored_total, 4)
                         if scored_total else None),
+        "coverage": cover,
         "by_metric": by_metric,
     })
 
