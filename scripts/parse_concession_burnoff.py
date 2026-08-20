@@ -48,6 +48,24 @@ MONEY = ("recurring_concessions", "current_lease_concessions",
          "concessions_remaining", "market_rent", "lease_rent")
 
 
+def _num(v):
+    """Yardi money cells arrive as numbers OR text — "1,234.56", "(1,500.00)",
+    "$2,400", "-" — and the first real export failed the naive sum on exactly
+    this. Parse what parses; everything else is None, never a guess."""
+    if isinstance(v, (int, float)):
+        return float(v)
+    if v is None:
+        return None
+    s = str(v).strip().replace("$", "").replace(",", "")
+    neg = s.startswith("(") and s.endswith(")")
+    if neg:
+        s = s[1:-1]
+    try:
+        return -float(s) if neg else float(s)
+    except ValueError:
+        return None
+
+
 def _date(v):
     if isinstance(v, (datetime.datetime, datetime.date)):
         return (v.date() if isinstance(v, datetime.datetime) else v).isoformat()
@@ -75,14 +93,20 @@ def parse(path, strict=True):
     units, total_row = [], None
     for r in ws.iter_rows(min_row=7, values_only=True):
         vals = dict(zip(COLS, r))
-        has_money = any(vals.get(k) is not None for k in MONEY)
+        money = {k: _num(vals.get(k)) for k in MONEY}
+        has_money = any(v is not None for v in money.values())
+        # rows with neither a unit nor a parseable money figure are section
+        # headings, notes, or padding — Yardi exports are full of them
         if not has_money and vals.get("unit") is None:
             continue
         label = str(vals.get("unit") or "").strip().lower()
-        # the total row has money but no unit number (or says so outright)
+        # a money row without a unit number is a total (or subtotal) row; the
+        # last one wins, which in these exports is the grand total
         if has_money and (vals.get("unit") is None or label.startswith("total")):
-            total_row = vals
+            total_row = money
             continue
+        if not has_money:
+            continue                      # a unit label with no figures — noise
         units.append({
             "unit": vals.get("unit"),
             "unit_type": vals.get("unit_type"),
@@ -90,11 +114,7 @@ def parse(path, strict=True):
             "lease_start": _date(vals.get("lease_start")),
             "concession_end": _date(vals.get("concession_end")),
             "lease_term": vals.get("lease_term"),
-            "recurring_concessions": vals.get("recurring_concessions"),
-            "current_lease_concessions": vals.get("current_lease_concessions"),
-            "concessions_remaining": vals.get("concessions_remaining"),
-            "market_rent": vals.get("market_rent"),
-            "lease_rent": vals.get("lease_rent"),
+            **money,
         })
 
     totals = {k: round(sum(u[k] or 0 for u in units), 2)

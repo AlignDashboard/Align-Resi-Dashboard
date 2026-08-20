@@ -90,6 +90,9 @@ def make_funnel(path, break_tie_out=False):
 
 
 def make_burnoff(path, break_tie_out=False, move_header=False):
+    """Deliberately gritty, because the first REAL export broke a clean-fixture
+    parser: money as text ("(1,500.00)", "$3,600", "1,234.00"), a section-text
+    row, an MTM lease term, and a dash where a number would be."""
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Report1"
@@ -102,20 +105,24 @@ def make_burnoff(path, break_tie_out=False, move_header=False):
     ws.append([None, "Type", None, None, "Date", "Date", "Recurring",
                "Concessions", "Concessions", "End Date", "Term", "Rent", "Rent", "Month"])
     ws.append([None, None, None, None, None, None, "Concessions", None, "Remaining"])
+    ws.append(["Some Section Heading"])            # text row, no unit, no money
     rows = [
+        # numeric money
         ["101", "A1", FAKE_NAMES[0].split()[0], FAKE_NAMES[0].split()[1],
          "2026-05-01", "2026-05-01", -1500.0, -1500.0, -1000.0,
          "2027-04-30", 12, 2800.0, 2650.0, 0],
+        # money as text, MTM term, dash placeholder
         ["202", "B2", FAKE_NAMES[1].split()[0], FAKE_NAMES[1].split()[1],
-         "2026-06-15", "2026-06-15", -2400.0, -2400.0, -2200.0,
-         "2027-06-14", 14, 3600.0, 3400.0, 0],
+         "2026-06-15", "2026-06-15", "(2,400.00)", "(2,400.00)", "(2,200.00)",
+         "2027-06-14", "MTM", "$3,600", "3,400.00", "-"],
     ]
     for r in rows:
         ws.append(r)
-    total_g = sum(r[6] for r in rows) + (100 if break_tie_out else 0)
+    ws.append(["303", "C3", None, None, None, None,   # unit label, no figures
+               None, None, None, None, None, "-", "-", "-"])
+    total_g = -3900.0 + (100 if break_tie_out else 0)
     ws.append([None, None, None, None, None, None, total_g,
-               sum(r[7] for r in rows), sum(r[8] for r in rows),
-               None, None, sum(r[11] for r in rows), sum(r[12] for r in rows), 0])
+               -3900.0, -3200.0, None, None, 6400.0, 6050.0, 0])
     wb.save(path)
 
 
@@ -173,7 +180,10 @@ def main():
     c = pcb.parse(str(cpath))
     check("as_of from A3", c["as_of"] == "2026-08-10", c["as_of"])
     check("unattributed flag", c["unattributed"] is True and c["property_code"] is None)
-    check("unit count excludes total row", c["unit_count"] == 2)
+    check("unit count excludes total, section and empty rows", c["unit_count"] == 2)
+    u202 = next(u for u in c["units"] if u["unit"] == "202")
+    check("text money parsed", u202["recurring_concessions"] == -2400.0
+          and u202["market_rent"] == 3600.0 and u202["lease_term"] == "MTM")
     check("totals tie out", all(k["ok"] for k in c["checks"]) and
           c["totals"]["recurring_concessions"] == -3900.0)
     blob = json.dumps(c)
