@@ -58,6 +58,14 @@
       "status": "active"
     },
     {
+      "drive_folder": "Delinquency",
+      "report_type": "ar_analytics",
+      "parser": "parse_delinquency",
+      "file_glob": "*.xlsx",
+      "status": "active",
+      "_comment": "Same report type as Residential AR Analytics -- the PM files delinquency summaries in both. A file present in both folders parses twice and the second store overwrites the first with identical content, which is harmless."
+    },
+    {
       "drive_folder": "Workorders - Mainentance ",
       "report_type": "workorders",
       "parser": null,

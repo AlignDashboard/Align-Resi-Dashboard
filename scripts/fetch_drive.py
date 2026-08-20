@@ -98,6 +98,14 @@ def main():
         files = contents(name)
         print(f"[warn] '{name}' is not in report_map.json — "
               f"{len(files)} file(s) ignored: {[f['name'] for f in files]}")
+        # --all (the inspect workflow) downloads even these, into _pending/, so
+        # a file mis-filed into _Unsorted can have its structure read from the
+        # inspect log. The daily pipeline still ignores unmapped folders.
+        if fetch_pending:
+            for f in files:
+                dest = DL_ROOT / "_pending" / name / f["name"]
+                _download(svc, f["id"], dest)
+                print(f"[ok] downloaded (unmapped) {name}/{f['name']}")
 
     for entry in cfg["subfolders"]:
         name = entry["drive_folder"]

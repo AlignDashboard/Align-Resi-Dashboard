@@ -173,11 +173,15 @@ Four rules keep it from overwriting better data or asserting what it cannot:
    rent increase against −3.74% offered, so `% Increase` is skipped there and
    Trade-out falls back to `New Lease Trade-Out` alone, recorded in the basis.
 
-Two things to confirm before trusting it further: the export **states its period
-nowhere inside the file** (only the filename carries a date), yet trade-out,
-closing ratio and renewal rate are all defined on a trailing-3-month basis; and
-**`AI Response Time` has no unit** — assumed seconds, which is why Avg First
-Response Time is published value-only (`RESPONSE_IS_SECONDS`).
+Two things the owner settled on 2026-08-20: the export is a **snapshot taken on
+the filename's date**, with the rate KPIs (trade-out, closing ratio, renewal
+rate) on a **trailing 1-month basis** from that date — note the scorecard's
+bands for those KPIs are written for trailing 3 months, so a volatile month
+swings the grade more than the bands assume; and **`AI Response Time` is in
+days** (`RESPONSE_UNIT`). Taken at face value that reads 35–37 days to first
+response at every property, which is hard to square with an AI assistant, so
+the figure is published in days but stays value-only rather than graded until
+a fresh export makes sense of it.
 
 Run it after `extract_scorecard.py` and after `populate_eliseai.py`. `--dry-run`
 reports without writing; `--received-at` records a real arrival time.

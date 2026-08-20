@@ -77,10 +77,19 @@ HEADING_TO_SLUG = {
 KPI_TLA = "# of Tours/Leads/Applications"
 KPI_RESPONSE = "Avg First Response Time"
 
-# AI Response Time has no unit in the export. 35–37 as seconds is ~0.6 min;
-# as minutes it would be ~36 min, which is the other side of the band. Assumed
-# seconds, and the cell is left ungraded until that is confirmed.
-RESPONSE_IS_SECONDS = True
+# AI Response Time is in DAYS, per the owner (2026-08-20). Taken at face value
+# that puts every property at 35–37 days to first response, which is hard to
+# square with an AI assistant answering prospects — so the figure is published
+# in days as stated, but stays value-only rather than graded, and the number
+# deserves a second look against a fresh export before anyone acts on it.
+RESPONSE_UNIT = "days"
+
+# The export is a snapshot taken on the date in the filename; the rate KPIs in
+# it (trade-out, closing ratio, renewal rate) are on a trailing ONE month basis
+# from that date, per the owner (2026-08-20). Note the scorecard's bands for
+# those KPIs are written for a trailing THREE month basis, so a volatile month
+# swings the grade more than the band's authors assumed.
+EXPORT_BASIS = "snapshot on the filename date; rate KPIs trailing 1 month from it"
 
 # Cells that carry a figure but no status. Either the band cannot apply to a
 # count triple, or the basis behind the number is not yet confirmed.
@@ -226,10 +235,11 @@ def measurements(row, slug, owned):
         None if la is not None else "Leasing Automation Rate blank")
 
     ai = num(row, "AI Response Time")
-    mins = (ai / 60) if (ai is not None and RESPONSE_IS_SECONDS) else ai
-    add(KPI_RESPONSE, None if mins is None else mins,
-        None if mins is None else f"{mins:.1f} min",
-        f"AI Response Time ({ai:g} assumed seconds) ÷ 60" if ai is not None else None,
+    add(KPI_RESPONSE, ai,
+        None if ai is None else f"{ai:g} {RESPONSE_UNIT}",
+        f"AI Response Time, in {RESPONSE_UNIT} per the owner (2026-08-20); "
+        f"implausibly long for an AI first response, so value-only"
+        if ai is not None else None,
         None if ai is not None else "AI Response Time blank")
 
     return out, leaseup
@@ -347,6 +357,7 @@ def main():
                 "bldg_source": f"EliseAI building metrics export "
                                f"({os.path.basename(a.csv_path)})",
                 "bldg_as_of": as_of,
+                "bldg_period": EXPORT_BASIS,
                 "bldg_received_at": a.received_at,
                 "bldg_received_what": "EliseAI building metrics export",
                 "bldg_kpis": sorted(filled),

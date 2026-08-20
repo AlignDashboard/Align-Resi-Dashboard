@@ -39,7 +39,7 @@ def load_properties():
     return cfg["properties"], code_to_prop
 
 
-def quarantined(prop, report_type):
+def quarantined(prop, report_type, period_end=None):
     """True when a property's source for this report type is known to be wrong.
 
     A report that reaches the pipeline is normally trusted -- the parsers tie
@@ -48,9 +48,19 @@ def quarantined(prop, report_type):
     judgement about provenance, so it is recorded in config/properties.json with
     its reason rather than inferred here, and the affected figures are dropped
     instead of published while the source is corrected.
+
+    "through_period" scopes it: a statement whose period ends AFTER that month
+    flows normally. This is how a brand-new property whose only statement is
+    dummy data starts publishing by itself the day a real statement lands,
+    instead of waiting for someone to remember to lift the block.
     """
     q = prop.get("quarantine") or {}
-    return report_type in (q.get("report_types") or [])
+    if report_type not in (q.get("report_types") or []):
+        return False
+    through = q.get("through_period")
+    if through and period_end and period_key(period_end) > period_key(through):
+        return False
+    return True
 
 
 # ---- period ordering ------------------------------------------------------
@@ -347,7 +357,7 @@ def process_manifest():
             print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                   f"add it to config/properties.json; skipping")
             continue
-        if quarantined(prop, item["report_type"]):
+        if quarantined(prop, item["report_type"], parsed.get("period_end")):
             print(f"[quarantined] {item['name']} -> {prop['name']}: "
                   f"{prop['quarantine']['reason']}")
             continue

@@ -953,7 +953,8 @@ async function loadDashboard() {
   const p = d.psf_vs_peers;
   if (p && p.available) {
     document.getElementById("psfEyebrow").textContent =
-      p.metric + " · SUBJECT vs " + (p.labels.length - 1) + " COMPS";
+      p.metric + " · SUBJECT vs " + (p.labels.length - 1) + " COMPS" +
+      (p.caveat ? " · " + p.caveat : "");
     const colors = p.labels.map(l => l === p.subject ? C.amber : C.muted);
     new Chart(document.getElementById("psf"), {
       type: "bar",
