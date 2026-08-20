@@ -496,6 +496,13 @@
         <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
       </div>
 
+      <div class="card wide">
+        <h2>New-Lease Trade-Outs</h2>
+        <span class="eyebrow" id="ltEyebrow">EXECUTED LEASES · % OVER PRIOR RENT &amp; CAPTURE vs MARKET</span>
+        <div class="statrow" id="ltStats"></div>
+        <div class="chartwrap"><canvas id="lcTrade"></canvas></div>
+      </div>
+
       <div class="card" id="cNoi">
         <h2>Expense Load &amp; NOI</h2>
         <span class="eyebrow">MONTHLY NOI MARGIN &amp; OPEX RATIO</span>
@@ -533,29 +540,16 @@
         <div class="blu-note" id="loNote" style="color:var(--muted);"></div>
       </div>
 
-      <div class="card">
-        <h2>New-Lease Trade-Outs</h2>
-        <span class="eyebrow" id="ltEyebrow">EXECUTED LEASES · % OVER PRIOR RENT &amp; CAPTURE vs MARKET</span>
-        <div class="statrow" id="ltStats"></div>
-        <div class="chartwrap" style="height:220px;"><canvas id="lcTrade"></canvas></div>
+      <div class="card" id="cGaps">
+        <h2>Largest Unit Gaps</h2>
+        <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
+        <div id="lgTbl"></div>
       </div>
 
       <div class="card wide">
         <h2>Rollover Schedule</h2>
         <span class="eyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
         <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
-      </div>
-
-      <div class="card" id="cFloorplan">
-        <h2>Floorplan Mix</h2>
-        <span class="eyebrow" id="lfEyebrow">UNITS BY FLOORPLAN · GAP TO MARKET</span>
-        <div class="chartwrap" style="height:280px;"><canvas id="lcFloor"></canvas></div>
-      </div>
-
-      <div class="card" id="cGaps">
-        <h2>Largest Unit Gaps</h2>
-        <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
-        <div id="lgTbl"></div>
       </div>
 
       <div class="card wide" id="cDelinquency">
@@ -1723,7 +1717,7 @@ async function loadLanding() {
     const host = document.getElementById("lkpis");
     const ltlCeiling = (L.expense_overview.revenue_compare[0] || {}).saving;
     const tiles = [
-      [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf", "cFloorplan", "floorplan mix — gap to market by plan"],
+      [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf", "cGaps", "largest unit gaps — gap to market by unit"],
       [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "rent capture — loss to lease by month"],
       [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
       [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate), "cRentCapture", "rent capture"],
@@ -1989,24 +1983,6 @@ async function loadLanding() {
         scales: { y: { grid: gridCfg }, y2: { position: "right", grid: { display: false }, min: 0, max: 100, ticks: { callback: v => v + "%" } },
           x: { grid: { display: false } } } }
     });
-  })();
-
-  /* ---- Floorplan mix ---- */
-  (function floorplans() {
-    const f = L.floorplans.rows.slice(0, 12);
-    new Chart(document.getElementById("lcFloor"), {
-      type: "bar",
-      data: { labels: f.map(x => x.plan),
-        datasets: [{ label: "Units", data: f.map(x => x.units),
-          backgroundColor: f.map(x => x.gap_pct >= .3 ? C.red : x.gap_pct >= .2 ? C.amber : C.teal) }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => { const p = f[c.dataIndex];
-            return `${p.units} units · avg ${Math.round(p.avg_sqft)} sf · ${fmPct(p.gap_pct)} below market ($${p.inplace_psf.toFixed(2)} vs $${p.market_psf.toFixed(2)}/sf)`; } } } },
-        scales: { x: { grid: gridCfg }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
-    });
-    document.getElementById("lfEyebrow").textContent =
-      "TOP 12 OF " + L.floorplans.rows.length + " FLOORPLANS · COLOR = GAP TO MARKET (RED ≥30%, AMBER ≥20%)";
   })();
 
   /* ---- Largest unit gaps ---- */
