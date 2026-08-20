@@ -2,6 +2,10 @@
 
 Static dashboard published with GitHub Pages, fed by a daily metrics pipeline.
 
+`OPEN_ITEMS.md` carries the current open items, numbered and grouped by what
+each one is waiting on. Read it after this file when picking up work — it is
+where state that used to arrive as a pasted handoff note now lives.
+
 ## Workflow
 
 **Commit and push small changes directly to `main`. Do not open a pull request
