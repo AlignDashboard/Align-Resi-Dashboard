@@ -371,7 +371,13 @@ def main():
         return
 
     recompute(sc)
-    json.dump(sc, open(a.out, "w"), indent=2)
+    # Minified, matching extract_scorecard / populate_scorecard / populate_eliseai.
+    # This file is fetched by the browser on every page load, and the writers have
+    # to agree: while this one wrote indent=2 and the others minified, the daily
+    # cron expanded the file and the next EliseAI fill re-collapsed it, churning
+    # ~1,900 lines through git each way and burying the real one-cell change.
+    with open(a.out, "w") as f:
+        json.dump(sc, f, separators=(",", ":"))
     print(f"wrote {a.out}: {total_filled} cell(s) filled")
     for p in sc["properties"]:
         if p.get("slug") in {HEADING_TO_SLUG.get(r["Property"]) for r in rows}:
