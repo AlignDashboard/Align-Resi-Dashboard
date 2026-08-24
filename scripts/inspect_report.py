@@ -129,6 +129,82 @@ def inspect(path):
             print(f"        {k}: {n:4d}  {s:,.2f}")
 
 
+def t12_header_probe(paths):
+    """Which period does each T12 statement actually claim? Aggregates only.
+
+    The parser trusts the month labels in the header row (MONTHS_COLS), so two
+    statements whose monthly ratios match at an offset mean one header is
+    wrong. Print every title row above the month header verbatim — Yardi puts
+    the period it was run for up there — then the parsed labels and monthly
+    ratios, then the pairwise shift at which the ratio series line up.
+    """
+    import parse_t12_statement as t12
+    MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    parsed = []
+    for path in paths:
+        print("=" * 78)
+        print(f"T12 {os.path.basename(path)}")
+        wb = openpyxl.load_workbook(path, data_only=True)
+        ws = wb["Report1"] if "Report1" in wb.sheetnames else wb.worksheets[0]
+        redact, _ = name_columns(ws)
+
+        # every row above and including the month-header row, verbatim
+        hdr = None
+        for r in range(1, min(ws.max_row, 15) + 1):
+            vals = [ws.cell(row=r, column=c + 1).value for c in t12.MONTHS_COLS]
+            if all(v and any(m in str(v) for m in MONTHS) for v in vals):
+                hdr = r
+                break
+        for r in range(1, (hdr or min(ws.max_row, 8)) + 1):
+            cells = [f"{CL(c)}={show(ws.cell(row=r, column=c).value, c in redact)}"
+                     for c in range(1, ws.max_column + 1)
+                     if ws.cell(row=r, column=c).value is not None]
+            if cells:
+                tag = "  <- month header" if r == hdr else ""
+                print(f"  r{r}: " + " | ".join(cells) + tag)
+        if hdr is None:
+            print("  NO month-header row found in the first 15 rows")
+
+        try:
+            p = t12.parse_t12(path)
+        except Exception as e:                              # noqa: BLE001
+            print(f"  parser refused it: {type(e).__name__}: {e}")
+            continue
+        print(f"  parsed: {p['property']} ({p['property_code']})  book={p['book']}"
+              f"  period_end={p['period_end']}")
+        print(f"  labels: {p['labels']}")
+        print("  monthly expense ratios: "
+              + "  ".join(f"{l}={r}" for l, r in
+                          zip(p["labels"] or [""] * 12, p["expense_ratio_monthly"])))
+        parsed.append((os.path.basename(path), p))
+
+    # Pairwise: at which month shift do two statements' ratio series agree?
+    # Twelve distinct months agreeing at shift 0 is a duplicate; agreeing at a
+    # non-zero shift means one statement's header claims the wrong period.
+    print("=" * 78)
+    print("pairwise ratio alignment (months agreeing within 0.15pp, of overlap):")
+    for i in range(len(parsed)):
+        for j in range(i + 1, len(parsed)):
+            (fa, a), (fb, b) = parsed[i], parsed[j]
+            best = []
+            for shift in range(-4, 5):
+                hits = total = 0
+                for k in range(12):
+                    if 0 <= k + shift < 12:
+                        ra, rb = a["expense_ratio_monthly"][k], \
+                                 b["expense_ratio_monthly"][k + shift]
+                        if ra is not None and rb is not None:
+                            total += 1
+                            hits += abs(ra - rb) <= 0.15
+                best.append((shift, hits, total))
+            top = max(best, key=lambda t: (t[1], t[1] / t[2] if t[2] else 0))
+            print(f"  {fa}  vs  {fb}:")
+            for shift, hits, total in best:
+                mark = "  <- best" if (shift, hits, total) == top and hits else ""
+                print(f"      shift {shift:+d}: {hits}/{total}{mark}")
+
+
 def tie_out_probe(path):
     """Why does the delinquency parser refuse this file? Aggregates only."""
     import parse_delinquency
@@ -171,11 +247,19 @@ if __name__ == "__main__":
     ap.add_argument("files", nargs="+")
     ap.add_argument("--delinquency", action="store_true",
                     help="also run the delinquency tie-out probe on each file")
+    ap.add_argument("--t12", action="store_true",
+                    help="T12 header probe: title rows, parsed period, monthly "
+                         "ratios, and pairwise shift alignment (skips the "
+                         "generic dump)")
     a = ap.parse_args()
+    present = [f for f in a.files if os.path.exists(f)]
     for f in a.files:
-        if not os.path.exists(f):
+        if f not in present:
             print(f"missing: {f}")
-            continue
+    if a.t12:
+        t12_header_probe(present)
+        sys.exit(0)
+    for f in present:
         inspect(f)
         if a.delinquency:
             tie_out_probe(f)

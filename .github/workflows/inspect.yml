@@ -47,6 +47,13 @@ jobs:
           if [ ${#files[@]} -eq 0 ]; then echo "no delinquency report present"; exit 0; fi
           python scripts/inspect_report.py --delinquency "${files[@]}"
 
+      - name: Probe the T12 statement headers (open item A3)
+        run: |
+          shopt -s nullglob
+          files=(_downloads/t12_statement/*.xlsx)
+          if [ ${#files[@]} -eq 0 ]; then echo "no T12 statement present"; exit 0; fi
+          python scripts/inspect_report.py --t12 "${files[@]}"
+
       - name: Inspect everything else that arrived
         run: |
           shopt -s nullglob
