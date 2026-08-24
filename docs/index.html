@@ -522,6 +522,26 @@
         <div class="blu-note" id="ltFoot" style="color:var(--muted);"></div>
       </div>
 
+      <div class="card wide" id="cRenewal">
+        <div class="card-head">
+          <div>
+            <h2>Renewal Pipeline — through Q2 2027</h2>
+            <span class="eyebrow">% INCREASE AND THE RENT IT CARRIES · RECOMPUTED LIVE FROM UNIT LEVEL</span>
+          </div>
+        </div>
+        <div class="inrow" id="lrInputs"></div>
+        <div class="statrow" id="lrStats"></div>
+        <div class="chartwrap" style="height:240px;"><canvas id="lcRenewal"></canvas></div>
+        <div class="blu-note" id="lrOffers" style="color:var(--muted);"></div>
+        <div class="blu-note" id="lrNote"></div>
+      </div>
+
+      <div class="card wide" id="cRollover">
+        <h2>Rollover Schedule</h2>
+        <span class="eyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
+        <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
+      </div>
+
       <div class="card" id="cNoi">
         <h2>Expense Load &amp; NOI</h2>
         <span class="eyebrow">MONTHLY NOI MARGIN &amp; OPEX RATIO</span>
@@ -534,20 +554,6 @@
         <span class="eyebrow" id="lcExpEyebrow">TTM BY BUCKET · LIKE-FOR-LIKE CHANGE</span>
         <div class="chartwrap" style="height:250px;"><canvas id="lcExp"></canvas></div>
         <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
-      </div>
-
-      <div class="card wide" id="cRenewal">
-        <div class="card-head">
-          <div>
-            <h2>Renewal Pipeline — through Q2 2027</h2>
-            <span class="eyebrow">INCREMENTAL RENT BY MONTH · RECOMPUTED LIVE FROM UNIT LEVEL</span>
-          </div>
-        </div>
-        <div class="inrow" id="lrInputs"></div>
-        <div class="statrow" id="lrStats"></div>
-        <div class="chartwrap" style="height:240px;"><canvas id="lcRenewal"></canvas></div>
-        <div class="blu-note" id="lrOffers" style="color:var(--muted);"></div>
-        <div class="blu-note" id="lrNote"></div>
       </div>
 
       <div class="card" id="cRateOcc">
@@ -563,12 +569,6 @@
         <h2>Largest Unit Gaps</h2>
         <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
         <div id="lgTbl"></div>
-      </div>
-
-      <div class="card wide">
-        <h2>Rollover Schedule</h2>
-        <span class="eyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
-        <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
       </div>
 
       <div class="card wide" id="cDelinquency">
@@ -1845,7 +1845,7 @@ async function loadLanding() {
       const newRent = capped * ret + m.market_var * (1 - ret) + m.market_on;
       const current = m.inplace_var + m.inplace_on;
       const moveouts = m.var_units * (1 - ret) + m.on_notice;
-      return { m, newRent, incr: newRent - current, moveouts };
+      return { m, newRent, current, incr: newRent - current, moveouts };
     });
     const incrYr = rows.reduce((s, r) => s + r.incr * 12, 0);
     const newRun = rows.reduce((s, r) => s + r.newRent * 12, 0);
@@ -1871,17 +1871,40 @@ async function loadLanding() {
       // whole units: a fractional move-out is an artefact of the retention rate
       [String(Math.round(r.moveouts)), "move-outs"],
     ]);
-    const data = r.rows.map(x => Math.round(x.incr));
-    if (renewalChart) { renewalChart.data.datasets[0].data = data; renewalChart.update(); return; }
+    // Two readings of one number: the percentage the book steps up, and the rent
+    // that step actually carries. They are not proportional across months -- a
+    // large percentage on a small expiring cohort is less money than a small one
+    // on a large cohort -- which is exactly why both axes are worth having.
+    const dollars = r.rows.map(x => Math.round(x.incr));
+    const pcts = r.rows.map(x => x.current ? x.incr / x.current * 100 : null);
+    if (renewalChart) {
+      renewalChart.data.datasets[0].data = pcts;
+      renewalChart.data.datasets[1].data = dollars;
+      renewalChart.update();
+      return;
+    }
     renewalChart = new Chart(document.getElementById("lcRenewal"), {
-      type: "bar",
       data: { labels: r.rows.map(x => shortMo(x.m.month)),
-        datasets: [{ label: "Incremental rent / mo", data, backgroundColor: C.amber }] },
+        datasets: [
+          { type: "bar", label: "% increase", data: pcts, yAxisID: "y",
+            backgroundColor: C.teal, order: 2 },
+          { type: "line", label: "Incremental rent / mo", data: dollars, yAxisID: "y2",
+            borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2,
+            pointRadius: 2, tension: .25, order: 1 },
+        ] },
       options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
+        plugins: { legend: legendCfg, tooltip: { callbacks: {
           label: c => { const m = L.renewal.months[c.dataIndex];
-            return `+${fm$(c.parsed.y)}/mo · ${m.expiring} units expiring` + (m.basis ? ` (${m.basis})` : ""); } } } },
-        scales: { y: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+            const v = c.dataset.yAxisID === "y2"
+              ? "+" + fm$(c.parsed.y) + "/mo"
+              : "+" + c.parsed.y.toFixed(1) + "%";
+            return `${c.dataset.label}: ${v}`; },
+          afterBody: c => { const m = L.renewal.months[c[0].dataIndex];
+            return m.expiring + " units expiring" + (m.basis ? " (" + m.basis + ")" : ""); } } } },
+        scales: {
+          y:  { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
+          y2: { position: "right", grid: { display: false },
+                ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
           x: { grid: { display: false } } } }
     });
   }
@@ -1990,8 +2013,16 @@ async function loadLanding() {
                capture: mean(ls, l => l.capture) * 100 };
     });
 
+    // The offers carry the rent on both sides, so the money the percentage is
+    // worth is stated, not inferred: offered minus in-place for that month's
+    // cohort. Paired the way the Renewal Pipeline card pairs them -- bars for
+    // the rate, an amber line for the rent it moves -- because a big percentage
+    // on a small cohort and a small one on a large cohort are not the same
+    // month, and the rate alone cannot tell them apart.
     const renewRaw = (((L.renewal || {}).offers || {}).months || []).map(m => ({
       month: m.month, n: m.leases, pct: m.wtd_increase * 100, capture: null,
+      incr: (m.offered_rent != null && m.current_rent != null)
+        ? m.offered_rent - m.current_rent : null,
     }));
 
     // The window ends at the last month either series reports as HAVING HAPPENED.
@@ -2008,7 +2039,7 @@ async function loadLanding() {
     // trade-out in a month that simply reported nothing.
     const onAxis = rows => {
       const by = new Map(rows.map(r => [r.month, r]));
-      return axis.map(k => by.get(k) || { month: k, n: 0, pct: null, capture: null });
+      return axis.map(k => by.get(k) || { month: k, n: 0, pct: null, capture: null, incr: null });
     };
     const newAxis = onAxis(newMonths);
     const renewAxis = onAxis(renewRaw);
@@ -2054,6 +2085,8 @@ async function loadLanding() {
         foot: "Renewals reach the workbook as monthly offer aggregates, not per-lease rows, "
             + "so each bar is that month's rent-weighted increase \u2014 the one figure the source "
             + "supports \u2014 and not an average of individual renewals like the new-lease view."
+            + " The amber line is the rent that rate moves \u2014 offered minus in-place "
+            + "for the month's cohort, on the right axis."
             + coverage(renewAxis)
             + (dropped.length ? " Offers already extended for " + dropped.map(shortMo).join(", ")
                 + " sit past the window: a forward offer is not a trailing month." : ""),
@@ -2068,6 +2101,10 @@ async function loadLanding() {
       if (mode === "new") ds.push({ type: "line", label: "Avg capture vs market at signing",
         data: rows.map(r => r.capture), borderColor: C.amber, borderWidth: 1.5,
         pointRadius: 2, tension: .2 });
+      const money = mode === "renew" && rows.some(r => r.incr != null);
+      if (money) ds.push({ type: "line", label: "Incremental rent / mo",
+        data: rows.map(r => r.incr), yAxisID: "y2", borderColor: C.amber,
+        backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 });
 
       if (chart) chart.destroy();
       chart = new Chart(document.getElementById("lcTrade"), {
@@ -2076,8 +2113,15 @@ async function loadLanding() {
           plugins: { legend: legendCfg, tooltip: { callbacks: {
             title: c => { const r = rows[c[0].dataIndex];
               return shortMo(r.month) + " · " + r.n + (r.n === 1 ? " lease" : " leases"); },
-            label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
-          scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } },
+            label: c => `${c.dataset.label}: ` + (c.dataset.yAxisID === "y2"
+              ? "+" + fm$(c.parsed.y) + "/mo" : c.parsed.y.toFixed(1) + "%") } } },
+          scales: { y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
+            // Zero-anchored like the Pipeline card's money axis. Left to itself
+            // Chart.js started this one at $5k, which drew May-to-Jun as a plunge
+            // from the top of the frame to the bottom on a 2.3x move.
+            ...(money ? { y2: { position: "right", grid: { display: false },
+              beginAtZero: true,
+              ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } } } : {}),
             x: { grid: { display: false },
               // 24 labels will not sit side by side on this card, and autoSkip
               // would hide the very months whose emptiness is the point.
