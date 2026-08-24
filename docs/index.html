@@ -147,16 +147,6 @@
   .tmode:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   .tmode .glyph { font-size: 12px; line-height: 1; }
 
-  /* Two-way series switch inside a card head (new leases vs renewals). */
-  .segbar { display: flex; gap: 2px; align-self: center; margin-bottom: 6px; }
-  .segbtn { background: none; border: 1px solid var(--line); color: var(--muted);
-    font-family: inherit; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
-    font-weight: 600; padding: 6px 11px; cursor: pointer; white-space: nowrap;
-    transition: color .15s, border-color .15s; }
-  .segbtn:hover { color: var(--amber); border-color: var(--amber); }
-  .segbtn[aria-pressed="true"] { color: var(--amber); border-color: var(--amber); }
-  .segbtn:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
-
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
   .card.wide { grid-column: 1 / -1; }
@@ -507,16 +497,8 @@
       </div>
 
       <div class="card wide" id="cTradeOuts">
-        <div class="card-head">
-          <div>
-            <h2 id="ltTitle">New-Lease Trade-Outs</h2>
-            <span class="eyebrow" id="ltEyebrow">EXECUTED LEASES · % OVER PRIOR RENT &amp; CAPTURE vs MARKET</span>
-          </div>
-          <div class="segbar" role="group" aria-label="Trade-out series">
-            <button class="segbtn" type="button" data-lt="new" aria-pressed="true">New leases</button>
-            <button class="segbtn" type="button" data-lt="renew" aria-pressed="false">Renewals</button>
-          </div>
-        </div>
+        <h2>Trade-outs</h2>
+        <span class="eyebrow">NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT</span>
         <div class="statrow" id="ltStats"></div>
         <div class="chartwrap"><canvas id="lcTrade"></canvas></div>
         <div class="blu-note" id="ltFoot" style="color:var(--muted);"></div>
@@ -1975,24 +1957,23 @@ async function loadLanding() {
 
   /* ---- Trade-outs ---- */
   (function trades() {
-    // One point per month rather than one per lease. The two series answer the
-    // same question from opposite sides of the roll, so they share the card and
-    // the toggle switches between them -- but they are NOT the same statistic:
+    // Both sides of the roll on one axis. They are both "percent over the rent
+    // that was there before", which is what makes the overlay fair -- and the
+    // gap between them is the whole story: a vacated unit re-leases at four to
+    // five times the increase a sitting resident is offered.
     //
+    // They are NOT computed the same way, and the footnote says so rather than
+    // letting a shared axis imply it:
     //   new leases -- every executed lease carries its own trade-out, so a month
-    //     is the plain mean of the leases signed in it, and the count is in the
-    //     tooltip so a one-lease month is not read as a trend.
+    //     is the plain mean of the leases signed in it.
     //   renewals   -- the workbook publishes no per-renewal record, only monthly
     //     offer aggregates, so the only figure available is its rent-weighted
     //     increase. Averaging it further would be inventing precision.
     //
-    // The footnote states which is on screen instead of leaving the difference
-    // to be inferred from the axis.
-    //
-    // Both series sit on the same trailing 24-month axis, anchored to the latest
-    // month the data actually reports rather than to the browser's clock -- this
-    // is a static page whose workbook is refreshed by hand, so a clock anchor
-    // would grow an empty column every month while the data stood still.
+    // Both sit on a trailing 24-month axis anchored to the latest month the data
+    // reports as having happened, not to the browser's clock -- this page is
+    // static and its workbook is refreshed by hand, so a clock anchor would grow
+    // an empty column every month while the data stood still.
     const s = L.leasing.summary, ra = L.leasing.renewal_activity || {};
     const WINDOW = 24;
     const addMonths = (k, n) => {                 // "2026-07", -3 -> "2026-04"
@@ -2009,136 +1990,97 @@ async function loadLanding() {
     const mean = (a, f) => a.reduce((t, x) => t + f(x), 0) / a.length;
     const newMonths = [...byMonth.keys()].sort().map(k => {
       const ls = byMonth.get(k);
-      return { month: k, n: ls.length, pct: mean(ls, l => l.tradeout) * 100,
-               capture: mean(ls, l => l.capture) * 100 };
+      return { month: k, n: ls.length, pct: mean(ls, l => l.tradeout) * 100 };
     });
 
-    // The offers carry the rent on both sides, so the money the percentage is
-    // worth is stated, not inferred: offered minus in-place for that month's
-    // cohort. Paired the way the Renewal Pipeline card pairs them -- bars for
-    // the rate, an amber line for the rent it moves -- because a big percentage
-    // on a small cohort and a small one on a large cohort are not the same
-    // month, and the rate alone cannot tell them apart.
+    // The offers carry the rent on both sides, so the money a renewal rate is
+    // worth is stated rather than inferred: offered minus in-place for that
+    // month's cohort. A big percentage on a small cohort and a small one on a
+    // large cohort are not the same month, and the rate alone cannot tell them
+    // apart -- which is why the money keeps its own axis.
     const renewRaw = (((L.renewal || {}).offers || {}).months || []).map(m => ({
-      month: m.month, n: m.leases, pct: m.wtd_increase * 100, capture: null,
+      month: m.month, n: m.leases, pct: m.wtd_increase * 100,
       incr: (m.offered_rent != null && m.current_rent != null)
         ? m.offered_rent - m.current_rent : null,
     }));
 
-    // The window ends at the last month either series reports as HAVING HAPPENED.
     // Renewal offers run past the tracker date for upcoming expirations, so they
-    // cannot set the anchor -- a forward offer is not a trailing month.
+    // cannot set the anchor: a forward offer is not a trailing month.
     const trackMo = (ra.tracker_date || "").slice(0, 7);
     const actual = [...newMonths.map(m => m.month),
                     ...renewRaw.filter(m => !trackMo || m.month <= trackMo).map(m => m.month)];
     const endMo = actual.sort().slice(-1)[0] || trackMo;
-    const startMo = addMonths(endMo, -(WINDOW - 1));
-    const axis = Array.from({ length: WINDOW }, (_, i) => addMonths(startMo, i));
+    const axis = Array.from({ length: WINDOW },
+                            (_, i) => addMonths(addMonths(endMo, -(WINDOW - 1)), i));
 
     // Months with no lease are gaps, never zeros: a zero bar would assert a 0%
     // trade-out in a month that simply reported nothing.
-    const onAxis = rows => {
+    const pick = (rows, k) => {
       const by = new Map(rows.map(r => [r.month, r]));
-      return axis.map(k => by.get(k) || { month: k, n: 0, pct: null, capture: null, incr: null });
+      return axis.map(m => { const r = by.get(m); return r ? r[k] : null; });
     };
-    const newAxis = onAxis(newMonths);
-    const renewAxis = onAxis(renewRaw);
+    const newPct = pick(newMonths, "pct");
+    const renPct = pick(renewRaw, "pct");
+    const renIncr = pick(renewRaw, "incr");
+    const counts = { new: pick(newMonths, "n"), renew: pick(renewRaw, "n") };
     const dropped = renewRaw.filter(m => m.month > endMo).map(m => m.month);
+    const filled = axis.filter((_, i) => newPct[i] !== null || renPct[i] !== null).length;
 
-    // How much of the window the source can actually fill. Saying it on the card
-    // keeps a mostly-empty axis reading as "no data yet" and not as "no leases".
-    const coverage = rows => {
-      const n = rows.filter(r => r.pct !== null).length;
-      return " Axis is the trailing " + WINDOW + " months to " + shortMo(endMo)
-        + "; " + n + " of " + WINDOW + " report data \u2014 months with no lease are left "
-        + "empty rather than drawn as zero.";
-    };
+    new Chart(document.getElementById("lcTrade"), {
+      data: { labels: axis.map(shortMo),
+        datasets: [
+          // order drives draw order and the legend alike: bars behind, the money
+          // line on top, and the legend reading new lease -> renewal -> the rent.
+          { type: "bar", label: "New lease · avg trade-out %", data: newPct, yAxisID: "y",
+            backgroundColor: newPct.map(v => v < 0 ? C.red : C.teal), order: 1 },
+          { type: "bar", label: "Renewal · wtd increase %", data: renPct, yAxisID: "y",
+            backgroundColor: renPct.map(v => v < 0 ? C.red : C.green), order: 2 },
+          { type: "line", label: "Renewal incremental rent / mo", data: renIncr, yAxisID: "y2",
+            borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2,
+            pointRadius: 2, tension: .25, order: 3 },
+        ] },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: {
+          title: c => shortMo(axis[c[0].dataIndex]),
+          label: c => {
+            const i = c.dataIndex;
+            if (c.dataset.yAxisID === "y2") return `${c.dataset.label}: +${fm$(c.parsed.y)}/mo`;
+            const n = c.datasetIndex === 0 ? counts.new[i] : counts.renew[i];
+            return `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`
+                 + (n ? ` (${n} lease${n === 1 ? "" : "s"})` : "");
+          } } } },
+        scales: {
+          y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
+          // Zero-anchored like the Renewal Pipeline card's money axis; left to
+          // itself Chart.js started this one at $5k, drawing a 2.3x move as a
+          // plunge from the top of the frame to the bottom.
+          y2: { position: "right", grid: { display: false }, beginAtZero: true,
+                ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+          x: { grid: { display: false },
+            // 24 labels will not sit side by side on this card, and autoSkip
+            // would hide the very months whose emptiness is the point.
+            ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false } } } }
+    });
 
-    const MODES = {
-      new: {
-        title: "New-Lease Trade-Outs",
-        eyebrow: "EXECUTED LEASES · MONTHLY AVG % OVER PRIOR RENT &amp; CAPTURE vs MARKET",
-        rows: newAxis,
-        bar: "Avg trade-out %",
-        stats: [[fmPct(s.avg_tradeout_exec), "avg trade-out"],
-                [fmPct(s.wtd_tradeout), "wtd trade-out"],
-                [fmPct(s.capture_at_signing), "capture at signing"],
-                [String(s.executed), "new leases"],
-                [String(s.below_prior), "below prior rent"]],
-        foot: "Each bar is the unweighted mean of the trade-outs executed that month; "
-            + "hover for the lease count behind it. The portfolio figures above stay "
-            + "rent-weighted, so a month of small units moves the bars more than the stat."
-            + coverage(newAxis)
-            + " The workbook's Lease Detail tab is hand-typed from the RealPage rate "
-            + "tracker, which is why the history is short.",
-      },
-      renew: {
-        title: "Renewal Increases",
-        eyebrow: "RENEWAL OFFERS · MONTHLY RENT-WEIGHTED % OVER IN-PLACE",
-        rows: renewAxis,
-        bar: "Wtd renewal increase %",
-        stats: [["+" + fmPct(ra.avg_increase, 0), "avg increase"],
-                [String(ra.renewals_signed || 0), "renewals signed"],
-                [fmPct(ra.leased_pct || 0, 0), "leased"],
-                ["$" + (ra.renewal_rate_psf || 0).toFixed(2), "renewal psf"],
-                [fmPct(ra.renewals_below_new || 0), "below new-lease rate"]],
-        foot: "Renewals reach the workbook as monthly offer aggregates, not per-lease rows, "
-            + "so each bar is that month's rent-weighted increase \u2014 the one figure the source "
-            + "supports \u2014 and not an average of individual renewals like the new-lease view."
-            + " The amber line is the rent that rate moves \u2014 offered minus in-place "
-            + "for the month's cohort, on the right axis."
-            + coverage(renewAxis)
-            + (dropped.length ? " Offers already extended for " + dropped.map(shortMo).join(", ")
-                + " sit past the window: a forward offer is not a trailing month." : ""),
-      },
-    };
+    statBlock(document.getElementById("ltStats"), [
+      [fmPct(s.avg_tradeout_exec), "avg new-lease trade-out"],
+      ["+" + fmPct(ra.avg_increase, 0), "avg renewal increase"],
+      [fmPct(s.capture_at_signing), "capture at signing"],
+      [String(s.executed), "new leases"],
+      [String(ra.renewals_signed || 0), "renewals signed"],
+    ]);
 
-    let chart = null;
-    function render(mode) {
-      const M = MODES[mode], rows = M.rows;
-      const ds = [{ type: "bar", label: M.bar, data: rows.map(r => r.pct),
-        backgroundColor: rows.map(r => r.pct < 0 ? C.red : C.teal) }];
-      if (mode === "new") ds.push({ type: "line", label: "Avg capture vs market at signing",
-        data: rows.map(r => r.capture), borderColor: C.amber, borderWidth: 1.5,
-        pointRadius: 2, tension: .2 });
-      const money = mode === "renew" && rows.some(r => r.incr != null);
-      if (money) ds.push({ type: "line", label: "Incremental rent / mo",
-        data: rows.map(r => r.incr), yAxisID: "y2", borderColor: C.amber,
-        backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 });
-
-      if (chart) chart.destroy();
-      chart = new Chart(document.getElementById("lcTrade"), {
-        data: { labels: rows.map(r => shortMo(r.month)), datasets: ds },
-        options: { maintainAspectRatio: false, responsive: true,
-          plugins: { legend: legendCfg, tooltip: { callbacks: {
-            title: c => { const r = rows[c[0].dataIndex];
-              return shortMo(r.month) + " · " + r.n + (r.n === 1 ? " lease" : " leases"); },
-            label: c => `${c.dataset.label}: ` + (c.dataset.yAxisID === "y2"
-              ? "+" + fm$(c.parsed.y) + "/mo" : c.parsed.y.toFixed(1) + "%") } } },
-          scales: { y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
-            // Zero-anchored like the Pipeline card's money axis. Left to itself
-            // Chart.js started this one at $5k, which drew May-to-Jun as a plunge
-            // from the top of the frame to the bottom on a 2.3x move.
-            ...(money ? { y2: { position: "right", grid: { display: false },
-              beginAtZero: true,
-              ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } } } : {}),
-            x: { grid: { display: false },
-              // 24 labels will not sit side by side on this card, and autoSkip
-              // would hide the very months whose emptiness is the point.
-              ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false } } } }
-      });
-
-      document.getElementById("ltTitle").textContent = M.title;
-      document.getElementById("ltEyebrow").innerHTML = M.eyebrow;
-      document.getElementById("ltFoot").textContent = M.foot;
-      statBlock(document.getElementById("ltStats"), M.stats);
-      document.querySelectorAll("#cTradeOuts .segbtn").forEach(b =>
-        b.setAttribute("aria-pressed", String(b.dataset.lt === mode)));
-    }
-
-    document.querySelectorAll("#cTradeOuts .segbtn").forEach(b =>
-      b.addEventListener("click", () => render(b.dataset.lt)));
-    render("new");
+    document.getElementById("ltFoot").textContent =
+      "Teal is the unweighted mean of the trade-outs executed that month; green is that "
+      + "month's rent-weighted renewal increase, which is the only form the offer "
+      + "aggregates support — they carry no per-renewal rows to average. Both are percent "
+      + "over the prior rent, so they share the left axis; the amber line is the rent the "
+      + "renewal rate moves, on the right. Axis is the trailing " + WINDOW + " months to "
+      + shortMo(endMo) + "; " + filled + " of " + WINDOW + " report data — months with no "
+      + "lease are left empty rather than drawn as zero, and the workbook's Lease Detail tab "
+      + "is hand-typed from the RealPage rate tracker, which is why the history is short."
+      + (dropped.length ? " Offers already extended for " + dropped.map(shortMo).join(", ")
+          + " sit past the window: a forward offer is not a trailing month." : "");
   })();
 
   /* ---- Rollover schedule ---- */
