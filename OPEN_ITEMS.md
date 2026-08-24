@@ -1,6 +1,6 @@
 # Open Items
 
-State as of 2026-08-20, HEAD `2971d57`. IDs are stable — when an item closes, move
+State as of 2026-08-24, HEAD `2837522`. IDs are stable — when an item closes, move
 it to *Closed* rather than renumbering, so "A3" means the same thing next week.
 
 **Live and uncertain** marks an item where the dashboard is publishing something
@@ -11,7 +11,6 @@ first: everything else is a gap, but these are assertions.
 
 | # | Item | What it blocks | Live and uncertain |
 | --- | --- | --- | --- |
-| A3 | Send `…rs335_accrual.xlsx` and `…rspalman_Accrual (3).xlsx` — **or** let me add a header dump to the pipeline log, which needs nothing from you | The two-month offset. The two statements' monthly ratios match at +2 months, so one has the wrong period, and the T12 parser's month columns are hardcoded (`MONTHS_COLS`) with the header found by first-row-containing-a-month | **yes** — Palma's 56.1% ratio and its delinquency denominator ride on these periods |
 | A4 | Supply a market-survey export for the PSF chart (subject + comps, 30-day avg rent/sqft — the RealPage market survey or the AIRM feed both carry it). Owner confirmed the $4.01 is old | A live PSF card. The chart now says "hand-entered, date unknown — likely stale" on its face until a feed exists | contained — the staleness is disclosed on the card |
 | A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** The funnel parser is live for both the `EliseAI Reports` and `Weekly Leasing Reports` folders, so the weeklies parse wherever the gmail-filing fix (C3) lands them. The Aug 18 file parses the day it moves out of `_Unsorted` | C3 only | no |
 | A6 | Which property does the concession burn-off export cover? Settled empirically that the file itself cannot answer: the parser now walks it as sections and the only heading text is "Projection by Unit" — report structure, not a property name. Parses and ties out clean every run (−$54,990 recurring concessions as of 08/10), stored nowhere. Needs your word on what "For Selected Properties" selected, or a per-property re-export; the moment a heading or filename names a property, sections route and store by themselves | Concession Load % and the Effective-vs-Gross-Rent card | no — nothing publishes from it yet |
@@ -68,6 +67,21 @@ Documented in CLAUDE.md and built but not activated. Strictly ordered.
 | F2 | The shared scorecard note prints on every property card, including the line about Palma's lease-up overrides, which reads oddly on Chorus. Can be scoped per property |
 
 ## Closed
+
+2026-08-24 — A3, by the header dump instead of the re-export: the inspect
+workflow now probes every T12 statement (`inspect_report.py --t12` — title rows
+verbatim, parsed period, monthly ratios, and a pairwise table of which month
+shift aligns two files). The run showed all four statements claim the **same**
+period in their own title rows, `Period = Jul 2025-Jun 2026`, so no live
+statement is mislabeled — the +2 offset lives inside the quarantined rs335
+dummy's fabricated content, whose Sep–Apr columns carry Palma North's Jul–Feb
+figures (7/10 overlapping months within 0.15pp, the exact pattern that raised
+the item). Palma North's statement is period-consistent (title row = column
+headers = parser read) and byte-identical in ratio across the Jul 15 and Jul 16
+exports (12/12 at shift 0), so the 56.1% ratio and the delinquency denominator
+stand on confirmed periods and the *live and uncertain* flag lifts. No file is
+needed from the owner: rs335 has no real T12 until a lease signs, and A1's
+`through_period` already lets its first real statement flow.
 
 2026-08-20 (parser round) — D2: `parse_leasing_funnel` live for the `EliseAI
 Reports` and `Weekly Leasing Reports` folders; per-community aggregates to
