@@ -53,12 +53,14 @@ WINDOW_DAYS = 7
 # Every count a day can carry; absent = zero (EliseAI omits empty sections).
 # Only tours_today, new_leads, applications and pending_knowledge feed a KPI —
 # the rest are recorded as context for the leasing funnel, not scored.
-# unresponsive_leads: EliseAI began emitting an "Unresponsive Leads" section on
-# 2026-08-19. Days recorded before that simply lack the key, which reads as zero
-# like any other absent count.
+# EliseAI keeps adding lead-state sections; each new one is recorded rather than
+# dropped. "Unresponsive Leads" first appeared 2026-08-19, "Inactive Leads"
+# 2026-08-24. Days recorded before a section existed simply lack the key, which
+# reads as zero like any other absent count.
 DAY_FIELDS = ("new_leads", "tours_today", "tours_booked_since_yesterday",
               "applications", "cancelled_leads", "unsubscribed",
-              "unresponsive_leads", "escalations_open", "pending_knowledge")
+              "unresponsive_leads", "inactive_leads",
+              "escalations_open", "pending_knowledge")
 
 
 def series_path(slug):
