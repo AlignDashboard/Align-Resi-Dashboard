@@ -491,7 +491,7 @@
 
       <div class="card wide" id="cRentCapture">
         <h2>Rent Capture</h2>
-        <span class="eyebrow">MARKET RENT POTENTIAL vs ACCRUED INCOME · CAPTURE RATE &amp; ECONOMIC OCCUPANCY</span>
+        <span class="eyebrow">MARKET RENT POTENTIAL vs ACCRUED INCOME · MONTHLY</span>
         <div class="chartwrap"><canvas id="lcCapture"></canvas></div>
         <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
       </div>
@@ -800,7 +800,7 @@ function chromeColors() {
            tick: cs.getPropertyValue("--tick").trim() };
 }
 
-// The neutral grey used for reference lines (blended, capture rate, cumulative)
+// The neutral grey used for reference lines (blended, cumulative)
 // needs a darker value on white or it nearly disappears. Both values are known,
 // so swapping between them is an exact match rather than a guess.
 const MUTED = { dark: "#8b95a4", light: "#5f6a78" };
@@ -1750,25 +1750,19 @@ async function loadLanding() {
     // loss-to-lease gap the chart exists to show. Floored to a clean $50k tick
     // just under the lowest plotted value; the footnote discloses the zoom.
     const yMin = Math.floor(Math.min(...rc.rental_income, ...rc.market_potential) * 0.97 / 5e4) * 5e4;
-    // the capture-rate axis hugs its data too (73–92% today, was fixed 50–110)
-    const capPct = rc.capture_rate.map(v => v * 100);
-    const capMin = Math.floor((Math.min(...capPct) - 3) / 5) * 5;
-    const capMax = Math.ceil((Math.max(...capPct) + 3) / 5) * 5;
     new Chart(document.getElementById("lcCapture"), {
       data: {
         labels: rc.months.map(shortMo),
         datasets: [
           { type: "bar", label: "Accrued rental income", data: rc.rental_income, backgroundColor: C.teal, order: 2 },
           { type: "line", label: "Market rent potential", data: rc.market_potential, borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25, order: 1 },
-          { type: "line", label: "Capture rate", data: rc.capture_rate.map(v => v * 100), yAxisID: "y2", borderColor: C.muted, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0, tension: .25, order: 0 },
         ]
       },
       options: { maintainAspectRatio: false, responsive: true,
         plugins: { legend: legendCfg, tooltip: { callbacks: { label: c =>
-          c.dataset.yAxisID === "y2" ? `Capture: ${c.parsed.y.toFixed(1)}%` : `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
+          `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
         scales: { y: { grid: gridCfg, min: yMin,
             ticks: { callback: v => "$" + (v / 1e6).toFixed(2) + "M" } },
-          y2: { position: "right", grid: { display: false }, min: capMin, max: capMax, ticks: { callback: v => v + "%" } },
           x: { grid: { display: false } } } }
     });
     document.getElementById("lcCaptureFoot").textContent =
