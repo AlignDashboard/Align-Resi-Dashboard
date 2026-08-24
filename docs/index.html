@@ -147,6 +147,16 @@
   .tmode:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   .tmode .glyph { font-size: 12px; line-height: 1; }
 
+  /* Two-way series switch inside a card head (new leases vs renewals). */
+  .segbar { display: flex; gap: 2px; align-self: center; margin-bottom: 6px; }
+  .segbtn { background: none; border: 1px solid var(--line); color: var(--muted);
+    font-family: inherit; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 600; padding: 6px 11px; cursor: pointer; white-space: nowrap;
+    transition: color .15s, border-color .15s; }
+  .segbtn:hover { color: var(--amber); border-color: var(--amber); }
+  .segbtn[aria-pressed="true"] { color: var(--amber); border-color: var(--amber); }
+  .segbtn:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
   .card.wide { grid-column: 1 / -1; }
@@ -496,11 +506,20 @@
         <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
       </div>
 
-      <div class="card wide">
-        <h2>New-Lease Trade-Outs</h2>
-        <span class="eyebrow" id="ltEyebrow">EXECUTED LEASES · % OVER PRIOR RENT &amp; CAPTURE vs MARKET</span>
+      <div class="card wide" id="cTradeOuts">
+        <div class="card-head">
+          <div>
+            <h2 id="ltTitle">New-Lease Trade-Outs</h2>
+            <span class="eyebrow" id="ltEyebrow">EXECUTED LEASES · % OVER PRIOR RENT &amp; CAPTURE vs MARKET</span>
+          </div>
+          <div class="segbar" role="group" aria-label="Trade-out series">
+            <button class="segbtn" type="button" data-lt="new" aria-pressed="true">New leases</button>
+            <button class="segbtn" type="button" data-lt="renew" aria-pressed="false">Renewals</button>
+          </div>
+        </div>
         <div class="statrow" id="ltStats"></div>
         <div class="chartwrap"><canvas id="lcTrade"></canvas></div>
+        <div class="blu-note" id="ltFoot" style="color:var(--muted);"></div>
       </div>
 
       <div class="card" id="cNoi">
@@ -1933,30 +1952,109 @@ async function loadLanding() {
 
   /* ---- Trade-outs ---- */
   (function trades() {
-    const ex = L.leasing.leases.filter(l => l.status === "Executed");
-    new Chart(document.getElementById("lcTrade"), {
-      data: { labels: ex.map(l => l.date.slice(5)),
-        datasets: [
-          { type: "bar", label: "Trade-out %", data: ex.map(l => l.tradeout * 100),
-            backgroundColor: ex.map(l => l.tradeout < 0 ? C.red : C.teal) },
-          { type: "line", label: "Capture vs market at signing", data: ex.map(l => l.capture * 100),
-            borderColor: C.amber, borderWidth: 1.5, pointRadius: 2, tension: .2 },
-        ] },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: {
-          title: c => "Unit " + ex[c[0].dataIndex].unit + " · " + ex[c[0].dataIndex].date,
-          label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
-        scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } },
-          x: { grid: { display: false }, ticks: { font: { size: 8 }, maxRotation: 90, minRotation: 90 } } } }
+    // One point per month rather than one per lease. The two series answer the
+    // same question from opposite sides of the roll, so they share the card and
+    // the toggle switches between them -- but they are NOT the same statistic:
+    //
+    //   new leases -- every executed lease carries its own trade-out, so a month
+    //     is the plain mean of the leases signed in it, and the count is in the
+    //     tooltip so a one-lease month is not read as a trend.
+    //   renewals   -- the workbook publishes no per-renewal record, only monthly
+    //     offer aggregates, so the only figure available is its rent-weighted
+    //     increase. Averaging it further would be inventing precision.
+    //
+    // The footnote states which is on screen instead of leaving the difference
+    // to be inferred from the axis.
+    const s = L.leasing.summary, ra = L.leasing.renewal_activity || {};
+
+    const byMonth = new Map();
+    L.leasing.leases.filter(l => l.status === "Executed").forEach(l => {
+      const k = l.date.slice(0, 7);
+      if (!byMonth.has(k)) byMonth.set(k, []);
+      byMonth.get(k).push(l);
     });
-    const s = L.leasing.summary, ra = L.leasing.renewal_activity;
-    statBlock(document.getElementById("ltStats"), [
-      [fmPct(s.wtd_tradeout), "wtd trade-out"],
-      [fmPct(s.capture_at_signing), "capture at signing"],
-      [String(s.executed), "new leases"],
-      [String(ra.renewals_signed), "renewals signed"],
-      ["+" + fmPct(ra.avg_increase, 0), "avg renewal increase"],
-    ]);
+    const mean = (a, f) => a.reduce((t, x) => t + f(x), 0) / a.length;
+    const newMonths = [...byMonth.keys()].sort().map(k => {
+      const ls = byMonth.get(k);
+      return { month: k, n: ls.length, pct: mean(ls, l => l.tradeout) * 100,
+               capture: mean(ls, l => l.capture) * 100 };
+    });
+
+    // Renewal offers run past the tracker date: those months are offers extended
+    // for upcoming expirations, not increases anyone has signed. Drawn in the
+    // muted grey the page already uses for "not a hard number".
+    const trackMo = (ra.tracker_date || "").slice(0, 7);
+    const renewMonths = (((L.renewal || {}).offers || {}).months || []).map(m => ({
+      month: m.month, n: m.leases, pct: m.wtd_increase * 100, capture: null,
+      future: !!trackMo && m.month > trackMo,
+    }));
+
+    const MODES = {
+      new: {
+        title: "New-Lease Trade-Outs",
+        eyebrow: "EXECUTED LEASES · MONTHLY AVG % OVER PRIOR RENT &amp; CAPTURE vs MARKET",
+        rows: newMonths,
+        bar: "Avg trade-out %",
+        stats: [[fmPct(s.avg_tradeout_exec), "avg trade-out"],
+                [fmPct(s.wtd_tradeout), "wtd trade-out"],
+                [fmPct(s.capture_at_signing), "capture at signing"],
+                [String(s.executed), "new leases"],
+                [String(s.below_prior), "below prior rent"]],
+        foot: "Each bar is the unweighted mean of the trade-outs executed that month; "
+            + "hover for the lease count behind it. The portfolio figures above stay "
+            + "rent-weighted, so a month of small units moves the bars more than the stat.",
+      },
+      renew: {
+        title: "Renewal Increases",
+        eyebrow: "RENEWAL OFFERS · MONTHLY RENT-WEIGHTED % OVER IN-PLACE",
+        rows: renewMonths,
+        bar: "Wtd renewal increase %",
+        stats: [["+" + fmPct(ra.avg_increase, 0), "avg increase"],
+                [String(ra.renewals_signed || 0), "renewals signed"],
+                [fmPct(ra.leased_pct || 0, 0), "leased"],
+                ["$" + (ra.renewal_rate_psf || 0).toFixed(2), "renewal psf"],
+                [fmPct(ra.renewals_below_new || 0), "below new-lease rate"]],
+        foot: "Renewals reach the workbook as monthly offer aggregates, not per-lease rows, "
+            + "so each bar is that month's rent-weighted increase \u2014 the one figure the source "
+            + "supports \u2014 and not an average of individual renewals like the new-lease view."
+            + (trackMo ? " Grey months are offers extended for expirations after the "
+                + shortMo(trackMo) + " tracker date, not increases signed." : ""),
+      },
+    };
+
+    let chart = null;
+    function render(mode) {
+      const M = MODES[mode], rows = M.rows;
+      const ds = [{ type: "bar", label: M.bar, data: rows.map(r => r.pct),
+        backgroundColor: rows.map(r => r.pct < 0 ? C.red : (r.future ? C.muted : C.teal)) }];
+      if (mode === "new") ds.push({ type: "line", label: "Avg capture vs market at signing",
+        data: rows.map(r => r.capture), borderColor: C.amber, borderWidth: 1.5,
+        pointRadius: 2, tension: .2 });
+
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById("lcTrade"), {
+        data: { labels: rows.map(r => shortMo(r.month)), datasets: ds },
+        options: { maintainAspectRatio: false, responsive: true,
+          plugins: { legend: legendCfg, tooltip: { callbacks: {
+            title: c => { const r = rows[c[0].dataIndex];
+              return shortMo(r.month) + " · " + r.n + (r.n === 1 ? " lease" : " leases")
+                + (r.future ? " · offered, not signed" : ""); },
+            label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
+          scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } },
+            x: { grid: { display: false } } } }
+      });
+
+      document.getElementById("ltTitle").textContent = M.title;
+      document.getElementById("ltEyebrow").innerHTML = M.eyebrow;
+      document.getElementById("ltFoot").textContent = M.foot;
+      statBlock(document.getElementById("ltStats"), M.stats);
+      document.querySelectorAll("#cTradeOuts .segbtn").forEach(b =>
+        b.setAttribute("aria-pressed", String(b.dataset.lt === mode)));
+    }
+
+    document.querySelectorAll("#cTradeOuts .segbtn").forEach(b =>
+      b.addEventListener("click", () => render(b.dataset.lt)));
+    render("new");
   })();
 
   /* ---- Rollover schedule ---- */
