@@ -1965,7 +1965,17 @@ async function loadLanding() {
     //
     // The footnote states which is on screen instead of leaving the difference
     // to be inferred from the axis.
+    //
+    // Both series sit on the same trailing 24-month axis, anchored to the latest
+    // month the data actually reports rather than to the browser's clock -- this
+    // is a static page whose workbook is refreshed by hand, so a clock anchor
+    // would grow an empty column every month while the data stood still.
     const s = L.leasing.summary, ra = L.leasing.renewal_activity || {};
+    const WINDOW = 24;
+    const addMonths = (k, n) => {                 // "2026-07", -3 -> "2026-04"
+      const [y, m] = k.split("-").map(Number), t = y * 12 + (m - 1) + n;
+      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
+    };
 
     const byMonth = new Map();
     L.leasing.leases.filter(l => l.status === "Executed").forEach(l => {
@@ -1980,20 +1990,44 @@ async function loadLanding() {
                capture: mean(ls, l => l.capture) * 100 };
     });
 
-    // Renewal offers run past the tracker date: those months are offers extended
-    // for upcoming expirations, not increases anyone has signed. Drawn in the
-    // muted grey the page already uses for "not a hard number".
-    const trackMo = (ra.tracker_date || "").slice(0, 7);
-    const renewMonths = (((L.renewal || {}).offers || {}).months || []).map(m => ({
+    const renewRaw = (((L.renewal || {}).offers || {}).months || []).map(m => ({
       month: m.month, n: m.leases, pct: m.wtd_increase * 100, capture: null,
-      future: !!trackMo && m.month > trackMo,
     }));
+
+    // The window ends at the last month either series reports as HAVING HAPPENED.
+    // Renewal offers run past the tracker date for upcoming expirations, so they
+    // cannot set the anchor -- a forward offer is not a trailing month.
+    const trackMo = (ra.tracker_date || "").slice(0, 7);
+    const actual = [...newMonths.map(m => m.month),
+                    ...renewRaw.filter(m => !trackMo || m.month <= trackMo).map(m => m.month)];
+    const endMo = actual.sort().slice(-1)[0] || trackMo;
+    const startMo = addMonths(endMo, -(WINDOW - 1));
+    const axis = Array.from({ length: WINDOW }, (_, i) => addMonths(startMo, i));
+
+    // Months with no lease are gaps, never zeros: a zero bar would assert a 0%
+    // trade-out in a month that simply reported nothing.
+    const onAxis = rows => {
+      const by = new Map(rows.map(r => [r.month, r]));
+      return axis.map(k => by.get(k) || { month: k, n: 0, pct: null, capture: null });
+    };
+    const newAxis = onAxis(newMonths);
+    const renewAxis = onAxis(renewRaw);
+    const dropped = renewRaw.filter(m => m.month > endMo).map(m => m.month);
+
+    // How much of the window the source can actually fill. Saying it on the card
+    // keeps a mostly-empty axis reading as "no data yet" and not as "no leases".
+    const coverage = rows => {
+      const n = rows.filter(r => r.pct !== null).length;
+      return " Axis is the trailing " + WINDOW + " months to " + shortMo(endMo)
+        + "; " + n + " of " + WINDOW + " report data \u2014 months with no lease are left "
+        + "empty rather than drawn as zero.";
+    };
 
     const MODES = {
       new: {
         title: "New-Lease Trade-Outs",
         eyebrow: "EXECUTED LEASES · MONTHLY AVG % OVER PRIOR RENT &amp; CAPTURE vs MARKET",
-        rows: newMonths,
+        rows: newAxis,
         bar: "Avg trade-out %",
         stats: [[fmPct(s.avg_tradeout_exec), "avg trade-out"],
                 [fmPct(s.wtd_tradeout), "wtd trade-out"],
@@ -2002,12 +2036,15 @@ async function loadLanding() {
                 [String(s.below_prior), "below prior rent"]],
         foot: "Each bar is the unweighted mean of the trade-outs executed that month; "
             + "hover for the lease count behind it. The portfolio figures above stay "
-            + "rent-weighted, so a month of small units moves the bars more than the stat.",
+            + "rent-weighted, so a month of small units moves the bars more than the stat."
+            + coverage(newAxis)
+            + " The workbook's Lease Detail tab is hand-typed from the RealPage rate "
+            + "tracker, which is why the history is short.",
       },
       renew: {
         title: "Renewal Increases",
         eyebrow: "RENEWAL OFFERS · MONTHLY RENT-WEIGHTED % OVER IN-PLACE",
-        rows: renewMonths,
+        rows: renewAxis,
         bar: "Wtd renewal increase %",
         stats: [["+" + fmPct(ra.avg_increase, 0), "avg increase"],
                 [String(ra.renewals_signed || 0), "renewals signed"],
@@ -2017,8 +2054,9 @@ async function loadLanding() {
         foot: "Renewals reach the workbook as monthly offer aggregates, not per-lease rows, "
             + "so each bar is that month's rent-weighted increase \u2014 the one figure the source "
             + "supports \u2014 and not an average of individual renewals like the new-lease view."
-            + (trackMo ? " Grey months are offers extended for expirations after the "
-                + shortMo(trackMo) + " tracker date, not increases signed." : ""),
+            + coverage(renewAxis)
+            + (dropped.length ? " Offers already extended for " + dropped.map(shortMo).join(", ")
+                + " sit past the window: a forward offer is not a trailing month." : ""),
       },
     };
 
@@ -2026,7 +2064,7 @@ async function loadLanding() {
     function render(mode) {
       const M = MODES[mode], rows = M.rows;
       const ds = [{ type: "bar", label: M.bar, data: rows.map(r => r.pct),
-        backgroundColor: rows.map(r => r.pct < 0 ? C.red : (r.future ? C.muted : C.teal)) }];
+        backgroundColor: rows.map(r => r.pct < 0 ? C.red : C.teal) }];
       if (mode === "new") ds.push({ type: "line", label: "Avg capture vs market at signing",
         data: rows.map(r => r.capture), borderColor: C.amber, borderWidth: 1.5,
         pointRadius: 2, tension: .2 });
@@ -2037,11 +2075,13 @@ async function loadLanding() {
         options: { maintainAspectRatio: false, responsive: true,
           plugins: { legend: legendCfg, tooltip: { callbacks: {
             title: c => { const r = rows[c[0].dataIndex];
-              return shortMo(r.month) + " · " + r.n + (r.n === 1 ? " lease" : " leases")
-                + (r.future ? " · offered, not signed" : ""); },
+              return shortMo(r.month) + " · " + r.n + (r.n === 1 ? " lease" : " leases"); },
             label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
           scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } },
-            x: { grid: { display: false } } } }
+            x: { grid: { display: false },
+              // 24 labels will not sit side by side on this card, and autoSkip
+              // would hide the very months whose emptiness is the point.
+              ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false } } } }
       });
 
       document.getElementById("ltTitle").textContent = M.title;
