@@ -544,6 +544,7 @@
           <div class="togrow" role="group" aria-label="Series shown">
             <button class="tog" type="button" data-ds="0" aria-pressed="true">NOI margin</button>
             <button class="tog" type="button" data-ds="1" aria-pressed="true">Expense ratio</button>
+            <button class="tog" type="button" data-ds="2" aria-pressed="true">Expense / door</button>
           </div>
         </div>
         <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
@@ -1823,6 +1824,7 @@ async function loadLanding() {
     });
     function setVis(i, on) {
       chart.setDatasetVisibility(i, on);
+      chart.options.scales.y2.display = chart.isDatasetVisible(2);
       chart.update();
       const btn = document.querySelector(`#cNoi .tog[data-ds="${i}"]`);
       if (btn) btn.setAttribute("aria-pressed", String(on));
