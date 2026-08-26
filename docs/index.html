@@ -551,10 +551,20 @@
         <div class="blu-note" id="lcNoiFoot" style="color:var(--muted);"></div>
       </div>
 
-      <div class="card">
-        <h2>Expense Deep Dive</h2>
-        <span class="eyebrow" id="lcExpEyebrow">TTM BY BUCKET · LIKE-FOR-LIKE CHANGE</span>
-        <div class="chartwrap" style="height:250px;"><canvas id="lcExp"></canvas></div>
+      <div class="card" id="cExpDeep">
+        <div class="card-head">
+          <div>
+            <h2>Expense Deep Dive</h2>
+            <span class="eyebrow" id="lcExpEyebrow">TTM BY BUCKET · LIKE-FOR-LIKE CHANGE</span>
+          </div>
+          <div class="togrow" role="group" aria-label="Deep dive period">
+            <button class="tog" type="button" data-ep="t12" aria-pressed="true">T12</button>
+            <button class="tog" type="button" data-ep="month" aria-pressed="false">Month</button>
+            <select id="lcExpMonth" class="prop-select" hidden aria-label="Statement month"></select>
+          </div>
+        </div>
+        <div class="chartwrap" id="lcExpWrap" style="height:250px;"><canvas id="lcExp"></canvas></div>
+        <div class="blu-note" id="lcExpNote" style="color:var(--muted);"></div>
         <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
       </div>
 
@@ -1842,17 +1852,124 @@ async function loadLanding() {
 
   /* ---- Expense deep dive ---- */
   (function expenses() {
+    // Two views of the same eleven buckets. The T12 side is the workbook's own
+    // grouping, statuses and all. The monthly side is classified in the
+    // pipeline from the property's T12 statement GL detail and published via
+    // metrics.json -- The Landing's statement has not reached Drive yet, so
+    // until it does the Month chip explains itself instead of drawing.
     const b = L.expense_overview.buckets.filter(x => x.name !== "Total");
-    const colors = b.map(x => x.status === "FLAG" ? C.red : x.status === "WATCH" ? C.amber : C.green);
-    new Chart(document.getElementById("lcExp"), {
-      type: "bar",
-      data: { labels: b.map(x => x.name), datasets: [{ label: "TTM", data: b.map(x => x.ttm), backgroundColor: colors }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => `TTM ${fm$(c.parsed.x)} · like-for-like ${(b[c.dataIndex].change * 100).toFixed(0)}% · ${b[c.dataIndex].status}` } } },
-        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
-          y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
-    });
+    const statusColor = x => x === "FLAG" ? C.red : x === "WATCH" ? C.amber : C.green;
+    const wrap = document.getElementById("lcExpWrap");
+    const note = document.getElementById("lcExpNote");
+    const sel = document.getElementById("lcExpMonth");
+    let chart = null, monthly = null, monthlyFetched = false;
+
+    const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    // point labels are bare month names; the period_end pins the year of each
+    const monthKeys = pt => {
+      const [em, ey] = pt.period_end.split(" ");
+      const end = (+ey) * 12 + MO.indexOf(em);
+      return pt.labels.map((_, i) => {
+        const t = end - (11 - i);
+        return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
+      });
+    };
+
+    function canvas() {
+      wrap.innerHTML = '<canvas id="lcExp"></canvas>';
+      return document.getElementById("lcExp");
+    }
+    function renderT12() {
+      if (chart) { chart.destroy(); chart = null; }
+      chart = new Chart(canvas(), {
+        type: "bar",
+        data: { labels: b.map(x => x.name),
+          datasets: [{ label: "TTM", data: b.map(x => x.ttm),
+                       backgroundColor: b.map(x => statusColor(x.status)) }] },
+        options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+          plugins: { legend: { display: false }, tooltip: { callbacks: {
+            label: c => `TTM ${fm$(c.parsed.x)} · like-for-like ${(b[c.dataIndex].change * 100).toFixed(0)}% · ${b[c.dataIndex].status}` } } },
+          scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
+            y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
+      });
+      document.getElementById("lcExpEyebrow").textContent = "TTM BY BUCKET · LIKE-FOR-LIKE CHANGE";
+      note.textContent = "";
+      sel.hidden = true;
+    }
+    function renderMonth() {
+      const pt = monthly;
+      if (!pt) {
+        if (chart) { chart.destroy(); chart = null; }
+        wrap.innerHTML = '<div class="empty"><div class="dash"></div>'
+          + '<div class="big">Monthly view awaits the statement</div>'
+          + '<div>The workbook publishes these buckets as period totals only. '
+          + "A month-by-month split needs The Landing's own 12-month statement "
+          + '(p0005611, accrual) in the Drive "T12 Expenses" folder — the pipeline '
+          + 'is already wired to classify, tie out, and publish it the day it lands.</div></div>';
+        document.getElementById("lcExpEyebrow").textContent = "MONTH BY BUCKET · AWAITING THE STATEMENT";
+        note.textContent = "";
+        sel.hidden = true;
+        return;
+      }
+      const keys = monthKeys(pt);
+      if (!sel.options.length) {
+        keys.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
+        sel.selectedIndex = keys.length - 1;
+      }
+      sel.hidden = false;
+      const i = +sel.value;
+      // workbook bucket order first so the two views line up; extras appended
+      const names = [...b.map(x => x.name).filter(n => pt.buckets[n]),
+                     ...Object.keys(pt.buckets).filter(n => !b.some(x => x.name === n))];
+      const vals = names.map(n => pt.buckets[n][i]);
+      const total = vals.reduce((t, v) => t + v, 0);
+      if (chart) { chart.destroy(); chart = null; }
+      chart = new Chart(canvas(), {
+        type: "bar",
+        data: { labels: names, datasets: [{ label: shortMo(keys[i]), data: vals,
+          backgroundColor: names.map(n => {
+            const wb = b.find(x => x.name === n);
+            return wb ? statusColor(wb.status) : C.muted;
+          }) }] },
+        options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+          plugins: { legend: { display: false }, tooltip: { callbacks: {
+            label: c => `${fm$(c.parsed.x)} · ${(100 * c.parsed.x / total).toFixed(0)}% of the month` } } },
+          scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+            y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
+      });
+      document.getElementById("lcExpEyebrow").textContent = "MONTH BY BUCKET · FROM THE STATEMENT'S GL DETAIL";
+      // reconcile against the workbook's monthly opex where the months overlap
+      const wbIdx = L.expense_noi.months.indexOf(keys[i]);
+      const wbOpex = wbIdx >= 0 ? L.expense_noi.opex[wbIdx] : null;
+      note.textContent = shortMo(keys[i]) + " total " + fm$(total)
+        + (wbOpex != null
+            ? " vs " + fm$(wbOpex) + " workbook opex ("
+              + (Math.abs(total - wbOpex) < 500 ? "ties out" : "gap " + fm$(total - wbOpex)) + ")."
+            : " — outside the workbook's month range.")
+        + " Buckets are keyword-classified from GL lines and tied to the statement's own"
+        + " recoverable total; the T12 view stays the analyst's hand grouping.";
+    }
+    async function toMonth() {
+      if (!monthlyFetched) {
+        monthlyFetched = true;
+        try {
+          const res = await fetch("metrics.json", { cache: "no-store" });
+          const m = await res.json();
+          monthly = ((m.expense_buckets || {}).properties || [])
+            .find(x => x.slug === "the-landing") || null;
+        } catch (e) { monthly = null; }
+      }
+      renderMonth();
+    }
+    function setMode(mode) {
+      document.querySelectorAll("#cExpDeep .tog").forEach(t =>
+        t.setAttribute("aria-pressed", String(t.dataset.ep === mode)));
+      if (mode === "t12") renderT12(); else toMonth();
+    }
+    document.querySelectorAll("#cExpDeep .tog").forEach(t =>
+      t.addEventListener("click", () => setMode(t.dataset.ep)));
+    sel.addEventListener("change", renderMonth);
+    renderT12();
     buildTable(document.getElementById("lcExpTbl"),
       [{ t: "Opportunity" }, { t: "Saving/yr", num: true }, { t: "Difficulty", mut: true }],
       L.expense_overview.opportunities.map(o => [o.name, fm$(o.saving), String(o.difficulty).split(" - ")[0]]));

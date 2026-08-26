@@ -165,6 +165,68 @@ def store_expense_ratio(prop, t12_parses):
     return hist
 
 
+def store_expense_buckets(prop, t12_parses):
+    """data/<slug>/expense_buckets.json — monthly expense dollars by bucket,
+    classified from the statement's GL detail (see parse_t12_statement), summed
+    across the property's codes per period like the ratio is. Aggregates only;
+    a GL account label is not personal data.
+
+    A parse whose buckets were refused (tie-out failure) is skipped loudly and
+    the ratio still stores — the two must not share a fate.
+    """
+    by_period = {}
+    for code, pr in sorted(latest_per_code(t12_parses).items()):
+        if not pr.get("expense_buckets"):
+            if pr.get("expense_buckets_error"):
+                print(f"[warn] {prop['name']} {pr.get('period_end')} code '{code}': "
+                      f"expense buckets refused -- {pr['expense_buckets_error']}")
+            continue
+        by_period.setdefault(pr["period_end"], []).append((code, pr))
+    if not by_period:
+        return None
+
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / "expense_buckets.json"
+    hist = json.load(open(fp)) if fp.exists() else {"points": []}
+
+    for period_end, group in by_period.items():
+        codes = [c for c, _ in group]
+        labels = group[0][1]["labels"]
+        if any(pr["labels"] != labels for _, pr in group[1:]):
+            print(f"[warn] {prop['name']} {period_end}: month labels differ across "
+                  f"codes -- buckets from '{codes[0]}' alone for this period")
+            group = group[:1]
+        merged, others = {}, []
+        for _, pr in group:
+            eb = pr["expense_buckets"]
+            for name, vals in eb["buckets"].items():
+                tgt = merged.setdefault(name, [0.0] * 12)
+                for i, v in enumerate(vals):
+                    tgt[i] += v
+            others.extend(l for l in eb.get("other_labels", []) if l not in others)
+        if others:
+            print(f"[note] {prop['name']} {period_end}: unclassified expense "
+                  f"lines went to '{'Other / unclassified'}': {others}")
+        point = {
+            "period_end": period_end,
+            "labels": labels,
+            "source_codes": codes,
+            "buckets": {k: [round(v, 2) for v in vs] for k, vs in sorted(merged.items())},
+            "basis": ("GL leaf lines classified by keyword into the workbook's buckets; "
+                      "recoverable side tied out against 5999-9998 per month; "
+                      "financing/non-cash/capital lines excluded"),
+        }
+        hist["points"] = [pt for pt in hist["points"] if pt["period_end"] != period_end]
+        hist["points"].append(point)
+        print(f"[ok] stored expense_buckets for {prop['name']} ({period_end}) "
+              f"from {'+'.join(codes)}: {len(merged)} bucket(s)")
+
+    hist["points"].sort(key=lambda pt: period_key(pt["period_end"]))
+    json.dump(hist, open(fp, "w"), indent=2)
+    return hist
+
+
 def store_monthly_revenue(prop, t12_parses):
     """data/<slug>/monthly_revenue.json — the latest month's total operating
     revenue, summed across this property's codes (Palma = rspalman + rspalmas).
@@ -420,6 +482,7 @@ def process_manifest():
     for slug, (prop, parses) in t12_by_slug.items():
         store_expense_ratio(prop, parses)
         store_monthly_revenue(prop, parses)
+        store_expense_buckets(prop, parses)
 
 
 # ---- metrics.json generation ---------------------------------------------
@@ -453,6 +516,30 @@ def build_metrics_json():
     # Load existing metrics.json to preserve the other (manual/demo) blocks
     mpath = DOCS / "metrics.json"
     metrics = json.load(open(mpath)) if mpath.exists() else {}
+
+    # Latest expense-bucket point per property, for the Deep Dive's monthly
+    # view. The card renders only when its property has a point, so shipping
+    # the block empty is the honest "awaiting the statement" state.
+    bucket_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "expense_buckets.json"
+        if not fp.exists():
+            continue
+        pts = json.load(open(fp))["points"]
+        if not pts:
+            continue
+        latest = pts[-1]
+        bucket_props.append({"slug": p["slug"], "name": p["name"],
+                             "period_end": latest["period_end"],
+                             "labels": latest["labels"],
+                             "buckets": latest["buckets"],
+                             "basis": latest.get("basis")})
+    metrics["expense_buckets"] = {
+        "available": bool(bucket_props),
+        "properties": bucket_props,
+    }
 
     if expense_ratio_props:
         metrics["expense_ratio"] = {
