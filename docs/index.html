@@ -158,6 +158,21 @@
   .tog[aria-pressed="false"] { opacity: .55; }
   .tog:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
 
+  /* Checkbox series toggles: one grid so the boxes line up in columns.
+     The box doubles as the series swatch — filled with its colour when on. */
+  .ckgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 1px 14px; margin: 2px 0 10px; }
+  .ck { display: flex; align-items: center; gap: 7px; background: none; border: none;
+    padding: 3px 0; cursor: pointer; color: var(--muted); font-family: inherit;
+    font-size: 9px; letter-spacing: .8px; text-transform: uppercase; text-align: left;
+    transition: color .15s; }
+  .ck:hover { color: var(--text); }
+  .ck[aria-checked="true"] { color: var(--text); }
+  .ck .box { width: 11px; height: 11px; flex: none; border: 1px solid var(--line);
+    border-radius: 1px; display: grid; place-items: center;
+    font-size: 9px; line-height: 1; font-weight: 700; color: #10130f; }
+  .ck:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
   .card.wide { grid-column: 1 / -1; }
@@ -536,17 +551,9 @@
       </div>
 
       <div class="card" id="cNoi">
-        <div class="card-head">
-          <div>
-            <h2>Expense Load &amp; NOI</h2>
-            <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · EXPENSE / DOOR</span>
-          </div>
-          <div class="togrow" role="group" aria-label="Series shown">
-            <button class="tog" type="button" data-ds="0" aria-pressed="true">NOI margin</button>
-            <button class="tog" type="button" data-ds="1" aria-pressed="true">Expense ratio</button>
-            <button class="tog" type="button" data-ds="2" aria-pressed="true">Expense / door</button>
-          </div>
-        </div>
+        <h2>Expense Load &amp; NOI</h2>
+        <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · EXPENSE / DOOR</span>
+        <div class="ckgrid" id="lcNoiCks" role="group" aria-label="Series shown"></div>
         <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
         <div class="blu-note" id="lcNoiFoot" style="color:var(--muted);"></div>
       </div>
@@ -563,6 +570,7 @@
             <select id="lcExpMonth" class="prop-select" hidden aria-label="Statement month"></select>
           </div>
         </div>
+        <div class="ckgrid" id="lcExpCks" role="group" aria-label="Categories shown"></div>
         <div class="chartwrap" id="lcExpWrap" style="height:250px;"><canvas id="lcExp"></canvas></div>
         <div class="blu-note" id="lcExpNote" style="color:var(--muted);"></div>
         <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
@@ -898,6 +906,31 @@ Chart.defaults.font.size = 11;
 Chart.defaults.borderColor = C.line;
 
 const gridCfg = { color: C.line, drawTicks: false };
+
+// Checkbox grid that shows and drives what a chart draws. One button per
+// series, laid out on a shared grid so the boxes line up in columns; the box
+// doubles as the series swatch, filled with its colour and ticked when on.
+function ckGrid(host, items, isOn, onToggle) {
+  host.textContent = "";
+  items.forEach(it => {
+    const b = elc("button", "ck");
+    b.type = "button";
+    b.setAttribute("role", "checkbox");
+    const box = elc("span", "box");
+    b.appendChild(box);
+    b.appendChild(elc("span", null, it.label));
+    const paint = () => {
+      const on = isOn(it);
+      b.setAttribute("aria-checked", String(on));
+      box.textContent = on ? "\u2713" : "";
+      box.style.background = on ? it.color : "transparent";
+      box.style.borderColor = it.color;
+    };
+    b.addEventListener("click", () => { onToggle(it); paint(); });
+    paint();
+    host.appendChild(b);
+  });
+}
 const legendCfg = { labels: { boxWidth: 10, boxHeight: 10, padding: 16,
   font: { size: 10 } }, position: "top", align: "end" };
 
@@ -1820,10 +1853,9 @@ async function loadLanding() {
           { label: "Expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
         ] },
       options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: { ...legendCfg,
-            // route legend clicks through the same switch as the head chips, so
-            // the two controls can never disagree about what is drawn
-            onClick: (e, item) => setVis(item.datasetIndex, !chart.isDatasetVisible(item.datasetIndex)) },
+        // the checkbox grid above the chart is both the legend and the switch,
+        // so the chart's own legend would only restate it
+        plugins: { legend: { display: false },
           tooltip: { callbacks: { label: c => c.dataset.yAxisID === "y2"
             ? `${c.dataset.label}: ${fm$(c.parsed.y)}/mo`
             : `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
@@ -1832,18 +1864,16 @@ async function loadLanding() {
                 ticks: { callback: v => "$" + (v / 1e3).toFixed(1) + "k" } },
           x: { grid: { display: false } } } }
     });
-    function setVis(i, on) {
-      chart.setDatasetVisibility(i, on);
-      chart.options.scales.y2.display = chart.isDatasetVisible(2);
-      chart.update();
-      const btn = document.querySelector(`#cNoi .tog[data-ds="${i}"]`);
-      if (btn) btn.setAttribute("aria-pressed", String(on));
-    }
-    document.querySelectorAll("#cNoi .tog").forEach(b =>
-      b.addEventListener("click", () => {
-        const i = +b.dataset.ds;
-        setVis(i, !chart.isDatasetVisible(i));
-      }));
+    ckGrid(document.getElementById("lcNoiCks"),
+      chart.data.datasets.map((d, i) => ({ label: d.label, color: d.borderColor, i })),
+      it => chart.isDatasetVisible(it.i),
+      it => {
+        chart.setDatasetVisibility(it.i, !chart.isDatasetVisible(it.i));
+        // the dollar axis has one tenant; an axis for nothing keeps claiming
+        // the right margin, so it leaves with its series
+        chart.options.scales.y2.display = chart.isDatasetVisible(2);
+        chart.update();
+      });
     document.getElementById("lcNoiFoot").textContent =
       "TTM NOI " + fm$(en.ttm.noi) + " (" + fmPct(en.ttm.noi_margin) + " margin) on revenue " +
       fm$(en.ttm.revenue) + ". Expense/door is the month's opex over the property's " + doors +
@@ -1863,7 +1893,9 @@ async function loadLanding() {
     const wrap = document.getElementById("lcExpWrap");
     const note = document.getElementById("lcExpNote");
     const sel = document.getElementById("lcExpMonth");
+    const cks = document.getElementById("lcExpCks");
     let chart = null, pt = null;
+    const hiddenCats = new Set();     // survives T12 <-> Month round trips
 
     try {
       const res = await fetch("metrics.json", { cache: "no-store" });
@@ -1909,6 +1941,7 @@ async function loadLanding() {
     }
     function renderT12() {
       sel.hidden = true;
+      cks.hidden = true;
       if (!pt) {
         // fallback: the workbook's analyst buckets, statuses and all
         if (chart) { chart.destroy(); chart = null; }
@@ -1939,35 +1972,46 @@ async function loadLanding() {
       const PAL = [C.teal, C.amber, C.red, C.green, "#6aa9e9", "#b58fd6",
                    "#d98fb0", "#8fd6a8", "#d6c88f", "#8fa3d6", "#d68f6a",
                    "#7fc4d6", "#c4a3e0"];
+      const color = (n, i) => n.startsWith("Other") ? C.muted : PAL[i % PAL.length];
       if (chart) { chart.destroy(); chart = null; }
       chart = new Chart(canvas(), {
         type: "line",
         data: { labels: keys.map(shortMo),
           datasets: names.map((n, i) => ({ label: n, data: pt.buckets[n],
-            borderColor: n.startsWith("Other") ? C.muted : PAL[i % PAL.length],
-            backgroundColor: n.startsWith("Other") ? C.muted : PAL[i % PAL.length],
+            hidden: hiddenCats.has(n),
+            borderColor: color(n, i), backgroundColor: color(n, i),
             borderWidth: 1.5, pointRadius: 1.5, tension: .25 })) },
         options: { maintainAspectRatio: false, responsive: true,
-          plugins: { legend: { ...legendCfg, position: "top", align: "start",
-              labels: { ...legendCfg.labels, boxWidth: 8, boxHeight: 8,
-                        padding: 8, font: { size: 8.5 } } },
+          // the checkbox grid above the chart is the legend and the switch
+          plugins: { legend: { display: false },
             tooltip: { callbacks: {
               label: c => `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
           scales: { y: { grid: gridCfg, beginAtZero: true,
               ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
             x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
       });
+      cks.hidden = false;
+      ckGrid(cks,
+        names.map((n, i) => ({ label: n, color: color(n, i), i })),
+        it => !hiddenCats.has(it.label),
+        it => {
+          if (hiddenCats.has(it.label)) hiddenCats.delete(it.label);
+          else hiddenCats.add(it.label);
+          chart.setDatasetVisibility(it.i, !hiddenCats.has(it.label));
+          chart.update();
+        });
       document.getElementById("lcExpEyebrow").textContent =
         "MONTHLY BY ALIGN-TREE GROUP · " + shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[11]).toUpperCase();
       const wbOpex = L.expense_noi.ttm.opex;
-      note.textContent = "Click a legend entry to show or hide its category — Taxes dwarfs the "
-        + "rest, so hiding it opens up the others. T12 total " + fm$(total) + " vs " + fm$(wbOpex)
+      note.textContent = "The boxes above switch categories on and off — Taxes dwarfs the "
+        + "rest, so unticking it opens up the others. T12 total " + fm$(total) + " vs " + fm$(wbOpex)
         + " workbook TTM opex (" + (Math.abs(total - wbOpex) < 5000 ? "ties out"
             : "gap " + fm$(total - wbOpex)) + ")."
         + " Grouped on the Align account tree via the COA mapping and tied out"
         + " against the statement's own total expenses each month.";
     }
     function renderMonth() {
+      cks.hidden = true;
       if (!pt) {
         if (chart) { chart.destroy(); chart = null; }
         wrap.innerHTML = '<div class="empty"><div class="dash"></div>'
