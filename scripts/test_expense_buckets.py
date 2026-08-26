@@ -78,6 +78,46 @@ def build(path, break_tieout=False):
     wb.save(path)
 
 
+def build_jpm(path, break_tieout=False):
+    """A statement shaped like The Landing's: JPM tree, four property codes in
+    the title row, six-digit accounts that config/coa_map.json translates."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Report1"
+    rows = [
+        ["Property =  p0005611 p0005612 p0005671 p0005640"],
+        ["Statement (12 months)"],
+        ["Period = Aug 2025-Jul 2026"],
+        ["Book = Accrual ; Tree = jpm_bf1"],
+        ["", ""] + ["Aug 2025", "Sep 2025", "Oct 2025", "Nov 2025", "Dec 2025",
+                    "Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026",
+                    "Jun 2026", "Jul 2026"] + ["Total"],
+        ["400000-3000", "REVENUE"],
+        ["410400-0001", "Market rent potential"] + [700000] * 12,
+        ["499999-9999", "TOTAL REVENUE"] + [700000] * 12,
+        ["500000-0000", "EXPENSES"],
+        ["510200-0000", "REAL ESTATE TAX EXP."],
+        ["510200-0001", "Real estate tax expense"] + [170000] * 12,
+        ["510299-9999", "TOTAL REAL ESTATE TAX EXP."] + [170000] * 12,
+        ["510440-0005", "Payroll - other"] + [50000] * 12,
+        ["510505-0001", "Cleaning contract"] + [8000] * 12,
+        ["510510-0041", "Courtesy patrol"] + [3000] * 12,   # NOT in the COA map
+        ["510605-0001", "Electricity - int"] + [14000] * 12,
+        ["510800-0001", "Insurance exp  - property"] + [21000] * 12,
+        ["511105-0001", "Legal"] + [2000] * 12,
+        ["519999-9999", "TOTAL OPERATING EXPENSES"] + [268000] * 12,
+        ["520510-0001", "Franchise tax expense"] + [300] * 12,
+        ["549999-9999", "TOTAL EXPENSES"]
+        + [268300 + (999 if break_tieout else 0)] * 12,
+        ["599999-9999", "TOTAL NET OPERATING INCOME"] + [431700] * 12,
+        ["600000-0000", "FINANCING EXPENSES"],
+        ["610100-0001", "Mortgage interest"] + [90000] * 12,
+    ]
+    for r in rows:
+        ws.append(r)
+    wb.save(path)
+
+
 def main():
     tmp = tempfile.mkdtemp()
     good = os.path.join(tmp, "good.xlsx")
@@ -117,6 +157,46 @@ def main():
     ok("...with the reason stated",
        "tie out" in (pb["expense_buckets_error"] or ""), pb["expense_buckets_error"])
     ok("...but the ratio still parses", pb["expense_ratio_t12"] is not None)
+
+    print("jpm tree via the COA mapping")
+    jgood = os.path.join(tmp, "jpm.xlsx")
+    jbad = os.path.join(tmp, "jpm_bad.xlsx")
+    build_jpm(jgood)
+    build_jpm(jbad, break_tieout=True)
+    jp = t12.parse_t12(jgood)
+    ok("four property codes from the title row",
+       jp["property_codes"] == ["p0005611", "p0005612", "p0005671", "p0005640"],
+       jp["property_codes"])
+    ok("tree detected", jp["tree"] == "jpm_bf1", jp["tree"])
+    ok("revenue anchored on 499999-9999", jp["revenue_t12"] == 700000 * 12,
+       jp["revenue_t12"])
+    ok("opex anchored on 519999-9999", jp["opex_recoverable_t12"] == 268000 * 12,
+       jp["opex_recoverable_t12"])
+    ok("opex basis recorded", "jpm" in jp["opex_basis"], jp["opex_basis"])
+    jb = jp["expense_buckets"]
+    ok("jpm buckets present", jb is not None and jp["expense_buckets_error"] is None,
+       jp["expense_buckets_error"])
+    g = jb["buckets"]
+    ok("RE tax + franchise tax grouped as Taxes", g.get("Taxes", [0])[0] == 170300, g)
+    ok("payroll via COA (510440-0005 -> 5170-3115)",
+       g.get("Payroll & benefits", [0])[0] == 50000, g)
+    ok("cleaning contract -> Cleaning (5110)", g.get("Cleaning", [0])[0] == 8000, g)
+    ok("utilities via COA", g.get("Utilities (net of billbacks)", [0])[0] == 14000, g)
+    ok("legal -> Professional fees", g.get("Professional fees", [0])[0] == 2000, g)
+    ok("unmapped account grouped by its label and reported",
+       g.get("Security & fire/life safety", [0])[0] == 3000
+       and any("510510-0041" in a for a in jb["unmapped_accounts"]),
+       (g.get("Security & fire/life safety"), jb["unmapped_accounts"]))
+    ok("financing never enters the groups",
+       sum(v[0] for v in g.values()) == 268300, {k: v[0] for k, v in g.items()})
+    ok("jpm tie-out against TOTAL EXPENSES", jb["recoverable_tieout_max_gap"] < 0.01,
+       jb["recoverable_tieout_max_gap"])
+    ok("grouping recorded as COA-mapped", jb["grouping"] == "align_tree_via_coa_map",
+       jb.get("grouping"))
+    jpb = t12.parse_t12(jbad)
+    ok("broken jpm tie-out refuses buckets, keeps the ratio",
+       jpb["expense_buckets"] is None and jpb["expense_ratio_t12"] is not None,
+       jpb["expense_buckets_error"])
 
     print(f"\n{PASS} passed, {FAIL} failed")
     sys.exit(1 if FAIL else 0)

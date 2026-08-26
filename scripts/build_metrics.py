@@ -119,7 +119,7 @@ def store_expense_ratio(prop, t12_parses):
     hist = json.load(open(fp)) if fp.exists() else {"points": []}
 
     for period_end, group in by_period.items():
-        codes = [c for c, _ in group]
+        codes = sorted({c2 for c, p in group for c2 in (p.get("property_codes") or [c])})
         rev_t12 = sum(p["revenue_t12"] for _, p in group)
         opex_t12 = sum(p["opex_recoverable_t12"] for _, p in group)
 
@@ -191,7 +191,7 @@ def store_expense_buckets(prop, t12_parses):
     hist = json.load(open(fp)) if fp.exists() else {"points": []}
 
     for period_end, group in by_period.items():
-        codes = [c for c, _ in group]
+        codes = sorted({c2 for c, pr in group for c2 in (pr.get("property_codes") or [c])})
         labels = group[0][1]["labels"]
         if any(pr["labels"] != labels for _, pr in group[1:]):
             print(f"[warn] {prop['name']} {period_end}: month labels differ across "
@@ -208,14 +208,36 @@ def store_expense_buckets(prop, t12_parses):
         if others:
             print(f"[note] {prop['name']} {period_end}: unclassified expense "
                   f"lines went to '{'Other / unclassified'}': {others}")
+        unmapped = sorted({a for _, pr in group
+                           for a in (pr["expense_buckets"].get("unmapped_accounts") or [])})
+        if unmapped:
+            print(f"[note] {prop['name']} {period_end}: {len(unmapped)} JPM account(s) "
+                  f"not in the COA mapping, grouped by their own labels -- extend the "
+                  f"COA workbook to settle them: {unmapped}")
+        # Once a building code has fed this property's expenses, its absence
+        # from a later statement is worth a loud line: a re-export that quietly
+        # drops one of The Landing's four codes would understate every bucket.
+        prior = {c for pt in hist["points"] if pt["period_end"] != period_end
+                 for c in pt.get("source_codes", [])}
+        missing = sorted(prior - set(codes))
+        if missing:
+            print(f"[warn] {prop['name']} {period_end}: previously reported "
+                  f"code(s) absent from this statement: {', '.join(missing)} -- "
+                  f"expenses may be understated if those codes still have activity")
         point = {
             "period_end": period_end,
             "labels": labels,
             "source_codes": codes,
             "buckets": {k: [round(v, 2) for v in vs] for k, vs in sorted(merged.items())},
-            "basis": ("GL leaf lines classified by keyword into the workbook's buckets; "
-                      "recoverable side tied out against 5999-9998 per month; "
-                      "financing/non-cash/capital lines excluded"),
+            "grouping": group[0][1]["expense_buckets"].get("grouping") or "align_keywords",
+            "unmapped_accounts": unmapped,
+            "codes_missing_vs_history": missing,
+            "basis": ("Align-tree groupings via config/coa_map.json, tied out against "
+                      "the statement's own total expenses per month"
+                      if group[0][1]["expense_buckets"].get("grouping")
+                      else "GL leaf lines classified by keyword into the workbook's "
+                           "buckets; recoverable side tied out against 5999-9998 "
+                           "per month; financing/non-cash/capital lines excluded"),
         }
         hist["points"] = [pt for pt in hist["points"] if pt["period_end"] != period_end]
         hist["points"].append(point)

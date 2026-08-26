@@ -25,7 +25,7 @@ ask for the PR; do not open one preemptively.
 | `docs/index.html` | The whole dashboard: markup, CSS, and Chart.js rendering in one file |
 | `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json` |
-| `config/` | `properties.json` and `report_map.json` — property list and report routing |
+| `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
 
 ## Refreshing The Landing

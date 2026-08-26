@@ -1,0 +1,1452 @@
+{
+ "source": "coa_mapping.xlsx",
+ "extracted_at": "2026-08-26T23:27:30+00:00",
+ "jpm": {
+  "410100-0001": [
+   "4100-1100",
+   "Base Rent Office"
+  ],
+  "410100-0008": [
+   "4050-5130",
+   "Residential Base rent"
+  ],
+  "410400-0001": [
+   "4050-5100",
+   "Residential Market rent potential"
+  ],
+  "410400-0002": [
+   "4050-5105",
+   "Residential Loss / Gain to lease"
+  ],
+  "410400-0003": [
+   "4050-5110",
+   "Residential Vacancy loss"
+  ],
+  "410400-0004": [
+   "4050-5120",
+   "Residential Employee rent allowance"
+  ],
+  "410400-0005": [
+   "4050-5125",
+   "Residential Administrative units"
+  ],
+  "410400-0006": [
+   "4050-5115",
+   "Residential Rental concessions"
+  ],
+  "410400-0015": [
+   "4050-5125",
+   "Residential Administrative units"
+  ],
+  "410400-0017": [
+   "4050-5110",
+   "Residential Vacancy loss"
+  ],
+  "420000-0006": [
+   "4050-5510",
+   "Residential - electric reimbursement revenue"
+  ],
+  "420000-0008": [
+   "4610-1100",
+   "Tenant Service Revenue-Cleaning"
+  ],
+  "420000-0012": [
+   "4050-5540",
+   "Residential - trash removal reimbursement revenue"
+  ],
+  "420000-0015": [
+   "4050-5525",
+   "Residential - pest control reimbursement revenue"
+  ],
+  "420000-0021": [
+   "4050-5545",
+   "Residential - water and sewer reimbursement revenue"
+  ],
+  "420600-0001": [
+   "4410-1000",
+   "Escalations - Operating Expense"
+  ],
+  "440200-0003": [
+   "4050-5315",
+   "Residential - deposit forfeiture revenue"
+  ],
+  "440200-0004": [
+   "4050-5385",
+   "Residential - vending machines revenue"
+  ],
+  "440200-0005": [
+   "4050-5350",
+   "Residential - NSF fees revenue"
+  ],
+  "440200-0006": [
+   "4050-5305",
+   "Residential - amenities rent revenue"
+  ],
+  "440200-0007": [
+   "4050-5310",
+   "Residential - application fee revenue"
+  ],
+  "440200-0008": [
+   "4050-5360",
+   "Residential - pet fee/pet rent revenue"
+  ],
+  "440200-0009": [
+   "4050-5380",
+   "Residential - tenant damage revenue"
+  ],
+  "440200-0010": [
+   "4050-5340",
+   "Residential - lease termination revenue"
+  ],
+  "440200-0011": [
+   "4050-5335",
+   "Residential - laundry revenue"
+  ],
+  "440200-0014": [
+   "4050-5140",
+   "Residential - month to month revenue"
+  ],
+  "440200-0018": [
+   "4050-5375",
+   "Residential - storage fees"
+  ],
+  "440200-0019": [
+   "4850-1600",
+   "Tenant Late Fees"
+  ],
+  "440200-0020": [
+   "4050-5505",
+   "Residential - cable/telephone reimbursement revenue"
+  ],
+  "440200-0021": [
+   "4050-5330",
+   "Residential - insurance recovery revenue"
+  ],
+  "440200-0027": [
+   "4752-3000",
+   "Garage Lease Revenue"
+  ],
+  "440200-0028": [
+   "4050-5305",
+   "Residential - amenities rent revenue"
+  ],
+  "440200-0035": [
+   "4050-5360",
+   "Residential - pet fee/pet rent revenue"
+  ],
+  "440200-0038": [
+   "4050-5390",
+   "Residential - transfer fees"
+  ],
+  "440200-0040": [
+   "4050-5555",
+   "Residential - locks/keys reimbursement revenue"
+  ],
+  "440200-0041": [
+   "4050-5530",
+   "Residential - security reimbursement"
+  ],
+  "440200-0042": [
+   "4050-5305",
+   "Residential - amenities rent revenue"
+  ],
+  "440200-0043": [
+   "4050-5535",
+   "Residential - service fees reimbursement"
+  ],
+  "442600-0042": [
+   "4050-5520",
+   "Residential - internet reimbursement revenue"
+  ],
+  "442600-0060": [
+   "4850-1600",
+   "Tenant Late Fees"
+  ],
+  "442600-0061": [
+   "4850-1000",
+   "Miscellaneous Income"
+  ],
+  "442600-0063": [
+   "4752-1000",
+   "Parking Income"
+  ],
+  "443000-0007": [
+   "4050-5370",
+   "Residential - special events revenue"
+  ],
+  "443000-0009": [
+   "4050-5305",
+   "Residential - amenities rent revenue"
+  ],
+  "443000-0010": [
+   "4050-5320",
+   "Residential - EV charging revenue"
+  ],
+  "443000-0013": [
+   "4050-5325",
+   "Residential - fitness center/classes rent"
+  ],
+  "443000-0014": [
+   "4050-5325",
+   "Residential - fitness center/classes rent"
+  ],
+  "443000-0018": [
+   "4050-5370",
+   "Residential - special events revenue"
+  ],
+  "443000-0020": [
+   "4050-5370",
+   "Residential - special events revenue"
+  ],
+  "443000-0027": [
+   "4050-5370",
+   "Residential - special events revenue"
+  ],
+  "443000-0030": [
+   "4752-1000",
+   "Parking Income"
+  ],
+  "450000-0015": [
+   "4899-1500",
+   "Interest Inc Tenant"
+  ],
+  "450000-0017": [
+   "4899-1000",
+   "Interest Income"
+  ],
+  "460500-0001": [
+   "4050-5490",
+   "Residential - Bad debt expense"
+  ],
+  "460500-0002": [
+   "4050-5495",
+   "Residential - Bad debt recovery"
+  ],
+  "460500-0003": [
+   "4050-5490",
+   "Residential - Bad debt expense"
+  ],
+  "510200-0001": [
+   "5700-6180",
+   "Tax-Real Estate Garage"
+  ],
+  "510200-0002": [
+   "5700-6140",
+   "Tax-Consultant"
+  ],
+  "510440-0005": [
+   "5170-3115",
+   "Admin Payroll- - Tenant Experience Salary Expense"
+  ],
+  "510450-0001": [
+   "5170-3115",
+   "Admin Payroll- - Tenant Experience Salary Expense"
+  ],
+  "510475-0004": [
+   "5170-3140",
+   "Admin Payroll- - Recruitment Advertisement"
+  ],
+  "510475-0005": [
+   "5170-3140",
+   "Admin Payroll- - Recruitment Advertisement"
+  ],
+  "510485-0001": [
+   "5170-3100",
+   "Admin Payroll- - Administrative GM Salary Expense"
+  ],
+  "510485-0002": [
+   "5170-3100",
+   "Admin Payroll- - Administrative GM Salary Expense"
+  ],
+  "510485-0003": [
+   "5170-3110",
+   "Admin Payroll- - Cloud Based Onsite Salary Expense"
+  ],
+  "510485-0004": [
+   "5170-3115",
+   "Admin Payroll- - Tenant Experience Salary Expense"
+  ],
+  "510485-0005": [
+   "5170-3125",
+   "Admin Payroll- - bonus and commissions expense"
+  ],
+  "510485-0006": [
+   "5170-3105",
+   "Admin Payroll- - Maintenance Salary Expense"
+  ],
+  "510485-0007": [
+   "5170-3105",
+   "Admin Payroll- - Maintenance Salary Expense"
+  ],
+  "510485-0012": [
+   "5170-3120",
+   "Admin Payroll- - taxes and benefits"
+  ],
+  "510485-0013": [
+   "5170-3145",
+   "Admin Payroll- - Training"
+  ],
+  "510485-0014": [
+   "5170-3135",
+   "Admin Payroll- - Uniforms"
+  ],
+  "510485-0016": [
+   "5170-3130",
+   "Admin Payroll- - processing fees expense"
+  ],
+  "510485-0017": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "510485-0018": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "510485-0019": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "510505-0001": [
+   "5110-1000",
+   "Cleaning-Contract Srvcs"
+  ],
+  "510505-0002": [
+   "5110-1350",
+   "Cleaning-Supplies"
+  ],
+  "510505-0006": [
+   "5110-1050",
+   "Cleaning-Repairs/Maintenance"
+  ],
+  "510505-0007": [
+   "5134-1350",
+   "HVAC Supplies"
+  ],
+  "510505-0008": [
+   "5133-1000",
+   "Elevator Contract Srvcs"
+  ],
+  "510505-0009": [
+   "5133-1050",
+   "Elevator R&M"
+  ],
+  "510505-0011": [
+   "5132-1050",
+   "Electrical/Lighting R&M"
+  ],
+  "510505-0012": [
+   "5132-1350",
+   "Electrical/Lighting Supplies"
+  ],
+  "510505-0013": [
+   "5135-1050",
+   "Plumbing R&M"
+  ],
+  "510505-0014": [
+   "5135-1350",
+   "Plumbing Supplies"
+  ],
+  "510505-0017": [
+   "5131-2550",
+   "GB-Pest Control"
+  ],
+  "510505-0019": [
+   "5300-6990",
+   "Utilities-Garbage"
+  ],
+  "510505-0020": [
+   "5300-6990",
+   "Utilities-Garbage"
+  ],
+  "510505-0027": [
+   "5125-1000",
+   "Fire/Life-Contract Srvcs"
+  ],
+  "510505-0028": [
+   "5125-1050",
+   "Fire/Life-Repairs/Maintenance"
+  ],
+  "510505-0029": [
+   "5125-9950",
+   "Fire/Life-Miscellaneous"
+  ],
+  "510505-0030": [
+   "5131-3200",
+   "GB-Glass Repair"
+  ],
+  "510505-0035": [
+   "5131-1050",
+   "GB-General R&M"
+  ],
+  "510505-0036": [
+   "5131-1350",
+   "GB-Building Supplies"
+  ],
+  "510505-0038": [
+   "5170-1500",
+   "Admin-Equipment Lease"
+  ],
+  "510505-0040": [
+   "7120-3600",
+   "NR RM-Seasonal Decorations"
+  ],
+  "510505-0041": [
+   "5131-2500",
+   "GB-Painting/Decorating"
+  ],
+  "510505-0043": [
+   "5131-3000",
+   "GB-Doors/Keys/Locks"
+  ],
+  "510505-0052": [
+   "5131-5105",
+   "GB-Appliance R&M"
+  ],
+  "510505-0053": [
+   "5131-5105",
+   "GB-Appliance R&M"
+  ],
+  "510505-0056": [
+   "5131-1450",
+   "GB-Building Equipment"
+  ],
+  "510505-0059": [
+   "5131-2500",
+   "GB-Painting/Decorating"
+  ],
+  "510505-0062": [
+   "5134-1010",
+   "HVAC Water Treatment"
+  ],
+  "510505-0071": [
+   "5131-3200",
+   "GB-Glass Repair"
+  ],
+  "510505-0072": [
+   "5110-2150",
+   "Cleaning-Floor Maintenance"
+  ],
+  "510505-0086": [
+   "5131-2500",
+   "GB-Painting/Decorating"
+  ],
+  "510505-0108": [
+   "4050-5540",
+   "Residential - trash removal reimbursement revenue"
+  ],
+  "510510-0001": [
+   "5132-1050",
+   "Electrical/Lighting R&M"
+  ],
+  "510510-0003": [
+   "5135-1050",
+   "Plumbing R&M"
+  ],
+  "510510-0005": [
+   "5110-1100",
+   "Cleaning-Window Cleaning"
+  ],
+  "510510-0009": [
+   "5145-1000",
+   "Landscaping Contract Srvcs"
+  ],
+  "510510-0010": [
+   "5145-1350",
+   "Landscaping Supplies"
+  ],
+  "510510-0011": [
+   "5145-9950",
+   "Landscaping Miscellaneous"
+  ],
+  "510510-0012": [
+   "5121-1000",
+   "Security-Contract Srvcs"
+  ],
+  "510510-0019": [
+   "5142-1050",
+   "Parking Lot R&M"
+  ],
+  "510510-0023": [
+   "5131-3200",
+   "GB-Glass Repair"
+  ],
+  "510510-0025": [
+   "5131-1350",
+   "GB-Building Supplies"
+  ],
+  "510510-0031": [
+   "5145-2000",
+   "Landscaping Fountain Maint"
+  ],
+  "510510-0038": [
+   "5170-5105",
+   "Admin-Pool/spa/sauna/tanning bed expense"
+  ],
+  "510605-0001": [
+   "5300-6100",
+   "Utilities-Electricity"
+  ],
+  "510605-0002": [
+   "5300-6200",
+   "Utilities-Gas"
+  ],
+  "510605-0003": [
+   "5300-6320",
+   "Utilities-Water FS"
+  ],
+  "510605-0005": [
+   "5300-6300",
+   "Utilities-Water& Sewer"
+  ],
+  "510605-0011": [
+   "5300-6130",
+   "Utilities-Electricity Vacant"
+  ],
+  "510605-0018": [
+   "5300-9850",
+   "Utilities-Direct Tenant Billback"
+  ],
+  "510605-0019": [
+   "5300-9850",
+   "Utilities-Direct Tenant Billback"
+  ],
+  "510605-0020": [
+   "5300-9850",
+   "Utilities-Direct Tenant Billback"
+  ],
+  "510605-0024": [
+   "5300-9850",
+   "Utilities-Direct Tenant Billback"
+  ],
+  "510800-0001": [
+   "5500-6110",
+   "Insurance-Property"
+  ],
+  "510800-0002": [
+   "5500-6115",
+   "Insurance-Liability"
+  ],
+  "510800-0003": [
+   "5500-6125",
+   "Insurance-Other"
+  ],
+  "510905-0001": [
+   "6150-0100",
+   "Advertising Expense"
+  ],
+  "510905-0006": [
+   "6130-0600",
+   "Mkt-Gen Research"
+  ],
+  "510905-0009": [
+   "6130-0100",
+   "Mkt-Gen Gift Card"
+  ],
+  "510905-0011": [
+   "6130-0700",
+   "Mkt-Gen Leasing Support"
+  ],
+  "510905-0013": [
+   "6130-5100",
+   "Mkt-Apartment guides"
+  ],
+  "510905-0015": [
+   "6140-0700",
+   "Advertising-Social Media"
+  ],
+  "510905-0016": [
+   "6130-0200",
+   "Mkt-Gen Campaign Collateral"
+  ],
+  "510905-0017": [
+   "6150-0200",
+   "Signage"
+  ],
+  "510905-0018": [
+   "6150-0300",
+   "Referral & Retention Incentives"
+  ],
+  "510905-0019": [
+   "6130-5105",
+   "Mkt-Referral fees"
+  ],
+  "510905-0021": [
+   "6130-0300",
+   "Mkt-Gen Merchant Comm"
+  ],
+  "511003-0001": [
+   "5137-5120",
+   "Residential Turnover painting expense"
+  ],
+  "511003-0003": [
+   "5137-1350",
+   "Residential Turnover Supplies"
+  ],
+  "511003-0004": [
+   "5137-5100",
+   "Residential Turnover blinds/vinyl expense"
+  ],
+  "511003-0005": [
+   "5137-5110",
+   "Residential Turnover cleaning expense"
+  ],
+  "511003-0006": [
+   "5137-1350",
+   "Residential Turnover Supplies"
+  ],
+  "511003-0007": [
+   "5137-9950",
+   "Residential Turnover Misc"
+  ],
+  "511015-0001": [
+   "5170-2450",
+   "Admin-On-Site Office Expense"
+  ],
+  "511015-0003": [
+   "5170-1150",
+   "Admin-Telephone"
+  ],
+  "511015-0004": [
+   "5170-2500",
+   "Admin-Postage"
+  ],
+  "511015-0012": [
+   "5170-1450",
+   "Admin-Equipment"
+  ],
+  "511020-0001": [
+   "5170-2200",
+   "Admin-Dues & Subscriptions"
+  ],
+  "511020-0003": [
+   "5170-7150",
+   "Admin-Permits/License"
+  ],
+  "511023-0001": [
+   "5170-2650",
+   "Admin-Travel"
+  ],
+  "511030-0001": [
+   "5170-1250",
+   "Admin-Software"
+  ],
+  "511030-0002": [
+   "5170-1250",
+   "Admin-Software"
+  ],
+  "511040-0001": [
+   "5170-2150",
+   "Admin-Bank Fees"
+  ],
+  "511067-0008": [
+   "5170-2350",
+   "Admin-Mgmt Fee"
+  ],
+  "511105-0001": [
+   "5170-2250",
+   "Admin-Legal"
+  ],
+  "511105-0007": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "511110-0002": [
+   "7400-0600",
+   "Prof Fees-Audit"
+  ],
+  "511110-0004": [
+   "5170-2000",
+   "Admin-Accounting/Audit"
+  ],
+  "511115-0001": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "512005-0018": [
+   "7120-3650",
+   "NR RM-Service Bar Supplies"
+  ],
+  "512005-0020": [
+   "6120-0200",
+   "Mkt-Events Special Events"
+  ],
+  "512005-0027": [
+   "6120-0200",
+   "Mkt-Events Special Events"
+  ],
+  "512005-0030": [
+   "7127-0400",
+   "NR Garage-Operator Expense"
+  ],
+  "512005-0031": [
+   "7127-1100",
+   "NR Garage-Cleaning"
+  ],
+  "520300-0002": [
+   "7130-1000",
+   "NR Security-Contracted Srvcs"
+  ],
+  "520300-0007": [
+   "7150-1990",
+   "NR Adm-Professional Fees"
+  ],
+  "520300-0010": [
+   "7150-1500",
+   "NR Adm-Vehicles"
+  ],
+  "520300-0013": [
+   "7120-3250",
+   "NR RM-Fitness Center Costs"
+  ],
+  "520300-0018": [
+   "7120-3650",
+   "NR RM-Service Bar Supplies"
+  ],
+  "520300-0020": [
+   "6120-0200",
+   "Mkt-Events Special Events"
+  ],
+  "520300-0027": [
+   "6120-0200",
+   "Mkt-Events Special Events"
+  ],
+  "520300-0030": [
+   "7127-0400",
+   "NR Garage-Operator Expense"
+  ],
+  "520300-0031": [
+   "7127-1100",
+   "NR Garage-Cleaning"
+  ],
+  "520300-0033": [
+   "7170-1000",
+   "NR Parking Lot-Contracted Serv"
+  ],
+  "520510-0001": [
+   "7190-0800",
+   "NR Taxes-Franchise"
+  ],
+  "520510-0005": [
+   "7190-0400",
+   "NR Taxes-Other"
+  ],
+  "410400-0008": [
+   "4050-5495",
+   "Residential - Bad debt recovery"
+  ],
+  "420000-0013": [
+   "4050-5355",
+   "Residential - package services revenue"
+  ],
+  "440200-0013": [
+   "4050-5345",
+   "Residential - misc revenue"
+  ],
+  "440200-0030": [
+   "4050-5115",
+   "Residential Rental concessions"
+  ],
+  "440200-0031": [
+   "4050-5115",
+   "Residential Rental concessions"
+  ],
+  "440200-0032": [
+   "4050-5120",
+   "Residential Employee rent allowance"
+  ],
+  "442600-0062": [
+   "4050-5505",
+   "Residential - cable/telephone reimbursement revenue"
+  ],
+  "442600-0070": [
+   "4850-1000",
+   "Miscellaneous Income"
+  ],
+  "442600-0092": [
+   "4050-5370",
+   "Residential - special events revenue"
+  ],
+  "450000-0014": [
+   "4899-1300",
+   "Interest Inc Escrow"
+  ],
+  "510200-0005": [
+   "5700-6130",
+   "Tax-Personal Property"
+  ],
+  "510420-0001": [
+   "5170-3105",
+   "Admin Payroll- - Maintenance Salary Expense"
+  ],
+  "510420-0004": [
+   "5170-3135",
+   "Admin Payroll- - Uniforms"
+  ],
+  "510450-0004": [
+   "5170-3135",
+   "Admin Payroll- - Uniforms"
+  ],
+  "510475-0012": [
+   "5500-6125",
+   "Insurance-Other"
+  ],
+  "510485-0015": [
+   "5170-3120",
+   "Admin Payroll- - taxes and benefits"
+  ],
+  "510505-0003": [
+   "5110-9950",
+   "Cleaning-Miscellaneous"
+  ],
+  "510505-0005": [
+   "5134-1000",
+   "HVAC Contract Srvcs"
+  ],
+  "510505-0018": [
+   "5131-2550",
+   "GB-Pest Control"
+  ],
+  "510505-0021": [
+   "5145-1000",
+   "Landscaping Contract Srvcs"
+  ],
+  "510505-0024": [
+   "5121-1000",
+   "Security-Contract Srvcs"
+  ],
+  "510505-0049": [
+   "5170-1450",
+   "Admin-Equipment"
+  ],
+  "510505-0079": [
+   "5133-1000",
+   "Elevator Contract Srvcs"
+  ],
+  "510505-0082": [
+   "5131-2500",
+   "GB-Painting/Decorating"
+  ],
+  "510510-0007": [
+   "5131-2550",
+   "GB-Pest Control"
+  ],
+  "510510-0034": [
+   "5131-9950",
+   "GB-Miscellaneous"
+  ],
+  "510510-0049": [
+   "5141-1000",
+   "Garage Contract Svcs"
+  ],
+  "510605-0010": [
+   "5300-6700",
+   "Utilities-Other"
+  ],
+  "510605-0014": [
+   "5300-9850",
+   "Utilities-Direct Tenant Billback"
+  ],
+  "510605-0015": [
+   "5170-5110",
+   "Admin-Resident Usage Memberships"
+  ],
+  "510605-0017": [
+   "5300-9850",
+   "Utilities-Direct Tenant Billback"
+  ],
+  "510615-0001": [
+   "5134-1000",
+   "HVAC Contract Srvcs"
+  ],
+  "510710-0011": [
+   "5170-2350",
+   "Admin-Mgmt Fee"
+  ],
+  "510715-0006": [
+   "6120-0200",
+   "Mkt-Events Special Events"
+  ],
+  "510715-0008": [
+   "6120-0200",
+   "Mkt-Events Special Events"
+  ],
+  "510800-0026": [
+   "5500-6110",
+   "Insurance-Property"
+  ],
+  "510905-0003": [
+   "6140-0100",
+   "Advertising-Print Placement"
+  ],
+  "510905-0014": [
+   "6130-5100",
+   "Mkt-Apartment guides"
+  ],
+  "510905-0023": [
+   "5170-2650",
+   "Admin-Travel"
+  ],
+  "510905-0029": [
+   "6140-0600",
+   "Advertising-Website"
+  ],
+  "510905-0030": [
+   "6110-2050",
+   "Mkt-Adm Decor"
+  ],
+  "510905-0032": [
+   "5172-1020",
+   "Corp - Meals and Entertainment"
+  ],
+  "511007-0001": [
+   "7200-0300",
+   "Fees-Specialty Leasing"
+  ],
+  "511007-0003": [
+   "7200-0300",
+   "Fees-Specialty Leasing"
+  ],
+  "511015-0002": [
+   "5170-1350",
+   "Admin-Supplies"
+  ],
+  "511015-0005": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "511027-0001": [
+   "5170-9950",
+   "Admin-Miscellaneous"
+  ],
+  "511027-0002": [
+   "5142-1000",
+   "Parking Lot Contract Srvcs"
+  ],
+  "511105-0004": [
+   "7500-7100",
+   "Leasing-Legal"
+  ],
+  "520200-0001": [
+   "7120-3000",
+   "NR RM-Other"
+  ],
+  "520600-0013": [
+   "7400-0100",
+   "Prof Fees-Legal"
+  ]
+ },
+ "rubicon": {
+  "475101-000-50": [
+   "4050-5140",
+   "Residential - month to month revenue"
+  ],
+  "475101-001-50": [
+   "4100-2100",
+   "Base Rent Retail Rent"
+  ],
+  "475107-000-50": [
+   "4100-2100",
+   "Base Rent Retail Rent"
+  ],
+  "475111-000-50": [
+   "4050-5490",
+   "Residential - Bad debt expense"
+  ],
+  "475114-000-50": [
+   "4050-5100",
+   "Residential Market rent potential"
+  ],
+  "475114-001-50": [
+   "4050-5120",
+   "Residential Employee rent allowance"
+  ],
+  "475115-000-50": [
+   "4100-2100",
+   "Base Rent Retail Rent"
+  ],
+  "475116-000-50": [
+   "4050-5310",
+   "Residential - application fee revenue"
+  ],
+  "475117-000-50": [
+   "4050-5305",
+   "Residential - amenities rent revenue"
+  ],
+  "475118-000-50": [
+   "4050-5380",
+   "Residential - tenant damage revenue"
+  ],
+  "475119-000-50": [
+   "4752-3000",
+   "Garage Lease Revenue"
+  ],
+  "475121-000-50": [
+   "4899-1500",
+   "Interest Inc Tenant"
+  ],
+  "475123-000-50": [
+   "4850-2100",
+   "Lease Cancellation Income"
+  ],
+  "475124-000-50": [
+   "4050-5555",
+   "Residential - locks/keys reimbursement revenue"
+  ],
+  "475125-000-50": [
+   "4050-5350",
+   "Residential - NSF fees revenue"
+  ],
+  "475126-000-50": [
+   "4050-5360",
+   "Residential - pet fee/pet rent revenue"
+  ],
+  "475127-000-50": [
+   "4050-5330",
+   "Residential - insurance recovery revenue"
+  ],
+  "475128-000-50": [
+   "4850-2500",
+   "Pest Control Income"
+  ],
+  "475129-000-50": [
+   "4050-5540",
+   "Residential - trash removal reimbursement revenue"
+  ],
+  "475130-000-50": [
+   "4050-5545",
+   "Residential - water and sewer reimbursement revenue"
+  ],
+  "475130-001-50": [
+   "4050-5510",
+   "Residential - electric reimbursement revenue"
+  ],
+  "475130-002-50": [
+   "4050-5515",
+   "Residential - gas reimbursement revenue"
+  ],
+  "475130-003-50": [
+   "4050-5540",
+   "Residential - trash removal reimbursement revenue"
+  ],
+  "475131-000-50": [
+   "4850-1000",
+   "Miscellaneous Income"
+  ],
+  "475132-000-50": [
+   "4050-5105",
+   "Residential Loss / Gain to lease"
+  ],
+  "475133-000-50": [
+   "4050-5110",
+   "Residential Vacancy loss"
+  ],
+  "475136-000-50": [
+   "4850-1000",
+   "Miscellaneous Income"
+  ],
+  "475139-000-50": [
+   "4050-5140",
+   "Residential - month to month revenue"
+  ],
+  "475208-000-50": [
+   "4410-1000",
+   "Escalations - Operating Expense"
+  ],
+  "475210-000-50": [
+   "4050-5535",
+   "Residential - service fees reimbursement"
+  ],
+  "475211-000-50": [
+   "4630-1100",
+   "Metered Utilities:Electric, Gas, Water TBB Revenue"
+  ],
+  "475402-000-50": [
+   "4050-5115",
+   "Residential Rental concessions"
+  ],
+  "475407-000-50": [
+   "4752-1000",
+   "Parking Income"
+  ],
+  "475409-000-50": [
+   "4799-1000",
+   "Storage Space Rental"
+  ],
+  "485101-000-50": [
+   "4899-1000",
+   "Interest Income"
+  ],
+  "495102-000-50": [
+   "4850-1000",
+   "Miscellaneous Income"
+  ],
+  "495103-000-50": [
+   "4050-5350",
+   "Residential - NSF fees revenue"
+  ],
+  "495115-000-50": [
+   "4850-1600",
+   "Tenant Late Fees"
+  ],
+  "545130-003-50": [
+   "4050-5540",
+   "Residential - trash removal reimbursement revenue"
+  ],
+  "650101-000-50": [
+   "5700-6110",
+   "Tax-Real Estate"
+  ],
+  "650108-000-50": [
+   "5700-6160",
+   "Tax-GRT"
+  ],
+  "650201-000-50": [
+   "5172-1013",
+   "Corp - Insurance - General Liability"
+  ],
+  "650201-001-50": [
+   "5500-6125",
+   "Insurance-Other"
+  ],
+  "650202-000-50": [
+   "5500-6110",
+   "Insurance-Property"
+  ],
+  "650302-000-50": [
+   "5170-1150",
+   "Admin-Telephone"
+  ],
+  "650305-000-50": [
+   "5300-6300",
+   "Utilities-Water& Sewer"
+  ],
+  "650308-000-50": [
+   "5135-1050",
+   "Plumbing R&M"
+  ],
+  "650311-000-50": [
+   "5134-1000",
+   "HVAC Contract Srvcs"
+  ],
+  "650313-000-50": [
+   "5121-1000",
+   "Security-Contract Srvcs"
+  ],
+  "650314-000-50": [
+   "5125-1250",
+   "Fire/Life-Software"
+  ],
+  "650314-003-50": [
+   "5125-1000",
+   "Fire/Life-Contract Srvcs"
+  ],
+  "650317-000-50": [
+   "5170-7150",
+   "Admin-Permits/License"
+  ],
+  "650318-000-50": [
+   "5170-3145",
+   "Admin Payroll- - Training"
+  ],
+  "650322-000-50": [
+   "5131-1050",
+   "GB-General R&M"
+  ],
+  "650323-000-50": [
+   "5131-1050",
+   "GB-General R&M"
+  ],
+  "650325-000-50": [
+   "5133-1050",
+   "Elevator R&M"
+  ],
+  "650328-000-50": [
+   "5145-1350",
+   "Landscaping Supplies"
+  ],
+  "650329-000-50": [
+   "5145-1000",
+   "Landscaping Contract Srvcs"
+  ],
+  "650331-000-50": [
+   "5300-6990",
+   "Utilities-Garbage"
+  ],
+  "650333-000-50": [
+   "5133-1000",
+   "Elevator Contract Srvcs"
+  ],
+  "650335-000-50": [
+   "5110-1000",
+   "Cleaning-Contract Srvcs"
+  ],
+  "650337-000-50": [
+   "5142-1350",
+   "Parking Lot Supplies"
+  ],
+  "650341-000-50": [
+   "5170-2500",
+   "Admin-Postage"
+  ],
+  "650356-000-50": [
+   "5110-2200",
+   "Cleaning-Carpets/Mats"
+  ],
+  "650358-000-50": [
+   "5141-1000",
+   "Garage Contract Svcs"
+  ],
+  "650360-000-50": [
+   "5170-1250",
+   "Admin-Software"
+  ],
+  "650362-000-50": [
+   "5137-5105",
+   "Residential Turnover carpets expense"
+  ],
+  "650364-000-50": [
+   "5131-3000",
+   "GB-Doors/Keys/Locks"
+  ],
+  "650370-000-50": [
+   "5152-1000",
+   "Fitness Ctr Contract Srvcs"
+  ],
+  "650425-000-50": [
+   "5170-2150",
+   "Admin-Bank Fees"
+  ],
+  "650426-000-50": [
+   "5170-3140",
+   "Admin Payroll- - Recruitment Advertisement"
+  ],
+  "650430-000-50": [
+   "5170-1350",
+   "Admin-Supplies"
+  ],
+  "650435-000-50": [
+   "5170-2500",
+   "Admin-Postage"
+  ],
+  "650435-001-50": [
+   "5170-5145",
+   "Admin-Credit Check & Verification"
+  ],
+  "650438-000-50": [
+   "5170-2250",
+   "Admin-Legal"
+  ],
+  "650442-000-50": [
+   "7400-0100",
+   "Prof Fees-Legal"
+  ],
+  "650449-000-50": [
+   "5170-3120",
+   "Admin Payroll- - taxes and benefits"
+  ],
+  "650450-000-50": [
+   "5131-1050",
+   "GB-General R&M"
+  ],
+  "650451-000-50": [
+   "5170-3100",
+   "Admin Payroll- - Administrative GM Salary Expense"
+  ],
+  "650451-050-50": [
+   "5170-3125",
+   "Admin Payroll- - bonus and commissions expense"
+  ],
+  "650452-000-50": [
+   "5170-3120",
+   "Admin Payroll- - taxes and benefits"
+  ],
+  "650454-000-50": [
+   "5170-1250",
+   "Admin-Software"
+  ],
+  "650464-000-50": [
+   "5170-2300",
+   "Admin-Meals Entertainment"
+  ],
+  "650470-000-50": [
+   "7400-1000",
+   "Prof Fees-Filing/Compliance"
+  ],
+  "650501-000-50": [
+   "5131-1050",
+   "GB-General R&M"
+  ],
+  "650503-000-50": [
+   "5132-1350",
+   "Electrical/Lighting Supplies"
+  ],
+  "650504-000-50": [
+   "5135-1050",
+   "Plumbing R&M"
+  ],
+  "650524-000-50": [
+   "5145-1000",
+   "Landscaping Contract Srvcs"
+  ],
+  "650532-000-50": [
+   "5131-5105",
+   "GB-Appliance R&M"
+  ],
+  "650536-000-50": [
+   "5131-1350",
+   "GB-Building Supplies"
+  ],
+  "650537-000-50": [
+   "5131-2500",
+   "GB-Painting/Decorating"
+  ],
+  "650548-000-50": [
+   "5131-1350",
+   "GB-Building Supplies"
+  ],
+  "650555-000-50": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "650556-000-50": [
+   "5131-2550",
+   "GB-Pest Control"
+  ],
+  "650564-000-50": [
+   "5142-1000",
+   "Parking Lot Contract Srvcs"
+  ],
+  "650565-000-50": [
+   "5152-1450",
+   "Fitness Ctr Equipment"
+  ],
+  "650601-000-50": [
+   "5300-6100",
+   "Utilities-Electricity"
+  ],
+  "650602-000-50": [
+   "5300-6100",
+   "Utilities-Electricity"
+  ],
+  "650603-000-50": [
+   "5300-6130",
+   "Utilities-Electricity Vacant"
+  ],
+  "650605-000-50": [
+   "5300-6200",
+   "Utilities-Gas"
+  ],
+  "650606-000-50": [
+   "5300-6300",
+   "Utilities-Water& Sewer"
+  ],
+  "650607-000-50": [
+   "5300-6990",
+   "Utilities-Garbage"
+  ],
+  "650608-000-50": [
+   "5300-6700",
+   "Utilities-Other"
+  ],
+  "650666-000-50": [
+   "5133-1000",
+   "Elevator Contract Srvcs"
+  ],
+  "650702-000-50": [
+   "6140-0700",
+   "Advertising-Social Media"
+  ],
+  "650717-000-50": [
+   "5131-9950",
+   "GB-Miscellaneous"
+  ],
+  "650718-000-50": [
+   "5170-1350",
+   "Admin-Supplies"
+  ],
+  "650718-001-50": [
+   "5170-1150",
+   "Admin-Telephone"
+  ],
+  "650723-000-50": [
+   "7500-0100",
+   "Leasing-Marketing"
+  ],
+  "650724-000-50": [
+   "6140-0600",
+   "Advertising-Website"
+  ],
+  "650801-000-50": [
+   "5170-2350",
+   "Admin-Mgmt Fee"
+  ],
+  "651003-000-50": [
+   "5110-1000",
+   "Cleaning-Contract Srvcs"
+  ],
+  "651004-000-50": [
+   "5110-1350",
+   "Cleaning-Supplies"
+  ],
+  "651008-000-50": [
+   "5170-2200",
+   "Admin-Dues & Subscriptions"
+  ],
+  "651016-000-50": [
+   "9596-1000",
+   "Miscellaneous Non Operating"
+  ],
+  "720103-000-50": [
+   "6200-0050",
+   "Int Exp-1st"
+  ],
+  "720204-000-50": [
+   "5170-2550",
+   "Admin-Professional Fees"
+  ],
+  "720206-000-50": [
+   "7400-0700",
+   "Prof Fees-Accounting"
+  ],
+  "720302-000-50": [
+   "5170-2150",
+   "Admin-Bank Fees"
+  ],
+  "720310-000-50": [
+   "7200-1100",
+   "Fees-Other"
+  ],
+  "720317-000-50": [
+   "5170-2200",
+   "Admin-Dues & Subscriptions"
+  ],
+  "720319-000-50": [
+   "7190-0800",
+   "NR Taxes-Franchise"
+  ],
+  "720341-000-50": [
+   "5170-1250",
+   "Admin-Software"
+  ],
+  "720349-000-50": [
+   "7124-1050",
+   "NR RM-Plumbing R&M"
+  ],
+  "720354-000-50": [
+   "7120-0200",
+   "NR Cleaning"
+  ],
+  "720374-000-50": [
+   "7660-1100",
+   "Tenant Improvements Expensed"
+  ],
+  "720375-000-50": [
+   "5137-5115",
+   "Residential Turnover misc repairs expense"
+  ],
+  "720500-000-50": [
+   "7200-0700",
+   "Fees-Incorporation/LLC"
+  ]
+ }
+}

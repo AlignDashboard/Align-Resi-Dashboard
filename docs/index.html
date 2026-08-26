@@ -1851,22 +1851,29 @@ async function loadLanding() {
   })();
 
   /* ---- Expense deep dive ---- */
-  (function expenses() {
-    // Two views of the same eleven buckets. The T12 side is the workbook's own
-    // grouping, statuses and all. The monthly side is classified in the
-    // pipeline from the property's T12 statement GL detail and published via
-    // metrics.json -- The Landing's statement has not reached Drive yet, so
-    // until it does the Month chip explains itself instead of drawing.
+  (async function expenses() {
+    // Both views draw from the property's own T12 statement, translated to the
+    // Align account tree through the COA mapping and published via metrics.json:
+    // T12 sums the twelve months per group, Month shows one at a time. The
+    // workbook's analyst buckets render only as the fallback when no statement
+    // has reached the pipeline yet -- they are period aggregates and cannot say
+    // anything about a single month.
     const b = L.expense_overview.buckets.filter(x => x.name !== "Total");
     const statusColor = x => x === "FLAG" ? C.red : x === "WATCH" ? C.amber : C.green;
     const wrap = document.getElementById("lcExpWrap");
     const note = document.getElementById("lcExpNote");
     const sel = document.getElementById("lcExpMonth");
-    let chart = null, monthly = null, monthlyFetched = false;
+    let chart = null, pt = null;
+
+    try {
+      const res = await fetch("metrics.json", { cache: "no-store" });
+      const m = await res.json();
+      pt = ((m.expense_buckets || {}).properties || [])
+        .find(x => x.slug === "the-landing") || null;
+    } catch (e) { pt = null; }
 
     const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    // point labels are bare month names; the period_end pins the year of each
-    const monthKeys = pt => {
+    const monthKeys = () => {
       const [em, ey] = pt.period_end.split(" ");
       const end = (+ey) * 12 + MO.indexOf(em);
       return pt.labels.map((_, i) => {
@@ -1874,71 +1881,91 @@ async function loadLanding() {
         return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
       });
     };
+    // largest first, Other last -- a stable order both views share
+    const groupNames = () => Object.keys(pt.buckets).sort((a, b2) => {
+      const oa = a.startsWith("Other"), ob = b2.startsWith("Other");
+      if (oa !== ob) return oa ? 1 : -1;
+      const t = n => pt.buckets[n].reduce((x, y) => x + y, 0);
+      return t(b2) - t(a);
+    });
+    const barColor = n => n.startsWith("Other") ? C.muted : C.teal;
 
     function canvas() {
       wrap.innerHTML = '<canvas id="lcExp"></canvas>';
       return document.getElementById("lcExp");
     }
-    function renderT12() {
+    function drawBars(names, vals, tipTotal, moneyTick) {
       if (chart) { chart.destroy(); chart = null; }
       chart = new Chart(canvas(), {
         type: "bar",
-        data: { labels: b.map(x => x.name),
-          datasets: [{ label: "TTM", data: b.map(x => x.ttm),
-                       backgroundColor: b.map(x => statusColor(x.status)) }] },
+        data: { labels: names, datasets: [{ data: vals,
+          backgroundColor: names.map(barColor) }] },
         options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
           plugins: { legend: { display: false }, tooltip: { callbacks: {
-            label: c => `TTM ${fm$(c.parsed.x)} · like-for-like ${(b[c.dataIndex].change * 100).toFixed(0)}% · ${b[c.dataIndex].status}` } } },
-          scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
+            label: c => `${fm$(c.parsed.x)} · ${(100 * c.parsed.x / tipTotal).toFixed(0)}% of total` } } },
+          scales: { x: { grid: gridCfg, ticks: { callback: moneyTick } },
             y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
       });
-      document.getElementById("lcExpEyebrow").textContent = "TTM BY BUCKET · LIKE-FOR-LIKE CHANGE";
-      note.textContent = "";
+    }
+    function renderT12() {
       sel.hidden = true;
+      if (!pt) {
+        // fallback: the workbook's analyst buckets, statuses and all
+        if (chart) { chart.destroy(); chart = null; }
+        chart = new Chart(canvas(), {
+          type: "bar",
+          data: { labels: b.map(x => x.name),
+            datasets: [{ data: b.map(x => x.ttm),
+                         backgroundColor: b.map(x => statusColor(x.status)) }] },
+          options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+            plugins: { legend: { display: false }, tooltip: { callbacks: {
+              label: c => `TTM ${fm$(c.parsed.x)} · like-for-like ${(b[c.dataIndex].change * 100).toFixed(0)}% · ${b[c.dataIndex].status}` } } },
+            scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
+              y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
+        });
+        document.getElementById("lcExpEyebrow").textContent = "TTM BY BUCKET · WORKBOOK (LIKE-FOR-LIKE CHANGE)";
+        note.textContent = "";
+        return;
+      }
+      const names = groupNames();
+      const vals = names.map(n => pt.buckets[n].reduce((x, y) => x + y, 0));
+      const total = vals.reduce((x, y) => x + y, 0);
+      drawBars(names, vals, total, v => "$" + (v / 1e6).toFixed(1) + "M");
+      const keys = monthKeys();
+      document.getElementById("lcExpEyebrow").textContent =
+        "T12 BY ALIGN-TREE GROUP · " + shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[11]).toUpperCase();
+      const wbOpex = L.expense_noi.ttm.opex;
+      note.textContent = "T12 total " + fm$(total) + " vs " + fm$(wbOpex)
+        + " workbook TTM opex (" + (Math.abs(total - wbOpex) < 5000 ? "ties out"
+            : "gap " + fm$(total - wbOpex)) + ")."
+        + " Grouped on the Align account tree via the COA mapping and tied out"
+        + " against the statement's own total expenses each month.";
     }
     function renderMonth() {
-      const pt = monthly;
       if (!pt) {
         if (chart) { chart.destroy(); chart = null; }
         wrap.innerHTML = '<div class="empty"><div class="dash"></div>'
           + '<div class="big">Monthly view awaits the statement</div>'
-          + '<div>The workbook publishes these buckets as period totals only. '
-          + "A month-by-month split needs The Landing's own 12-month statement "
-          + '(p0005611, accrual) in the Drive "T12 Expenses" folder — the pipeline '
-          + 'is already wired to classify, tie out, and publish it the day it lands.</div></div>';
+          + '<div>A month-by-month split needs the property’s 12-month statement '
+          + 'in the Drive "T12 Expenses" folder — the pipeline classifies, ties out '
+          + 'and publishes it the day it lands.</div></div>';
         document.getElementById("lcExpEyebrow").textContent = "MONTH BY BUCKET · AWAITING THE STATEMENT";
         note.textContent = "";
         sel.hidden = true;
         return;
       }
-      const keys = monthKeys(pt);
+      const keys = monthKeys();
       if (!sel.options.length) {
         keys.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
         sel.selectedIndex = keys.length - 1;
       }
       sel.hidden = false;
       const i = +sel.value;
-      // workbook bucket order first so the two views line up; extras appended
-      const names = [...b.map(x => x.name).filter(n => pt.buckets[n]),
-                     ...Object.keys(pt.buckets).filter(n => !b.some(x => x.name === n))];
+      const names = groupNames();
       const vals = names.map(n => pt.buckets[n][i]);
-      const total = vals.reduce((t, v) => t + v, 0);
-      if (chart) { chart.destroy(); chart = null; }
-      chart = new Chart(canvas(), {
-        type: "bar",
-        data: { labels: names, datasets: [{ label: shortMo(keys[i]), data: vals,
-          backgroundColor: names.map(n => {
-            const wb = b.find(x => x.name === n);
-            return wb ? statusColor(wb.status) : C.muted;
-          }) }] },
-        options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-          plugins: { legend: { display: false }, tooltip: { callbacks: {
-            label: c => `${fm$(c.parsed.x)} · ${(100 * c.parsed.x / total).toFixed(0)}% of the month` } } },
-          scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
-            y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
-      });
-      document.getElementById("lcExpEyebrow").textContent = "MONTH BY BUCKET · FROM THE STATEMENT'S GL DETAIL";
-      // reconcile against the workbook's monthly opex where the months overlap
+      const total = vals.reduce((x, y) => x + y, 0);
+      drawBars(names, vals, total, v => "$" + (v / 1e3).toFixed(0) + "k");
+      document.getElementById("lcExpEyebrow").textContent = "MONTH BY ALIGN-TREE GROUP · FROM THE STATEMENT";
       const wbIdx = L.expense_noi.months.indexOf(keys[i]);
       const wbOpex = wbIdx >= 0 ? L.expense_noi.opex[wbIdx] : null;
       note.textContent = shortMo(keys[i]) + " total " + fm$(total)
@@ -1946,25 +1973,13 @@ async function loadLanding() {
             ? " vs " + fm$(wbOpex) + " workbook opex ("
               + (Math.abs(total - wbOpex) < 500 ? "ties out" : "gap " + fm$(total - wbOpex)) + ")."
             : " — outside the workbook's month range.")
-        + " Buckets are keyword-classified from GL lines and tied to the statement's own"
-        + " recoverable total; the T12 view stays the analyst's hand grouping.";
-    }
-    async function toMonth() {
-      if (!monthlyFetched) {
-        monthlyFetched = true;
-        try {
-          const res = await fetch("metrics.json", { cache: "no-store" });
-          const m = await res.json();
-          monthly = ((m.expense_buckets || {}).properties || [])
-            .find(x => x.slug === "the-landing") || null;
-        } catch (e) { monthly = null; }
-      }
-      renderMonth();
+        + " Grouped on the Align account tree via the COA mapping, tied out against"
+        + " the statement's own total expenses each month.";
     }
     function setMode(mode) {
       document.querySelectorAll("#cExpDeep .tog").forEach(t =>
         t.setAttribute("aria-pressed", String(t.dataset.ep === mode)));
-      if (mode === "t12") renderT12(); else toMonth();
+      if (mode === "t12") renderT12(); else renderMonth();
     }
     document.querySelectorAll("#cExpDeep .tog").forEach(t =>
       t.addEventListener("click", () => setMode(t.dataset.ep)));

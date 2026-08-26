@@ -15,14 +15,35 @@ Usage:
     result = parse_t12("path/to/statement.xlsx")
 """
 
+import os
+import re
 import sys
 import json
 import openpyxl
 
-# Yardi rollup account codes we anchor on. If the chart definition changes,
-# change these codes -- the rest of the logic is generic.
-CODE_REVENUE = "4999-9999"   # TOTAL OPERATING REVENUE
-CODE_OPEX    = "5999-9998"   # TOTAL OPERATING EXPENSE RECOVERABLE
+# JPM->Align chart-of-accounts mapping, extracted from the owner's COA workbook
+# by scripts/extract_coa_map.py. Loaded lazily so align-tree statements never
+# need it; a jpm-tree statement without it refuses buckets rather than guessing.
+COA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "config", "coa_map.json")
+_COA = None
+
+
+def _coa():
+    global _COA
+    if _COA is None:
+        _COA = json.load(open(COA_PATH))
+    return _COA
+
+# Yardi rollup account codes we anchor on, per account tree. The Align tree
+# (align_resbv) is what Palma and 335 Third report on; The Landing's statement
+# arrives on the JPM tree (jpm_bf1) with six-digit accounts, and its expenses
+# are translated back to the Align tree through config/coa_map.json.
+CODE_REVENUE = "4999-9999"   # align: TOTAL OPERATING REVENUE
+CODE_OPEX    = "5999-9998"   # align: TOTAL OPERATING EXPENSE RECOVERABLE
+JPM_REVENUE  = "499999-9999" # jpm: TOTAL REVENUE
+JPM_OPEX     = "519999-9999" # jpm: TOTAL OPERATING EXPENSES
+JPM_EXP_ALL  = "549999-9999" # jpm: TOTAL EXPENSES (operating + non-operating)
 
 MONTHS_COLS = range(2, 14)   # columns C..N hold the 12 monthly values
 TOTAL_COL   = 14             # column O holds the row total
@@ -65,6 +86,127 @@ BUCKET_OTHER = "Other / unclassified"
 BELOW_LINE_EXCLUDE = ("interest", "depreciation", "amortization", "amortisation",
                       "capital", "debt service", "reserve", "asset management",
                       "partnership", "income tax provision")
+
+
+# Display groups for the JPM-tree statement, defined on the ALIGN side of the
+# COA mapping -- these are the Align account tree's own families (5110 Cleaning,
+# 5137 Residential Turnover, 5300 Utilities, 5700 Taxes, 71xx non-recoverable
+# twins, ...), so the deep dive reads in the tree's groupings rather than in
+# keyword guesses. ADMIN (5170) splits by sub-code the way the tree itself
+# names them: 3xxx payroll, 2350 mgmt fee, 2000/2250/2550 professional.
+def _align_group(align_code, align_name):
+    c = align_code
+    pre = c.split("-")[0]
+    suf = c.split("-")[1] if "-" in c else ""
+    if pre in ("5700", "7190"):
+        return "Taxes"
+    if pre in ("5500", "7180"):
+        return "Insurance"
+    if pre in ("5300", "7140") or (pre == "4050" and suf.startswith("55")) or pre == "4630":
+        return "Utilities (net of billbacks)"
+    if pre == "5170" and suf.startswith("3"):
+        return "Payroll & benefits"
+    if pre in ("5173",):
+        return "Payroll & benefits"
+    if pre == "5170" and suf == "2350" or pre == "7200":
+        return "Management fee"
+    if pre == "5170" and suf in ("2000", "2250", "2550") or pre == "7400":
+        return "Professional fees"
+    if pre in ("5170", "5171", "7150"):
+        return "Admin & office"
+    if pre == "5110" or (pre == "7120" and suf.startswith("02")):
+        return "Cleaning"
+    if pre in ("5120", "5121", "5125", "7130", "7135"):
+        return "Security & fire/life safety"
+    if pre == "5137":
+        return "Residential turnover"
+    if pre in ("5150", "5151", "5152", "5153"):
+        return "Tenant engagement"
+    if pre.startswith("61"):
+        return "Marketing & advertising"
+    if pre in ("5130", "5131", "5132", "5133", "5134", "5135", "5136", "5140",
+               "5141", "5142", "5145", "7101", "7120", "7121", "7122", "7123",
+               "7124", "7125", "7127", "7160", "7170", "7195", "7660"):
+        return "Repairs & maintenance"
+    if pre == "7250":
+        return "Bad debt"
+    return None
+
+
+# Fallback for JPM leaves the COA workbook does not map (they are listed in the
+# output so the owner can extend the mapping): grouped by their own label.
+_JPM_FALLBACK = [
+    ("Residential turnover", ("turnover",)),
+    ("Security & fire/life safety", ("patrol", "security", "alarm")),
+    ("Tenant engagement", ("concierge", "courtesy")),
+    ("Taxes", ("tax",)),
+    ("Professional fees", ("professional", "legal", "accounting")),
+    ("Admin & office", ("credit report", "credit card", "bank", "office")),
+    ("Repairs & maintenance", ("carpet", "repair", "maint")),
+]
+
+
+def expense_buckets_jpm(rows):
+    """The Landing's statement arrives on the JPM tree; its expense leaves are
+    translated to Align accounts through config/coa_map.json and grouped by the
+    Align tree's families. Region: 500000-0000 EXPENSES through 549999-9999
+    TOTAL EXPENSES (operating + non-operating; financing and the balance sheet
+    sit outside it). The tie-out is strict: every leaf is grouped somewhere,
+    so the groups must sum to the statement's own TOTAL EXPENSES each month.
+    """
+    coa = _coa()["jpm"]
+    months = 12
+    buckets, unmapped, other = {}, [], []
+    total = None
+    in_exp = False
+    for r in rows:
+        code = str(r[0]).strip() if r and r[0] else ""
+        label = str(r[1]).strip() if r and len(r) > 1 and r[1] else ""
+        if code == "500000-0000":
+            in_exp = True
+            continue
+        if code == JPM_EXP_ALL:
+            total = [float(r[c]) if isinstance(r[c], (int, float)) else 0.0
+                     for c in MONTHS_COLS]
+            break
+        if not in_exp or not code:
+            continue
+        vals = [float(r[c]) if len(r) > c and isinstance(r[c], (int, float))
+                else None for c in MONTHS_COLS]
+        if not any(v is not None for v in vals):
+            continue
+        if label.upper().startswith("TOTAL") or code[-2:] in ("98", "99"):
+            continue
+        mapped = coa.get(code)
+        if mapped:
+            grp = _align_group(mapped[0], mapped[1])
+        else:
+            unmapped.append(f"{code} {label}")
+            grp = next((g for g, kws in _JPM_FALLBACK
+                        if any(k in label.lower() for k in kws)), None)
+        if grp is None:
+            grp = "Other / unclassified"
+            other.append(f"{code} {label}")
+        tgt = buckets.setdefault(grp, [0.0] * months)
+        for i, v in enumerate(vals):
+            if v is not None:
+                tgt[i] += v
+
+    if total is None:
+        raise ValueError(f"no {JPM_EXP_ALL} TOTAL EXPENSES row; cannot tie out")
+    summed = [sum(vs[i] for vs in buckets.values()) for i in range(months)]
+    delta = max(abs(summed[i] - total[i]) for i in range(months))
+    if delta > 1.0:
+        raise ValueError(f"grouped leaves do not tie out against {JPM_EXP_ALL} "
+                         f"(max monthly gap {delta:,.2f}); buckets refused")
+    return {
+        "buckets": {k: [round(v, 2) for v in vs] for k, vs in sorted(buckets.items())},
+        "other_labels": other,
+        "unmapped_accounts": unmapped,
+        "below_line_excluded": [],
+        "recoverable_tieout_max_gap": round(delta, 4),
+        "grouping": "align_tree_via_coa_map",
+    }
 
 
 def _classify(text):
@@ -167,11 +309,32 @@ def _property_name(rows):
     return str(cell).split("(")[0].strip() if cell else "Unknown Property"
 
 
-def _property_code(rows):
-    # Row 0, col A: e.g. "Palma North (rspalman)" -> "rspalman"
+def _property_codes(rows):
+    """All property codes the statement covers, first one primary.
+
+    Two title-row shapes exist: "Palma North (rspalman)" for a single code, and
+    "Property =  p0005611 p0005612 p0005671 p0005640" when Yardi combines
+    several codes into one statement (The Landing reports as four).
+    """
     cell = str(rows[0][0]) if rows and rows[0] and rows[0][0] else ""
+    if cell.strip().lower().startswith("property") and "=" in cell:
+        return [c for c in cell.split("=", 1)[1].split() if c]
     if "(" in cell and ")" in cell:
-        return cell[cell.rfind("(") + 1:cell.rfind(")")].strip()
+        return [cell[cell.rfind("(") + 1:cell.rfind(")")].strip()]
+    return []
+
+
+def _property_code(rows):
+    codes = _property_codes(rows)
+    return codes[0] if codes else None
+
+
+def _tree(rows):
+    """The account tree from the Book row: 'Book = Accrual ; Tree = jpm_bf1'."""
+    for r in rows[:6]:
+        cell = str(r[0]) if r and r[0] else ""
+        if "Tree" in cell and "=" in cell:
+            return cell.split("Tree")[1].split("=")[1].strip()
     return None
 
 
@@ -222,15 +385,20 @@ def _period_end(rows):
 def parse_t12(path):
     rows = _load_rows(path)
     prop = _property_name(rows)
-    code = _property_code(rows)
+    codes = _property_codes(rows)
+    code = codes[0] if codes else None
     labels = _month_labels(rows)
-    rev = _line_by_code(rows, CODE_REVENUE)
-    opex = _line_by_code(rows, CODE_OPEX)
+    tree = _tree(rows)
+    jpm = bool(tree and tree.lower().startswith("jpm"))
+    rev_code = JPM_REVENUE if jpm else CODE_REVENUE
+    opex_code = JPM_OPEX if jpm else CODE_OPEX
+    rev = _line_by_code(rows, rev_code)
+    opex = _line_by_code(rows, opex_code)
 
     if rev is None:
-        raise ValueError(f"Revenue line {CODE_REVENUE} not found in {path}")
+        raise ValueError(f"Revenue line {rev_code} not found in {path}")
     if opex is None:
-        raise ValueError(f"Opex line {CODE_OPEX} not found in {path}")
+        raise ValueError(f"Opex line {opex_code} not found in {path}")
 
     rev_t12 = sum(rev)
     opex_t12 = sum(opex)
@@ -247,14 +415,18 @@ def parse_t12(path):
     # Bucketed monthly expense detail. A classification failure must not take
     # the ratio store down with it, so it degrades to None with the reason.
     try:
-        bucketed = expense_buckets(rows)
+        bucketed = expense_buckets_jpm(rows) if jpm else expense_buckets(rows)
         buckets_error = None
-    except ValueError as e:
+    except (ValueError, OSError) as e:
         bucketed, buckets_error = None, str(e)
 
     return {
         "property": prop,
         "property_code": code,
+        "property_codes": codes,
+        "tree": tree,
+        "opex_basis": ("jpm 519999-9999 total operating expenses" if jpm
+                       else "align 5999-9998 recoverable opex"),
         "book": _book(rows),
         "period_end": period_end,
         "labels": labels,

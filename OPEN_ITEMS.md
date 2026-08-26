@@ -14,7 +14,6 @@ first: everything else is a gap, but these are assertions.
 | A4 | Supply a market-survey export for the PSF chart (subject + comps, 30-day avg rent/sqft — the RealPage market survey or the AIRM feed both carry it). Owner confirmed the $4.01 is old | A live PSF card. The chart now says "hand-entered, date unknown — likely stale" on its face until a feed exists | contained — the staleness is disclosed on the card |
 | A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** The funnel parser is live for both the `EliseAI Reports` and `Weekly Leasing Reports` folders, so the weeklies parse wherever the gmail-filing fix (C3) lands them. The Aug 18 file parses the day it moves out of `_Unsorted` | C3 only | no |
 | A6 | Which property does the concession burn-off export cover? Settled empirically that the file itself cannot answer: the parser now walks it as sections and the only heading text is "Projection by Unit" — report structure, not a property name. Parses and ties out clean every run (−$54,990 recurring concessions as of 08/10), stored nowhere. Needs your word on what "For Selected Properties" selected, or a per-property re-export; the moment a heading or filename names a property, sections route and store by themselves | Concession Load % and the Effective-vs-Gross-Rent card | no — nothing publishes from it yet |
-| A7 | Export The Landing's own 12-month statement (p0005611, accrual) from Yardi into the Drive `T12 Expenses` folder | The Expense Deep Dive's monthly view. The card now has a T12/Month toggle; the monthly side needs the statement's GL detail, and the pipeline is wired end-to-end — classification into the workbook's eleven buckets, a per-month tie-out against the statement's own 5999-9998 total, publication through `metrics.json` — so it fills the day the file lands (`scripts/test_expense_buckets.py` guards it). Until then the Month view says what it is waiting for | no — the card says "awaiting the statement" rather than drawing |
 
 ## B · Blocked on an answer from EliseAI
 
@@ -68,6 +67,23 @@ Documented in CLAUDE.md and built but not activated. Strictly ordered.
 | F2 | The shared scorecard note prints on every property card, including the line about Palma's lease-up overrides, which reads oddly on Chorus. Can be scoped per property |
 
 ## Closed
+
+2026-08-26 — A7: the statement arrived the day after it was asked for —
+`12_Month_Statement_Accrual.xlsx` in `T12 Expenses`, covering all four Landing
+codes (p0005611/12/71/40) in one file, on the **JPM tree** (jpm_bf1) rather than
+align_resbv. The owner also supplied the COA mapping workbook, distilled into
+`config/coa_map.json` by `scripts/extract_coa_map.py`; the parser translates JPM
+leaves to Align accounts and groups them by the Align tree's own families,
+tying out against the statement's TOTAL EXPENSES to the cent. Both Deep Dive
+views now draw from it (T12 total $4.73M matches the workbook TTM opex; every
+spot-checked month matches the workbook's monthly opex). The Landing joins the
+expense-ratio card at 32.7% (basis: JPM total operating expenses). Going
+forward the pipeline warns when a previously-reported code is absent from a new
+statement, and lists the 10 JPM accounts (~$115k) the COA workbook does not yet
+map — worth extending the mapping to settle them: Carpets, Alarm monitoring,
+Courtesy patrol, two Turnover lines, Credit reports, Credit Card Fees,
+Courtesy/Concierge REIT-sensitive, Gross Rec./Bus. Lic. Tax, and a Professional
+Fees line.
 
 2026-08-24 — A3, by the header dump instead of the re-export: the inspect
 workflow now probes every T12 statement (`inspect_report.py --t12` — title rows
