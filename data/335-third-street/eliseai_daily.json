@@ -178,6 +178,20 @@
       "inactive_leads": 0,
       "escalations_open": 3,
       "pending_knowledge": 4
+    },
+    {
+      "date": "2026-08-26",
+      "received_at": "2026-08-26T15:37:40Z",
+      "new_leads": 1,
+      "tours_today": 0,
+      "tours_booked_since_yesterday": 0,
+      "applications": 0,
+      "cancelled_leads": 1,
+      "unsubscribed": 0,
+      "unresponsive_leads": 0,
+      "inactive_leads": 0,
+      "escalations_open": 4,
+      "pending_knowledge": 4
     }
   ],
   "_comment_received_at": "'received_at' is when the email landed in the dashboard@alignrealestate.com mailbox (UTC), which is what the page reports as the data's last-updated time - distinct from 'date', the day the counts describe. For an email forwarded in by hand rather than sent straight from EliseAI, this is when the forward arrived, so it can run later than EliseAI's own send time (2026-08-05 and 2026-08-13 are both forwards). No sender address is stored."
