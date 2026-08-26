@@ -147,6 +147,17 @@
   .tmode:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   .tmode .glyph { font-size: 12px; line-height: 1; }
 
+  /* Per-series show/hide chips in a card head. Pressed = drawn. */
+  .togrow { display: flex; gap: 2px; align-self: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .tog { background: none; border: 1px solid var(--line); color: var(--muted);
+    font-family: inherit; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 600; padding: 6px 11px; cursor: pointer; white-space: nowrap;
+    transition: color .15s, border-color .15s, opacity .15s; }
+  .tog:hover { color: var(--amber); border-color: var(--amber); }
+  .tog[aria-pressed="true"] { color: var(--amber); border-color: var(--amber); }
+  .tog[aria-pressed="false"] { opacity: .55; }
+  .tog:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
   .card.wide { grid-column: 1 / -1; }
@@ -525,8 +536,16 @@
       </div>
 
       <div class="card" id="cNoi">
-        <h2>Expense Load &amp; NOI</h2>
-        <span class="eyebrow">MONTHLY NOI MARGIN &amp; OPEX RATIO</span>
+        <div class="card-head">
+          <div>
+            <h2>Expense Load &amp; NOI</h2>
+            <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · EXPENSE / DOOR</span>
+          </div>
+          <div class="togrow" role="group" aria-label="Series shown">
+            <button class="tog" type="button" data-ds="0" aria-pressed="true">NOI margin</button>
+            <button class="tog" type="button" data-ds="1" aria-pressed="true">Expense ratio</button>
+          </div>
+        </div>
         <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
         <div class="blu-note" id="lcNoiFoot" style="color:var(--muted);"></div>
       </div>
@@ -1776,20 +1795,47 @@ async function loadLanding() {
   /* ---- Expense & NOI ---- */
   (function noi() {
     const en = L.expense_noi;
-    new Chart(document.getElementById("lcNoi"), {
+    // Expense per door: the month's opex over the property's unit count -- the
+    // same numerator the ratio uses, in the unit operators quote. The two ratios
+    // share the percent axis; the door figure gets the dollar axis on the right.
+    const doors = L.meta.units;
+    const perDoor = en.opex.map(v => (doors && v != null) ? v / doors : null);
+    const chart = new Chart(document.getElementById("lcNoi"), {
       type: "line",
       data: { labels: en.months.map(shortMo),
         datasets: [
-          { label: "NOI margin", data: en.noi_margin.map(v => v * 100), borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
-          { label: "Opex ratio", data: en.opex_ratio.map(v => v * 100), borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: "NOI margin", data: en.noi_margin.map(v => v * 100), yAxisID: "y", borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: "Expense ratio", data: en.opex_ratio.map(v => v * 100), yAxisID: "y", borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: "Expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
         ] },
       options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
-        scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } }, x: { grid: { display: false } } } }
+        plugins: { legend: { ...legendCfg,
+            // route legend clicks through the same switch as the head chips, so
+            // the two controls can never disagree about what is drawn
+            onClick: (e, item) => setVis(item.datasetIndex, !chart.isDatasetVisible(item.datasetIndex)) },
+          tooltip: { callbacks: { label: c => c.dataset.yAxisID === "y2"
+            ? `${c.dataset.label}: ${fm$(c.parsed.y)}/mo`
+            : `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
+        scales: { y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
+          y2: { position: "right", grid: { display: false }, beginAtZero: true,
+                ticks: { callback: v => "$" + (v / 1e3).toFixed(1) + "k" } },
+          x: { grid: { display: false } } } }
     });
+    function setVis(i, on) {
+      chart.setDatasetVisibility(i, on);
+      chart.update();
+      const btn = document.querySelector(`#cNoi .tog[data-ds="${i}"]`);
+      if (btn) btn.setAttribute("aria-pressed", String(on));
+    }
+    document.querySelectorAll("#cNoi .tog").forEach(b =>
+      b.addEventListener("click", () => {
+        const i = +b.dataset.ds;
+        setVis(i, !chart.isDatasetVisible(i));
+      }));
     document.getElementById("lcNoiFoot").textContent =
       "TTM NOI " + fm$(en.ttm.noi) + " (" + fmPct(en.ttm.noi_margin) + " margin) on revenue " +
-      fm$(en.ttm.revenue) + ". " + en.tax_note;
+      fm$(en.ttm.revenue) + ". Expense/door is the month's opex over the property's " + doors +
+      " units, on the right axis (TTM " + fm$(en.ttm.opex_per_unit / 12) + "/mo). " + en.tax_note;
   })();
 
   /* ---- Expense deep dive ---- */
