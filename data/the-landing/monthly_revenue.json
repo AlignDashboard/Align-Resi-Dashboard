@@ -1,0 +1,11 @@
+{
+  "revenue_month": 1328218.38,
+  "basis": "GL 4999-9999 total operating revenue, latest reported month per code",
+  "codes": {
+    "p0005611": {
+      "month": "Jul",
+      "revenue": 1328218.38,
+      "period_end": "Jul 2026"
+    }
+  }
+}
