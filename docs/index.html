@@ -576,15 +576,6 @@
         <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
       </div>
 
-      <div class="card" id="cRateOcc">
-        <h2>Rate vs Occupancy</h2>
-        <span class="eyebrow">TRADE-OFF SCENARIO · CHANGE vs TODAY</span>
-        <div class="inrow" id="loInputs"></div>
-        <div class="statrow" id="loStats"></div>
-        <div id="loGrid"></div>
-        <div class="blu-note" id="loNote" style="color:var(--muted);"></div>
-      </div>
-
       <div class="card" id="cGaps">
         <h2>Largest Unit Gaps</h2>
         <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
@@ -1789,7 +1780,6 @@ async function loadLanding() {
       ["+" + fm$(L.renewal.workbook_rollup.recurring_noi) + "/yr", "Renewal pipeline NOI", "+" + fmPct(L.renewal.workbook_rollup.recurring_noi / L.renewal.ttm_operating_noi) + " at workbook assumptions", "cRenewal", "renewal pipeline"],
       [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cGaps", "largest unit gaps"],
       [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
-      [fm$(L.rate_occ.ttm_value_today), "TTM value today", "at " + fmPct(L.inputs.cap_rate) + " cap", "cRateOcc", "rate vs occupancy"],
     ];
     tiles.forEach(([v, k, s, target, where]) => {
       const kp = elc("button", "kpi");
@@ -2166,44 +2156,6 @@ async function loadLanding() {
     "either box to fall back to the workbook's per-month basis (statutory cap near-term, " +
     "policy rate beyond). " + L.renewal.model_note;
   renderRenewal();
-
-  /* ---- Rate vs occupancy (live model) ---- */
-  function renderRateOcc() {
-    const ro = L.rate_occ;
-    const ltl = numOr(oFields.ltl, ro.scenario_ltl * 100) / 100;
-    const vac = numOr(oFields.vac, ro.scenario_vac * 100) / 100;
-    const capRate = numOr(rFields.cap, 5) / 100, fee = numOr(rFields.fee, 2.1) / 100;
-    const inc = (ro.cur_ltl - ltl) * ro.market_rent_yr - (vac - ro.cur_vacancy) * ro.market_rent_yr;
-    const recNOI = inc * (1 - fee);
-    const extraVacUnits = Math.max(0, (vac - ro.cur_vacancy) * L.meta.units);
-    const net = recNOI / capRate - extraVacUnits * (L.inputs.make_ready_per_moveout || 500);
-    statBlock(document.getElementById("loStats"), [
-      [(inc < 0 ? "-" : "+") + fm$(Math.abs(inc)) + "/yr", "incremental rent"],
-      [(recNOI < 0 ? "-" : "+") + fm$(Math.abs(recNOI)) + "/yr", "recurring NOI"],
-      [fm$(net), "net value change"],
-      [fmPct(ro.breakeven_ltl), "breakeven LTL"],
-    ]);
-  }
-  const oFields = inputRow(document.getElementById("loInputs"), [
-    { key: "ltl", label: "loss to lease → %", val: +(L.rate_occ.scenario_ltl * 100).toFixed(1), step: "1" },
-    { key: "vac", label: "econ vacancy → %", val: +(L.rate_occ.scenario_vac * 100).toFixed(1), step: "0.5" },
-  ], renderRateOcc);
-  (function grid() {
-    const ro = L.rate_occ;
-    buildTable(document.getElementById("loGrid"),
-      [{ t: "LTL \\ Vac" }].concat(ro.grid_vac.map(v => ({ t: fmPct(v), num: true }))),
-      ro.grid_ltl.map((l, i) => [fmPct(l)].concat(ro.grid[i].map(v => {
-        const cell = elc("span", null, fm$(v));
-        cell.style.color = v > 0 ? C.green : v < 0 ? C.red : C.muted;
-        return cell;
-      }))));
-    document.getElementById("loNote").textContent =
-      "Change in annual rental income vs today (LTL " + fmPct(ro.cur_ltl) +
-      ", vacancy " + fmPct(ro.cur_vacancy, 2) + "). Today's TTM value " + fm$(ro.ttm_value_today) + ".";
-  })();
-  renderRateOcc();
-  // rate-occ valuation follows the renewal card's cap rate / fee inputs
-  ["cap", "fee", "vac"].forEach(k => rFields[k].addEventListener("input", renderRateOcc));
 
   /* ---- Trade-outs ---- */
   (function trades() {
