@@ -25,6 +25,11 @@ Which KPIs a delinquency report can actually answer:
                             as a whole number of percent. The published basis is
                             the current rent roll, so the newest month answers it
                             rather than the TTM column.
+  NOI Margin %              the current month's NOI over revenue, from the
+                            Expense & NOI series behind that card. The published
+                            band's basis is T12, and a single accrual month
+                            swings well past it in both directions, so the TTM
+                            figure is recorded alongside the graded month.
 
 "POs over 30 days" and "# of invoices processed" are accounts *payable*; a
 resident AR report cannot speak to them and they are left alone.
@@ -65,6 +70,7 @@ OUT = "docs/scorecard.json"
 KPI_TOTAL = "Total Deliquency"
 KPI_SPLIT = "Split Between 30/60/90"
 KPI_LTL = "Loss to Lease %"
+KPI_NOI = "NOI Margin %"
 
 
 def pct1(v):
@@ -114,11 +120,21 @@ def facts_from_landing(path="docs/landing.json"):
     # from today's.
     rc = doc.get("rent_capture") or {}
     ltl_series, months = rc.get("ltl_pct") or [], rc.get("months") or []
+    # NOI margin, likewise from the monthly series behind the Expense Load & NOI
+    # card rather than its TTM column. Note the published band's own basis says
+    # T12: a single accrual month swings hard (Apr 2026 reads 47.0% on that
+    # month's tax true-up, Jul 2026 reads 72.6%), so both are recorded below and
+    # which one the band is meant to grade is the owner's call.
+    en = doc.get("expense_noi") or {}
+    noi_series, noi_months = en.get("noi_margin") or [], en.get("months") or []
     return {
         "as_of": d.get("as_of"),
         "gross_owed": d.get("gross_owed"),
         "ltl_pct": ltl_series[-1] if ltl_series else None,
         "ltl_month": months[-1] if months else None,
+        "noi_margin": noi_series[-1] if noi_series else None,
+        "noi_margin_month": noi_months[-1] if noi_months else None,
+        "noi_margin_ttm": (en.get("ttm") or {}).get("noi_margin"),
         "split": [bucket("31 - 60", "31-60"), bucket("61 - 90", "61-90"),
                   bucket("over 90")],
         # the workbook computes this ratio itself, so use it rather than
@@ -218,6 +234,12 @@ def measurements(f):
     else:
         out[KPI_LTL] = (None, None,
                         "this source carries no market-rent-vs-in-place series")
+
+    if f.get("noi_margin") is not None:
+        out[KPI_NOI] = (f["noi_margin"], pct1(f["noi_margin"]), None)
+    else:
+        out[KPI_NOI] = (None, None,
+                        "this source carries no monthly revenue-and-NOI series")
 
     parts = f.get("split") or []
     if len(parts) == 3 and all(p is not None for p in parts):
@@ -431,6 +453,11 @@ def main():
         meas[slug]["denominator"] = facts["denominator_note"]
     if facts.get("ltl_month"):
         meas[slug]["ltl_month"] = facts["ltl_month"]
+    if facts.get("noi_margin_month"):
+        meas[slug]["noi_margin_month"] = facts["noi_margin_month"]
+        # the T12 figure the band's own basis names, kept beside the month that
+        # is graded so the difference between them is on the record
+        meas[slug]["noi_margin_ttm"] = facts.get("noi_margin_ttm")
     sc["meta"]["note"] = (sc["meta"]["note"].split(" Measured values")[0] +
                           " Measured values, where present, are computed from the "
                           "underlying report and their status is derived from the "

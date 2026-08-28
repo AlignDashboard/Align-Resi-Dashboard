@@ -115,6 +115,16 @@ reads artificially high and grades red against a band whose ceiling is 10%. It
 is wired and graded; whether the band or the denominator wants revisiting is
 the owner's call.
 
+`--from-landing` also fills **`NOI Margin %`** the same way — the current
+month's NOI over revenue from the Expense & NOI series behind that card, to one
+decimal. Note the direction of the caveat is the opposite of loss to lease's:
+that KPI's published basis *is* the current rent roll, while this one's basis
+line says **T12**, and a single accrual month swings well outside the band in
+both directions (Apr 2026 reads 47.0% on that month's tax true-up, Jul 2026
+reads 72.6% and grades green against a T12 of 66.8%). The month is what is
+graded, per the owner; `noi_margin_ttm` is recorded beside it in
+`measured[slug]` so the two are never confused.
+
 `populate_scorecard.py` merges into `measured[slug]` rather than replacing it,
 so running it out of the documented order no longer drops the other feeds'
 `bldg_*` and `eliseai_*` keys — and with them their arrival times.
