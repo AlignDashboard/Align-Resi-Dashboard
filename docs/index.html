@@ -1857,22 +1857,40 @@ async function loadLanding() {
     const key = i => { const t = end - (cur - i);
       return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0"); };
 
-    // Each basis compares a trailing window against the window immediately
-    // before it, of the same length -- one month against the month before, three
-    // against the three before, twelve against the twelve before. Both columns
-    // therefore carry the same number of months: the current column is 3x a
-    // month under T3 and 12x under T12, not a single month held fixed while the
-    // other side grows.
+    // Each basis puts a trailing window on the left and the current month
+    // scaled to the same length on the right: T3 is the last three months
+    // against July run three times over, T12 the last twelve against July run
+    // twelve times. The right-hand column is therefore the current month's rate
+    // held for the window, not three or twelve actual months -- which is the
+    // comparison, "is this month running above or below the trailing average".
     const sum = (a, from, len) => a.slice(from, from + len).reduce((x, y) => x + y, 0);
-    const span = (from, len) => len === 1 ? shortMo(key(from))
-                    : shortMo(key(from)) + "\u2013" + shortMo(key(from + len - 1));
+    const trail = (a, k) => sum(a, n - Math.min(k, n), Math.min(k, n));
+    const span = k => shortMo(key(n - Math.min(k, n))) + "\u2013" + shortMo(key(cur));
     const BASES = {
-      prev: { k: 1, cur: "Current Month", prior: () => shortMo(key(cur - 1)) },
-      t3:   { k: 3, cur: "Current T3", prior: () => "Prior T3" },
-      t12:  { k: 12, cur: "Current T12", prior: () => "Prior T12" },
+      prev: { k: 1,
+              base: series => series[cur - 1],
+              head: () => shortMo(key(cur - 1)),
+              label: () => shortMo(key(cur - 1)),
+              curHead: () => "Current Month (" + shortMo(key(cur)) + ")",
+              curLabel: () => "Current Month",
+              blurb: () => "the prior month, " + shortMo(key(cur - 1)) },
+      t3:   { k: 3,
+              base: series => trail(series, 3),
+              head: () => "T3 (" + span(3) + ")",
+              label: () => "T3",
+              curHead: () => "Current \u00d73 (" + shortMo(key(cur)) + ")",
+              curLabel: () => "Current \u00d73",
+              blurb: () => "the trailing " + Math.min(3, n) + " months, " + span(3) },
+      t12:  { k: 12,
+              base: series => trail(series, 12),
+              head: () => "T12 (" + span(12) + ")",
+              label: () => "T12",
+              curHead: () => "Current \u00d712 (" + shortMo(key(cur)) + ")",
+              curLabel: () => "Current \u00d712",
+              blurb: () => "the trailing " + Math.min(12, n) + " months, " + span(12) },
     };
 
-    // Variance is the change between those two windows as a percentage, coloured
+    // Variance is the change between the two columns as a percentage, coloured
     // by favourability rather than by sign: more revenue and more NOI are good,
     // more expense is not, so the expense row's colour is inverted. Without that
     // inversion July's $24k saving would print red for being a negative number.
@@ -1884,62 +1902,51 @@ async function loadLanding() {
       e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
       return e;
     };
-    const DASH = "\u2014";
     function render(basisKey) {
       const B = BASES[basisKey] || BASES.prev;
-      const k = B.k;
-      const curFrom = n - k;                  // the trailing window
-      const priorFrom = curFrom - k;          // the one before it
-      // A twelve-month comparison needs twenty-four months of statement. One
-      // statement carries twelve, so until a second year has arrived the prior
-      // window is stated as missing rather than filled from a shorter slice
-      // that would compare unlike periods.
-      const havePrior = k <= n && priorFrom >= 0;
-      const factor = 12 / k;                  // what turns a window into a year
+      const k = Math.min(B.k, n);
+      // 12 / window: what turns either column into an annual figure. Both are
+      // scaled by the same factor, so the right-hand column always annualizes
+      // to the current month x 12 whichever basis is showing.
+      const factor = 12 / k;
       const row = (label, series, goodWhenUp) => {
-        const b = sum(series, curFrom, k), bYr = b * factor;
-        if (!havePrior) return [label, DASH, fm$(b), DASH, fm$(bYr), DASH];
-        const a = sum(series, priorFrom, k), aYr = a * factor;
+        const a = B.base(series), b = series[cur] * k;
+        const aYr = a * factor, bYr = b * factor;
         const pct = aYr ? (bYr - aYr) / Math.abs(aYr) : null;
         return [label, fm$(a), fm$(b), fm$(aYr), fm$(bYr),
-                pct === null ? DASH : vcell(pct, goodWhenUp)];
+                pct === null ? "\u2014" : vcell(pct, goodWhenUp)];
       };
-      const priorHead = havePrior
-        ? B.prior() + (k > 1 ? " (" + span(priorFrom, k) + ")" : "")
-        : B.prior() + " (needs " + (2 * k) + " months, have " + n + ")";
-      const curHead = B.cur + " (" + span(curFrom, k) + ")";
       buildTable(document.getElementById("lopTbl"),
         [{ t: "" },
-         { t: priorHead, num: true },
-         { t: curHead, num: true },
-         { t: B.prior() + " annualized", num: true },
-         { t: B.cur + " annualized", num: true },
+         { t: B.head(), num: true },
+         { t: B.curHead(), num: true },
+         { t: B.label() + " annualized", num: true },
+         { t: B.curLabel() + " annualized", num: true },
          { t: "Variance", num: true }],
         [row("Operating revenue", pt.revenue, true),
          row("Operating expenses", pt.opex, false),
          row("Operating NOI", pt.noi, true)]);
 
       document.getElementById("lopEyebrow").textContent =
-        B.cur.toUpperCase() + " (" + span(curFrom, k).toUpperCase() + ") vs "
-        + B.prior().toUpperCase() + " \u00b7 ANNUALIZED \u00b7 FROM THE T12 STATEMENT";
+        B.curLabel().toUpperCase() + " (" + shortMo(key(cur)).toUpperCase() + ") vs "
+        + B.label().toUpperCase() + " \u00b7 ANNUALIZED \u00b7 FROM THE T12 STATEMENT";
       document.getElementById("lopNote").textContent =
         "The same statement the expense cards read, refreshed on the same daily run \u2014 "
-        + "the window follows the statement, so it moves along when a new month is posted. "
-        + (havePrior
-            ? span(curFrom, k) + " (" + k + " month" + (k > 1 ? "s" : "") + ") is measured "
-              + "against the " + k + " month" + (k > 1 ? "s" : "") + " before it, "
-              + span(priorFrom, k) + ". Both columns cover the same number of months, so "
-              + "they compare directly; annualized scales each by \u00d7" + factor
-              + " to a full year, which is the frame the variance is taken in, not a forecast."
-            : "A " + k + "-month comparison needs " + (2 * k) + " months of statement and only "
-              + n + " have arrived, so the prior window is left blank rather than filled from "
-              + "a shorter period. " + span(curFrom, k) + " is shown on its own, annualized "
-              + "\u00d7" + factor + ". The prior column fills itself in once a second year of "
-              + "statements has landed.")
-        + " NOI is revenue less operating expense (" + (pt.basis || "") + "), so the three rows "
-        + "reconcile; non-operating items below that line are excluded. Variance is the "
-        + "percentage difference, coloured by favourability rather than by sign: green is more "
-        + "revenue, more NOI, or less expense.";
+        + "the current month follows the statement, so it moves to the new month when one "
+        + "is posted. " + shortMo(key(cur)) + " is measured against " + B.blurb() + ". "
+        + (k > 1
+            ? "The left column is " + k + " real months; the right is "
+              + shortMo(key(cur)) + " multiplied by " + k + " \u2014 that month's rate held "
+              + "for the same span, not " + k + " actual months \u2014 so the two sides carry "
+              + "the same weight and the variance reads as how far above or below the "
+              + "trailing average the current month is running. "
+            : "")
+        + "Annualized scales both columns by \u00d7" + factor + " to a full year, which is the "
+        + "frame the variance is taken in, not a forecast. NOI is revenue less operating "
+        + "expense (" + (pt.basis || "") + "), so the three rows reconcile; non-operating "
+        + "items below that line are excluded. Variance is the percentage difference, "
+        + "coloured by favourability rather than by sign: green is more revenue, more NOI, "
+        + "or less expense.";
       document.querySelectorAll("#cOpSummary .tog").forEach(t =>
         t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));
     }
