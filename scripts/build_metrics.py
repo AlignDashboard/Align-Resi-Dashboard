@@ -249,6 +249,54 @@ def store_expense_buckets(prop, t12_parses):
     return hist
 
 
+def store_monthly_pl(prop, t12_parses):
+    """data/<slug>/monthly_pl.json — operating revenue, operating expense and
+    the NOI between them, month by month, summed across the property's codes
+    like the ratio is. Aggregates only.
+
+    NOI here is revenue minus operating expense, not the statement's own NOI
+    line: on the JPM tree that line also carries non-operating expense
+    (financing-adjacent items below 519999-9999), so using it would leave a
+    three-row card whose first two rows do not reconcile to its third. The
+    basis string says which anchors were used, and the card prints it.
+    """
+    by_period = {}
+    for code, pr in sorted(latest_per_code(t12_parses).items()):
+        by_period.setdefault(pr["period_end"], []).append((code, pr))
+
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / "monthly_pl.json"
+    hist = json.load(open(fp)) if fp.exists() else {"points": []}
+
+    for period_end, group in by_period.items():
+        codes = sorted({c2 for c, pr in group for c2 in (pr.get("property_codes") or [c])})
+        labels = group[0][1]["labels"]
+        if any(pr["labels"] != labels for _, pr in group[1:]):
+            print(f"[warn] {prop['name']} {period_end}: month labels differ across "
+                  f"codes -- monthly P&L from '{group[0][0]}' alone for this period")
+            group = group[:1]
+        rev = [sum(pr["revenue_monthly"][i] for _, pr in group) for i in range(12)]
+        opex = [sum(pr["opex_recoverable_monthly"][i] for _, pr in group) for i in range(12)]
+        point = {
+            "period_end": period_end,
+            "labels": labels,
+            "source_codes": codes,
+            "revenue": [round(v, 2) for v in rev],
+            "opex": [round(v, 2) for v in opex],
+            "noi": [round(rev[i] - opex[i], 2) for i in range(12)],
+            "basis": group[0][1].get("opex_basis"),
+        }
+        hist["points"] = [pt for pt in hist["points"] if pt["period_end"] != period_end]
+        hist["points"].append(point)
+        print(f"[ok] stored monthly_pl for {prop['name']} ({period_end}) "
+              f"from {'+'.join(codes)}")
+
+    hist["points"].sort(key=lambda pt: period_key(pt["period_end"]))
+    json.dump(hist, open(fp, "w"), indent=2)
+    return hist
+
+
 def store_monthly_revenue(prop, t12_parses):
     """data/<slug>/monthly_revenue.json — the latest month's total operating
     revenue, summed across this property's codes (Palma = rspalman + rspalmas).
@@ -505,6 +553,7 @@ def process_manifest():
         store_expense_ratio(prop, parses)
         store_monthly_revenue(prop, parses)
         store_expense_buckets(prop, parses)
+        store_monthly_pl(prop, parses)
 
 
 # ---- metrics.json generation ---------------------------------------------
@@ -562,6 +611,27 @@ def build_metrics_json():
         "available": bool(bucket_props),
         "properties": bucket_props,
     }
+
+    # Latest monthly P&L point per property, for the operating-summary card.
+    pl_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "monthly_pl.json"
+        if not fp.exists():
+            continue
+        pts = json.load(open(fp))["points"]
+        if not pts:
+            continue
+        latest = pts[-1]
+        pl_props.append({"slug": p["slug"], "name": p["name"],
+                         "period_end": latest["period_end"],
+                         "labels": latest["labels"],
+                         "revenue": latest["revenue"], "opex": latest["opex"],
+                         "noi": latest["noi"],
+                         "source_codes": latest.get("source_codes"),
+                         "basis": latest.get("basis")})
+    metrics["monthly_pl"] = {"available": bool(pl_props), "properties": pl_props}
 
     if expense_ratio_props:
         metrics["expense_ratio"] = {

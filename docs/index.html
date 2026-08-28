@@ -540,6 +540,13 @@
         <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
       </div>
 
+      <div class="card wide" id="cOpSummary">
+        <h2>Operating Summary</h2>
+        <span class="eyebrow" id="lopEyebrow">MONTH vs PRIOR MONTH · ANNUALISED · FROM THE T12 STATEMENT</span>
+        <div id="lopTbl"></div>
+        <div class="blu-note" id="lopNote" style="color:var(--muted);"></div>
+      </div>
+
       <div class="card" id="cNoi">
         <h2>Expense Load &amp; NOI</h2>
         <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · EXPENSE / DOOR</span>
@@ -1813,6 +1820,62 @@ async function loadLanding() {
       " · capture " + fmPct(rc.ttm.capture_rate) + " · loss to lease " + fmPct(rc.ttm.ltl_pct) +
       ". Yardi market rent table was revised up sharply from Apr 2026, which widens measured loss to lease. " +
       "Dollar axis starts at " + fm$(yMin) + ", not $0, to make the income-vs-potential gap visible.";
+  })();
+
+  /* ---- Operating summary (T12 month vs prior month) ---- */
+  (async function opSummary() {
+    // Same statement, same schedule as the other two expense cards: the
+    // pipeline parses the T12 from Drive each run and publishes the twelve
+    // monthly columns through metrics.json, so this card refreshes when they do.
+    const card = document.getElementById("cOpSummary");
+    let pt = null;
+    try {
+      const res = await fetch("metrics.json", { cache: "no-store" });
+      const m = await res.json();
+      pt = ((m.monthly_pl || {}).properties || []).find(x => x.slug === "the-landing") || null;
+    } catch (e) { pt = null; }
+    if (!pt || pt.revenue.length < 2) { card.hidden = true; return; }
+
+    const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const [em, ey] = pt.period_end.split(" ");
+    const end = (+ey) * 12 + MO.indexOf(em);
+    const key = i => { const t = end - (11 - i);
+      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0"); };
+    const cur = pt.revenue.length - 1, prev = cur - 1;
+
+    // Variance is current less prior, coloured by sign as asked: green above,
+    // red below. Note that on the expense row a positive variance is more
+    // spend -- the sign is what is coloured, not favourability.
+    const vcell = v => {
+      const e = elc("span", null, (v > 0 ? "+" : "") + fm$(v));
+      e.style.color = v > 0 ? C.green : v < 0 ? C.red : C.muted;
+      return e;
+    };
+    const row = (label, series) => {
+      const a = series[prev], b = series[cur];
+      return [label, fm$(a), fm$(b), fm$(a * 12), fm$(b * 12), vcell(b - a)];
+    };
+    buildTable(document.getElementById("lopTbl"),
+      [{ t: "" },
+       { t: shortMo(key(prev)), num: true }, { t: shortMo(key(cur)), num: true },
+       { t: shortMo(key(prev)) + " annualised", num: true },
+       { t: shortMo(key(cur)) + " annualised", num: true },
+       { t: "Variance", num: true }],
+      [row("Operating revenue", pt.revenue),
+       row("Operating expenses", pt.opex),
+       row("Operating NOI", pt.noi)]);
+
+    document.getElementById("lopEyebrow").textContent =
+      shortMo(key(cur)).toUpperCase() + " vs " + shortMo(key(prev)).toUpperCase()
+      + " · ANNUALISED · FROM THE T12 STATEMENT";
+    document.getElementById("lopNote").textContent =
+      "The two most recent months of the same statement the expense cards read, refreshed on "
+      + "the same daily run. Annualised is the month \u00d7 12, not a forecast. NOI is revenue "
+      + "less operating expense (" + (pt.basis || "") + "), so the three rows reconcile; "
+      + "non-operating items below that line are excluded. Variance is "
+      + shortMo(key(cur)) + " less " + shortMo(key(prev))
+      + ", coloured by sign rather than by favourability \u2014 so on the expense row a "
+      + "decrease shows red although it saves money, and an increase shows green.";
   })();
 
   /* ---- Expense & NOI ---- */
