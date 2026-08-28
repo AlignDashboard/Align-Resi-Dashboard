@@ -508,7 +508,7 @@
         <div class="card-head">
           <div>
             <h2>Operating Summary</h2>
-            <span class="eyebrow" id="lopEyebrow">MONTH vs PRIOR MONTH · ANNUALISED · FROM THE T12 STATEMENT</span>
+            <span class="eyebrow" id="lopEyebrow">CURRENT MONTH vs PRIOR MONTH · ANNUALIZED · FROM THE T12 STATEMENT</span>
           </div>
           <div class="togrow" role="group" aria-label="Comparison basis">
             <button class="tog" type="button" data-basis="prev" aria-pressed="true">Prev month</button>
@@ -1852,28 +1852,30 @@ async function loadLanding() {
       return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0"); };
     const cur = pt.revenue.length - 1, prev = cur - 1;
     const n = pt.revenue.length;
-    const mean = (a, k) => a.slice(Math.max(0, n - k), n).reduce((x, y) => x + y, 0)
-                           / Math.min(k, n);
-    // What the current month is measured against. The trailing windows end AT
-    // the current month, the way T12 means the statement's twelve months
-    // everywhere else on this page -- so they answer "is this month above or
-    // below its own run-rate", and their per-month average is what compares
-    // like for like against a single month.
+    // Each basis is a PERIOD TOTAL over a trailing window ending at the current
+    // month -- one month, three, twelve -- so T3 carries three months of value
+    // and T12 twelve, not a per-month average. What makes them comparable to a
+    // single month is the annualized column: each is scaled by 12/window, so
+    // prior month x12, T3 x4, T12 x1, all landing in the same annual frame.
+    const win = k => Math.min(k, n);
+    const total = (a, k) => a.slice(n - win(k), n).reduce((x, y) => x + y, 0);
+    const span = k => win(k) === 1 ? shortMo(key(cur - 1))
+                    : shortMo(key(cur - win(k) + 1)) + "\u2013" + shortMo(key(cur));
     const BASES = {
-      prev: { label: () => shortMo(key(prev)),
-              head: () => shortMo(key(prev)),
+      prev: { months: 1, head: () => shortMo(key(prev)),
+              label: () => shortMo(key(prev)),
               value: series => series[prev],
-              blurb: () => "the prior month" },
-      t3:   { label: () => "T3 avg/mo",
-              head: () => "T3 avg/mo",
-              value: series => mean(series, 3),
-              blurb: () => "the trailing 3 months to " + shortMo(key(cur))
-                           + ", averaged per month" },
-      t12:  { label: () => "T12 avg/mo",
-              head: () => "T12 avg/mo",
-              value: series => mean(series, 12),
-              blurb: () => "the trailing " + Math.min(12, n) + " months to "
-                           + shortMo(key(cur)) + ", averaged per month" },
+              blurb: () => "the prior month, " + shortMo(key(prev)) },
+      t3:   { months: 3, head: () => "T3 (" + span(3) + ")",
+              label: () => "T3",
+              value: series => total(series, 3),
+              blurb: () => "the trailing " + win(3) + " months, " + span(3)
+                           + ", totalled" },
+      t12:  { months: 12, head: () => "T12 (" + span(12) + ")",
+              label: () => "T12",
+              value: series => total(series, 12),
+              blurb: () => "the trailing " + win(12) + " months, " + span(12)
+                           + ", totalled" },
     };
 
     // Variance is the month-on-month change as a percentage, coloured by
@@ -1890,30 +1892,38 @@ async function loadLanding() {
     };
     function render(basisKey) {
       const B = BASES[basisKey] || BASES.prev;
+      // 12 / window: what turns each basis total into an annual figure.
+      const factor = 12 / win(B.months);
       const row = (label, series, goodWhenUp) => {
         const a = B.value(series), b = series[cur];
-        // a zero base has no percentage change to report
-        const pct = a ? (b - a) / Math.abs(a) : null;
-        return [label, fm$(a), fm$(b), fm$(a * 12), fm$(b * 12),
+        const aYr = a * factor, bYr = b * 12;
+        // variance is taken on the annualized figures, which is the only frame
+        // in which a three- or twelve-month total and a single month compare
+        const pct = aYr ? (bYr - aYr) / Math.abs(aYr) : null;
+        return [label, fm$(a), fm$(b), fm$(aYr), fm$(bYr),
                 pct === null ? "\u2014" : vcell(pct, goodWhenUp)];
       };
       buildTable(document.getElementById("lopTbl"),
         [{ t: "" },
-         { t: B.head(), num: true }, { t: shortMo(key(cur)), num: true },
-         { t: B.head() + " annualised", num: true },
-         { t: shortMo(key(cur)) + " annualised", num: true },
+         { t: B.head(), num: true },
+         { t: "Current Month (" + shortMo(key(cur)) + ")", num: true },
+         { t: B.label() + " annualized", num: true },
+         { t: "Current Month annualized", num: true },
          { t: "Variance", num: true }],
         [row("Operating revenue", pt.revenue, true),
          row("Operating expenses", pt.opex, false),
          row("Operating NOI", pt.noi, true)]);
 
       document.getElementById("lopEyebrow").textContent =
-        shortMo(key(cur)).toUpperCase() + " vs " + B.label().toUpperCase()
-        + " · ANNUALISED · FROM THE T12 STATEMENT";
+        "CURRENT MONTH (" + shortMo(key(cur)).toUpperCase() + ") vs "
+        + B.label().toUpperCase() + " · ANNUALIZED · FROM THE T12 STATEMENT";
       document.getElementById("lopNote").textContent =
-        "The same statement the expense cards read, refreshed on the same daily run. "
-        + shortMo(key(cur)) + " is measured against " + B.blurb()
-        + ". Annualised is that monthly figure \u00d7 12, not a forecast. NOI is revenue "
+        "The same statement the expense cards read, refreshed on the same daily run \u2014 "
+        + "the current month follows the statement, so it moves to the new month when one "
+        + "is posted. " + shortMo(key(cur)) + " is measured against " + B.blurb()
+        + ". Annualized scales each column to a full year \u2014 the current month \u00d7 12 and "
+        + "the basis \u00d7 " + factor + " \u2014 which is the frame the variance is taken in, "
+        + "not a forecast. NOI is revenue "
         + "less operating expense (" + (pt.basis || "") + "), so the three rows reconcile; "
         + "non-operating items below that line are excluded. Variance is the percentage "
         + "difference, coloured by favourability rather than by sign: green is more "
