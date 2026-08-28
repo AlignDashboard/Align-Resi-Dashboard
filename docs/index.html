@@ -505,8 +505,17 @@
     <div class="grid">
 
       <div class="card wide" id="cOpSummary">
-        <h2>Operating Summary</h2>
-        <span class="eyebrow" id="lopEyebrow">MONTH vs PRIOR MONTH · ANNUALISED · FROM THE T12 STATEMENT</span>
+        <div class="card-head">
+          <div>
+            <h2>Operating Summary</h2>
+            <span class="eyebrow" id="lopEyebrow">MONTH vs PRIOR MONTH · ANNUALISED · FROM THE T12 STATEMENT</span>
+          </div>
+          <div class="togrow" role="group" aria-label="Comparison basis">
+            <button class="tog" type="button" data-basis="prev" aria-pressed="true">Prev month</button>
+            <button class="tog" type="button" data-basis="t3" aria-pressed="false">T3</button>
+            <button class="tog" type="button" data-basis="t12" aria-pressed="false">T12</button>
+          </div>
+        </div>
         <div id="lopTbl"></div>
         <div class="blu-note" id="lopNote" style="color:var(--muted);"></div>
       </div>
@@ -1842,6 +1851,30 @@ async function loadLanding() {
     const key = i => { const t = end - (11 - i);
       return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0"); };
     const cur = pt.revenue.length - 1, prev = cur - 1;
+    const n = pt.revenue.length;
+    const mean = (a, k) => a.slice(Math.max(0, n - k), n).reduce((x, y) => x + y, 0)
+                           / Math.min(k, n);
+    // What the current month is measured against. The trailing windows end AT
+    // the current month, the way T12 means the statement's twelve months
+    // everywhere else on this page -- so they answer "is this month above or
+    // below its own run-rate", and their per-month average is what compares
+    // like for like against a single month.
+    const BASES = {
+      prev: { label: () => shortMo(key(prev)),
+              head: () => shortMo(key(prev)),
+              value: series => series[prev],
+              blurb: () => "the prior month" },
+      t3:   { label: () => "T3 avg/mo",
+              head: () => "T3 avg/mo",
+              value: series => mean(series, 3),
+              blurb: () => "the trailing 3 months to " + shortMo(key(cur))
+                           + ", averaged per month" },
+      t12:  { label: () => "T12 avg/mo",
+              head: () => "T12 avg/mo",
+              value: series => mean(series, 12),
+              blurb: () => "the trailing " + Math.min(12, n) + " months to "
+                           + shortMo(key(cur)) + ", averaged per month" },
+    };
 
     // Variance is the month-on-month change as a percentage, coloured by
     // favourability rather than by sign: more revenue and more NOI are good,
@@ -1855,34 +1888,42 @@ async function loadLanding() {
       e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
       return e;
     };
-    const row = (label, series, goodWhenUp) => {
-      const a = series[prev], b = series[cur];
-      // a zero prior month has no percentage change to report
-      const pct = a ? (b - a) / Math.abs(a) : null;
-      return [label, fm$(a), fm$(b), fm$(a * 12), fm$(b * 12),
-              pct === null ? "—" : vcell(pct, goodWhenUp)];
-    };
-    buildTable(document.getElementById("lopTbl"),
-      [{ t: "" },
-       { t: shortMo(key(prev)), num: true }, { t: shortMo(key(cur)), num: true },
-       { t: shortMo(key(prev)) + " annualised", num: true },
-       { t: shortMo(key(cur)) + " annualised", num: true },
-       { t: "Variance", num: true }],
-      [row("Operating revenue", pt.revenue, true),
-       row("Operating expenses", pt.opex, false),
-       row("Operating NOI", pt.noi, true)]);
+    function render(basisKey) {
+      const B = BASES[basisKey] || BASES.prev;
+      const row = (label, series, goodWhenUp) => {
+        const a = B.value(series), b = series[cur];
+        // a zero base has no percentage change to report
+        const pct = a ? (b - a) / Math.abs(a) : null;
+        return [label, fm$(a), fm$(b), fm$(a * 12), fm$(b * 12),
+                pct === null ? "\u2014" : vcell(pct, goodWhenUp)];
+      };
+      buildTable(document.getElementById("lopTbl"),
+        [{ t: "" },
+         { t: B.head(), num: true }, { t: shortMo(key(cur)), num: true },
+         { t: B.head() + " annualised", num: true },
+         { t: shortMo(key(cur)) + " annualised", num: true },
+         { t: "Variance", num: true }],
+        [row("Operating revenue", pt.revenue, true),
+         row("Operating expenses", pt.opex, false),
+         row("Operating NOI", pt.noi, true)]);
 
-    document.getElementById("lopEyebrow").textContent =
-      shortMo(key(cur)).toUpperCase() + " vs " + shortMo(key(prev)).toUpperCase()
-      + " · ANNUALISED · FROM THE T12 STATEMENT";
-    document.getElementById("lopNote").textContent =
-      "The two most recent months of the same statement the expense cards read, refreshed on "
-      + "the same daily run. Annualised is the month \u00d7 12, not a forecast. NOI is revenue "
-      + "less operating expense (" + (pt.basis || "") + "), so the three rows reconcile; "
-      + "non-operating items below that line are excluded. Variance is the change from "
-      + shortMo(key(prev)) + " to " + shortMo(key(cur))
-      + " as a percentage, coloured by favourability rather than by sign: green is more "
-      + "revenue, more NOI, or less expense.";
+      document.getElementById("lopEyebrow").textContent =
+        shortMo(key(cur)).toUpperCase() + " vs " + B.label().toUpperCase()
+        + " · ANNUALISED · FROM THE T12 STATEMENT";
+      document.getElementById("lopNote").textContent =
+        "The same statement the expense cards read, refreshed on the same daily run. "
+        + shortMo(key(cur)) + " is measured against " + B.blurb()
+        + ". Annualised is that monthly figure \u00d7 12, not a forecast. NOI is revenue "
+        + "less operating expense (" + (pt.basis || "") + "), so the three rows reconcile; "
+        + "non-operating items below that line are excluded. Variance is the percentage "
+        + "difference, coloured by favourability rather than by sign: green is more "
+        + "revenue, more NOI, or less expense.";
+      document.querySelectorAll("#cOpSummary .tog").forEach(t =>
+        t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));
+    }
+    document.querySelectorAll("#cOpSummary .tog").forEach(t =>
+      t.addEventListener("click", () => render(t.dataset.basis)));
+    render("prev");
   })();
 
   /* ---- Expense & NOI ---- */
