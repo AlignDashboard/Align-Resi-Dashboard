@@ -2072,19 +2072,20 @@ async function loadLanding() {
   (async function noi() {
     const en = L.expense_noi;
     // Controllable expense per door: the month's operating expense less taxes,
-    // insurance and utilities, over the property's unit count. The exclusions
-    // are what management cannot move in a month, so what is left is the part a
-    // PM is actually answerable for. It needs the expense split by category,
-    // which the workbook's Expense & NOI tab does not carry -- only a total and
-    // its own controllable/non-controllable cut, which excludes the management
-    // fee rather than utilities. So the numerator comes from the T12 statement's
-    // own account groups, the same source the Expense Deep Dive draws.
+    // insurance, utilities and the management fee, over the property's unit
+    // count. The exclusions are what management cannot move in a month, so what
+    // is left is the part a PM is actually answerable for. It needs the expense
+    // split by category, which the workbook's Expense & NOI tab does not carry
+    // -- only a total and its own controllable cut, on a different basket. So
+    // the numerator comes from the T12 statement's own account groups, the same
+    // source the Expense Deep Dive draws.
     //
     // That statement spans twelve months where this chart spans nineteen, so the
     // line starts where the statement does rather than being padded out.
     const doors = L.meta.units;
     const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const NOT_CONTROLLABLE = [/^tax/i, /^insurance/i, /^utilit/i];
+    const NOT_CONTROLLABLE = [/^tax/i, /^insurance/i, /^utilit/i,
+                              /^management fee/i];
     const m = await metricsJson();
     const eb = (((m || {}).expense_buckets || {}).properties || [])
       .find(x => x.slug === "the-landing") || null;
@@ -2112,8 +2113,9 @@ async function loadLanding() {
         });
       } else {
         ctrlNote = "Controllable expense/door is not drawn: the statement's account "
-                 + "groups no longer name taxes, insurance and utilities the way this "
-                 + "chart excludes them, and guessing which is which would understate it.";
+                 + "groups no longer name taxes, insurance, utilities and the management "
+                 + "fee the way this chart excludes them, and guessing which is which "
+                 + "would overstate it.";
       }
     } else {
       ctrlNote = "Controllable expense/door is not drawn: no T12 statement has reached "
@@ -2158,7 +2160,8 @@ async function loadLanding() {
       "TTM NOI " + fm$(en.ttm.noi) + " (" + fmPct(en.ttm.noi_margin) + " margin) on revenue " +
       fm$(en.ttm.revenue) + ". "
       + (ctrlNote || ("Controllable expense/door is the month's operating expense less "
-          + "taxes, insurance and utilities, over the property's " + doors + " units, on "
+          + "taxes, insurance, utilities and the management fee, over the property's "
+          + doors + " units, on "
           + "the right axis \u2014 " + fm$(ctrlTtm / doors) + "/mo averaged across the "
           + ctrlMonths.length + " months the T12 statement covers, against "
           + fm$(en.ttm.opex_per_unit / 12) + "/mo for total expense. It starts at "

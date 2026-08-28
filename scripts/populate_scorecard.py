@@ -31,12 +31,14 @@ Which KPIs a delinquency report can actually answer:
                             swings well past it in both directions, so the TTM
                             figure is recorded alongside the graded month.
   Controllable OpEx/Unit    the current month's operating expense less taxes,
-                            insurance and utilities, per unit, x12 for the band's
-                            per-year basis. Numerator comes from the T12
-                            statement's account groups (data/<slug>/
-                            expense_buckets.json), since the workbook carries
-                            only a total. Note the band's own "how" line excludes
-                            the management fee rather than utilities.
+                            insurance, utilities and the management fee, per
+                            unit, x12 for the band's per-year basis. Numerator
+                            comes from the T12 statement's account groups
+                            (data/<slug>/expense_buckets.json), since the
+                            workbook carries only a total. The band's cutoffs are
+                            the workbook's; its "how" line described an older
+                            basket, so the fill restates it and keeps the sheet's
+                            wording in "how_workbook".
 
 "POs over 30 days" and "# of invoices processed" are accounts *payable*; a
 resident AR report cannot speak to them and they are left alone.
@@ -80,11 +82,18 @@ KPI_LTL = "Loss to Lease %"
 KPI_NOI = "NOI Margin %"
 KPI_CTRL = "Controllable OpEx/Unit"
 
-# What a property manager cannot move inside a month. Matched by name against
-# the T12 statement's own account groups rather than listed exactly, and all
-# three must be found -- a renamed group that silently stopped matching would
-# leave taxes inside "controllable" and the figure would read a third too high.
-NOT_CONTROLLABLE = ("tax", "insurance", "utilit")
+# What a property manager cannot move inside a month, per the owner. Matched by
+# name against the T12 statement's own account groups rather than listed exactly,
+# and every one must be found -- a renamed group that silently stopped matching
+# would leave taxes inside "controllable" and the figure would read far too high.
+NOT_CONTROLLABLE = ("tax", "insurance", "utilit", "management fee")
+# The band's numeric cutoffs are the workbook's; the basket they are applied to
+# is this. The workbook's ranges sheet still describes the older basket, so the
+# fill restates "how" from what it actually excluded and keeps the sheet's own
+# wording beside it, rather than publishing a definition the number does not
+# follow.
+CONTROLLABLE_HOW = ("Operating expense less taxes, insurance, utilities and the "
+                    "management fee, per unit, current month x12")
 
 
 def pct1(v):
@@ -513,8 +522,12 @@ def main():
         meas[slug]["ltl_month"] = facts["ltl_month"]
     if facts.get("ctrl_month"):
         meas[slug]["controllable_basis"] = (
-            f"{facts['ctrl_month']} operating expense less taxes, insurance and "
-            f"utilities, over {facts['ctrl_units']} units, x12")
+            f"{facts['ctrl_month']} operating expense less taxes, insurance, "
+            f"utilities and the management fee, over {facts['ctrl_units']} units, x12")
+        t = (sc.get("thresholds") or {}).get(KPI_CTRL)
+        if t and t.get("how") != CONTROLLABLE_HOW:
+            t.setdefault("how_workbook", t.get("how"))
+            t["how"] = CONTROLLABLE_HOW
     if facts.get("noi_margin_month"):
         meas[slug]["noi_margin_month"] = facts["noi_margin_month"]
         # the T12 figure the band's own basis names, kept beside the month that
