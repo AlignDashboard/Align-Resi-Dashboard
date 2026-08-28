@@ -103,6 +103,22 @@ A delinquency report answers exactly two of the 28 KPIs:
 `POs over 30 days` and `# of invoices processed` are accounts *payable* and a
 resident AR report cannot speak to them.
 
+`--from-landing` fills a third KPI the delinquency report cannot: **`Loss to
+Lease %`**, the **current month's** loss to lease over market rent potential
+from the workbook's Rent Capture series, as a whole number of percent. The
+published basis is the current rent roll, so the newest month answers it rather
+than the TTM column — which for The Landing differ sharply (27% for Jul 2026
+against 17.2% TTM), because Yardi's market-rent table was revised up from Apr
+2026. The threshold sheet's own basis note flags the risk this creates: if
+`Market rent potential` is aspirational rather than achievable, every property
+reads artificially high and grades red against a band whose ceiling is 10%. It
+is wired and graded; whether the band or the denominator wants revisiting is
+the owner's call.
+
+`populate_scorecard.py` merges into `measured[slug]` rather than replacing it,
+so running it out of the documented order no longer drops the other feeds'
+`bldg_*` and `eliseai_*` keys — and with them their arrival times.
+
 ### EliseAI leasing data
 
 Two feeds, per the owner's design: the **weekly EliseAI funnel report**

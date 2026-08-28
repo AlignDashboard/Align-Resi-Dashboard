@@ -18,6 +18,14 @@ Which KPIs a delinquency report can actually answer:
                             be good or bad in, so the cell gets no status and no
                             colour (see UNSCORED in extract_scorecard.py).
 
+--from-landing also fills one KPI a delinquency report cannot:
+
+  Loss to Lease %           the current month's loss to lease over market rent
+                            potential, from the workbook's Rent Capture series,
+                            as a whole number of percent. The published basis is
+                            the current rent roll, so the newest month answers it
+                            rather than the TTM column.
+
 "POs over 30 days" and "# of invoices processed" are accounts *payable*; a
 resident AR report cannot speak to them and they are left alone.
 
@@ -56,10 +64,17 @@ OUT = "docs/scorecard.json"
 # because that is what the properties' status maps use.
 KPI_TOTAL = "Total Deliquency"
 KPI_SPLIT = "Split Between 30/60/90"
+KPI_LTL = "Loss to Lease %"
 
 
 def pct1(v):
     return f"{v * 100:.1f}%"
+
+
+def pct0(v):
+    """Loss to lease as a whole number of percent: a gap this wide is not a
+    figure a tenth of a point changes the reading of."""
+    return f"{v * 100:.0f}%"
 
 
 def classify(value, t):
@@ -92,9 +107,18 @@ def facts_from_landing(path="docs/landing.json"):
             if any(n in k.lower() for n in needles):
                 return v
         return None
+    # Loss to lease, from the workbook's Rent Capture series rather than its
+    # TTM column: the KPI's published basis is the current rent roll, so the
+    # newest month is the one that answers it. The TTM average would fold in a
+    # year of older market-rent tables, which for this property differ sharply
+    # from today's.
+    rc = doc.get("rent_capture") or {}
+    ltl_series, months = rc.get("ltl_pct") or [], rc.get("months") or []
     return {
         "as_of": d.get("as_of"),
         "gross_owed": d.get("gross_owed"),
+        "ltl_pct": ltl_series[-1] if ltl_series else None,
+        "ltl_month": months[-1] if months else None,
         "split": [bucket("31 - 60", "31-60"), bucket("61 - 90", "61-90"),
                   bucket("over 90")],
         # the workbook computes this ratio itself, so use it rather than
@@ -188,6 +212,12 @@ def measurements(f):
     else:
         out[KPI_TOTAL] = (None, None,
                           "needs one month's billed rent — pass --monthly-rent")
+
+    if f.get("ltl_pct") is not None:
+        out[KPI_LTL] = (f["ltl_pct"], pct0(f["ltl_pct"]), None)
+    else:
+        out[KPI_LTL] = (None, None,
+                        "this source carries no market-rent-vs-in-place series")
 
     parts = f.get("split") or []
     if len(parts) == 3 and all(p is not None for p in parts):
@@ -383,17 +413,24 @@ def main():
     recompute(sc)
 
     meas = sc.setdefault("measured", {})
-    meas[slug] = {"source": facts["source"], "as_of": facts["as_of"],
-                  # arrival time, not coverage date: what the page reports as
-                  # "data last updated". None when the source carries none.
-                  "received_at": facts.get("received_at"),
-                  "received_what": facts.get("received_what"),
-                  # keyed on display, not raw: an unscored KPI has figures to
-                  # show but no single number to classify
-                  "kpis": sorted(k for k in measurements(facts)
-                                 if prop["values"].get(k, {}).get("display") is not None)}
+    # update, not replace: another feed's keys for this property live in the
+    # same dict under their own prefix (bldg_*, eliseai_*), and replacing it
+    # wholesale dropped them whenever this script ran out of the documented
+    # order -- taking their arrival times off the page with them.
+    meas.setdefault(slug, {}).update({
+                 "source": facts["source"], "as_of": facts["as_of"],
+                 # arrival time, not coverage date: what the page reports as
+                 # "data last updated". None when the source carries none.
+                 "received_at": facts.get("received_at"),
+                 "received_what": facts.get("received_what"),
+                 # keyed on display, not raw: an unscored KPI has figures to
+                 # show but no single number to classify
+                 "kpis": sorted(k for k in measurements(facts)
+                                if prop["values"].get(k, {}).get("display") is not None)})
     if facts.get("denominator_note"):
         meas[slug]["denominator"] = facts["denominator_note"]
+    if facts.get("ltl_month"):
+        meas[slug]["ltl_month"] = facts["ltl_month"]
     sc["meta"]["note"] = (sc["meta"]["note"].split(" Measured values")[0] +
                           " Measured values, where present, are computed from the "
                           "underlying report and their status is derived from the "

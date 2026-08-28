@@ -695,7 +695,7 @@ async function loadAll() {
     const rc = d.rent_capture || {};
     renderTable(host, {
       id: "t-l-capture", group: "The Landing", title: "Rent capture",
-      feeds: "Rent Capture chart (bars, market-rent line, capture-rate line)",
+      feeds: "Loss to Lease chart (bars, market-rent line, capture-rate line)",
       note: "Vacancy loss, employee allowance and concessions are stored positive here and "
           + "plotted as deductions.",
       cols: [{ key: "month", label: "Month" },
@@ -717,7 +717,7 @@ async function loadAll() {
     });
     renderTable(host, {
       id: "t-l-capture-ttm", group: "The Landing", title: "Rent capture — TTM",
-      feeds: "Footnote under the Rent Capture chart", cols: KVCOLS, rows: kv(rc.ttm),
+      feeds: "Footnote under the Loss to Lease chart", cols: KVCOLS, rows: kv(rc.ttm),
     });
 
     const en = d.expense_noi || {};

@@ -555,8 +555,7 @@
       <div class="kpis" id="lkpis"></div>
 
       <div class="card wide" id="cRentCapture">
-        <h2>Rent Capture</h2>
-        <span class="eyebrow">MARKET RENT POTENTIAL vs ACCRUED INCOME · MONTHLY</span>
+        <h2>Loss to Lease</h2>
         <div class="chartwrap"><canvas id="lcCapture"></canvas></div>
         <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
       </div>
@@ -1890,7 +1889,7 @@ async function loadLanding() {
          "cLandingScorecard", "the KPI scorecard"];
     const tiles = [
       [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf", "cGaps", "largest unit gaps — gap to market by unit"],
-      [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "rent capture — loss to lease by month"],
+      [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "loss to lease by month"],
       [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
       occTile,
       [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cGaps", "largest unit gaps"],
@@ -1911,7 +1910,7 @@ async function loadLanding() {
     });
   })();
 
-  /* ---- Rent capture ---- */
+  /* ---- Loss to lease ---- */
   (function rentCapture() {
     const rc = L.rent_capture;
     // Zoom the money axis to the data instead of anchoring at $0 — income and
