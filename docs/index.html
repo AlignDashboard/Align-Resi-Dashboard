@@ -371,6 +371,16 @@
   table.dt td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); color: var(--text); }
   table.dt td.num, table.dt th.num { text-align: right; }
   table.dt td.mut { color: var(--muted); }
+  /* The operating summary rewrites its column headings when the horizon toggle
+     moves -- "Jun 26" becomes "T12 (Aug 25-Jul 26)" -- and an auto-layout table
+     re-measures on every press, sliding all five columns sideways. Fixed widths
+     pin them, so pressing a toggle changes the numbers and nothing else. The
+     header height is reserved for two lines for the same reason: a heading that
+     wraps at one width and not another would otherwise nudge the rows down. */
+  #lopTbl table.dt { table-layout: fixed; }
+  #lopTbl table.dt th, #lopTbl table.dt td { width: 15.6%; }
+  #lopTbl table.dt th:first-child, #lopTbl table.dt td:first-child { width: 22%; }
+  #lopTbl table.dt th { vertical-align: bottom; height: 3.6em; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
   .pill.good  { color: var(--green); border-color: var(--green); }
@@ -508,7 +518,7 @@
         <div class="card-head">
           <div>
             <h2>Operating Summary</h2>
-            <span class="eyebrow" id="lopEyebrow">CURRENT MONTH vs PRIOR MONTH · ANNUALIZED · FROM THE T12 STATEMENT</span>
+            <span class="eyebrow" id="lopEyebrow">CURRENT MONTH vs A TRAILING WINDOW · ANNUALIZED · FROM THE T12 STATEMENT</span>
           </div>
           <div class="togrow" role="group" aria-label="Comparison basis">
             <button class="tog" type="button" data-basis="prev" aria-pressed="true">Prev month</button>
@@ -1927,9 +1937,10 @@ async function loadLanding() {
          row("Operating expenses", pt.opex, false),
          row("Operating NOI", pt.noi, true)]);
 
-      document.getElementById("lopEyebrow").textContent =
-        B.curLabel().toUpperCase() + " (" + shortMo(key(cur)).toUpperCase() + ") vs "
-        + B.label().toUpperCase() + " \u00b7 ANNUALIZED \u00b7 FROM THE T12 STATEMENT";
+      // Deliberately does not name the horizon: the eyebrow sits above the
+      // table, so a string that changed length with the toggle would rewrap at
+      // narrow widths and push the whole table up and down. The column headings
+      // say which horizon is showing.
       document.getElementById("lopNote").textContent =
         "The same statement the expense cards read, refreshed on the same daily run \u2014 "
         + "the current month follows the statement, so it moves to the new month when one "
@@ -1940,7 +1951,10 @@ async function loadLanding() {
               + "for the same span, not " + k + " actual months \u2014 so the two sides carry "
               + "the same weight and the variance reads as how far above or below the "
               + "trailing average the current month is running. "
-            : "")
+            : "The left column is the month before and the right is "
+              + shortMo(key(cur)) + " itself \u2014 one real month on each side, no scaling "
+              + "\u2014 so the two sides carry the same weight and the variance reads as how "
+              + "far above or below last month the current month is running. ")
         + "Annualized scales both columns by \u00d7" + factor + " to a full year, which is the "
         + "frame the variance is taken in, not a forecast. NOI is revenue less operating "
         + "expense (" + (pt.basis || "") + "), so the three rows reconcile; non-operating "
