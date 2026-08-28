@@ -80,6 +80,13 @@ must run **in this order**:
    hand-set symbols, the metric groups, and (since v10) the published target
    ranges and the Palma lease-up overrides. **This resets every measured value
    to null**, which is why it goes first.
+`OMITTED_METRICS` in `extract_scorecard.py` is the list of grid columns the
+dashboard does not publish at all — `# of offers that are 30 days` as of
+2026-08-28. They are dropped at extraction rather than hidden on the page, so no
+downstream table carries a KPI with no home, and their published range goes with
+them. The workbook keeps its own column either way, and the extractor warns if a
+name in the list stops matching a column.
+
 2. `python scripts/populate_scorecard.py --from-landing` — fills the measured
    numbers a report can actually answer and re-derives those cells' status from
    the published band, keeping the workbook's original symbol in
@@ -87,7 +94,7 @@ must run **in this order**:
    counts and the portfolio roll-up so the matrix, health chart and tally cannot
    drift apart.
 
-A delinquency report answers exactly two of the 28 KPIs:
+A delinquency report answers exactly two of the 27 published KPIs:
 
 - `Total Deliquency` — gross resident AR over one month's billed rent, graded
   against the published band. The report alone does not carry the rent, so pass

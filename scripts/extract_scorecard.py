@@ -50,6 +50,12 @@ STATE_BY_SYMBOL = {l["symbol"]: l["state"] for l in LEGEND}
 # excluded from the at-or-above-target counts rather than inflating them.
 UNSCORED = {"Split Between 30/60/90"}
 
+# KPIs on the workbook's grid that the dashboard does not report at all. Dropped
+# here rather than hidden on the page, so nothing downstream carries a column
+# with no home: not the matrix, not a property's row, not the thresholds table,
+# not the coverage counts. The workbook keeps its own column either way.
+OMITTED_METRICS = {"# of offers that are 30 days"}
+
 # Rows on the workbook's grid that are not published. The grid is the analyst's
 # working sheet and carries properties the dashboard does not report on; each
 # one published adds a column of hand-set symbols to the matrix and another
@@ -94,6 +100,15 @@ for col in range(FIRST_METRIC_COL, ws.max_column + 1):
         continue
     metrics.append({"name": str(name).strip(), "group": group,
                     "col": get_column_letter(col)})
+
+dropped = sorted({m["name"] for m in metrics} & OMITTED_METRICS)
+metrics = [m for m in metrics if m["name"] not in OMITTED_METRICS]
+for n in dropped:
+    print(f"[skip] {n} \u2014 not published (OMITTED_METRICS)")
+gone = sorted(OMITTED_METRICS - set(dropped))
+if gone:
+    print(f"  WARNING: OMITTED_METRICS names {', '.join(gone)}, which the grid "
+          f"does not have \u2014 a renamed column would silently start publishing")
 
 # ---- one record per property ----
 properties = []
@@ -188,6 +203,11 @@ if RANGES_SHEET in wb.sheetnames:
             "in_range": rs.cell(row=r, column=6).value,
             "below": rs.cell(row=r, column=7).value,
         })
+
+    # an omitted KPI's range goes with it, so the table cannot describe a cell
+    # that is no longer anywhere on the dashboard
+    for n in OMITTED_METRICS & set(thresholds):
+        del thresholds[n]
 
     unmatched = sorted(set(thresholds) - {m["name"] for m in metrics})
     if unmatched:
