@@ -504,6 +504,13 @@
     <div class="view" id="view2" role="tabpanel" aria-labelledby="tabView2" tabindex="0" hidden>
     <div class="grid">
 
+      <div class="card wide" id="cOpSummary">
+        <h2>Operating Summary</h2>
+        <span class="eyebrow" id="lopEyebrow">MONTH vs PRIOR MONTH · ANNUALISED · FROM THE T12 STATEMENT</span>
+        <div id="lopTbl"></div>
+        <div class="blu-note" id="lopNote" style="color:var(--muted);"></div>
+      </div>
+
       <div class="card wide" id="cLandingScorecard">
         <div class="card-head">
           <div>
@@ -538,13 +545,6 @@
         <h2>Rollover Schedule</h2>
         <span class="eyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
         <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
-      </div>
-
-      <div class="card wide" id="cOpSummary">
-        <h2>Operating Summary</h2>
-        <span class="eyebrow" id="lopEyebrow">MONTH vs PRIOR MONTH · ANNUALISED · FROM THE T12 STATEMENT</span>
-        <div id="lopTbl"></div>
-        <div class="blu-note" id="lopNote" style="color:var(--muted);"></div>
       </div>
 
       <div class="card" id="cNoi">
@@ -1843,17 +1843,24 @@ async function loadLanding() {
       return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0"); };
     const cur = pt.revenue.length - 1, prev = cur - 1;
 
-    // Variance is current less prior, coloured by sign as asked: green above,
-    // red below. Note that on the expense row a positive variance is more
-    // spend -- the sign is what is coloured, not favourability.
-    const vcell = v => {
-      const e = elc("span", null, (v > 0 ? "+" : "") + fm$(v));
-      e.style.color = v > 0 ? C.green : v < 0 ? C.red : C.muted;
+    // Variance is the month-on-month change as a percentage, coloured by
+    // favourability rather than by sign: more revenue and more NOI are good,
+    // more expense is not, so the expense row's colour is inverted. Without
+    // that inversion July's $24k saving would print red for being a negative
+    // number. The percentage keeps its own sign -- what flips is the colour.
+    const vcell = (pctChange, goodWhenUp) => {
+      const favourable = goodWhenUp ? pctChange > 0 : pctChange < 0;
+      const e = elc("span", null,
+        (pctChange > 0 ? "+" : "") + (pctChange * 100).toFixed(1) + "%");
+      e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
       return e;
     };
-    const row = (label, series) => {
+    const row = (label, series, goodWhenUp) => {
       const a = series[prev], b = series[cur];
-      return [label, fm$(a), fm$(b), fm$(a * 12), fm$(b * 12), vcell(b - a)];
+      // a zero prior month has no percentage change to report
+      const pct = a ? (b - a) / Math.abs(a) : null;
+      return [label, fm$(a), fm$(b), fm$(a * 12), fm$(b * 12),
+              pct === null ? "—" : vcell(pct, goodWhenUp)];
     };
     buildTable(document.getElementById("lopTbl"),
       [{ t: "" },
@@ -1861,9 +1868,9 @@ async function loadLanding() {
        { t: shortMo(key(prev)) + " annualised", num: true },
        { t: shortMo(key(cur)) + " annualised", num: true },
        { t: "Variance", num: true }],
-      [row("Operating revenue", pt.revenue),
-       row("Operating expenses", pt.opex),
-       row("Operating NOI", pt.noi)]);
+      [row("Operating revenue", pt.revenue, true),
+       row("Operating expenses", pt.opex, false),
+       row("Operating NOI", pt.noi, true)]);
 
     document.getElementById("lopEyebrow").textContent =
       shortMo(key(cur)).toUpperCase() + " vs " + shortMo(key(prev)).toUpperCase()
@@ -1872,10 +1879,10 @@ async function loadLanding() {
       "The two most recent months of the same statement the expense cards read, refreshed on "
       + "the same daily run. Annualised is the month \u00d7 12, not a forecast. NOI is revenue "
       + "less operating expense (" + (pt.basis || "") + "), so the three rows reconcile; "
-      + "non-operating items below that line are excluded. Variance is "
-      + shortMo(key(cur)) + " less " + shortMo(key(prev))
-      + ", coloured by sign rather than by favourability \u2014 so on the expense row a "
-      + "decrease shows red although it saves money, and an increase shows green.";
+      + "non-operating items below that line are excluded. Variance is the change from "
+      + shortMo(key(prev)) + " to " + shortMo(key(cur))
+      + " as a percentage, coloured by favourability rather than by sign: green is more "
+      + "revenue, more NOI, or less expense.";
   })();
 
   /* ---- Expense & NOI ---- */
