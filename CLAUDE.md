@@ -221,6 +221,17 @@ EliseAI's **building metrics export** (`metricsbuilding<YYYYMMDD>.csv`, 79
 columns per property). This is a *third* EliseAI feed, distinct from the two
 above: the weekly funnel report and the daily emails.
 
+**`# of Renewals` prints the count beside the rate** — `42/88.9%` for The
+Landing. The export carries a `Renewal Rate` and no count of any kind (79
+columns, checked), so the count comes from `landing.json`'s
+`leasing.renewal_activity.renewals_signed` — the workbook's renewal tracker, the
+same source the Trade-outs card draws, as of its own `tracker_date`. The two
+halves therefore cover **different periods**: the count is the tracker to
+2026-07-26, the rate is the export's trailing window to its filename date. The
+count is not the numerator of the rate, `bldg_basis` says so, and the **rate** is
+what the band grades. A property with no renewal tracker (Chorus, Madelon) keeps
+the rate alone — `RENEWAL_COUNT_SOURCE` is the lookup, so adding one is a line.
+
 It fills nine KPIs where the export column means what the KPI means — Leased %
 (from `100 − Exposure Rate`, which matches the KPI's definition better than
 `Occupancy Rate`), Trade-out %, Closing Ratio, # of Renewals, % Increase, Total

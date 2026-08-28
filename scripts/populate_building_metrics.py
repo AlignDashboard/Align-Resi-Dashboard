@@ -17,7 +17,14 @@ subset the scorecard can honestly take from it.
                                   definition better than Occupancy Rate does.
   Trade-out %                     Combined Trade-Out (new + renewal blend).
   Closing Ratio                   Tour Attended to Lease Signed Rate.
-  # of Renewals                   Renewal Rate (renewals ÷ expirations).
+  # of Renewals                   Renewal Rate (renewals ÷ expirations), printed
+                                  with the renewals-signed count where a property
+                                  publishes one -- "42/88.9%". The export carries
+                                  no count of its own, so the count comes from the
+                                  workbook's renewal tracker (the same source the
+                                  Trade-outs card draws) and the two halves cover
+                                  different periods; the basis says which is which.
+                                  The rate is still what the band grades.
   % Increase                      Avg Rent Increase Executed (%), falling back
                                   to Offered (%) where executed is blank.
   Total Deliquency                Delinquency Rate.
@@ -200,9 +207,17 @@ def measurements(row, slug, owned):
 
     # ---- renewals ------------------------------------------------------
     rr = num(row, "Renewal Rate")
-    add("# of Renewals", None if rr is None else rr / 100,
-        None if rr is None else f"{rr:.1f}%",
-        "Renewal Rate (renewals signed ÷ expirations)",
+    signed, signed_at = renewals_signed(slug)
+    basis = "Renewal Rate (renewals signed \u00f7 expirations)"
+    disp = None if rr is None else f"{rr:.1f}%"
+    if rr is not None and signed is not None:
+        disp = f"{signed}/{rr:.1f}%"
+        basis = (f"{signed} renewals signed per the workbook's renewal tracker at "
+                 f"{signed_at} (the Trade-outs card's own source); {rr:.1f}% is the "
+                 f"export's Renewal Rate (renewals signed \u00f7 expirations) on its own "
+                 f"trailing period. Different windows, so the count is not the "
+                 f"numerator of the rate; the rate is what the band grades")
+    add("# of Renewals", None if rr is None else rr / 100, disp, basis,
         None if rr is not None else "Renewal Rate blank")
 
     # ---- % increase ----------------------------------------------------
@@ -244,6 +259,23 @@ def measurements(row, slug, owned):
         None if ai is not None else "AI Response Time blank")
 
     return out, leaseup
+
+
+# The export publishes a renewal RATE and no count. A property whose analyst
+# workbook records renewals signed can show both; nothing else can, so this is a
+# lookup rather than a column, and the file it reads is the one the Trade-outs
+# card is built from.
+RENEWAL_COUNT_SOURCE = {"the-landing": "docs/landing.json"}
+
+
+def renewals_signed(slug):
+    """(count, as-of) of renewals signed for a property, or (None, None)."""
+    path = RENEWAL_COUNT_SOURCE.get(slug)
+    if not path or not os.path.exists(path):
+        return None, None
+    ra = ((json.load(open(path)) or {}).get("leasing") or {}).get("renewal_activity") or {}
+    n = ra.get("renewals_signed")
+    return (int(n), ra.get("tracker_date")) if isinstance(n, (int, float)) else (None, None)
 
 
 def owned_by_other_feeds(sc, slug):
