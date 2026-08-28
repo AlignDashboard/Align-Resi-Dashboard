@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-08-27T20:55:16.986579+00:00",
+    "generated_at": "2026-08-28T16:29:43.044330+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -666,6 +666,145 @@
           ]
         },
         "basis": "GL leaf lines classified by keyword into the workbook's buckets; recoverable side tied out against 5999-9998 per month; financing/non-cash/capital lines excluded"
+      }
+    ]
+  },
+  "monthly_pl": {
+    "available": true,
+    "properties": [
+      {
+        "slug": "the-landing",
+        "name": "The Landing",
+        "period_end": "Jul 2026",
+        "labels": [
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul"
+        ],
+        "revenue": [
+          1136685.93,
+          1121348.35,
+          1139834.56,
+          1150402.58,
+          1205418.87,
+          1187947.78,
+          1195024.42,
+          1180301.75,
+          1178881.59,
+          1162784.04,
+          1207642.03,
+          1328218.38
+        ],
+        "opex": [
+          366634.17,
+          347840.24,
+          353846.71,
+          333144.84,
+          408229.72,
+          355631.72,
+          402126.17,
+          423007.41,
+          622956.43,
+          377424.15,
+          333955.47,
+          310209.66
+        ],
+        "noi": [
+          770051.76,
+          773508.11,
+          785987.85,
+          817257.74,
+          797189.15,
+          832316.06,
+          792898.25,
+          757294.34,
+          555925.16,
+          785359.89,
+          873686.56,
+          1018008.72
+        ],
+        "source_codes": [
+          "p0005611",
+          "p0005612",
+          "p0005640",
+          "p0005671"
+        ],
+        "basis": "jpm 519999-9999 total operating expenses"
+      },
+      {
+        "slug": "palma",
+        "name": "Palma",
+        "period_end": "Jun 2026",
+        "labels": [
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun"
+        ],
+        "revenue": [
+          99437.96,
+          99473.0,
+          141453.05,
+          168763.38,
+          179750.0,
+          198867.52,
+          273565.5,
+          331558.17,
+          291992.05,
+          307104.0,
+          395957.76,
+          261317.82
+        ],
+        "opex": [
+          158188.94,
+          144683.36,
+          144776.06,
+          152340.83,
+          84533.64,
+          161977.14,
+          162068.06,
+          143888.33,
+          161598.64,
+          168827.63,
+          153524.36,
+          -94102.7
+        ],
+        "noi": [
+          -58750.98,
+          -45210.36,
+          -3323.01,
+          16422.55,
+          95216.36,
+          36890.38,
+          111497.44,
+          187669.84,
+          130393.41,
+          138276.37,
+          242433.4,
+          355420.52
+        ],
+        "source_codes": [
+          "rspalman",
+          "rspalmas"
+        ],
+        "basis": "align 5999-9998 recoverable opex"
       }
     ]
   }
