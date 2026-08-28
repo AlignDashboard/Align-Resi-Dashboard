@@ -132,6 +132,20 @@ reads 72.6% and grades green against a T12 of 66.8%). The month is what is
 graded, per the owner; `noi_margin_ttm` is recorded beside it in
 `measured[slug]` so the two are never confused.
 
+`--from-landing` also fills **`# of month to month`** — published as a **ratio**
+despite the name, per the band's own basis line: units past lease expiry and
+still occupied, over occupied units. The Landing reads 31/262 = 11.8% for the
+2026-07-14 rent roll, which grades below a band whose red line is 5%.
+
+The rent roll has no month-to-month state of its own: the workbook classifies
+every unit as Current, On notice, Holdover or Vacant, and those four partition
+all 263. So a unit the rent roll calls month-to-month is already a Holdover —
+which is why the **4** units the renewal tracker and the rent roll agree on sit
+*inside* the 31 rather than beside it, and the total is 31, not 35. Both sides of
+the workbook's own reconciliation report that 4 as the overlap. The tracker's MTM
+roster is not used as a source: of its 17 units, 13 have a running lease, and it
+misses 27 of the 31 holdovers.
+
 `--from-landing` also fills **`Controllable OpEx/Unit`**: the current month's
 operating expense **less taxes, insurance, utilities and the management fee**,
 per unit, times twelve for the band's per-year basis. The Landing reads $6,697

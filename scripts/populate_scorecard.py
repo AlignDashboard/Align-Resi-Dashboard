@@ -30,6 +30,12 @@ Which KPIs a delinquency report can actually answer:
                             band's basis is T12, and a single accrual month
                             swings well past it in both directions, so the TTM
                             figure is recorded alongside the graded month.
+  # of month to month       units past lease expiry and still occupied, over
+                            occupied units. Published as a ratio, not a count,
+                            per the band's own basis line. The renewal tracker's
+                            MTM roster is not used: the workbook's reconciliation
+                            finds most of it wrong, and the units it gets right
+                            are already inside this cohort.
   Controllable OpEx/Unit    the current month's operating expense less taxes,
                             insurance, utilities and the management fee, per
                             unit, x12 for the band's per-year basis. Numerator
@@ -81,6 +87,15 @@ KPI_SPLIT = "Split Between 30/60/90"
 KPI_LTL = "Loss to Lease %"
 KPI_NOI = "NOI Margin %"
 KPI_CTRL = "Controllable OpEx/Unit"
+KPI_MTM = "# of month to month"
+
+# The rent roll's own classification, as the workbook reads it: every unit is in
+# exactly one of these. There is no separate month-to-month state, so a unit the
+# rent roll calls month-to-month is already a holdover -- which is why the four
+# units the renewal tracker and the rent roll agree on are inside this 31 rather
+# than beside it.
+MTM_STATUS = "Holdover"
+OCCUPIED_STATUSES = ("Current", "On notice", "Holdover")
 
 # What a property manager cannot move inside a month, per the owner. Matched by
 # name against the T12 statement's own account groups rather than listed exactly,
@@ -182,6 +197,22 @@ def facts_from_landing(path="docs/landing.json"):
     noi_series, noi_months = en.get("noi_margin") or [], en.get("months") or []
     units = (doc.get("meta") or {}).get("units")
     ctrl, ctrl_month, ctrl_why = controllable_per_unit("the-landing", units)
+
+    # Month to month, as a share of occupied units -- the KPI is published as a
+    # ratio despite being named "#". Both sides come from the same unit list, and
+    # the occupied count is checked against the delinquency block's own figure so
+    # a status the workbook renames cannot quietly shrink the denominator.
+    rows = doc.get("units") or []
+    mtm = sum(1 for u in rows if u.get("status") == MTM_STATUS)
+    occupied = sum(1 for u in rows if u.get("status") in OCCUPIED_STATUSES)
+    stated = (doc.get("delinquency") or {}).get("occupied_units")
+    mtm_why = None
+    if not rows:
+        mtm_why = "this source carries no per-unit list"
+    elif stated is not None and occupied != stated:
+        mtm_why = (f"occupied units disagree: {occupied} by status against the "
+                   f"delinquency block's {stated}")
+        occupied = None
     return {
         "as_of": d.get("as_of"),
         "gross_owed": d.get("gross_owed"),
@@ -194,6 +225,10 @@ def facts_from_landing(path="docs/landing.json"):
         "ctrl_month": ctrl_month,
         "ctrl_units": units,
         "ctrl_why": ctrl_why,
+        "mtm_share": (mtm / occupied) if (occupied and not mtm_why) else None,
+        "mtm_units": mtm,
+        "mtm_occupied": occupied,
+        "mtm_why": mtm_why,
         "split": [bucket("31 - 60", "31-60"), bucket("61 - 90", "61-90"),
                   bucket("over 90")],
         # the workbook computes this ratio itself, so use it rather than
@@ -307,6 +342,11 @@ def measurements(f):
         out[KPI_CTRL] = (None, None,
                          f.get("ctrl_why")
                          or "no T12 statement grouped by account for this property")
+
+    if f.get("mtm_share") is not None:
+        out[KPI_MTM] = (f["mtm_share"], pct1(f["mtm_share"]), None)
+    else:
+        out[KPI_MTM] = (None, None, f.get("mtm_why") or "no per-unit lease status")
 
     parts = f.get("split") or []
     if len(parts) == 3 and all(p is not None for p in parts):
@@ -520,6 +560,10 @@ def main():
         meas[slug]["denominator"] = facts["denominator_note"]
     if facts.get("ltl_month"):
         meas[slug]["ltl_month"] = facts["ltl_month"]
+    if facts.get("mtm_share") is not None:
+        meas[slug]["mtm_basis"] = (
+            f"{facts['mtm_units']} units past lease expiry and still occupied over "
+            f"{facts['mtm_occupied']} occupied, at {facts['as_of']}")
     if facts.get("ctrl_month"):
         meas[slug]["controllable_basis"] = (
             f"{facts['ctrl_month']} operating expense less taxes, insurance, "
