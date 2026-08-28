@@ -1831,11 +1831,12 @@ async function loadLanding() {
       "Dollar axis starts at " + fm$(yMin) + ", not $0, to make the income-vs-potential gap visible.";
   })();
 
-  /* ---- Operating summary (T12 month vs prior month) ---- */
+  /* ---- Operating summary (a trailing window vs the window before it) ---- */
   (async function opSummary() {
     // Same statement, same schedule as the other two expense cards: the
-    // pipeline parses the T12 from Drive each run and publishes the twelve
-    // monthly columns through metrics.json, so this card refreshes when they do.
+    // pipeline parses each T12 from Drive, stitches successive statements into
+    // one continuous month series and publishes it through metrics.json, so this
+    // card refreshes when they do and lengthens as more statements arrive.
     const card = document.getElementById("cOpSummary");
     let pt = null;
     try {
@@ -1848,41 +1849,34 @@ async function loadLanding() {
     const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const [em, ey] = pt.period_end.split(" ");
     const end = (+ey) * 12 + MO.indexOf(em);
-    const key = i => { const t = end - (11 - i);
+    const n = pt.revenue.length, cur = n - 1;
+    // The series can run longer than one statement: the pipeline stitches
+    // successive T12s into a continuous run of months, newest reading winning
+    // on the eleven each pair shares. So index arithmetic hangs off the newest
+    // month, not off a fixed twelve.
+    const key = i => { const t = end - (cur - i);
       return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0"); };
-    const cur = pt.revenue.length - 1, prev = cur - 1;
-    const n = pt.revenue.length;
-    // Each basis is a PERIOD TOTAL over a trailing window ending at the current
-    // month -- one month, three, twelve -- so T3 carries three months of value
-    // and T12 twelve, not a per-month average. What makes them comparable to a
-    // single month is the annualized column: each is scaled by 12/window, so
-    // prior month x12, T3 x4, T12 x1, all landing in the same annual frame.
-    const win = k => Math.min(k, n);
-    const total = (a, k) => a.slice(n - win(k), n).reduce((x, y) => x + y, 0);
-    const span = k => win(k) === 1 ? shortMo(key(cur - 1))
-                    : shortMo(key(cur - win(k) + 1)) + "\u2013" + shortMo(key(cur));
+
+    // Each basis compares a trailing window against the window immediately
+    // before it, of the same length -- one month against the month before, three
+    // against the three before, twelve against the twelve before. Both columns
+    // therefore carry the same number of months: the current column is 3x a
+    // month under T3 and 12x under T12, not a single month held fixed while the
+    // other side grows.
+    const sum = (a, from, len) => a.slice(from, from + len).reduce((x, y) => x + y, 0);
+    const span = (from, len) => len === 1 ? shortMo(key(from))
+                    : shortMo(key(from)) + "\u2013" + shortMo(key(from + len - 1));
     const BASES = {
-      prev: { months: 1, head: () => shortMo(key(prev)),
-              label: () => shortMo(key(prev)),
-              value: series => series[prev],
-              blurb: () => "the prior month, " + shortMo(key(prev)) },
-      t3:   { months: 3, head: () => "T3 (" + span(3) + ")",
-              label: () => "T3",
-              value: series => total(series, 3),
-              blurb: () => "the trailing " + win(3) + " months, " + span(3)
-                           + ", totalled" },
-      t12:  { months: 12, head: () => "T12 (" + span(12) + ")",
-              label: () => "T12",
-              value: series => total(series, 12),
-              blurb: () => "the trailing " + win(12) + " months, " + span(12)
-                           + ", totalled" },
+      prev: { k: 1, cur: "Current Month", prior: () => shortMo(key(cur - 1)) },
+      t3:   { k: 3, cur: "Current T3", prior: () => "Prior T3" },
+      t12:  { k: 12, cur: "Current T12", prior: () => "Prior T12" },
     };
 
-    // Variance is the month-on-month change as a percentage, coloured by
-    // favourability rather than by sign: more revenue and more NOI are good,
-    // more expense is not, so the expense row's colour is inverted. Without
-    // that inversion July's $24k saving would print red for being a negative
-    // number. The percentage keeps its own sign -- what flips is the colour.
+    // Variance is the change between those two windows as a percentage, coloured
+    // by favourability rather than by sign: more revenue and more NOI are good,
+    // more expense is not, so the expense row's colour is inverted. Without that
+    // inversion July's $24k saving would print red for being a negative number.
+    // The percentage keeps its own sign -- what flips is the colour.
     const vcell = (pctChange, goodWhenUp) => {
       const favourable = goodWhenUp ? pctChange > 0 : pctChange < 0;
       const e = elc("span", null,
@@ -1890,43 +1884,61 @@ async function loadLanding() {
       e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
       return e;
     };
+    const DASH = "\u2014";
     function render(basisKey) {
       const B = BASES[basisKey] || BASES.prev;
-      // 12 / window: what turns each basis total into an annual figure.
-      const factor = 12 / win(B.months);
+      const k = B.k;
+      const curFrom = n - k;                  // the trailing window
+      const priorFrom = curFrom - k;          // the one before it
+      // A twelve-month comparison needs twenty-four months of statement. One
+      // statement carries twelve, so until a second year has arrived the prior
+      // window is stated as missing rather than filled from a shorter slice
+      // that would compare unlike periods.
+      const havePrior = k <= n && priorFrom >= 0;
+      const factor = 12 / k;                  // what turns a window into a year
       const row = (label, series, goodWhenUp) => {
-        const a = B.value(series), b = series[cur];
-        const aYr = a * factor, bYr = b * 12;
-        // variance is taken on the annualized figures, which is the only frame
-        // in which a three- or twelve-month total and a single month compare
+        const b = sum(series, curFrom, k), bYr = b * factor;
+        if (!havePrior) return [label, DASH, fm$(b), DASH, fm$(bYr), DASH];
+        const a = sum(series, priorFrom, k), aYr = a * factor;
         const pct = aYr ? (bYr - aYr) / Math.abs(aYr) : null;
         return [label, fm$(a), fm$(b), fm$(aYr), fm$(bYr),
-                pct === null ? "\u2014" : vcell(pct, goodWhenUp)];
+                pct === null ? DASH : vcell(pct, goodWhenUp)];
       };
+      const priorHead = havePrior
+        ? B.prior() + (k > 1 ? " (" + span(priorFrom, k) + ")" : "")
+        : B.prior() + " (needs " + (2 * k) + " months, have " + n + ")";
+      const curHead = B.cur + " (" + span(curFrom, k) + ")";
       buildTable(document.getElementById("lopTbl"),
         [{ t: "" },
-         { t: B.head(), num: true },
-         { t: "Current Month (" + shortMo(key(cur)) + ")", num: true },
-         { t: B.label() + " annualized", num: true },
-         { t: "Current Month annualized", num: true },
+         { t: priorHead, num: true },
+         { t: curHead, num: true },
+         { t: B.prior() + " annualized", num: true },
+         { t: B.cur + " annualized", num: true },
          { t: "Variance", num: true }],
         [row("Operating revenue", pt.revenue, true),
          row("Operating expenses", pt.opex, false),
          row("Operating NOI", pt.noi, true)]);
 
       document.getElementById("lopEyebrow").textContent =
-        "CURRENT MONTH (" + shortMo(key(cur)).toUpperCase() + ") vs "
-        + B.label().toUpperCase() + " · ANNUALIZED · FROM THE T12 STATEMENT";
+        B.cur.toUpperCase() + " (" + span(curFrom, k).toUpperCase() + ") vs "
+        + B.prior().toUpperCase() + " \u00b7 ANNUALIZED \u00b7 FROM THE T12 STATEMENT";
       document.getElementById("lopNote").textContent =
         "The same statement the expense cards read, refreshed on the same daily run \u2014 "
-        + "the current month follows the statement, so it moves to the new month when one "
-        + "is posted. " + shortMo(key(cur)) + " is measured against " + B.blurb()
-        + ". Annualized scales each column to a full year \u2014 the current month \u00d7 12 and "
-        + "the basis \u00d7 " + factor + " \u2014 which is the frame the variance is taken in, "
-        + "not a forecast. NOI is revenue "
-        + "less operating expense (" + (pt.basis || "") + "), so the three rows reconcile; "
-        + "non-operating items below that line are excluded. Variance is the percentage "
-        + "difference, coloured by favourability rather than by sign: green is more "
+        + "the window follows the statement, so it moves along when a new month is posted. "
+        + (havePrior
+            ? span(curFrom, k) + " (" + k + " month" + (k > 1 ? "s" : "") + ") is measured "
+              + "against the " + k + " month" + (k > 1 ? "s" : "") + " before it, "
+              + span(priorFrom, k) + ". Both columns cover the same number of months, so "
+              + "they compare directly; annualized scales each by \u00d7" + factor
+              + " to a full year, which is the frame the variance is taken in, not a forecast."
+            : "A " + k + "-month comparison needs " + (2 * k) + " months of statement and only "
+              + n + " have arrived, so the prior window is left blank rather than filled from "
+              + "a shorter period. " + span(curFrom, k) + " is shown on its own, annualized "
+              + "\u00d7" + factor + ". The prior column fills itself in once a second year of "
+              + "statements has landed.")
+        + " NOI is revenue less operating expense (" + (pt.basis || "") + "), so the three rows "
+        + "reconcile; non-operating items below that line are excluded. Variance is the "
+        + "percentage difference, coloured by favourability rather than by sign: green is more "
         + "revenue, more NOI, or less expense.";
       document.querySelectorAll("#cOpSummary .tog").forEach(t =>
         t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));

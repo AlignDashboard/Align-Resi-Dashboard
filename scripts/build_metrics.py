@@ -558,6 +558,48 @@ def process_manifest():
 
 # ---- metrics.json generation ---------------------------------------------
 
+def stitch_monthly_pl(points):
+    """Every statement's twelve columns merged into one continuous month series.
+
+    Consecutive T12 statements overlap -- a new one repeats eleven months of the
+    last -- so months are keyed by their absolute index and the newest statement
+    wins where two disagree, a restated month being a correction rather than a
+    second reading. Only the contiguous run ending at the newest month is
+    returned: a gap between statements would otherwise shift every month left of
+    it onto the wrong label.
+
+    The operating-summary card compares a trailing window against the window
+    before it, so a T3 comparison needs six months and a T12 comparison
+    twenty-four. One statement carries twelve; this is what lets those windows
+    reach past it as more statements arrive.
+    """
+    cells = {}
+    for pt in points:                       # oldest first, so newest overwrites
+        yr, mon = period_key(pt["period_end"])
+        if not yr:
+            continue
+        end = yr * 12 + (mon - 1)
+        n = len(pt["revenue"])
+        for i in range(n):
+            cells[end - (n - 1 - i)] = (pt["revenue"][i], pt["opex"][i],
+                                        pt["noi"][i], pt.get("basis"))
+    if not cells:
+        return None
+    hi = max(cells)
+    start = hi
+    while start - 1 in cells:
+        start -= 1
+    idx = list(range(start, hi + 1))
+    return {
+        "labels": [_MON[i % 12] for i in idx],
+        "months": [f"{i // 12}-{i % 12 + 1:02d}" for i in idx],
+        "revenue": [cells[i][0] for i in idx],
+        "opex": [cells[i][1] for i in idx],
+        "noi": [cells[i][2] for i in idx],
+        "basis": cells[hi][3],
+    }
+
+
 def build_metrics_json():
     props, _ = load_properties()
 
@@ -624,13 +666,21 @@ def build_metrics_json():
         if not pts:
             continue
         latest = pts[-1]
+        series = stitch_monthly_pl(pts)
+        if series is None:
+            continue
+        if len(series["revenue"]) > len(latest["revenue"]):
+            print(f"[ok] {p['name']} monthly P&L spans "
+                  f"{len(series['revenue'])} months across "
+                  f"{len(pts)} statements")
         pl_props.append({"slug": p["slug"], "name": p["name"],
                          "period_end": latest["period_end"],
-                         "labels": latest["labels"],
-                         "revenue": latest["revenue"], "opex": latest["opex"],
-                         "noi": latest["noi"],
+                         "labels": series["labels"],
+                         "months": series["months"],
+                         "revenue": series["revenue"], "opex": series["opex"],
+                         "noi": series["noi"],
                          "source_codes": latest.get("source_codes"),
-                         "basis": latest.get("basis")})
+                         "basis": series["basis"] or latest.get("basis")})
     metrics["monthly_pl"] = {"available": bool(pl_props), "properties": pl_props}
 
     if expense_ratio_props:
