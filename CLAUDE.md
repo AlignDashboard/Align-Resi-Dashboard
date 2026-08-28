@@ -132,10 +132,14 @@ reads 72.6% and grades green against a T12 of 66.8%). The month is what is
 graded, per the owner; `noi_margin_ttm` is recorded beside it in
 `measured[slug]` so the two are never confused.
 
-`--from-landing` also fills **`# of month to month`** — published as a **ratio**
-despite the name, per the band's own basis line: units past lease expiry and
-still occupied, over occupied units. The Landing reads 31/262 = 11.8% for the
-2026-07-14 rent roll, which grades below a band whose red line is 5%.
+`--from-landing` also fills **`Month to Month Leases`** — the workbook's grid
+calls that column `# of month to month`, and `RENAMES` in
+`extract_scorecard.py` is what publishes it under the clearer name (the ranges
+sheet is matched through the same map, so the band follows the rename). The cell
+prints **`31/11.8%`**: units past lease expiry and still occupied, then their
+share of occupied units. The **share** is what the band grades, per its own basis
+line, so the raw value behind the cell stays the ratio. The Landing reads 31/262
+for the 2026-07-14 rent roll, which grades below a band whose red line is 5%.
 
 The rent roll has no month-to-month state of its own: the workbook classifies
 every unit as Current, On notice, Holdover or Vacant, and those four partition

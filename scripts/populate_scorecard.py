@@ -30,9 +30,12 @@ Which KPIs a delinquency report can actually answer:
                             band's basis is T12, and a single accrual month
                             swings well past it in both directions, so the TTM
                             figure is recorded alongside the graded month.
-  # of month to month       units past lease expiry and still occupied, over
-                            occupied units. Published as a ratio, not a count,
-                            per the band's own basis line. The renewal tracker's
+  Month to Month Leases     units past lease expiry and still occupied, printed
+                            as "31/11.8%" -- the count and its share of occupied
+                            units. The share is what the band grades, per its own
+                            basis line. (The grid calls this column "# of month
+                            to month"; see RENAMES in extract_scorecard.py.) The
+                            renewal tracker's
                             MTM roster is not used: the workbook's reconciliation
                             finds most of it wrong, and the units it gets right
                             are already inside this cohort.
@@ -87,7 +90,7 @@ KPI_SPLIT = "Split Between 30/60/90"
 KPI_LTL = "Loss to Lease %"
 KPI_NOI = "NOI Margin %"
 KPI_CTRL = "Controllable OpEx/Unit"
-KPI_MTM = "# of month to month"
+KPI_MTM = "Month to Month Leases"
 
 # The rent roll's own classification, as the workbook reads it: every unit is in
 # exactly one of these. There is no separate month-to-month state, so a unit the
@@ -344,7 +347,10 @@ def measurements(f):
                          or "no T12 statement grouped by account for this property")
 
     if f.get("mtm_share") is not None:
-        out[KPI_MTM] = (f["mtm_share"], pct1(f["mtm_share"]), None)
+        # count and share together: the KPI is named for a count and banded on a
+        # ratio, and neither on its own says what the other does
+        out[KPI_MTM] = (f["mtm_share"],
+                        f"{f['mtm_units']}/{pct1(f['mtm_share'])}", None)
     else:
         out[KPI_MTM] = (None, None, f.get("mtm_why") or "no per-unit lease status")
 

@@ -56,6 +56,11 @@ UNSCORED = {"Split Between 30/60/90"}
 # not the coverage counts. The workbook keeps its own column either way.
 OMITTED_METRICS = {"# of offers that are 30 days"}
 
+# Grid columns the dashboard publishes under a different name. The workbook's own
+# header is left alone; this is only what the JSON and the page call the KPI, and
+# the ranges sheet is matched through it too so a renamed cell keeps its band.
+RENAMES = {"# of month to month": "Month to Month Leases"}
+
 # Rows on the workbook's grid that are not published. The grid is the analyst's
 # working sheet and carries properties the dashboard does not report on; each
 # one published adds a column of hand-set symbols to the matrix and another
@@ -110,6 +115,16 @@ if gone:
     print(f"  WARNING: OMITTED_METRICS names {', '.join(gone)}, which the grid "
           f"does not have \u2014 a renamed column would silently start publishing")
 
+on_grid = {m["name"] for m in metrics}
+for m in metrics:
+    if m["name"] in RENAMES:
+        print(f"[rename] {m['name']} \u2192 {RENAMES[m['name']]}")
+        m["name"] = RENAMES[m["name"]]
+unrenamed = sorted(set(RENAMES) - on_grid)
+if unrenamed:
+    print(f"  WARNING: RENAMES names {', '.join(unrenamed)}, which the grid does "
+          f"not have \u2014 that KPI would publish under its grid name instead")
+
 # ---- one record per property ----
 properties = []
 for row in range(FIRST_DATA_ROW, ws.max_row + 1):
@@ -157,6 +172,9 @@ ALIASES = {                                   # ranges-sheet name -> grid name
     "# of open work orders": "# of work orders",
     "open eliseai tasks": "Open Elise Tasks",
 }
+# a renamed grid column keeps its published range: the ranges sheet still calls
+# it by the workbook's own name
+ALIASES.update({_norm(k): v for k, v in RENAMES.items()})
 GRID_BY_NORM = {_norm(m["name"]): m["name"] for m in metrics}
 
 thresholds, leaseup_overrides = {}, []
