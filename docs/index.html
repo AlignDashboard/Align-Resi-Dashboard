@@ -162,6 +162,10 @@
      The box doubles as the series swatch — filled with its colour when on. */
   .ckgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
     gap: 1px 14px; margin: 2px 0 10px; }
+  /* `display: grid` outranks the UA sheet's [hidden] rule, so setting .hidden on
+     a .ckgrid does nothing without this — the grid stays on screen wired to
+     whatever chart built it. Same trap as .view[hidden] above. */
+  .ckgrid[hidden] { display: none; }
   .ck { display: flex; align-items: center; gap: 7px; background: none; border: none;
     padding: 3px 0; cursor: pointer; color: var(--muted); font-family: inherit;
     font-size: 9px; letter-spacing: .8px; text-transform: uppercase; text-align: left;
@@ -1986,8 +1990,8 @@ async function loadLanding() {
         + " against the statement's own total expenses each month.";
     }
     function renderMonth() {
-      cks.hidden = true;
       if (!pt) {
+        cks.hidden = true;
         if (chart) { chart.destroy(); chart = null; }
         wrap.innerHTML = '<div class="empty"><div class="dash"></div>'
           + '<div class="big">Monthly view awaits the statement</div>'
@@ -2007,9 +2011,25 @@ async function loadLanding() {
       sel.hidden = false;
       const i = +sel.value;
       const names = groupNames();
-      const vals = names.map(n => pt.buckets[n][i]);
-      const total = vals.reduce((x, y) => x + y, 0);
-      drawBars(names, vals, total, v => "$" + (v / 1e3).toFixed(0) + "k");
+      // The total stays the statement's own — every group, ticked or not — so
+      // the tie-out below and the tooltip's share-of-total keep meaning the same
+      // thing however the boxes are set. Only the bars drawn are filtered.
+      const total = names.reduce((t, n) => t + pt.buckets[n][i], 0);
+      const shown = names.filter(n => !hiddenCats.has(n));
+      drawBars(shown, shown.map(n => pt.buckets[n][i]), total,
+        v => "$" + (v / 1e3).toFixed(0) + "k");
+      // This view's bars carry no per-group palette, so the swatch is the bar's
+      // own colour. The set is shared with T12, so a group unticked there is
+      // still unticked here.
+      cks.hidden = false;
+      ckGrid(cks,
+        names.map(n => ({ label: n, color: barColor(n) })),
+        it => !hiddenCats.has(it.label),
+        it => {
+          if (hiddenCats.has(it.label)) hiddenCats.delete(it.label);
+          else hiddenCats.add(it.label);
+          renderMonth();
+        });
       document.getElementById("lcExpEyebrow").textContent = "MONTH BY ALIGN-TREE GROUP · FROM THE STATEMENT";
       const wbIdx = L.expense_noi.months.indexOf(keys[i]);
       const wbOpex = wbIdx >= 0 ? L.expense_noi.opex[wbIdx] : null;
@@ -2018,6 +2038,10 @@ async function loadLanding() {
             ? " vs " + fm$(wbOpex) + " workbook opex ("
               + (Math.abs(total - wbOpex) < 500 ? "ties out" : "gap " + fm$(total - wbOpex)) + ")."
             : " — outside the workbook's month range.")
+        + (shown.length < names.length
+            ? " " + (names.length - shown.length) + " of " + names.length
+              + " groups unticked — the total above still counts every one of them."
+            : "")
         + " Grouped on the Align account tree via the COA mapping, tied out against"
         + " the statement's own total expenses each month.";
     }
