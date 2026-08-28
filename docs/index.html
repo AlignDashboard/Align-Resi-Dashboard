@@ -576,7 +576,7 @@
 
       <div class="card" id="cNoi">
         <h2>Expense Load &amp; NOI</h2>
-        <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · EXPENSE / DOOR</span>
+        <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR</span>
         <div class="ckgrid" id="lcNoiCks" role="group" aria-label="Series shown"></div>
         <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
         <div class="blu-note" id="lcNoiFoot" style="color:var(--muted);"></div>
@@ -2069,20 +2069,68 @@ async function loadLanding() {
   })();
 
   /* ---- Expense & NOI ---- */
-  (function noi() {
+  (async function noi() {
     const en = L.expense_noi;
-    // Expense per door: the month's opex over the property's unit count -- the
-    // same numerator the ratio uses, in the unit operators quote. The two ratios
-    // share the percent axis; the door figure gets the dollar axis on the right.
+    // Controllable expense per door: the month's operating expense less taxes,
+    // insurance and utilities, over the property's unit count. The exclusions
+    // are what management cannot move in a month, so what is left is the part a
+    // PM is actually answerable for. It needs the expense split by category,
+    // which the workbook's Expense & NOI tab does not carry -- only a total and
+    // its own controllable/non-controllable cut, which excludes the management
+    // fee rather than utilities. So the numerator comes from the T12 statement's
+    // own account groups, the same source the Expense Deep Dive draws.
+    //
+    // That statement spans twelve months where this chart spans nineteen, so the
+    // line starts where the statement does rather than being padded out.
     const doors = L.meta.units;
-    const perDoor = en.opex.map(v => (doors && v != null) ? v / doors : null);
+    const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const NOT_CONTROLLABLE = [/^tax/i, /^insurance/i, /^utilit/i];
+    const m = await metricsJson();
+    const eb = (((m || {}).expense_buckets || {}).properties || [])
+      .find(x => x.slug === "the-landing") || null;
+
+    // Every exclusion has to be found by name. A renamed group that silently
+    // stopped matching would leave taxes inside "controllable" and the figure
+    // would read a third too high with nothing to show for it, so the line is
+    // withheld instead.
+    let ctrl = {}, ctrlNote = "", matched = [];
+    if (eb) {
+      matched = NOT_CONTROLLABLE.filter(re => Object.keys(eb.buckets).some(n => re.test(n)));
+      if (matched.length === NOT_CONTROLLABLE.length) {
+        const [em, ey] = eb.period_end.split(" ");
+        const end = (+ey) * 12 + MO.indexOf(em);
+        eb.labels.forEach((_, i) => {
+          const t = end - (eb.labels.length - 1 - i);
+          const key = Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
+          let total = 0, excluded = 0;
+          Object.keys(eb.buckets).forEach(n => {
+            const v = eb.buckets[n][i] || 0;
+            total += v;
+            if (NOT_CONTROLLABLE.some(re => re.test(n))) excluded += v;
+          });
+          ctrl[key] = total - excluded;
+        });
+      } else {
+        ctrlNote = "Controllable expense/door is not drawn: the statement's account "
+                 + "groups no longer name taxes, insurance and utilities the way this "
+                 + "chart excludes them, and guessing which is which would understate it.";
+      }
+    } else {
+      ctrlNote = "Controllable expense/door is not drawn: no T12 statement has reached "
+               + "the pipeline, and the workbook alone does not split expense by category.";
+    }
+    const perDoor = en.months.map(k =>
+      (doors && ctrl[k] != null) ? ctrl[k] / doors : null);
+    const ctrlMonths = en.months.filter(k => ctrl[k] != null);
+    const ctrlTtm = ctrlMonths.length
+      ? ctrlMonths.reduce((t, k) => t + ctrl[k], 0) / ctrlMonths.length : null;
     const chart = new Chart(document.getElementById("lcNoi"), {
       type: "line",
       data: { labels: en.months.map(shortMo),
         datasets: [
           { label: "NOI margin", data: en.noi_margin.map(v => v * 100), yAxisID: "y", borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
           { label: "Expense ratio", data: en.opex_ratio.map(v => v * 100), yAxisID: "y", borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
-          { label: "Expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: "Controllable expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
         ] },
       options: { maintainAspectRatio: false, responsive: true,
         // the checkbox grid above the chart is both the legend and the switch,
@@ -2108,8 +2156,15 @@ async function loadLanding() {
       });
     document.getElementById("lcNoiFoot").textContent =
       "TTM NOI " + fm$(en.ttm.noi) + " (" + fmPct(en.ttm.noi_margin) + " margin) on revenue " +
-      fm$(en.ttm.revenue) + ". Expense/door is the month's opex over the property's " + doors +
-      " units, on the right axis (TTM " + fm$(en.ttm.opex_per_unit / 12) + "/mo). " + en.tax_note;
+      fm$(en.ttm.revenue) + ". "
+      + (ctrlNote || ("Controllable expense/door is the month's operating expense less "
+          + "taxes, insurance and utilities, over the property's " + doors + " units, on "
+          + "the right axis \u2014 " + fm$(ctrlTtm / doors) + "/mo averaged across the "
+          + ctrlMonths.length + " months the T12 statement covers, against "
+          + fm$(en.ttm.opex_per_unit / 12) + "/mo for total expense. It starts at "
+          + shortMo(ctrlMonths[0]) + " because the statement does; the two ratio lines run "
+          + "the full range. "))
+      + en.tax_note;
   })();
 
   /* ---- Expense deep dive ---- */

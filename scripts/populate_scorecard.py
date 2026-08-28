@@ -30,6 +30,13 @@ Which KPIs a delinquency report can actually answer:
                             band's basis is T12, and a single accrual month
                             swings well past it in both directions, so the TTM
                             figure is recorded alongside the graded month.
+  Controllable OpEx/Unit    the current month's operating expense less taxes,
+                            insurance and utilities, per unit, x12 for the band's
+                            per-year basis. Numerator comes from the T12
+                            statement's account groups (data/<slug>/
+                            expense_buckets.json), since the workbook carries
+                            only a total. Note the band's own "how" line excludes
+                            the management fee rather than utilities.
 
 "POs over 30 days" and "# of invoices processed" are accounts *payable*; a
 resident AR report cannot speak to them and they are left alone.
@@ -71,10 +78,47 @@ KPI_TOTAL = "Total Deliquency"
 KPI_SPLIT = "Split Between 30/60/90"
 KPI_LTL = "Loss to Lease %"
 KPI_NOI = "NOI Margin %"
+KPI_CTRL = "Controllable OpEx/Unit"
+
+# What a property manager cannot move inside a month. Matched by name against
+# the T12 statement's own account groups rather than listed exactly, and all
+# three must be found -- a renamed group that silently stopped matching would
+# leave taxes inside "controllable" and the figure would read a third too high.
+NOT_CONTROLLABLE = ("tax", "insurance", "utilit")
 
 
 def pct1(v):
     return f"{v * 100:.1f}%"
+
+
+def controllable_per_unit(slug, units):
+    """This month's controllable operating expense per unit, annualized.
+
+    The band is written per unit per year, so the month is multiplied by twelve.
+    Source is data/<slug>/expense_buckets.json -- the property's own T12
+    statement grouped on the Align account tree -- because the analyst workbook
+    carries only a total and its own controllable cut, which excludes the
+    management fee rather than utilities.
+    """
+    path = os.path.join("data", slug, "expense_buckets.json")
+    if not units or not os.path.exists(path):
+        return None, None, None
+    pts = (json.load(open(path)) or {}).get("points") or []
+    if not pts:
+        return None, None, None
+    pt = pts[-1]
+    buckets = pt.get("buckets") or {}
+    names = list(buckets)
+    found = [k for k in NOT_CONTROLLABLE if any(k in n.lower() for n in names)]
+    if len(found) != len(NOT_CONTROLLABLE):
+        return None, None, ("the statement's account groups do not name "
+                            + ", ".join(k for k in NOT_CONTROLLABLE if k not in found))
+    i = len(pt["labels"]) - 1
+    total = sum((b[i] or 0) for b in buckets.values())
+    excluded = sum((b[i] or 0) for n, b in buckets.items()
+                   if any(k in n.lower() for k in NOT_CONTROLLABLE))
+    month = f"{pt['period_end']}"
+    return (total - excluded) / units * 12, month, None
 
 
 def pct0(v):
@@ -127,6 +171,8 @@ def facts_from_landing(path="docs/landing.json"):
     # which one the band is meant to grade is the owner's call.
     en = doc.get("expense_noi") or {}
     noi_series, noi_months = en.get("noi_margin") or [], en.get("months") or []
+    units = (doc.get("meta") or {}).get("units")
+    ctrl, ctrl_month, ctrl_why = controllable_per_unit("the-landing", units)
     return {
         "as_of": d.get("as_of"),
         "gross_owed": d.get("gross_owed"),
@@ -135,6 +181,10 @@ def facts_from_landing(path="docs/landing.json"):
         "noi_margin": noi_series[-1] if noi_series else None,
         "noi_margin_month": noi_months[-1] if noi_months else None,
         "noi_margin_ttm": (en.get("ttm") or {}).get("noi_margin"),
+        "ctrl_per_unit_yr": ctrl,
+        "ctrl_month": ctrl_month,
+        "ctrl_units": units,
+        "ctrl_why": ctrl_why,
         "split": [bucket("31 - 60", "31-60"), bucket("61 - 90", "61-90"),
                   bucket("over 90")],
         # the workbook computes this ratio itself, so use it rather than
@@ -240,6 +290,14 @@ def measurements(f):
     else:
         out[KPI_NOI] = (None, None,
                         "this source carries no monthly revenue-and-NOI series")
+
+    if f.get("ctrl_per_unit_yr") is not None:
+        v = f["ctrl_per_unit_yr"]
+        out[KPI_CTRL] = (v, f"${v:,.0f}", None)
+    else:
+        out[KPI_CTRL] = (None, None,
+                         f.get("ctrl_why")
+                         or "no T12 statement grouped by account for this property")
 
     parts = f.get("split") or []
     if len(parts) == 3 and all(p is not None for p in parts):
@@ -453,6 +511,10 @@ def main():
         meas[slug]["denominator"] = facts["denominator_note"]
     if facts.get("ltl_month"):
         meas[slug]["ltl_month"] = facts["ltl_month"]
+    if facts.get("ctrl_month"):
+        meas[slug]["controllable_basis"] = (
+            f"{facts['ctrl_month']} operating expense less taxes, insurance and "
+            f"utilities, over {facts['ctrl_units']} units, x12")
     if facts.get("noi_margin_month"):
         meas[slug]["noi_margin_month"] = facts["noi_margin_month"]
         # the T12 figure the band's own basis names, kept beside the month that

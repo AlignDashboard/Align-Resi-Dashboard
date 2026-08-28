@@ -125,6 +125,25 @@ reads 72.6% and grades green against a T12 of 66.8%). The month is what is
 graded, per the owner; `noi_margin_ttm` is recorded beside it in
 `measured[slug]` so the two are never confused.
 
+`--from-landing` also fills **`Controllable OpEx/Unit`**: the current month's
+operating expense **less taxes, insurance and utilities**, per unit, times
+twelve for the band's per-year basis. The Landing reads $8,062 for Jul 2026
+(in range). The numerator comes from `data/<slug>/expense_buckets.json` — the
+property's own T12 statement grouped on the Align account tree — because the
+workbook's Expense & NOI tab carries only a total and its own
+controllable/non-controllable cut, which excludes the **management fee** rather
+than utilities. The Expense Load & NOI card's third line is the same figure per
+month, and starts at the statement's first month rather than the workbook's.
+
+**The exclusions are the owner's, and they differ from the band's own `how`
+line**, which reads "Excludes taxes, insurance, management fee" and counts
+utilities as controllable. On the same month that basket gives $7,527/unit
+against the $8,062 published here — both in range, but the band was set against
+the other basket, so it is worth reconciling the two rather than assuming they
+agree. All three exclusions are matched by name against the statement's account
+groups and **all three must be found**; a renamed group leaves the figure
+unpublished rather than quietly counting taxes as controllable.
+
 `populate_scorecard.py` merges into `measured[slug]` rather than replacing it,
 so running it out of the documented order no longer drops the other feeds'
 `bldg_*` and `eliseai_*` keys — and with them their arrival times.
