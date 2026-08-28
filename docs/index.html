@@ -543,7 +543,6 @@
         <div class="card-head">
           <div>
             <h2>KPI Scorecard — The Landing</h2>
-            <span class="eyebrow" id="lscEyebrow">LOADING…</span>
           </div>
           <div class="sc-health" id="lscHealth"></div>
         </div>
@@ -1753,24 +1752,38 @@ function scRollUp(p, groups) {
 
 // A property's own slice of the scorecard, for the top of its view.
 function renderPropertyScorecard(slug, ids) {
+  // The Landing's card carries no eyebrow: the health block beside the heading
+  // already says how many KPIs are graded and how many are below. So the
+  // summary line is written only where one exists...
+  const eyebrowText = t => {
+    const e = ids.eyebrow && document.getElementById(ids.eyebrow);
+    if (e) e.textContent = t;
+  };
+  // ...but the two states where the card would otherwise render blank have to
+  // be said somewhere, so those fall back to the note line.
+  const cannotRender = t => {
+    const e = ids.eyebrow && document.getElementById(ids.eyebrow);
+    const n = e || document.getElementById(ids.note);
+    if (n) n.textContent = t;
+  };
   if (!SC) {
-    document.getElementById(ids.eyebrow).textContent = "SCORECARD UNAVAILABLE";
+    cannotRender("SCORECARD UNAVAILABLE");
     return;
   }
   const p = SC.properties.find(x => x.slug === slug);
   if (!p) {
-    document.getElementById(ids.eyebrow).textContent = "NOT ON THE SCORECARD YET";
+    cannotRender("NOT ON THE SCORECARD YET");
     return;
   }
   const hidden = new Set(SC_HIDDEN_GROUPS[slug] || []);
   const groups = SC.groups.filter(g => !hidden.has(g.name));
   const roll = scRollUp(p, groups);
-  document.getElementById(ids.eyebrow).textContent =
+  eyebrowText(
     roll.scored === 0
       ? "NO KPI MEASURED YET · " + roll.coverage.total + " CELLS AWAITING A FEED"
       : roll.counts.below === 0
         ? "ALL " + roll.scored + " GRADED KPIs AT OR ABOVE TARGET"
-        : roll.counts.below + " OF " + roll.scored + " GRADED KPIs BELOW TARGET";
+        : roll.counts.below + " OF " + roll.scored + " GRADED KPIs BELOW TARGET");
 
   const health = document.getElementById(ids.health);
   health.textContent = "";
@@ -1844,7 +1857,7 @@ async function loadLanding() {
   // This property's slice of the KPI scorecard, at the top of its view.
   await scPromise;
   renderPropertyScorecard("the-landing", {
-    eyebrow: "lscEyebrow", health: "lscHealth", strip: "lscStrip",
+    health: "lscHealth", strip: "lscStrip",
     legend: "lscLegend", note: "lscNote",
   });
 
