@@ -380,7 +380,13 @@
   #lopTbl table.dt { table-layout: fixed; }
   #lopTbl table.dt th, #lopTbl table.dt td { width: 15.6%; }
   #lopTbl table.dt th:first-child, #lopTbl table.dt td:first-child { width: 22%; }
-  #lopTbl table.dt th { vertical-align: bottom; height: 3.6em; }
+  #lopTbl table.dt th { vertical-align: bottom; height: 44px; }
+  /* It is the board's header table -- three rows above everything else -- so it
+     is set larger than the data tables further down the page. */
+  #lopTbl table.dt { font-size: 15px; margin-top: 14px; }
+  #lopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
+  #lopTbl table.dt td { padding: 13px 10px 13px 0; }
+  #lopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
   .pill.good  { color: var(--green); border-color: var(--green); }
