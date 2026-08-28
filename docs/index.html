@@ -1688,6 +1688,49 @@ renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
 // property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
 scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
 
+// Groups a property tab leaves off its own scorecard. A display filter only:
+// scorecard.json still carries all 28 KPIs, the portfolio scorecard and every
+// other property tab still show all seven groups, and nothing here writes back.
+const SC_HIDDEN_GROUPS = {
+  "the-landing": ["AR/AP Metrics", "Maintenance Metrics", "Resident Experience",
+                  "Open EliseAI Tasks"],
+};
+
+// The header figures for whichever groups a tab is showing. Hiding cells without
+// this would leave the head counting KPIs the card no longer displays -- The
+// Landing's one below-target cell is Total Deliquency, in a hidden group, so the
+// head would have said "1 of 7 below target" and named a metric that is not
+// there. A KPI counts as graded when status_source says "measured", which is the
+// test populate_scorecard.recompute itself applies: "value_only" and "unscored"
+// cells are reported but never scored. Over all seven groups this reproduces the
+// published scored / counts / coverage / at_or_above exactly.
+function scRollUp(p, groups) {
+  const src = p.status_source || {};
+  const counts = { exceeding: 0, in_range: 0, below: 0 };
+  const below = [];
+  let total = 0, graded = 0, reported = 0;
+  groups.forEach(g => g.metrics.forEach(name => {
+    total++;
+    const s = src[name];
+    if (s === "measured") {
+      graded++;
+      const st = p.statuses[name];
+      if (counts[st] !== undefined) counts[st]++;
+      if (st === "below") below.push(name);
+    } else if (s) {
+      reported++;
+    }
+  }));
+  return {
+    scored: graded,
+    counts,
+    below_metrics: below,
+    at_or_above: graded ? (counts.exceeding + counts.in_range) / graded : null,
+    coverage: { graded, reported_ungraded: reported,
+                awaiting: total - graded - reported, total },
+  };
+}
+
 // A property's own slice of the scorecard, for the top of its view.
 function renderPropertyScorecard(slug, ids) {
   if (!SC) {
@@ -1699,20 +1742,23 @@ function renderPropertyScorecard(slug, ids) {
     document.getElementById(ids.eyebrow).textContent = "NOT ON THE SCORECARD YET";
     return;
   }
+  const hidden = new Set(SC_HIDDEN_GROUPS[slug] || []);
+  const groups = SC.groups.filter(g => !hidden.has(g.name));
+  const roll = scRollUp(p, groups);
   document.getElementById(ids.eyebrow).textContent =
-    p.scored === 0
-      ? "NO KPI MEASURED YET · " + ((p.coverage || {}).total || 0) + " CELLS AWAITING A FEED"
-      : p.counts.below === 0
-        ? "ALL " + p.scored + " GRADED KPIs AT OR ABOVE TARGET"
-        : p.counts.below + " OF " + p.scored + " GRADED KPIs BELOW TARGET";
+    roll.scored === 0
+      ? "NO KPI MEASURED YET · " + roll.coverage.total + " CELLS AWAITING A FEED"
+      : roll.counts.below === 0
+        ? "ALL " + roll.scored + " GRADED KPIs AT OR ABOVE TARGET"
+        : roll.counts.below + " OF " + roll.scored + " GRADED KPIs BELOW TARGET";
 
   const health = document.getElementById(ids.health);
   health.textContent = "";
-  const big = elc("div", "big", p.at_or_above == null ? "—" : fmPct(p.at_or_above, 0));
-  if (p.scored) big.classList.add("sc-state-" + scTone(p.counts));
+  const big = elc("div", "big", roll.at_or_above == null ? "—" : fmPct(roll.at_or_above, 0));
+  if (roll.scored) big.classList.add("sc-state-" + scTone(roll.counts));
   health.appendChild(big);
-  health.appendChild(elc("div", "lbl", p.scored
-    ? "at or above target · " + p.scored + " of " + ((p.coverage || {}).total || 0) + " graded"
+  health.appendChild(elc("div", "lbl", roll.scored
+    ? "at or above target · " + roll.scored + " of " + roll.coverage.total + " graded"
     : "nothing measured yet"));
   // this property's own feeds only — the portfolio head carries the rest
   const upd = scUpdatedEl(slug);
@@ -1721,7 +1767,7 @@ function renderPropertyScorecard(slug, ids) {
   const strip = document.getElementById(ids.strip);
   strip.textContent = "";
   const unscored = scUnscoredSet();
-  SC.groups.forEach(g => {
+  groups.forEach(g => {
     strip.appendChild(elc("div", "g", g.name));
     g.metrics.forEach(name => {
       const m = elc("div", "m");
@@ -1742,8 +1788,17 @@ function renderPropertyScorecard(slug, ids) {
     ? "Lease-up overrides apply here: " +
       SC.leaseup_overrides.map(o => o.kpi + " (" + String(o.approach || "").toLowerCase().replace(/\.$/, "") + ")").join("; ") + ". "
     : "";
+  // Say what is not on this tab, so a shorter card is not mistaken for the whole
+  // scorecard: the hidden groups stay on the portfolio card and in the JSON.
+  const off = SC.groups.filter(g => hidden.has(g.name)).map(g => g.name);
   document.getElementById(ids.note).textContent =
-    (p.below_metrics.length ? "Below target: " + p.below_metrics.join(", ") + ". " : "") +
+    (roll.below_metrics.length
+      ? "Below target: " + roll.below_metrics.join(", ") + ". " : "") +
+    (off.length
+      ? "This tab shows " + roll.coverage.total + " of the scorecard’s "
+        + SC.groups.reduce((t, g) => t + g.metrics.length, 0) + " KPIs — "
+        + off.join(", ") + " are left off here and stay on the portfolio scorecard. "
+      : "") +
     ov +
     (scHasValues(SC) ? "" : "\u201c" + SC_PENDING + "\u201d marks a value not supplied yet. ") +
     SC.meta.note;
