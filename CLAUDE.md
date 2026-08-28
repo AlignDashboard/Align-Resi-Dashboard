@@ -192,6 +192,34 @@ now lands in the Drive `EliseAI Reports` folder and `update.yml` runs this
 script on the newest one automatically, passing Drive's `landed_at` as the
 arrival — the hand-off step only exists for a CSV that never reached Drive.
 
+### The unit directory
+
+`UnitDirectory<MM_DD_YYYY>.xlsx` in the Drive `Building Info` folder is the
+buildings' fixed description — every unit's floorplan code, square footage,
+bedrooms and baths, for all properties in one export. `parse_unit_directory`
+splits it on the property-code rows inside it and ties each section out against
+that section's own `Total <code>` row on all three numbers it publishes (unit
+count, rent total, square footage), plus the file's `Grand Total`. A section
+that does not tie out is reported rather than stored.
+
+It exists because **nothing else says how many bedrooms a floorplan has.** The
+rent roll and the analyst workbook both name the plan (`lab19`) and neither
+defines it, so the Landing's unit-gap table joins the plan code to
+`data/<slug>/unit_directory.json` for bedrooms and the plan's square-footage
+range. Bedrooms belong to the plan, not the unit: a plan whose rows disagree is
+flagged, never averaged.
+
+The Landing's directory counts **265 units where the rent roll counts 263** —
+`WAITLIST` and `WAIT1B1B` are Yardi placeholders, not apartments. They are
+counted as `placeholder_units` rather than dropped, because the export's own
+total includes them and the tie-out has to as well; `residential_units` is the
+263. One unit (647) is classed `lab21` in the directory and `lab9` in the
+workbook, which is why the per-plan counts differ by one in each of those.
+
+A directory carries no resident and no lease, so there is nothing to scrub — it
+still goes through `store_report` so the central scrub covers it by default
+rather than by remembering that this one is safe.
+
 The **concession burn-off export** (Drive `Concession Burnoff` folder) parses
 via `parse_concession_burnoff` — as-of date, unit count and money totals, tied
 out against the report's own total row; resident names are read only to tell a

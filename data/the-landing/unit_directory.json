@@ -1,0 +1,881 @@
+{
+  "report_type": "unit_directory",
+  "property": "The Landing",
+  "property_code": "p0005611",
+  "property_codes": [
+    "p0005611"
+  ],
+  "as_of": "2026-08-25",
+  "units": 265,
+  "residential_units": 263,
+  "placeholder_units": 2,
+  "plans": {
+    "laa1": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 90,
+      "sqft_min": 520.0,
+      "sqft_max": 821.0,
+      "sqft_avg": 587,
+      "rent_min": 5485.0,
+      "rent_max": 5800.0
+    },
+    "laa10": {
+      "bedrooms": 1,
+      "baths": 1.5,
+      "units": 1,
+      "sqft_min": 821.0,
+      "sqft_max": 821.0,
+      "sqft_avg": 821,
+      "rent_min": 6230.0,
+      "rent_max": 6230.0
+    },
+    "laa11": {
+      "bedrooms": 1,
+      "baths": 1.5,
+      "units": 1,
+      "sqft_min": 956.0,
+      "sqft_max": 956.0,
+      "sqft_avg": 956,
+      "rent_min": 6010.0,
+      "rent_max": 6010.0
+    },
+    "laa12": {
+      "bedrooms": 1,
+      "baths": 1.5,
+      "units": 1,
+      "sqft_min": 966.0,
+      "sqft_max": 966.0,
+      "sqft_avg": 966,
+      "rent_min": 6070.0,
+      "rent_max": 6070.0
+    },
+    "laa2": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 7,
+      "sqft_min": 637.0,
+      "sqft_max": 682.0,
+      "sqft_avg": 662,
+      "rent_min": 5745.0,
+      "rent_max": 5885.0
+    },
+    "laa3": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 727.0,
+      "sqft_max": 727.0,
+      "sqft_avg": 727,
+      "rent_min": 6015.0,
+      "rent_max": 6015.0
+    },
+    "laa4": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 2,
+      "sqft_min": 777.0,
+      "sqft_max": 780.0,
+      "sqft_avg": 778,
+      "rent_min": 5740.0,
+      "rent_max": 5820.0
+    },
+    "laa5": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 13,
+      "sqft_min": 662.0,
+      "sqft_max": 700.0,
+      "sqft_avg": 687,
+      "rent_min": 5870.0,
+      "rent_max": 5920.0
+    },
+    "laa6": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 13,
+      "sqft_min": 715.0,
+      "sqft_max": 821.0,
+      "sqft_avg": 763,
+      "rent_min": 5860.0,
+      "rent_max": 5905.0
+    },
+    "laa7": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 6,
+      "sqft_min": 738.0,
+      "sqft_max": 773.0,
+      "sqft_avg": 752,
+      "rent_min": 5915.0,
+      "rent_max": 5965.0
+    },
+    "laa8": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 2,
+      "sqft_min": 752.0,
+      "sqft_max": 752.0,
+      "sqft_avg": 752,
+      "rent_min": 6080.0,
+      "rent_max": 6105.0
+    },
+    "laa9": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 2,
+      "sqft_min": 780.0,
+      "sqft_max": 828.0,
+      "sqft_avg": 804,
+      "rent_min": 5935.0,
+      "rent_max": 6110.0
+    },
+    "lab1": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 3,
+      "sqft_min": 741.0,
+      "sqft_max": 742.0,
+      "sqft_avg": 741,
+      "rent_min": 7676.0,
+      "rent_max": 7786.0
+    },
+    "lab10": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 3,
+      "sqft_min": 886.0,
+      "sqft_max": 891.0,
+      "sqft_avg": 889,
+      "rent_min": 7851.0,
+      "rent_max": 7961.0
+    },
+    "lab11": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 3,
+      "sqft_min": 905.0,
+      "sqft_max": 1104.0,
+      "sqft_avg": 1000,
+      "rent_min": 8016.0,
+      "rent_max": 8181.0
+    },
+    "lab12": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 932.0,
+      "sqft_max": 932.0,
+      "sqft_avg": 932,
+      "rent_min": 7961.0,
+      "rent_max": 7961.0
+    },
+    "lab13": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 2,
+      "sqft_min": 933.0,
+      "sqft_max": 950.0,
+      "sqft_avg": 942,
+      "rent_min": 8191.0,
+      "rent_max": 8221.0
+    },
+    "lab14": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 945.0,
+      "sqft_max": 945.0,
+      "sqft_avg": 945,
+      "rent_min": 8276.0,
+      "rent_max": 8276.0
+    },
+    "lab15": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 5,
+      "sqft_min": 951.0,
+      "sqft_max": 1106.0,
+      "sqft_avg": 983,
+      "rent_min": 8096.0,
+      "rent_max": 8171.0
+    },
+    "lab16": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 3,
+      "sqft_min": 980.0,
+      "sqft_max": 981.0,
+      "sqft_avg": 981,
+      "rent_min": 8001.0,
+      "rent_max": 8001.0
+    },
+    "lab17": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 6,
+      "sqft_min": 984.0,
+      "sqft_max": 984.0,
+      "sqft_avg": 984,
+      "rent_min": 8016.0,
+      "rent_max": 8171.0
+    },
+    "lab18": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 1175.0,
+      "sqft_max": 1175.0,
+      "sqft_avg": 1175,
+      "rent_min": 8336.0,
+      "rent_max": 8336.0
+    },
+    "lab19": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 24,
+      "sqft_min": 1081.0,
+      "sqft_max": 1100.0,
+      "sqft_avg": 1092,
+      "rent_min": 8141.0,
+      "rent_max": 8396.0
+    },
+    "lab2": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 3,
+      "sqft_min": 798.0,
+      "sqft_max": 799.0,
+      "sqft_avg": 798,
+      "rent_min": 7726.0,
+      "rent_max": 7836.0
+    },
+    "lab20": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 2,
+      "sqft_min": 1309.0,
+      "sqft_max": 1309.0,
+      "sqft_avg": 1309,
+      "rent_min": 8371.0,
+      "rent_max": 8371.0
+    },
+    "lab21": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 9,
+      "sqft_min": 830.0,
+      "sqft_max": 1069.0,
+      "sqft_avg": 1028,
+      "rent_min": 7916.0,
+      "rent_max": 8191.0
+    },
+    "lab22": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 2,
+      "sqft_min": 1066.0,
+      "sqft_max": 1066.0,
+      "sqft_avg": 1066,
+      "rent_min": 8091.0,
+      "rent_max": 8091.0
+    },
+    "lab23": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 4,
+      "sqft_min": 1163.0,
+      "sqft_max": 1344.0,
+      "sqft_avg": 1254,
+      "rent_min": 8416.0,
+      "rent_max": 8441.0
+    },
+    "lab3": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 861.0,
+      "sqft_max": 861.0,
+      "sqft_avg": 861,
+      "rent_min": 7766.0,
+      "rent_max": 7766.0
+    },
+    "lab4": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 891.0,
+      "sqft_max": 891.0,
+      "sqft_avg": 891,
+      "rent_min": 7921.0,
+      "rent_max": 7921.0
+    },
+    "lab5": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 956.0,
+      "sqft_max": 956.0,
+      "sqft_avg": 956,
+      "rent_min": 7931.0,
+      "rent_max": 7931.0
+    },
+    "lab6": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 956.0,
+      "sqft_max": 956.0,
+      "sqft_avg": 956,
+      "rent_min": 7906.0,
+      "rent_max": 7906.0
+    },
+    "lab7": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 998.0,
+      "sqft_max": 998.0,
+      "sqft_avg": 998,
+      "rent_min": 7991.0,
+      "rent_max": 7991.0
+    },
+    "lab8": {
+      "bedrooms": 2,
+      "baths": 1.5,
+      "units": 3,
+      "sqft_min": 1226.0,
+      "sqft_max": 1236.0,
+      "sqft_avg": 1230,
+      "rent_min": 7871.0,
+      "rent_max": 7921.0
+    },
+    "lab9": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 30,
+      "sqft_min": 827.0,
+      "sqft_max": 863.0,
+      "sqft_avg": 846,
+      "rent_min": 7716.0,
+      "rent_max": 7971.0
+    },
+    "lac1": {
+      "bedrooms": 3,
+      "baths": 2.0,
+      "units": 9,
+      "sqft_min": 1092.0,
+      "sqft_max": 1099.0,
+      "sqft_avg": 1096,
+      "rent_min": 7924.0,
+      "rent_max": 8084.0
+    },
+    "lac2": {
+      "bedrooms": 3,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 1073.0,
+      "sqft_max": 1073.0,
+      "sqft_avg": 1073,
+      "rent_min": 7854.0,
+      "rent_max": 7854.0
+    },
+    "lac3": {
+      "bedrooms": 3,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 1481.0,
+      "sqft_max": 1481.0,
+      "sqft_avg": 1481,
+      "rent_min": 9069.0,
+      "rent_max": 9069.0
+    },
+    "lac4": {
+      "bedrooms": 3,
+      "baths": 3.0,
+      "units": 1,
+      "sqft_min": 1456.0,
+      "sqft_max": 1456.0,
+      "sqft_avg": 1456,
+      "rent_min": 9254.0,
+      "rent_max": 9254.0
+    },
+    "lac5": {
+      "bedrooms": 3,
+      "baths": 3.0,
+      "units": 3,
+      "sqft_min": 1501.0,
+      "sqft_max": 1501.0,
+      "sqft_avg": 1501,
+      "rent_min": 8929.0,
+      "rent_max": 9009.0
+    },
+    "lac6": {
+      "bedrooms": 3,
+      "baths": 3.0,
+      "units": 1,
+      "sqft_min": 1621.0,
+      "sqft_max": 1621.0,
+      "sqft_avg": 1621,
+      "rent_min": 9444.0,
+      "rent_max": 9444.0
+    }
+  },
+  "sections": [
+    {
+      "property_code": "p0005611",
+      "units": 265,
+      "residential_units": 263,
+      "placeholder_units": 2,
+      "placeholders": [
+        "WAIT1B1B",
+        "WAITLIST"
+      ],
+      "sqft_total": 216864.0,
+      "rent_total": 1815489.0,
+      "plans": {
+        "laa1": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 90,
+          "sqft_min": 520.0,
+          "sqft_max": 821.0,
+          "sqft_avg": 587,
+          "rent_min": 5485.0,
+          "rent_max": 5800.0
+        },
+        "laa10": {
+          "bedrooms": 1,
+          "baths": 1.5,
+          "units": 1,
+          "sqft_min": 821.0,
+          "sqft_max": 821.0,
+          "sqft_avg": 821,
+          "rent_min": 6230.0,
+          "rent_max": 6230.0
+        },
+        "laa11": {
+          "bedrooms": 1,
+          "baths": 1.5,
+          "units": 1,
+          "sqft_min": 956.0,
+          "sqft_max": 956.0,
+          "sqft_avg": 956,
+          "rent_min": 6010.0,
+          "rent_max": 6010.0
+        },
+        "laa12": {
+          "bedrooms": 1,
+          "baths": 1.5,
+          "units": 1,
+          "sqft_min": 966.0,
+          "sqft_max": 966.0,
+          "sqft_avg": 966,
+          "rent_min": 6070.0,
+          "rent_max": 6070.0
+        },
+        "laa2": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 7,
+          "sqft_min": 637.0,
+          "sqft_max": 682.0,
+          "sqft_avg": 662,
+          "rent_min": 5745.0,
+          "rent_max": 5885.0
+        },
+        "laa3": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 1,
+          "sqft_min": 727.0,
+          "sqft_max": 727.0,
+          "sqft_avg": 727,
+          "rent_min": 6015.0,
+          "rent_max": 6015.0
+        },
+        "laa4": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 2,
+          "sqft_min": 777.0,
+          "sqft_max": 780.0,
+          "sqft_avg": 778,
+          "rent_min": 5740.0,
+          "rent_max": 5820.0
+        },
+        "laa5": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 13,
+          "sqft_min": 662.0,
+          "sqft_max": 700.0,
+          "sqft_avg": 687,
+          "rent_min": 5870.0,
+          "rent_max": 5920.0
+        },
+        "laa6": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 13,
+          "sqft_min": 715.0,
+          "sqft_max": 821.0,
+          "sqft_avg": 763,
+          "rent_min": 5860.0,
+          "rent_max": 5905.0
+        },
+        "laa7": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 6,
+          "sqft_min": 738.0,
+          "sqft_max": 773.0,
+          "sqft_avg": 752,
+          "rent_min": 5915.0,
+          "rent_max": 5965.0
+        },
+        "laa8": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 2,
+          "sqft_min": 752.0,
+          "sqft_max": 752.0,
+          "sqft_avg": 752,
+          "rent_min": 6080.0,
+          "rent_max": 6105.0
+        },
+        "laa9": {
+          "bedrooms": 1,
+          "baths": 1.0,
+          "units": 2,
+          "sqft_min": 780.0,
+          "sqft_max": 828.0,
+          "sqft_avg": 804,
+          "rent_min": 5935.0,
+          "rent_max": 6110.0
+        },
+        "lab1": {
+          "bedrooms": 2,
+          "baths": 1.0,
+          "units": 3,
+          "sqft_min": 741.0,
+          "sqft_max": 742.0,
+          "sqft_avg": 741,
+          "rent_min": 7676.0,
+          "rent_max": 7786.0
+        },
+        "lab10": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 3,
+          "sqft_min": 886.0,
+          "sqft_max": 891.0,
+          "sqft_avg": 889,
+          "rent_min": 7851.0,
+          "rent_max": 7961.0
+        },
+        "lab11": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 3,
+          "sqft_min": 905.0,
+          "sqft_max": 1104.0,
+          "sqft_avg": 1000,
+          "rent_min": 8016.0,
+          "rent_max": 8181.0
+        },
+        "lab12": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 1,
+          "sqft_min": 932.0,
+          "sqft_max": 932.0,
+          "sqft_avg": 932,
+          "rent_min": 7961.0,
+          "rent_max": 7961.0
+        },
+        "lab13": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 2,
+          "sqft_min": 933.0,
+          "sqft_max": 950.0,
+          "sqft_avg": 942,
+          "rent_min": 8191.0,
+          "rent_max": 8221.0
+        },
+        "lab14": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 1,
+          "sqft_min": 945.0,
+          "sqft_max": 945.0,
+          "sqft_avg": 945,
+          "rent_min": 8276.0,
+          "rent_max": 8276.0
+        },
+        "lab15": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 5,
+          "sqft_min": 951.0,
+          "sqft_max": 1106.0,
+          "sqft_avg": 983,
+          "rent_min": 8096.0,
+          "rent_max": 8171.0
+        },
+        "lab16": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 3,
+          "sqft_min": 980.0,
+          "sqft_max": 981.0,
+          "sqft_avg": 981,
+          "rent_min": 8001.0,
+          "rent_max": 8001.0
+        },
+        "lab17": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 6,
+          "sqft_min": 984.0,
+          "sqft_max": 984.0,
+          "sqft_avg": 984,
+          "rent_min": 8016.0,
+          "rent_max": 8171.0
+        },
+        "lab18": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 1,
+          "sqft_min": 1175.0,
+          "sqft_max": 1175.0,
+          "sqft_avg": 1175,
+          "rent_min": 8336.0,
+          "rent_max": 8336.0
+        },
+        "lab19": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 24,
+          "sqft_min": 1081.0,
+          "sqft_max": 1100.0,
+          "sqft_avg": 1092,
+          "rent_min": 8141.0,
+          "rent_max": 8396.0
+        },
+        "lab2": {
+          "bedrooms": 2,
+          "baths": 1.0,
+          "units": 3,
+          "sqft_min": 798.0,
+          "sqft_max": 799.0,
+          "sqft_avg": 798,
+          "rent_min": 7726.0,
+          "rent_max": 7836.0
+        },
+        "lab20": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 2,
+          "sqft_min": 1309.0,
+          "sqft_max": 1309.0,
+          "sqft_avg": 1309,
+          "rent_min": 8371.0,
+          "rent_max": 8371.0
+        },
+        "lab21": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 9,
+          "sqft_min": 830.0,
+          "sqft_max": 1069.0,
+          "sqft_avg": 1028,
+          "rent_min": 7916.0,
+          "rent_max": 8191.0
+        },
+        "lab22": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 2,
+          "sqft_min": 1066.0,
+          "sqft_max": 1066.0,
+          "sqft_avg": 1066,
+          "rent_min": 8091.0,
+          "rent_max": 8091.0
+        },
+        "lab23": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 4,
+          "sqft_min": 1163.0,
+          "sqft_max": 1344.0,
+          "sqft_avg": 1254,
+          "rent_min": 8416.0,
+          "rent_max": 8441.0
+        },
+        "lab3": {
+          "bedrooms": 2,
+          "baths": 1.0,
+          "units": 1,
+          "sqft_min": 861.0,
+          "sqft_max": 861.0,
+          "sqft_avg": 861,
+          "rent_min": 7766.0,
+          "rent_max": 7766.0
+        },
+        "lab4": {
+          "bedrooms": 2,
+          "baths": 1.0,
+          "units": 1,
+          "sqft_min": 891.0,
+          "sqft_max": 891.0,
+          "sqft_avg": 891,
+          "rent_min": 7921.0,
+          "rent_max": 7921.0
+        },
+        "lab5": {
+          "bedrooms": 2,
+          "baths": 1.0,
+          "units": 1,
+          "sqft_min": 956.0,
+          "sqft_max": 956.0,
+          "sqft_avg": 956,
+          "rent_min": 7931.0,
+          "rent_max": 7931.0
+        },
+        "lab6": {
+          "bedrooms": 2,
+          "baths": 1.0,
+          "units": 1,
+          "sqft_min": 956.0,
+          "sqft_max": 956.0,
+          "sqft_avg": 956,
+          "rent_min": 7906.0,
+          "rent_max": 7906.0
+        },
+        "lab7": {
+          "bedrooms": 2,
+          "baths": 1.0,
+          "units": 1,
+          "sqft_min": 998.0,
+          "sqft_max": 998.0,
+          "sqft_avg": 998,
+          "rent_min": 7991.0,
+          "rent_max": 7991.0
+        },
+        "lab8": {
+          "bedrooms": 2,
+          "baths": 1.5,
+          "units": 3,
+          "sqft_min": 1226.0,
+          "sqft_max": 1236.0,
+          "sqft_avg": 1230,
+          "rent_min": 7871.0,
+          "rent_max": 7921.0
+        },
+        "lab9": {
+          "bedrooms": 2,
+          "baths": 2.0,
+          "units": 30,
+          "sqft_min": 827.0,
+          "sqft_max": 863.0,
+          "sqft_avg": 846,
+          "rent_min": 7716.0,
+          "rent_max": 7971.0
+        },
+        "lac1": {
+          "bedrooms": 3,
+          "baths": 2.0,
+          "units": 9,
+          "sqft_min": 1092.0,
+          "sqft_max": 1099.0,
+          "sqft_avg": 1096,
+          "rent_min": 7924.0,
+          "rent_max": 8084.0
+        },
+        "lac2": {
+          "bedrooms": 3,
+          "baths": 2.0,
+          "units": 1,
+          "sqft_min": 1073.0,
+          "sqft_max": 1073.0,
+          "sqft_avg": 1073,
+          "rent_min": 7854.0,
+          "rent_max": 7854.0
+        },
+        "lac3": {
+          "bedrooms": 3,
+          "baths": 2.0,
+          "units": 1,
+          "sqft_min": 1481.0,
+          "sqft_max": 1481.0,
+          "sqft_avg": 1481,
+          "rent_min": 9069.0,
+          "rent_max": 9069.0
+        },
+        "lac4": {
+          "bedrooms": 3,
+          "baths": 3.0,
+          "units": 1,
+          "sqft_min": 1456.0,
+          "sqft_max": 1456.0,
+          "sqft_avg": 1456,
+          "rent_min": 9254.0,
+          "rent_max": 9254.0
+        },
+        "lac5": {
+          "bedrooms": 3,
+          "baths": 3.0,
+          "units": 3,
+          "sqft_min": 1501.0,
+          "sqft_max": 1501.0,
+          "sqft_avg": 1501,
+          "rent_min": 8929.0,
+          "rent_max": 9009.0
+        },
+        "lac6": {
+          "bedrooms": 3,
+          "baths": 3.0,
+          "units": 1,
+          "sqft_min": 1621.0,
+          "sqft_max": 1621.0,
+          "sqft_avg": 1621,
+          "rent_min": 9444.0,
+          "rent_max": 9444.0
+        }
+      },
+      "checks": [
+        {
+          "check": "unit count",
+          "parsed": 265,
+          "report": 265,
+          "gap": 0
+        },
+        {
+          "check": "rent total",
+          "parsed": 1815489.0,
+          "report": 1815489.0,
+          "gap": 0.0
+        },
+        {
+          "check": "sqft total",
+          "parsed": 216864.0,
+          "report": 216864.0,
+          "gap": 0.0
+        }
+      ]
+    }
+  ],
+  "problems": [],
+  "source_file": "UnitDirectory08_25_2026.xlsx",
+  "landed_at": "2026-08-26T00:46:52Z",
+  "checks": [
+    {
+      "check": "grand total unit count",
+      "parsed": 265,
+      "report": 265,
+      "gap": 0
+    }
+  ]
+}

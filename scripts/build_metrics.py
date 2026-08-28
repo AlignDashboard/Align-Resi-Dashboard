@@ -384,6 +384,42 @@ def store_delinquency(prop, parsed):
                          "summary", "residents"])
 
 
+def store_unit_directory(prop, parsed):
+    """data/<slug>/unit_directory.json — the building's fixed description.
+
+    The floorplan table is what the property page joins a unit's plan code to
+    when it needs bedrooms or the plan's square footage; the rent roll and the
+    analyst workbook both name the plan but neither says how many bedrooms it
+    has. Sections stay separate per building code, since a property reporting
+    under several codes has a separate directory for each, and the merged plan
+    table is built from them with a collision check rather than assumed unique.
+
+    No resident, no lease, no name — a unit directory carries none. It still
+    goes through store_report, so the central scrub covers it like everything
+    else rather than by remembering that this one is safe.
+    """
+    secs = parsed.get("sections") or []
+    plans, clash = {}, []
+    for sec in secs:
+        for code, plan in (sec.get("plans") or {}).items():
+            if code in plans and plans[code] != plan:
+                clash.append(f"plan '{code}' differs between building codes")
+            plans[code] = plan
+    merged = dict(parsed)
+    merged["plans"] = plans
+    merged["units"] = sum(s.get("units") or 0 for s in secs)
+    merged["residential_units"] = sum(s.get("residential_units") or 0 for s in secs)
+    merged["placeholder_units"] = sum(s.get("placeholder_units") or 0 for s in secs)
+    merged["problems"] = (parsed.get("problems") or []) + clash
+    for pr in merged["problems"]:
+        print(f"[warn] {prop['name']} unit directory: {pr}")
+    return store_report(prop, merged, "unit_directory.json",
+                        ["report_type", "property", "property_code",
+                         "property_codes", "as_of", "units",
+                         "residential_units", "placeholder_units", "plans",
+                         "sections", "problems"])
+
+
 def store_leasing_funnel(prop, parsed):
     """data/<slug>/leasing_funnel.json — this community's funnel series.
 
@@ -424,6 +460,7 @@ ACCUMULATORS = {
     "ar_analytics": store_delinquency,
     "leasing_funnel": store_leasing_funnel,
     "concession_burnoff": store_concessions,
+    "unit_directory": store_unit_directory,
 }
 
 
@@ -653,6 +690,27 @@ def build_metrics_json():
         "available": bool(bucket_props),
         "properties": bucket_props,
     }
+
+    # The floorplan table per property, for joining a unit's plan code to its
+    # bedroom count. Static description of the building, refreshed when a new
+    # directory lands rather than daily.
+    ud_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "unit_directory.json"
+        if not fp.exists():
+            continue
+        ud = json.load(open(fp))
+        ud_props.append({"slug": p["slug"], "name": p["name"],
+                         "as_of": ud.get("as_of"),
+                         "landed_at": ud.get("landed_at"),
+                         "source_file": ud.get("source_file"),
+                         "units": ud.get("units"),
+                         "residential_units": ud.get("residential_units"),
+                         "codes": [s.get("property_code") for s in ud.get("sections") or []],
+                         "plans": ud.get("plans") or {}})
+    metrics["unit_directory"] = {"available": bool(ud_props), "properties": ud_props}
 
     # Latest monthly P&L point per property, for the operating-summary card.
     pl_props = []

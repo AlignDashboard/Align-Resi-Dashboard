@@ -387,6 +387,9 @@
   #lopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
   #lopTbl table.dt td { padding: 13px 10px 13px 0; }
   #lopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
+  /* Gap/yr is right-aligned and Expiry left-aligned, so without this the two
+     columns run together ("$45k MTM Feb 25"). */
+  #lgTbl table.dt th:nth-child(7), #lgTbl table.dt td:nth-child(7) { padding-left: 16px; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
   .pill.good  { color: var(--green); border-color: var(--green); }
@@ -598,10 +601,11 @@
         <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
       </div>
 
-      <div class="card" id="cGaps">
+      <div class="card wide" id="cGaps">
         <h2>Largest Unit Gaps</h2>
         <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
         <div id="lgTbl"></div>
+        <div class="blu-note" id="lgNote" style="color:var(--muted);"></div>
       </div>
 
       <div class="card wide" id="cDelinquency">
@@ -949,6 +953,13 @@ const legendCfg = { labels: { boxWidth: 10, boxHeight: 10, padding: 16,
 
 // Sync the button and chart chrome with whatever the inline head script applied.
 applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
+
+// One fetch of metrics.json for the cards that need it after the first render.
+// The Landing's view is built from landing.json; the few cards that also read
+// the pipeline's own output share this rather than each fetching again.
+let _metricsPromise = null;
+const metricsJson = () => (_metricsPromise = _metricsPromise
+  || fetch("metrics.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
 
 /* ============================================================
    LOAD DATA + RENDER
@@ -2434,16 +2445,80 @@ async function loadLanding() {
   })();
 
   /* ---- Largest unit gaps ---- */
-  (function gaps() {
+  (async function gaps() {
     const top = units.filter(u => u.gap > 0)
       .sort((a, b) => b.gap - a.gap).slice(0, 12);
+
+    // Bedrooms belong to the floorplan, not the unit, and neither the rent roll
+    // nor the workbook says how many a plan has -- both only name the code
+    // ("lab19"). The Yardi Unit Directory does, so the plan code is joined to
+    // it here and shown as bedrooms instead. A plan the directory does not
+    // carry prints as a dash naming the code rather than guessing from it.
+    const m = await metricsJson();
+    const dir = (((m || {}).unit_directory || {}).properties || [])
+      .find(x => x.slug === "the-landing") || null;
+    const plan = t => ((dir || {}).plans || {})[t] || null;
+
+    const bedsCell = u => {
+      const p = plan(u.type);
+      const b = p ? p.bedrooms : null;
+      const e = elc("span", null, b == null ? "\u2014" : b === 0 ? "Studio" : b + " BR");
+      e.title = p
+        ? "Plan " + u.type + " \u00b7 " + b + " bed / " + p.baths + " bath \u00b7 "
+          + p.units + " units of this plan \u00b7 " + p.sqft_min + "\u2013" + p.sqft_max + " sqft"
+        : "Plan " + u.type + " is not in the unit directory";
+      return e;
+    };
+
+    // Expiry: the month the lease runs to, unless it has already run out. A
+    // holdover is the month-to-month case -- the workbook's MTM tab is the same
+    // roster -- and carries the exact date it expired, so that goes on hover.
+    // "Expired" without MTM is a lease past its date that the workbook has not
+    // put in that roster, which is worth telling apart rather than merging.
+    const ho = {};
+    (L.holdovers.units || []).forEach(h => { ho[h.unit] = h; });
+    const rrKey = +((L.meta.rent_roll_as_of || "").slice(0, 4)
+                    + (L.meta.rent_roll_as_of || "").slice(5, 7)) || 0;
+    const moOf = k => shortMo(String(k).slice(0, 4) + "-" + String(k).slice(4, 6));
+    const expiryCell = u => {
+      let text, title;
+      const h = ho[u.unit];
+      if (u.status === "Vacant" || !u.expiry_key || u.expiry_key <= 190001) {
+        text = "\u2014"; title = "No lease on the rent roll";
+      } else if (h) {
+        text = "MTM \u00b7 " + moOf(u.expiry_key);
+        title = "Lease expired " + h.expired + " and has run month to month since \u2014 "
+                + h.months_expired + " months";
+      } else if (u.expiry_key < rrKey) {
+        text = "Expired " + moOf(u.expiry_key);
+        title = "Ran out before the rent roll's own date (" + L.meta.rent_roll_as_of
+                + ") but is not on the workbook's month-to-month roster";
+      } else {
+        text = moOf(u.expiry_key);
+        title = "Lease runs to " + moOf(u.expiry_key);
+      }
+      const e = elc("span", null, text);
+      e.title = title;
+      return e;
+    };
+
     buildTable(document.getElementById("lgTbl"),
-      [{ t: "Unit" }, { t: "Type", mut: true }, { t: "In-place", num: true }, { t: "Market", num: true },
-       { t: "Gap/yr", num: true }, { t: "Status" }],
-      top.map(u => ["#" + u.unit, u.type, fm$(u.inplace), fm$(u.market),
-        fm$(u.gap * 12), statusPill(u.status === "Holdover" ? "FLAG" : "CURRENT")]));
+      [{ t: "Unit" }, { t: "Beds" }, { t: "SF", num: true },
+       { t: "In-place", num: true }, { t: "Market", num: true },
+       { t: "Gap/yr", num: true }, { t: "Expiry" }, { t: "Status" }],
+      top.map(u => ["#" + u.unit, bedsCell(u), u.sqft.toLocaleString(),
+        fm$(u.inplace), fm$(u.market), fm$(u.gap * 12),
+        expiryCell(u), statusPill(u.status === "Holdover" ? "FLAG" : "CURRENT")]));
     const t = document.getElementById("lgTbl").querySelectorAll(".pill");
     t.forEach((p, i) => { p.textContent = top[i].status; });
+
+    document.getElementById("lgNote").textContent =
+      "Rents, square footage and lease dates are the workbook's, from the rent roll of "
+      + L.meta.rent_roll_as_of + ". Bedrooms come from the Yardi Unit Directory"
+      + (dir ? " of " + dir.as_of + " (" + dir.residential_units + " apartments across "
+               + Object.keys(dir.plans).length + " floorplans)" : ", which has not been fetched yet")
+      + ", joined on the plan code. Expiry is the month the lease runs to; \u201cMTM\u201d is a "
+      + "lease already run out and continuing month to month, with the date it expired on hover.";
   })();
 
   /* ---- Delinquency ---- */

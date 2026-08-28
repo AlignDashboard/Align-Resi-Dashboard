@@ -1,99 +1,107 @@
 {
-  "_comment": "Maps each Drive subfolder name to a report type and the parser module that handles it. Add entries as new report parsers are built. Subfolders without a parser are ignored (logged) until one is added. Rent Roll and Residential AR Analytics now have parsers (parse_rent_roll, parse_delinquency); both expose parse(path) and tie out against the report's own total rows. Weekly Leasing Reports is still pending and trade-out data is hand-entered in the workbook's Lease Detail tab.",
-  "subfolders": [
-    {
-      "drive_folder": "T12 Expenses",
-      "report_type": "t12_statement",
-      "parser": "parse_t12_statement",
-      "file_glob": "*.xlsx",
-      "status": "active"
-    },
-    {
-      "drive_folder": "Rent Roll",
-      "report_type": "rent_roll",
-      "parser": "parse_rent_roll",
-      "file_glob": "*.xlsx",
-      "status": "active"
-    },
-    {
-      "drive_folder": "Property Status",
-      "report_type": "property_status",
-      "parser": null,
-      "file_glob": "*.xlsx",
-      "status": "pending"
-    },
-    {
-      "drive_folder": "Weekly Leasing Reports",
-      "report_type": "leasing_funnel",
-      "parser": "parse_leasing_funnel",
-      "file_glob": "leasing_funnel_report*.xlsx",
-      "status": "active",
-      "_comment": "The EliseAI weekly funnel parses from here too, so it works wherever the gmail filing lands it. The pending entry below is for this folder's intended content -- the RealPage rate tracker -- which has never yet arrived."
-    },
-    {
-      "drive_folder": "Weekly Leasing Reports",
-      "report_type": "leasing_report",
-      "parser": null,
-      "file_glob": "*.xlsx",
-      "status": "pending"
-    },
-    {
-      "drive_folder": "Concession Burnoff",
-      "report_type": "concession_burnoff",
-      "parser": "parse_concession_burnoff",
-      "file_glob": "*.xlsx",
-      "status": "active"
-    },
-    {
-      "drive_folder": "AIRM - Yardi Rev Management",
-      "report_type": "revenue_mgmt",
-      "parser": null,
-      "file_glob": "*.xlsx",
-      "status": "pending"
-    },
-    {
-      "drive_folder": "AP Analytics",
-      "report_type": "ap_analytics",
-      "parser": null,
-      "file_glob": "*.xlsx",
-      "status": "pending"
-    },
-    {
-      "drive_folder": "Residential AR Analytics",
-      "report_type": "ar_analytics",
-      "parser": "parse_delinquency",
-      "file_glob": "*.xlsx",
-      "status": "active"
-    },
-    {
-      "drive_folder": "Delinquency",
-      "report_type": "ar_analytics",
-      "parser": "parse_delinquency",
-      "file_glob": "*.xlsx",
-      "status": "active",
-      "_comment": "Same report type as Residential AR Analytics -- the PM files delinquency summaries in both. A file present in both folders parses twice and the second store overwrites the first with identical content, which is harmless."
-    },
-    {
-      "drive_folder": "Workorders - Mainentance ",
-      "report_type": "workorders",
-      "parser": null,
-      "file_glob": "*.xlsx",
-      "status": "pending"
-    },
-    {
-      "drive_folder": "EliseAI Reports",
-      "report_type": "leasing_funnel",
-      "parser": "parse_leasing_funnel",
-      "file_glob": "leasing_funnel_report*.xlsx",
-      "status": "active"
-    },
-    {
-      "drive_folder": "EliseAI Reports",
-      "report_type": "bldg_metrics_csv",
-      "parser": null,
-      "file_glob": "*.csv",
-      "status": "active",
-      "_comment": "The building-metrics CSV. No parse/accumulate step -- update.yml runs populate_building_metrics.py on the newest one after the scorecard fill, passing Drive's landed_at as the arrival time."
-    }
-  ]
+ "_comment": "Maps each Drive subfolder name to a report type and the parser module that handles it. Add entries as new report parsers are built. Subfolders without a parser are ignored (logged) until one is added. Rent Roll and Residential AR Analytics now have parsers (parse_rent_roll, parse_delinquency); both expose parse(path) and tie out against the report's own total rows. Weekly Leasing Reports is still pending and trade-out data is hand-entered in the workbook's Lease Detail tab.",
+ "subfolders": [
+  {
+   "drive_folder": "T12 Expenses",
+   "report_type": "t12_statement",
+   "parser": "parse_t12_statement",
+   "file_glob": "*.xlsx",
+   "status": "active"
+  },
+  {
+   "drive_folder": "Rent Roll",
+   "report_type": "rent_roll",
+   "parser": "parse_rent_roll",
+   "file_glob": "*.xlsx",
+   "status": "active"
+  },
+  {
+   "drive_folder": "Property Status",
+   "report_type": "property_status",
+   "parser": null,
+   "file_glob": "*.xlsx",
+   "status": "pending"
+  },
+  {
+   "drive_folder": "Weekly Leasing Reports",
+   "report_type": "leasing_funnel",
+   "parser": "parse_leasing_funnel",
+   "file_glob": "leasing_funnel_report*.xlsx",
+   "status": "active",
+   "_comment": "The EliseAI weekly funnel parses from here too, so it works wherever the gmail filing lands it. The pending entry below is for this folder's intended content -- the RealPage rate tracker -- which has never yet arrived."
+  },
+  {
+   "drive_folder": "Weekly Leasing Reports",
+   "report_type": "leasing_report",
+   "parser": null,
+   "file_glob": "*.xlsx",
+   "status": "pending"
+  },
+  {
+   "drive_folder": "Concession Burnoff",
+   "report_type": "concession_burnoff",
+   "parser": "parse_concession_burnoff",
+   "file_glob": "*.xlsx",
+   "status": "active"
+  },
+  {
+   "drive_folder": "AIRM - Yardi Rev Management",
+   "report_type": "revenue_mgmt",
+   "parser": null,
+   "file_glob": "*.xlsx",
+   "status": "pending"
+  },
+  {
+   "drive_folder": "AP Analytics",
+   "report_type": "ap_analytics",
+   "parser": null,
+   "file_glob": "*.xlsx",
+   "status": "pending"
+  },
+  {
+   "drive_folder": "Residential AR Analytics",
+   "report_type": "ar_analytics",
+   "parser": "parse_delinquency",
+   "file_glob": "*.xlsx",
+   "status": "active"
+  },
+  {
+   "drive_folder": "Delinquency",
+   "report_type": "ar_analytics",
+   "parser": "parse_delinquency",
+   "file_glob": "*.xlsx",
+   "status": "active",
+   "_comment": "Same report type as Residential AR Analytics -- the PM files delinquency summaries in both. A file present in both folders parses twice and the second store overwrites the first with identical content, which is harmless."
+  },
+  {
+   "drive_folder": "Workorders - Mainentance ",
+   "report_type": "workorders",
+   "parser": null,
+   "file_glob": "*.xlsx",
+   "status": "pending"
+  },
+  {
+   "drive_folder": "EliseAI Reports",
+   "report_type": "leasing_funnel",
+   "parser": "parse_leasing_funnel",
+   "file_glob": "leasing_funnel_report*.xlsx",
+   "status": "active"
+  },
+  {
+   "drive_folder": "EliseAI Reports",
+   "report_type": "bldg_metrics_csv",
+   "parser": null,
+   "file_glob": "*.csv",
+   "status": "active",
+   "_comment": "The building-metrics CSV. No parse/accumulate step -- update.yml runs populate_building_metrics.py on the newest one after the scorecard fill, passing Drive's landed_at as the arrival time."
+  },
+  {
+   "drive_folder": "Building Info",
+   "report_type": "unit_directory",
+   "parser": "parse_unit_directory",
+   "file_glob": "UnitDirectory*.xlsx",
+   "status": "active",
+   "_comment": "The Yardi Unit Directory: every unit's floorplan, square footage, bedrooms and baths, for all properties in one export. Routed by the property-code rows inside it and tied out against each section's own Total row."
+  }
+ ]
 }
