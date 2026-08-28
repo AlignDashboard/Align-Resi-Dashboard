@@ -1323,6 +1323,16 @@ function scBand(metric, state) {
   const band = t && { exceeding: t.exceeding, in_range: t.in_range, below: t.below }[state];
   return band ? " (" + band + ")" : "";
 }
+// The period a single KPI's number covers, from whichever feed filled it —
+// each family lists the cells it owns in "<prefix>kpis" (see SC_FEED_PREFIXES),
+// so this does not have to know which feed that happens to be today.
+function scKpiAsOf(slug, metric) {
+  const m = ((SC && SC.measured) || {})[slug] || {};
+  for (const { prefix } of SC_FEED_PREFIXES) {
+    if ((m[prefix + "kpis"] || []).includes(metric)) return m[prefix + "as_of"] || null;
+  }
+  return null;
+}
 const scHasValues = sc => sc.properties.some(p =>
   Object.values(p.values || {}).some(v => v && v.display != null));
 
@@ -1849,11 +1859,29 @@ async function loadLanding() {
   (function kpis() {
     const host = document.getElementById("lkpis");
     const ltlCeiling = (L.expense_overview.revenue_compare[0] || {}).saving;
+    // One occupancy figure on this page. The board carried two: this tile's TTM
+    // economic occupancy from the workbook -- a dollar measure, 1 - vacancy loss
+    // over market potential -- beside the scorecard's Leased %, a unit measure
+    // snapshotted on the export date. Two definitions, two feeds and two dates
+    // read as one number disagreeing with itself, so the tile now mirrors the
+    // scorecard cell: occupancy has a single definition, source and as-of date
+    // wherever the page states it. Economic occupancy is still what the rent
+    // capture card is built from, under its own name, where the distinction
+    // between dollars and units is the point.
+    const scProp = SC && (SC.properties || []).find(x => x.slug === "the-landing");
+    const leased = scProp ? scValue(scProp, "Leased %") : null;
+    const leasedOn = scKpiAsOf("the-landing", "Leased %");
+    const occTile = leased && leased.display
+      ? [leased.display, "Leased",
+         "100 \u2212 exposure" + (leasedOn ? " \u00b7 as of " + leasedOn : ""),
+         "cLandingScorecard", "the KPI scorecard"]
+      : ["\u2014", "Leased", "awaiting the leasing feed",
+         "cLandingScorecard", "the KPI scorecard"];
     const tiles = [
       [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf", "cGaps", "largest unit gaps — gap to market by unit"],
       [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "rent capture — loss to lease by month"],
       [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
-      [fmPct(L.rent_capture.ttm.econ_occupancy), "Econ occupancy", "TTM · capture " + fmPct(L.rent_capture.ttm.capture_rate), "cRentCapture", "rent capture"],
+      occTile,
       [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cGaps", "largest unit gaps"],
       [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
     ];
