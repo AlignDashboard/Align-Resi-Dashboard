@@ -178,6 +178,12 @@
   .ck:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
 
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  /* A grid item's default min-width is its content's size, and a Chart.js
+     canvas holds the pixel width it last rendered at -- so without this, every
+     chart card refuses to shrink below the width it happened to have, and on a
+     phone the whole page scrolls sideways to fit it. Zero floor lets cards
+     track the viewport; the charts are responsive and redraw to fit. */
+  .grid > * { min-width: 0; }
   .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
   .card.wide { grid-column: 1 / -1; }
   .card h2 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
@@ -218,7 +224,7 @@
     margin: 4px 0 14px; }
   .sc-head { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start;
     flex: 1 1 320px; }
-  .sc-chart { flex: 0 0 auto; width: 320px; height: 190px; margin-left: auto; }
+  .sc-chart { flex: 0 0 auto; width: 320px; max-width: 100%; height: 190px; margin-left: auto; }
   /* The matrix is wider than a narrow viewport. A grid item defaults to
      min-width:auto, so without this the card refuses to shrink below the
      table's min-content width and the whole page scrolls sideways instead of
@@ -404,7 +410,22 @@
   .prop-select option { background: var(--panel); color: var(--text); }
   .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 
-  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+    /* Wide tables scroll inside their own card rather than widening the page.
+       The min-widths keep the columns readable at phone width -- and for the
+       operating summary they also keep the fixed column geometry its toggle
+       relies on, since the percentages resolve against the table, not the
+       card. Tables narrower than their card are unaffected. */
+    #lopTbl, #lgTbl, #ldTbl, #lcExpTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #lopTbl table.dt { min-width: 620px; }
+    #lgTbl table.dt { min-width: 680px; }
+    /* Finger-sized controls: the tap targets that measured 25-26px tall. */
+    .tab { padding: 14px 11px; }
+    .tog { padding: 12px 14px; }
+    .tmode { padding: 11px 14px; }
+    .ck { padding: 8px 0; }
+  }
 </style>
 </head>
 <body>
