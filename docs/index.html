@@ -396,6 +396,13 @@
   /* Gap/yr is right-aligned and Expiry left-aligned, so without this the two
      columns run together ("$45k MTM Feb 25"). */
   #lgTbl table.dt th:nth-child(7), #lgTbl table.dt td:nth-child(7) { padding-left: 16px; }
+  /* Status is last and left-aligned, and a left-aligned last column is where an
+     auto-layout table's leftover width piles up. On the wide card that is ~145px
+     of it, so the pills sat marooned mid-row with a gap of dead space behind them
+     and the card's right edge. Right-aligning anchors them to that edge, under a
+     STATUS heading that now sits over the pills instead of adrift left of them. */
+  #lgTbl table.dt th:last-child,
+  #lgTbl table.dt td:last-child { text-align: right; padding-right: 0; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
   .pill.good  { color: var(--green); border-color: var(--green); }
