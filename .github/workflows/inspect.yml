@@ -37,6 +37,10 @@ jobs:
         env:
           GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+          # The Drive library ("Resi Dashboard") -- keys, reference docs, the
+          # unit directory. Optional: unset, report_map entries marked
+          # "tree": "reference" are skipped with a line in the log.
+          GDRIVE_REFERENCE_FOLDER_ID: ${{ secrets.GDRIVE_REFERENCE_FOLDER_ID }}
         run: python scripts/fetch_drive.py --all
 
       - name: Inspect the delinquency reports

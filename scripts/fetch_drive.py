@@ -7,6 +7,15 @@ files from the configured subfolders into ./_downloads/<report_type>/.
 Env vars (set as GitHub secrets):
   GDRIVE_SA_KEY      -- the full service-account JSON (as a string)
   GDRIVE_FOLDER_ID   -- the ID of the PARENT folder that holds the subfolders
+                        ("Report Lander" -- where the Gmail filer drops reports)
+  GDRIVE_REFERENCE_FOLDER_ID
+                     -- optional. The ID of the LIBRARY folder ("Resi Dashboard")
+                        holding hand-curated, long-lived material rather than
+                        periodic report drops: keys, reference docs, the unit
+                        directory. An entry in report_map.json with
+                        "tree": "reference" is looked up here instead of under
+                        GDRIVE_FOLDER_ID. Unset means those entries are skipped,
+                        with a line in the log saying so.
 
 Reads config/report_map.json to know which subfolders to pull and what
 report_type to tag them with. Subfolders with status != "active" are skipped
@@ -75,28 +84,50 @@ def main():
     cfg = json.load(open("config/report_map.json"))
     svc = _service()
     parent = os.environ["GDRIVE_FOLDER_ID"]
+    reference_parent = os.environ.get("GDRIVE_REFERENCE_FOLDER_ID") or None
 
     DL_ROOT.mkdir(parents=True, exist_ok=True)
 
-    # map subfolder-name -> its Drive id
-    all_children = _list_children(svc, parent)
-    folders = {f["name"]: f["id"] for f in all_children
-               if f["mimeType"] == "application/vnd.google-apps.folder"}
-    print(f"[info] parent folder contains {len(folders)} subfolder(s): "
-          f"{sorted(folders.keys())}")
-
     FOLDER_MIME = "application/vnd.google-apps.folder"
 
-    def contents(folder_name):
-        return [f for f in _list_children(svc, folders[folder_name])
+    # Two trees, because two kinds of thing live in Drive and they are not
+    # organised alike. "reports" is the Gmail filer's drop folder, one subfolder
+    # per report type, churning daily. "reference" is the library the owner
+    # curates by hand -- keys, long-lived documents, the unit directory -- which
+    # sits outside the drop tree on purpose, so automation does not churn it.
+    # An entry names its tree; the default is reports.
+    def subfolders_of(parent_id):
+        return {f["name"]: f["id"] for f in _list_children(svc, parent_id)
+                if f["mimeType"] == FOLDER_MIME}
+
+    trees = {"reports": subfolders_of(parent), "reference": {}}
+    print(f"[info] parent folder contains {len(trees['reports'])} subfolder(s): "
+          f"{sorted(trees['reports'])}")
+    if reference_parent:
+        trees["reference"] = subfolders_of(reference_parent)
+        print(f"[info] reference folder contains {len(trees['reference'])} "
+              f"subfolder(s): {sorted(trees['reference'])}")
+    else:
+        print('[info] GDRIVE_REFERENCE_FOLDER_ID is not set -- entries marked '
+              '"tree": "reference" are skipped this run')
+
+    def folders_for(entry):
+        return trees.get(entry.get("tree", "reports"), {})
+
+    def contents(entry):
+        return [f for f in _list_children(svc, folders_for(entry)[entry["drive_folder"]])
                 if f["mimeType"] != FOLDER_MIME]
 
     manifest = []
     # Folders the config does not mention at all — a report dropped in one of
     # these is invisible to the pipeline, so say so rather than ignore it.
-    unmapped = sorted(set(folders) - {e["drive_folder"] for e in cfg["subfolders"]})
+    # Only the reports tree is checked for strays: the library is the owner's to
+    # arrange, and warning about every folder in it would be noise, not a finding.
+    folders = trees["reports"]
+    unmapped = sorted(set(folders) - {e["drive_folder"] for e in cfg["subfolders"]
+                                      if e.get("tree", "reports") == "reports"})
     for name in unmapped:
-        files = contents(name)
+        files = contents({"drive_folder": name})
         print(f"[warn] '{name}' is not in report_map.json — "
               f"{len(files)} file(s) ignored: {[f['name'] for f in files]}")
         # --all (the inspect workflow) downloads even these, into _pending/, so
@@ -110,14 +141,16 @@ def main():
 
     for entry in cfg["subfolders"]:
         name = entry["drive_folder"]
+        folders = folders_for(entry)
+        where = "" if entry.get("tree", "reports") == "reports" else " [reference]"
         if entry.get("status") != "active":
             # List it anyway. Skipping silently means a report can sit in a
             # pending folder for weeks with nothing in the log to show it, and
             # the filename usually carries the property code.
             if name in folders:
-                files = contents(name)
-                print(f"[skip] '{name}' (no parser yet) — {len(files)} file(s) "
-                      f"waiting: {[f['name'] for f in files]}")
+                files = contents(entry)
+                print(f"[skip] '{name}'{where} (no parser yet) — {len(files)} "
+                      f"file(s) waiting: {[f['name'] for f in files]}")
                 if fetch_pending:
                     for f in files:
                         dest = DL_ROOT / "_pending" / name / f["name"]
@@ -127,16 +160,20 @@ def main():
                 print(f"[skip] '{name}' (no parser yet, folder absent)")
             continue
         if name not in folders:
-            print(f"[warn] subfolder '{name}' not found in Drive parent")
+            if entry.get("tree") == "reference" and not reference_parent:
+                print(f"[skip] '{name}' [reference] — GDRIVE_REFERENCE_FOLDER_ID "
+                      f"is not set, so the library was not scanned")
+            else:
+                print(f"[warn] subfolder '{name}'{where} not found in Drive parent")
             continue
-        files = contents(name)
+        files = contents(entry)
         # file_glob splits a folder that holds more than one kind of file:
         # EliseAI Reports carries both the weekly funnel .xlsx and the
         # building-metrics .csv, each with its own report_type entry.
         glob = entry.get("file_glob") or "*"
         skipped = [f["name"] for f in files if not fnmatch.fnmatch(f["name"], glob)]
         files = [f for f in files if fnmatch.fnmatch(f["name"], glob)]
-        print(f"[info] '{name}' ({glob}) contains {len(files)} file(s): "
+        print(f"[info] '{name}'{where} ({glob}) contains {len(files)} file(s): "
               f"{[f['name'] for f in files]}")
         if skipped:
             # a file that matches no entry's glob must stay visible in the log,

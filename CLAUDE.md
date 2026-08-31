@@ -373,11 +373,38 @@ funnel sat in `_Unsorted` for six weeks, and how the `AIRM/Yardi Rev Management`
 and `Workorders/Maintaince` rules were one real report away from quietly
 starting a second folder each (a `/` is legal in a Drive folder name).
 
+### Two Drive trees
+
+`fetch_drive.py` scans **two** parents, because two different kinds of thing live
+in Drive:
+
+| Tree | Env var | What it is |
+| --- | --- | --- |
+| `reports` (default) | `GDRIVE_FOLDER_ID` | **Report Lander** — the Gmail filer's drop folder, one subfolder per report type, churning daily |
+| `reference` | `GDRIVE_REFERENCE_FOLDER_ID` | **Resi Dashboard** — the owner's hand-curated library: keys, long-lived documents, the unit directory |
+
+A `report_map.json` entry names its tree; omitted means `reports`. `Building
+Info` is the one `reference` entry today: the unit directory is the buildings'
+fixed description, not a periodic report, so it belongs in the library rather
+than the drop tree — and the pipeline reaches into the library for it instead of
+the folder being dragged into Report Lander. `GDRIVE_REFERENCE_FOLDER_ID` is
+optional; unset, those entries are skipped with a line in the log rather than a
+crash.
+
+The filing script needs the same distinction from the other side, since Apps
+Script can only find and create folders *inside* its target folder. A rule whose
+folder is in `EXTERNAL_FOLDERS` is resolved by absolute ID, read from a **script
+property** (`BUILDING_INFO_FOLDER_ID`) rather than written into the file —
+script properties survive a full paste, and this file is public. Unset, matching
+files stay in `_Unsorted` and every run logs why; they are never filed somewhere
+wrong. `test_routing.py` asserts `EXTERNAL_FOLDERS` and `"tree": "reference"`
+name the same folders, so the two halves cannot drift apart.
+
 `scripts/test_routing.py` is the check that they still agree. It reads the rules
 out of the `.js` directly, and asserts every rule's folder is a `drive_folder` in
 `report_map.json`, that no folder name contains `/`, that every `file_glob`
-starts with `*`, and that a list of real filenames still routes where it belongs.
-Run it after editing either file.
+starts with `*`, that the two trees agree, and that a list of real filenames
+still routes where it belongs. Run it after editing either file.
 
 Two traps worth knowing:
 

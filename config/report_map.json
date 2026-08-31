@@ -98,11 +98,12 @@
   },
   {
    "drive_folder": "Building Info",
+   "tree": "reference",
    "report_type": "unit_directory",
    "parser": "parse_unit_directory",
    "file_glob": "*UnitDirectory*.xlsx",
    "status": "active",
-   "_comment": "The Yardi Unit Directory: every unit's floorplan, square footage, bedrooms and baths, for all properties in one export. Routed by the property-code rows inside it and tied out against each section's own Total row. The glob leads with * because the Gmail-to-Drive filer prefixes the arrival date; fnmatch tests the whole filename, so an anchored pattern would skip every automatically filed copy."
+   "_comment": "The Yardi Unit Directory: every unit's floorplan, square footage, bedrooms and baths, for all properties in one export. Routed by the property-code rows inside it and tied out against each section's own Total row. Lives in the REFERENCE tree (GDRIVE_REFERENCE_FOLDER_ID), not the Gmail filer's drop folder: Building Info is the owner's hand-curated library of keys and long-lived documents, and the unit directory is exactly that -- the buildings' fixed description, not a periodic report. The glob leads with * because the filer prefixes the arrival date; fnmatch tests the whole filename, so an anchored pattern would skip every automatically filed copy."
   },
   {
    "drive_folder": "Renewal Tracker",
