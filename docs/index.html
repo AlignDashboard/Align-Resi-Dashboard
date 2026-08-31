@@ -393,25 +393,36 @@
   #lopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
   #lopTbl table.dt td { padding: 13px 10px 13px 0; }
   #lopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
-  /* Expiry and Status close the row, and the card is far wider than its eight
-     columns need. An auto-layout table hands its leftover width to the columns
-     that will take it, and these two took most of it: Status alone carried ~145px
-     of empty box, Expiry ~215px. Because Expiry is left-aligned and Status is
-     right-aligned, both columns' slack pooled in the space between them -- a
-     ~270px void mid-row, with the pills stranded short of the card's edge.
+  /* This card is far wider than its eight columns need -- about 350px of text in
+     a 1100px table -- and an auto-layout table gives the surplus to whichever
+     columns will take it. That is what kept opening voids in one place after
+     another. The gap you see between two columns is the sum of the slack on
+     either side of it, and a left-aligned column holds its slack to the right
+     while a right-aligned one holds it to the left; so wherever the two kinds
+     meet, both shares land in the same gap. Expiry|Status collected ~270px that
+     way, and closing it only moved the surplus to Beds|SF, which collected ~180px.
 
-     Sizing the pair to their content (width:1% is the shrink-to-fit idiom; nowrap
-     keeps "MTM · Feb 25" and the pill on one line) hands that width back to the
-     six columns on the left and leaves these three as a tight group on the right,
-     each separated by the same deliberate 40px. The right padding on the last
-     column only held the pills off the card edge, so it goes. The 40px also does
-     the job the old 16px did here: keeping "$45k" from running into the Expiry
-     beside it. */
-  #lgTbl table.dt th:nth-child(7), #lgTbl table.dt td:nth-child(7),
-  #lgTbl table.dt th:last-child,   #lgTbl table.dt td:last-child {
-    width: 1%; white-space: nowrap; padding-left: 40px; }
-  #lgTbl table.dt th:last-child,
-  #lgTbl table.dt td:last-child { text-align: right; padding-right: 0; }
+     Fixed widths spend it deliberately instead: each column gets its content plus
+     an equal share, so all seven gaps land within 8px of each other (~105px at
+     full width, tightening evenly as the card narrows). Expiry joins the
+     right-aligned block so its share falls on the side that needs it, which also
+     lines the dates up on the month rather than on the "MTM ·" in front of it.
+
+     The widths are content-derived and sum to 100. nowrap is set only on the two
+     columns that must not break, so anything longer than expected wraps inside
+     its own column instead of colliding with the next. */
+  #lgTbl table.dt { table-layout: fixed; }
+  #lgTbl table.dt th:nth-child(n+3), #lgTbl table.dt td:nth-child(n+3) { text-align: right; }
+  #lgTbl table.dt th:nth-child(1), #lgTbl table.dt td:nth-child(1) { width: 12%; }
+  #lgTbl table.dt th:nth-child(2), #lgTbl table.dt td:nth-child(2) { width: 7.5%; }
+  #lgTbl table.dt th:nth-child(3), #lgTbl table.dt td:nth-child(3) { width: 8%; }
+  #lgTbl table.dt th:nth-child(4), #lgTbl table.dt td:nth-child(4) { width: 14.3%; }
+  #lgTbl table.dt th:nth-child(5), #lgTbl table.dt td:nth-child(5) { width: 13.2%; }
+  #lgTbl table.dt th:nth-child(6), #lgTbl table.dt td:nth-child(6) { width: 13.2%; }
+  #lgTbl table.dt th:nth-child(7), #lgTbl table.dt td:nth-child(7) {
+    width: 16.4%; padding-left: 0; white-space: nowrap; }
+  #lgTbl table.dt th:last-child, #lgTbl table.dt td:last-child {
+    width: 15.4%; padding-right: 0; white-space: nowrap; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
   .pill.good  { color: var(--green); border-color: var(--green); }
