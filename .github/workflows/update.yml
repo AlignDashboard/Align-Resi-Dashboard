@@ -72,6 +72,14 @@ jobs:
           sys.exit(subprocess.call(cmd))
           EOF
 
+      # After the fills, so the chain reports what this run actually produced —
+      # which reports arrived, when they landed, which scorecard cells each feed
+      # ended up owning. It refuses to write if a card anchor or a data-table id
+      # it names has gone missing, which fails the run rather than publishing a
+      # map that points at nothing.
+      - name: Build the data lineage
+        run: python scripts/build_lineage.py
+
       - name: Refuse to commit if personal data leaked into the output
         run: python scripts/check_no_pii.py
 
@@ -79,8 +87,8 @@ jobs:
         run: |
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A data docs/metrics.json docs/scorecard.json 2>/dev/null \
-            || git add docs/metrics.json docs/scorecard.json
+          git add -A data docs/metrics.json docs/scorecard.json docs/lineage.json 2>/dev/null \
+            || git add docs/metrics.json docs/scorecard.json docs/lineage.json
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else

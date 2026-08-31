@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Align Data Tables</title>
+<title>Align Data Flow &amp; Tables</title>
 <script>
   // Applied before first paint; shares the dashboard's stored preference.
   (function () {
@@ -66,12 +66,8 @@
     cursor: pointer; }
   .tmode:hover { color: var(--amber); border-color: var(--amber); }
 
-  .lede { color: var(--muted); font-size: 11px; line-height: 1.7; max-width: 860px; margin-bottom: 18px; }
-  .sources { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
-  .src { border: 1px solid var(--line); background: var(--panel); padding: 9px 12px; font-size: 10px;
-    color: var(--muted); line-height: 1.6; }
-  .src b { color: var(--text); font-weight: 600; }
-  .src.bad { border-color: var(--red); color: var(--red); }
+  .lede { color: var(--muted); font-size: 11px; line-height: 1.7; max-width: 880px; margin-bottom: 18px; }
+  .lede b { color: var(--text); font-weight: 600; }
 
   /* contents */
   nav.toc { border: 1px solid var(--line); background: var(--panel); padding: 14px 16px; margin-bottom: 26px; }
@@ -145,6 +141,114 @@
   .empty { padding: 26px 15px; color: var(--muted); font-size: 11px; line-height: 1.7; }
   footer { margin-top: 34px; color: var(--muted); font-size: 10px; letter-spacing: 1px;
     line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
+
+  /* ---------- page views: the flow first, the tables behind it ---------- */
+  .viewbar { display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 18px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .vtabs { display: flex; gap: 2px; }
+  .vtab { background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--muted); font-family: inherit; font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; font-weight: 600; padding: 9px 15px; cursor: pointer; }
+  .vtab:hover { color: var(--text); }
+  .vtab[aria-selected="true"] { color: var(--amber); border-bottom-color: var(--amber); }
+  .vtab .n { color: var(--muted); font-weight: 400; }
+  .sources { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+  .viewbar .sources { margin: 0 0 8px; }
+  .src { border: 1px solid var(--line); background: var(--panel); padding: 7px 10px; font-size: 9px;
+    color: var(--muted); line-height: 1.55; }
+  .src b { color: var(--text); font-weight: 600; }
+  .src.bad { border-color: var(--red); color: var(--red); }
+
+  /* ---------- the six stages, explained once at the top ---------- */
+  .stagekey { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 20px; }
+  .stagekey .sk { background: var(--panel); padding: 10px 12px; }
+  .stagekey .n { font-size: 8px; letter-spacing: 1.2px; color: var(--amber); text-transform: uppercase; }
+  .stagekey .k { font-size: 11px; }
+  .stagekey .k { font-size: 10.5px; font-weight: 600; margin: 4px 0 5px; }
+  .stagekey .h { font-size: 9px; color: var(--muted); line-height: 1.55; }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+  .fchip { background: none; border: 1px solid var(--line); color: var(--muted);
+    font-family: inherit; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    font-weight: 600; padding: 6px 10px; cursor: pointer; }
+  .fchip:hover { color: var(--text); }
+  .fchip[aria-pressed="true"] { color: var(--amber); border-color: var(--amber); }
+  .fchip .c { color: var(--text); }
+
+  /* ---------- one row per source: Drive -> ... -> a card ---------- */
+  .flow { border: 1px solid var(--line); background: var(--panel); margin-bottom: 16px; }
+  /* a chain that does not reach the dashboard is drawn as one that does not close */
+  .flow.st-waiting, .flow.st-no-parser { border-style: dashed; }
+  .flow > .fhead { padding: 12px 14px 10px; border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    align-items: flex-start; }
+  .flow h3 { font-size: 12px; font-weight: 600; letter-spacing: .5px;
+    display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .flow .fsub { font-size: 9.5px; color: var(--muted); margin-top: 5px; line-height: 1.6; }
+  .flow .fwhen { font-size: 9px; color: var(--muted); text-align: right; line-height: 1.6; }
+  .flow .fwhen b { color: var(--text); font-weight: 600; }
+  .badge { font-size: 8px; letter-spacing: 1.2px; text-transform: uppercase; padding: 2px 7px;
+    border: 1px solid; font-weight: 600; white-space: nowrap; }
+  .badge.st-live { color: var(--green); border-color: var(--green); }
+  .badge.st-partial { color: var(--teal); border-color: var(--teal); }
+  .badge.st-waiting { color: var(--amber); border-color: var(--amber); }
+  .badge.st-no-parser { color: var(--muted); border-color: var(--line); }
+  .badge.st-manual { color: var(--blue); border-color: var(--blue); }
+  .badge.open { color: var(--red); border-color: var(--red); }
+
+  .chain { display: flex; align-items: stretch; padding: 12px 14px; overflow-x: auto; }
+  .step { flex: 1 1 0; min-width: 172px; border: 1px solid var(--line); background: var(--panel-2);
+    padding: 9px 10px; }
+  /* a stage nothing reaches: drawn empty rather than dropped, so the chain
+     shows where it actually stops */
+  .step.off { background: transparent; border-style: dashed; }
+  .step .stg { font-size: 8px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--amber); }
+  .step.off .stg { color: var(--muted); }
+  .step .ttl { font-size: 10.5px; font-weight: 600; margin: 5px 0 2px; line-height: 1.45;
+    word-break: break-word; }
+  .step.off .ttl { color: var(--muted); font-weight: 400; font-style: italic; }
+  .step .ln { font-size: 9px; color: var(--muted); line-height: 1.55; margin-top: 4px;
+    word-break: break-word; }
+  .step .ln.chk { color: var(--muted); }
+  .step .ln.chk::before { content: "\2713\00a0"; color: var(--green); }
+  .step .ln.mono { color: var(--text); }
+  .step a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+  .step a:hover { color: var(--amber); border-bottom-color: var(--amber); }
+  .step .sep { height: 1px; background: var(--line); margin: 8px 0 6px; }
+  .arrow { flex: 0 0 24px; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 13px; }
+
+  .ffoot { padding: 0 14px 13px; font-size: 9.5px; color: var(--muted); line-height: 1.65; }
+  .ffoot .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; align-items: center; }
+  .chip { font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase; border: 1px solid var(--line);
+    padding: 3px 7px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  a.chip:hover { color: var(--amber); border-color: var(--amber); }
+  .chip.lbl { border-color: transparent; padding-left: 0; }
+  details.ev { margin-top: 10px; }
+  details.ev summary { cursor: pointer; font-size: 9px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--amber); }
+  details.ev summary:hover { color: var(--text); }
+  details.ev .scroll { max-height: 260px; margin-top: 8px; border: 1px solid var(--line); }
+  /* a flow linked to from a table's "From:" line, marked the same way a row is */
+  .flow.row-target { border-color: var(--amber); }
+  .flow.row-target > .fhead { background: var(--target-wash); }
+  .tlink { color: var(--amber); text-decoration: none; border-bottom: 1px solid transparent; }
+  .tlink:hover { border-bottom-color: var(--amber); }
+  /* which flow a table belongs to, printed in the table's own head */
+  .tbl .from { font-size: 9.5px; color: var(--muted); margin-top: 4px; }
+  .tbl .from a { color: var(--amber); text-decoration: none; }
+  .tbl .from a:hover { text-decoration: underline; }
+
+  @media (max-width: 900px) {
+    /* stacked rather than side-scrolled: six nodes do not fit a phone, and a
+       chain read top-to-bottom is still a chain */
+    .chain { flex-direction: column; overflow-x: visible; }
+    .arrow { flex: 0 0 20px; transform: rotate(90deg); }
+    .flow .fwhen { text-align: left; }
+    /* four freshness chips stacked is most of a phone screen */
+    .viewbar .sources { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -154,14 +258,14 @@
        session unlock it redirects rather than prompting. -->
   <div id="gate">
     <div class="mark"></div>
-    <h1>Align Data Tables</h1>
+    <h1>Align Data</h1>
     <div class="sub" id="gateMsg">Checking access…</div>
     <a class="plain" id="gateLink" href="index.html" style="display:none;">Go to the dashboard →</a>
   </div>
 
   <div id="app">
     <header class="top">
-      <div class="title">ALIGN · <span>DATA TABLES</span></div>
+      <div class="title">ALIGN · <span>DATA FLOW &amp; TABLES</span></div>
       <div class="right">
         <a class="plain" id="backLink" href="index.html">← Dashboard</a>
         <button class="tmode" id="themeToggle" type="button" role="switch" aria-checked="false">
@@ -170,15 +274,40 @@
       </div>
     </header>
 
-    <div class="lede" id="lede">
-      The numbers behind each chart on the dashboard, exactly as the page reads them —
-      no rounding or abbreviation. Each table names the chart it feeds and can be
-      downloaded as CSV. Larger tables have a filter box.
+    <div class="viewbar">
+      <div class="vtabs" role="tablist" aria-label="Page views">
+        <button class="vtab" id="vtFlow" type="button" role="tab" aria-controls="viewFlow"
+                aria-selected="true">Data flow</button>
+        <button class="vtab" id="vtTables" type="button" role="tab" aria-controls="viewTables"
+                aria-selected="false" tabindex="-1">Tables <span class="n" id="vtTablesN"></span></button>
+      </div>
+      <div class="sources" id="sources"></div>
     </div>
 
-    <div class="sources" id="sources"></div>
-    <nav class="toc" id="toc"><h2>Contents</h2></nav>
-    <div id="tables"></div>
+    <section class="view" id="viewFlow" role="tabpanel" aria-labelledby="vtFlow" tabindex="0">
+      <div class="lede">
+        Every number on this dashboard starts as a file somebody else produced. This is the
+        chain each one travels: the <b>Google Drive folder</b> it lands in, the <b>export</b>
+        itself, the <b>script</b> that reads it and what that script checks before believing
+        it, the scrubbed copy kept in <b>data/</b>, the <b>JSON</b> the site fetches, and the
+        <b>card</b> it finally shows up on. Where a chain stops short it is drawn stopping
+        short — a report can arrive, parse and tie out and still feed nothing.
+      </div>
+      <div class="stagekey" id="stagekey"></div>
+      <div class="filters" id="flowFilters"></div>
+      <div id="flows"></div>
+      <div id="reverse"></div>
+    </section>
+
+    <section class="view" id="viewTables" role="tabpanel" aria-labelledby="vtTables" tabindex="0" hidden>
+      <div class="lede">
+        The numbers behind each chart on the dashboard, exactly as the page reads them —
+        no rounding or abbreviation. Each table names the chart it feeds and the source it
+        came down from, and can be downloaded as CSV. Larger tables have a filter box.
+      </div>
+      <nav class="toc" id="toc"><h2>Contents</h2></nav>
+      <div id="tables"></div>
+    </section>
 
     <footer id="footer"></footer>
   </div>
@@ -283,6 +412,22 @@ function renderTable(host, spec) {
   const left = el("div");
   left.appendChild(el("h3", null, title));
   if (feeds) left.appendChild(el("div", "feeds", "Feeds: " + feeds));
+  // Which source this table came down from, so a table is never read without
+  // knowing what produced it. Built from lineage.json, so a table nothing
+  // claims simply carries no line rather than a guess.
+  const from = sourceOf(id);
+  if (from.length) {
+    const d = el("div", "from");
+    d.appendChild(document.createTextNode("From: "));
+    from.forEach((f, i) => {
+      if (i) d.appendChild(document.createTextNode(" · "));
+      const a = el("a", null, f.title);
+      a.href = "#" + flowAnchor(f.id);
+      a.addEventListener("click", () => showView("viewFlow"));
+      d.appendChild(a);
+    });
+    left.appendChild(d);
+  }
   if (note) left.appendChild(el("div", "note", note));
   head.appendChild(left);
 
@@ -306,7 +451,7 @@ function renderTable(host, spec) {
   if (!rows.length) {
     box.appendChild(el("div", "empty", spec.emptyNote || "No rows — this feed has no data yet."));
     host.appendChild(box);
-    TOC.push({ id, title, group: spec.group, n: 0 });
+    if (!spec.noToc) TOC.push({ id, title, group: spec.group, n: 0 });
     return;
   }
 
@@ -343,7 +488,7 @@ function renderTable(host, spec) {
     });
   }
   host.appendChild(box);
-  TOC.push({ id, title, group: spec.group, n: rows.length });
+  if (!spec.noToc) TOC.push({ id, title, group: spec.group, n: rows.length });
 }
 
 function buildRow(cols, r, isTotal, rowId) {
@@ -360,6 +505,10 @@ function buildRow(cols, r, isTotal, rowId) {
       // design — without this the ungraded cells are indistinguishable from it.
       if (v === null || v === undefined) td.appendChild(el("span", "st-none", "—"));
       else td.appendChild(el("span", "st-swatch st-" + v));
+    } else if (c.fmt === "link" && c.href) {
+      const url = c.href(r);
+      if (url) { const a = el("a", "tlink", F.raw(v)); a.href = url; td.appendChild(a); }
+      else td.textContent = F.raw(v);
     } else if (c.fmt === "pill") {
       const map = { GOOD: "good", CURRENT: "good", WATCH: "watch", REVIEW: "watch", FLAG: "flag",
                     PRIORITY: "flag", "AT RISK": "flag", MINOR: "mut", Holdover: "flag",
@@ -409,6 +558,500 @@ function kv(obj, labels) {
 const KVCOLS = [{ key: "key", label: "Field" }, { key: "value", label: "Value", fmt: "raw" }];
 
 /* ============================================================
+   PAGE VIEWS
+   The flow is the front door: it answers "where did this number come
+   from" before the tables answer "what is it". The tables keep every
+   id they had, so a deep link from the dashboard still lands on its
+   row — it just switches the view on the way in.
+   ============================================================ */
+const VIEWS = ["viewFlow", "viewTables"];
+const VIEW_TAB = { viewFlow: "vtFlow", viewTables: "vtTables" };
+
+function showView(id, focus) {
+  VIEWS.forEach(v => {
+    const on = v === id;
+    document.getElementById(v).hidden = !on;
+    const tab = document.getElementById(VIEW_TAB[v]);
+    tab.setAttribute("aria-selected", String(on));
+    tab.tabIndex = on ? 0 : -1;
+  });
+  if (focus) document.getElementById(VIEW_TAB[id]).focus();
+}
+Object.entries(VIEW_TAB).forEach(([view, tab]) =>
+  document.getElementById(tab).addEventListener("click", () => showView(view)));
+document.querySelector(".vtabs").addEventListener("keydown", e => {
+  const dir = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+  if (!dir) return;
+  e.preventDefault();
+  const i = VIEWS.indexOf(document.getElementById(document.activeElement.getAttribute("aria-controls")).id);
+  showView(VIEWS[(i + dir + VIEWS.length) % VIEWS.length], true);
+});
+
+/* ============================================================
+   DATA FLOW
+   Rendered from lineage.json — written by scripts/build_lineage.py,
+   which derives the Drive side from config/report_map.json and checks
+   every card anchor and table id it names against index.html and this
+   page before it will write the file.
+   ============================================================ */
+const STATUS_LABEL = {
+  live: "Live", partial: "Parsed, not published", waiting: "Waiting on a file",
+  "no-parser": "No parser yet", manual: "Hand-authored",
+};
+const STATUS_BLURB = {
+  live: "A file arrives, the pipeline reads it, and something on the dashboard shows it.",
+  partial: "It arrives and parses. Nothing publishes it, so the chain stops in data/.",
+  waiting: "The parser is written and registered. No file has ever arrived to run it on.",
+  "no-parser": "The folder is registered so a file dropped in it shows up in the fetch log. "
+             + "Writing the parser needs one sample file.",
+  manual: "No feed at all — the numbers are edited into the JSON and carried through each run.",
+};
+const ORIGIN_LABEL = {
+  drive: "Google Drive folder", email: "Dashboard mailbox",
+  workbook: "Analyst workbook", manual: "Edited in place",
+};
+const ORIGIN_GROUP = {
+  drive: "From Google Drive · the daily pipeline",
+  email: "From the dashboard mailbox",
+  workbook: "From a workbook, refreshed by hand",
+  manual: "No feed behind it",
+};
+
+let LINEAGE = null;
+// tableId -> the flows that produce it, for the "From:" line on each table.
+// Built before the tables render, so a table always knows its own source.
+let SOURCE_INDEX = [];
+
+const flowAnchor = id => "f-" + id;
+
+function sourceOf(tableId) {
+  return SOURCE_INDEX
+    .filter(e => e.exact ? e.match === tableId : tableId.startsWith(e.match))
+    .map(e => ({ id: e.id, title: e.title }));
+}
+
+function buildSourceIndex(flows) {
+  SOURCE_INDEX = [];
+  flows.forEach(f => {
+    if (f.same_as) return;                    // an alias route, folded in below
+    (f.tables || []).forEach(t => SOURCE_INDEX.push({
+      id: f.id, title: f.title,
+      match: t.endsWith("*") ? t.slice(0, -1) : t, exact: !t.endsWith("*"),
+    }));
+  });
+}
+
+/* when a feed last delivered, in words a stopped feed cannot hide behind */
+function whenText(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d)) return String(iso);
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const ago = days <= 0 ? "today" : days === 1 ? "yesterday" : days + " days ago";
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+       + " · " + ago;
+}
+const newestArrival = f => (f.evidence || [])
+  .map(e => e.landed_at).filter(Boolean).sort().slice(-1)[0] || null;
+
+function stepNode(stage, title, off) {
+  const d = el("div", "step" + (off ? " off" : ""));
+  d.appendChild(el("div", "stg", stage));
+  d.appendChild(el("div", "ttl", title));
+  return d;
+}
+function addLine(node, text, cls) {
+  if (text) node.appendChild(el("div", "ln" + (cls ? " " + cls : ""), text));
+  return node;
+}
+const base = path => String(path).split("/").pop();
+
+function nodeSource(f, aliases) {
+  const n = stepNode("Source", f.source_label || "—");
+  addLine(n, ORIGIN_LABEL[f.origin_kind] || f.origin_kind);
+  addLine(n, f.source_detail);
+  aliases.forEach(a => addLine(n, "Also registered: " + a.source_label));
+  return n;
+}
+
+/* Some feeds record what they are ("EliseAI building metrics export
+   (metrics-building-2026-08-31.csv)") rather than only what the file was
+   called, so pull the filename out of the sentence rather than giving up on
+   it. Nothing without a report extension counts. */
+const fileFrom = x => {
+  const m = String(x || "").match(/[\w.\-]+\.(?:xlsx|xlsm|xls|csv)\b/i);
+  return m ? base(m[0]) : null;
+};
+
+function nodeReport(f) {
+  // The newest file actually seen beats the pattern it would match. Evidence
+  // with no filename is still an arrival -- a T12 point accumulated before the
+  // pipeline recorded source names is not "nothing arrived".
+  const seen = (f.evidence || []).map(e => fileFrom(e.source_file)).filter(Boolean);
+  const arrived = (f.evidence || []).length > 0;
+  const n = stepNode("The report",
+    seen.length ? seen[0] : (f.example || (arrived ? "filename not recorded"
+                                                   : "no file has arrived")),
+    !arrived);
+  if (seen.length > 1) addLine(n, "+ " + (seen.length - 1) + " more");
+  else if (!seen.length && f.example && arrived) addLine(n, "the filename this run saw was not recorded");
+  addLine(n, f.carries);
+  return n;
+}
+
+function nodeStep(f) {
+  const steps = f.steps || [];
+  if (!steps.length) {
+    const n = stepNode("Pipeline step", "no parser written", true);
+    addLine(n, "Registered in config/report_map.json as pending. The fetch log "
+             + "lists what is waiting in the folder.");
+    return n;
+  }
+  const n = stepNode("Pipeline step", base(steps[0].script));
+  addLine(n, steps[0].does);
+  addLine(n, steps[0].checks, "chk");
+  steps.slice(1).forEach(st => {
+    n.appendChild(el("div", "sep"));
+    addLine(n, base(st.script), "mono");
+    addLine(n, st.does);
+    addLine(n, st.checks, "chk");
+  });
+  return n;
+}
+
+function nodeStored(f) {
+  const stores = f.stores || [];
+  if (!stores.length) {
+    const n = stepNode("Stored", "nothing kept", true);
+    addLine(n, f.status === "manual"
+      ? "Nothing to store — the values live in docs/metrics.json itself."
+      : "Read and used, not written to data/.");
+    return n;
+  }
+  // shared prefix once, filenames under it: "data/<slug>/expense_ratio.json"
+  // four times over wraps mid-word and reads as noise
+  const dir = stores[0].includes("/") ? stores[0].slice(0, stores[0].lastIndexOf("/") + 1) : "";
+  const shared = dir && stores.every(x => x.startsWith(dir));
+  const n = stepNode("Stored", shared ? dir : stores[0]);
+  (shared ? stores : stores.slice(1)).forEach(x =>
+    addLine(n, shared ? x.slice(dir.length) : x, "mono"));
+  const props = (f.evidence || []).map(e => e.property).filter(Boolean);
+  addLine(n, props.length ? props.length + " propert" + (props.length === 1 ? "y" : "ies")
+                            + ": " + props.join(", ")
+                          : "no file written yet");
+  return n;
+}
+
+function nodePublished(f) {
+  const pubs = f.publishes || [];
+  if (!pubs.length) {
+    const n = stepNode("Published", "not published", true);
+    addLine(n, "Nothing the site fetches carries it. The chain stops one stage short.");
+    return n;
+  }
+  const byFile = {};
+  pubs.forEach(x => (byFile[x.file] = byFile[x.file] || []).push(x.key));
+  const files = Object.keys(byFile);
+  const n = stepNode("Published", files[0]);
+  addLine(n, byFile[files[0]].join(", "));
+  files.slice(1).forEach(fl => {
+    n.appendChild(el("div", "sep"));
+    addLine(n, fl, "mono");
+    addLine(n, byFile[fl].join(", "));
+  });
+  return n;
+}
+
+function nodeDashboard(f) {
+  const cards = f.dashboard || [];
+  if (!cards.length) {
+    const n = stepNode("On the dashboard", "nothing shows it", true);
+    addLine(n, f.status === "waiting" || f.status === "no-parser"
+      ? "It would land here once the file and the parser both exist."
+      : "No card reads it today.");
+    return n;
+  }
+  const n = stepNode("On the dashboard", "");
+  n.querySelector(".ttl").remove();
+  cards.forEach((c, i) => {
+    if (i) n.appendChild(el("div", "sep"));
+    const t = el("div", "ttl");
+    const a = el("a", null, c.card);
+    // the dashboard selects the owning tab from the fragment and flashes the card
+    a.href = "index.html#" + c.anchor;
+    t.appendChild(a);
+    n.appendChild(t);
+    addLine(n, c.tab + " tab");
+  });
+  return n;
+}
+
+function evidenceTable(f) {
+  const rows = f.evidence || [];
+  if (!rows.length) return null;
+  const d = el("details", "ev");
+  d.appendChild(el("summary", null,
+    "What has actually arrived (" + rows.length + ")"));
+  const scroll = el("div", "scroll");
+  const table = el("table"), thead = el("thead"), hr = el("tr");
+  ["Property", "Arrived", "Data as of", "What"].forEach(h => hr.appendChild(el("th", null, h)));
+  thead.appendChild(hr); table.appendChild(thead);
+  const tb = el("tbody");
+  rows.forEach(r => {
+    const tr = el("tr");
+    tr.appendChild(el("td", null, r.property || "—"));
+    tr.appendChild(el("td", null, whenText(r.landed_at) || "not recorded"));
+    tr.appendChild(el("td", null, r.as_of || "—"));
+    tr.appendChild(el("td", "wrap", [r.source_file, r.detail].filter(Boolean).join(" — ") || "—"));
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb);
+  scroll.appendChild(table);
+  d.appendChild(scroll);
+  return d;
+}
+
+function renderFlow(f, aliases) {
+  const box = el("div", "flow st-" + f.status);
+  box.id = flowAnchor(f.id);
+
+  const head = el("div", "fhead");
+  const left = el("div");
+  const h3 = el("h3");
+  h3.appendChild(document.createTextNode(f.title));
+  h3.appendChild(el("span", "badge st-" + f.status, STATUS_LABEL[f.status] || f.status));
+  if (f.open_item) h3.appendChild(el("span", "badge open", "Open item " + f.open_item));
+  left.appendChild(h3);
+  left.appendChild(el("div", "fsub", STATUS_BLURB[f.status] || ""));
+  head.appendChild(left);
+
+  const when = el("div", "fwhen");
+  const arrived = newestArrival(f);
+  if (arrived) {
+    when.appendChild(el("b", null, "Last arrival"));
+    when.appendChild(document.createElement("br"));
+    when.appendChild(document.createTextNode(whenText(arrived)));
+  } else if (f.parser || f.steps.length) {
+    const t = el("span", null, "arrival not recorded");
+    t.title = "The source carried no arrival time. Only a Drive fetch or an "
+            + "email records one; a series accumulated before that keeps the "
+            + "period it covers and nothing else.";
+    when.appendChild(t);
+  }
+  head.appendChild(when);
+  box.appendChild(head);
+
+  const chain = el("div", "chain");
+  [nodeSource(f, aliases), nodeReport(f), nodeStep(f), nodeStored(f),
+   nodePublished(f), nodeDashboard(f)].forEach((n, i) => {
+    if (i) chain.appendChild(el("div", "arrow", "→"));
+    chain.appendChild(n);
+  });
+  box.appendChild(chain);
+
+  const foot = el("div", "ffoot");
+  if (f.note) foot.appendChild(el("div", null, f.note));
+  aliases.forEach(a => a.note && foot.appendChild(el("div", null,
+    a.source_label + ": " + a.note)));
+  const tables = (f.tables || []).concat(...aliases.map(a => a.tables || []));
+  if (tables.length) {
+    const chips = el("div", "chips");
+    chips.appendChild(el("span", "chip lbl", "Numbers:"));
+    tableChips(tables).forEach(c => chips.appendChild(c));
+    foot.appendChild(chips);
+  }
+  const ev = evidenceTable(f);
+  if (ev) foot.appendChild(ev);
+  box.appendChild(foot);
+  return box;
+}
+
+/* the tables on this page that hold a flow's numbers, resolved through the
+   same wildcard the generator checked (t-expratio-* is one table per property) */
+function tableChips(patterns) {
+  const ids = [];
+  patterns.forEach(pat => {
+    if (pat.endsWith("*")) {
+      TOC.filter(t => t.id.startsWith(pat.slice(0, -1)))
+         .forEach(t => ids.push(t));
+    } else {
+      const t = TOC.find(x => x.id === pat);
+      if (t) ids.push(t);
+    }
+  });
+  const seen = new Set();
+  return ids.filter(t => !seen.has(t.id) && seen.add(t.id)).map(t => {
+    const a = el("a", "chip", t.title);
+    a.href = "#" + t.id;
+    a.addEventListener("click", () => showView("viewTables"));
+    return a;
+  });
+}
+
+/* the registered-but-unparsed folders, as one block rather than one empty
+   chain each. Every folder is still named, with what it would feed. */
+function renderPending(flows) {
+  const box = el("div", "flow st-no-parser");
+  const head = el("div", "fhead");
+  const left = el("div");
+  const h3 = el("h3");
+  h3.appendChild(document.createTextNode("Registered, waiting on a parser"));
+  h3.appendChild(el("span", "badge st-no-parser", flows.length + " folders"));
+  left.appendChild(h3);
+  left.appendChild(el("div", "fsub", STATUS_BLURB["no-parser"]));
+  head.appendChild(left);
+  box.appendChild(head);
+
+  const scroll = el("div", "scroll");
+  const table = el("table"), thead = el("thead"), hr = el("tr");
+  ["Drive folder", "What it would feed", "Chain reaches"].forEach(h =>
+    hr.appendChild(el("th", null, h)));
+  thead.appendChild(hr); table.appendChild(thead);
+  const tb = el("tbody");
+  flows.forEach(f => {
+    const tr = el("tr");
+    tr.appendChild(el("td", null, f.source_label));
+    tr.appendChild(el("td", "wrap", f.carries));
+    tr.appendChild(el("td", null, "the fetch log, and stops"));
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb);
+  scroll.appendChild(table);
+  box.appendChild(scroll);
+  box.appendChild(el("div", "ffoot",
+    "The fetcher lists what is sitting in each of these every run, so a file "
+    + "dropped in one is never invisible — it just has nothing to read it yet. "
+    + "A parser cannot be written truthfully without one sample file, and none "
+    + "of these folders has ever held one."));
+  return box;
+}
+
+function renderLineage(L) {
+  const flows = L.flows || [];
+
+  // the six stages, once, above everything
+  const key = document.getElementById("stagekey");
+  (L.stages || []).forEach((st, i) => {
+    const d = el("div", "sk");
+    d.appendChild(el("div", "n", "Stage " + (i + 1)));
+    d.appendChild(el("div", "k", st.label));
+    d.appendChild(el("div", "h", st.hint));
+    key.appendChild(d);
+  });
+
+  // alias routes (the same report registered in a second folder) are folded
+  // into the flow they duplicate rather than drawn twice
+  const primary = flows.filter(f => !f.same_as);
+  const aliasesOf = id => flows.filter(f => f.same_as === id);
+
+  const host = document.getElementById("flows");
+  const filters = document.getElementById("flowFilters");
+  const counts = {};
+  primary.forEach(f => { counts[f.status] = (counts[f.status] || 0) + 1; });
+
+  const cards = [];
+  const origins = [];
+  primary.forEach(f => { if (!origins.includes(f.origin_kind)) origins.push(f.origin_kind); });
+  origins.forEach(group => {
+    const mine = primary.filter(f => f.origin_kind === group);
+    host.appendChild(el("div", "grouphead", ORIGIN_GROUP[group] || group));
+    // A registered folder with no parser has the same empty chain every time.
+    // Drawing five of them buries the four that actually carry data, so they
+    // collapse into one block — still every folder, still by name.
+    mine.filter(f => f.status !== "no-parser").forEach(f => {
+      const card = renderFlow(f, aliasesOf(f.id));
+      host.appendChild(card);
+      cards.push(card);
+    });
+    const pending = mine.filter(f => f.status === "no-parser");
+    if (pending.length) {
+      const block = renderPending(pending);
+      host.appendChild(block);
+      cards.push(block);
+    }
+  });
+
+  // status filters. Hiding a group's last visible row hides its heading too,
+  // or the page grows headings with nothing under them.
+  let active = null;
+  const apply = () => {
+    cards.forEach(c => {
+      c.hidden = !!active && !c.classList.contains("st-" + active);
+    });
+    host.querySelectorAll(".grouphead").forEach(g => {
+      let any = false;
+      for (let n = g.nextElementSibling; n && !n.classList.contains("grouphead");
+           n = n.nextElementSibling) {
+        if (!n.hidden) { any = true; break; }
+      }
+      g.hidden = !any;
+    });
+  };
+  const chip = (status, label, n) => {
+    const b = el("button", "fchip");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(status === active));
+    b.appendChild(document.createTextNode(label + " "));
+    b.appendChild(el("span", "c", String(n)));
+    b.addEventListener("click", () => {
+      active = active === status ? null : status;
+      filters.querySelectorAll(".fchip").forEach(x =>
+        x.setAttribute("aria-pressed", String(x === b && active !== null)));
+      apply();
+    });
+    return b;
+  };
+  const all = el("button", "fchip");
+  all.type = "button";
+  all.setAttribute("aria-pressed", "true");
+  all.appendChild(document.createTextNode("All sources "));
+  all.appendChild(el("span", "c", String(primary.length)));
+  all.addEventListener("click", () => {
+    active = null;
+    filters.querySelectorAll(".fchip").forEach(x =>
+      x.setAttribute("aria-pressed", String(x === all)));
+    apply();
+  });
+  filters.appendChild(all);
+  ["live", "partial", "waiting", "no-parser", "manual"].forEach(st => {
+    if (counts[st]) filters.appendChild(chip(st, STATUS_LABEL[st], counts[st]));
+  });
+
+  // the same chain read from the other end
+  const rev = document.getElementById("reverse");
+  rev.appendChild(el("div", "grouphead", "Every card, and what feeds it"));
+  const revRows = [];
+  primary.forEach(f => (f.dashboard || []).forEach(c => revRows.push({
+    tab: c.tab, card: c.card, anchor: c.anchor, source: f.title,
+    origin: f.source_label,
+    arrives: ORIGIN_LABEL[f.origin_kind] || f.origin_kind,
+    status: STATUS_LABEL[f.status] || f.status,
+    // nothing arrives for a hand-authored block, so it has no arrival to
+    // report -- printing the pipeline run would read as a freshness date
+    last: f.origin_kind === "manual" ? "nothing arrives"
+        : (whenText(newestArrival(f)) || "not recorded"),
+  })));
+  const TABORDER = { Portfolio: 0, Scorecard: 1, "The Landing": 2 };
+  revRows.sort((a, b) => (TABORDER[a.tab] ?? 9) - (TABORDER[b.tab] ?? 9)
+    || a.card.localeCompare(b.card));
+  renderTable(rev, {
+    id: "t-reverse", group: "Flow", noToc: true,
+    title: "Where each card's numbers come from",
+    note: "The chain read backwards, one row per card. A card fed by two "
+        + "sources appears twice — the Landing scorecard slice and the "
+        + "Expense Load & NOI card both are.",
+    cols: [{ key: "tab", label: "Dashboard tab" },
+           { key: "card", label: "Card", fmt: "link",
+             href: r => "index.html#" + r.anchor },
+           { key: "source", label: "Source report", wrap: true },
+           { key: "origin", label: "Where it comes from", wrap: true },
+           { key: "arrives", label: "Arrives by" },
+           { key: "last", label: "Last arrival" }],
+    rows: revRows, filterable: true,
+  });
+}
+
+/* ============================================================
    LOAD + BUILD
    ============================================================ */
 async function grab(name) {
@@ -420,13 +1063,15 @@ async function grab(name) {
 }
 
 async function loadAll() {
-  const [M, L, S] = await Promise.all(
-    [grab("metrics.json"), grab("landing.json"), grab("scorecard.json")]);
+  const [M, L, S, LN] = await Promise.all(
+    [grab("metrics.json"), grab("landing.json"), grab("scorecard.json"),
+     grab("lineage.json")]);
 
   const srcHost = document.getElementById("sources");
   [["metrics.json", M, d => d.meta && d.meta.generated_at],
    ["landing.json", L, d => d.meta && d.meta.generated_at],
-   ["scorecard.json", S, d => d.meta && d.meta.generated_at]].forEach(([name, r, gen]) => {
+   ["scorecard.json", S, d => d.meta && d.meta.generated_at],
+   ["lineage.json", LN, d => d.meta && d.meta.generated_at]].forEach(([name, r, gen]) => {
     const box = el("div", "src" + (r.ok ? "" : " bad"));
     box.appendChild(el("b", null, name));
     box.appendChild(document.createElement("br"));
@@ -435,6 +1080,9 @@ async function loadAll() {
       : "could not load — " + r.error));
     srcHost.appendChild(box);
   });
+
+  // Before the tables, so each one can print the source it came down from.
+  if (LN.ok) { LINEAGE = LN.data; buildSourceIndex(LINEAGE.flows || []); }
 
   const host = document.getElementById("tables");
   const group = name => host.appendChild(el("div", "grouphead", name));
@@ -1089,10 +1737,24 @@ async function loadAll() {
   }
 
   buildTOC();
+  document.getElementById("vtTablesN").textContent = "(" + TOC.length + ")";
+
+  // After the tables: the flow links to them by id, and reads TOC to resolve
+  // the per-property wildcards into the tables that actually exist.
+  if (LINEAGE) {
+    renderLineage(LINEAGE);
+  } else {
+    document.getElementById("flows").appendChild(el("div", "empty",
+      "Could not load lineage.json — run scripts/build_lineage.py. "
+      + "The tables are unaffected; the flow is what is missing."));
+  }
+
   focusHashTarget();
   document.getElementById("footer").textContent =
     "Every table on this page is read from the same JSON the dashboard fetches, so what you "
-    + "see here is what the charts plot. CSV exports carry raw unrounded values. "
+    + "see here is what the charts plot. The flow is read from lineage.json, whose Drive side "
+    + "is derived from config/report_map.json — a folder registered tomorrow appears here by "
+    + "itself. CSV exports carry raw unrounded values. "
     + "SECURITY: the password gate is client-side only and not encryption — this page exposes "
     + "the same data as the dashboard, so treat the link the same way.";
 }
@@ -1104,8 +1766,13 @@ async function loadAll() {
 function focusHashTarget() {
   const id = decodeURIComponent((location.hash || "").slice(1));
   if (!id) return;
+  if (id === "flow" || id === "tables") { showView(id === "flow" ? "viewFlow" : "viewTables"); return; }
   const target = document.getElementById(id);
   if (!target) return;
+  // A deep link names a row or a table, both of which live in the tables view,
+  // or a flow. Switch first: scrollIntoView on a hidden section does nothing.
+  const view = target.closest(".view");
+  if (view) showView(view.id);
   document.querySelectorAll(".row-target").forEach(n => n.classList.remove("row-target"));
   target.classList.add("row-target");
   target.scrollIntoView({ block: "center", behavior: "smooth" });

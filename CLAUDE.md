@@ -24,6 +24,8 @@ ask for the PR; do not open one preemptively.
 | --- | --- |
 | `docs/index.html` | The whole dashboard: markup, CSS, and Chart.js rendering in one file |
 | `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
+| `docs/data.html` | Two views behind the same gate: the **data-flow** chain, and the **tables** holding every number the JSON carries |
+| `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json` |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
@@ -352,6 +354,64 @@ Past `SC_STALE_DAYS` (3, in `index.html`) the timestamp turns red: the daily
 EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
 "Feed arrival times" table lists every feed's arrival beside its as-of date.
 
+## The Data-Flow Page
+
+`docs/data.html` opens on **Data flow**: one row per source, laid out on the
+same six stages every number travels —
+
+    source -> the report -> pipeline step -> stored -> published -> a card
+
+The **Tables** view behind it is the old page unchanged: every number the JSON
+holds, at full precision, with CSV. Deep links still work and still land on
+their row — a fragment naming a table or a row switches the view on the way in,
+so the scorecard's per-cell links from `index.html` are unaffected.
+
+Each row also links **out**: a card name under "On the dashboard" goes to
+`index.html#<cardId>`, and the dashboard selects the owning tab and flashes the
+card. Every Portfolio card now carries an id for this (`cExpRatio`, `cExpTrend`,
+`cPsf`, `cTradeOutsPortfolio`); the Landing cards already had them.
+
+Regenerate with `python scripts/build_lineage.py` (`--check` verifies and writes
+nothing). `update.yml` runs it after the scorecard fills, so the published chain
+reports what that run actually produced.
+
+**Half of it is derived and half is declared, on purpose.**
+
+- The **Drive side comes from `config/report_map.json`**. Every entry becomes a
+  row whether or not anyone described it, so a folder registered tomorrow
+  appears on the page by itself — flagged as undocumented rather than silently
+  missing.
+- The **downstream edges are declared** in `DRIVE_FLOWS` / `OTHER_FLOWS` in
+  `build_lineage.py`. Nothing in the repo records that `metrics.json`'s
+  `expense_buckets` block is what the Expense Deep Dive draws; that edge exists
+  only inside `index.html`'s fetch calls, so it is written down once and
+  **checked** on every run.
+- What has actually arrived is **evidence**, read from the repo as it stands:
+  which per-property files exist, the newest source filename, when it landed,
+  which scorecard cells each feed ended up owning. A declared flow with no
+  evidence is reported as waiting, not as working.
+
+The script **refuses to write** on a card anchor `index.html` does not define, a
+table id `data.html` does not build, or a parser module named in the report map
+that is not in `scripts/`. A lineage page that has quietly gone stale is worse
+than none, because it is read as a map.
+
+Five statuses, and they are the page's whole argument:
+
+| Status | Means |
+| --- | --- |
+| `live` | A file arrives, the pipeline reads it, something on the dashboard shows it |
+| `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
+| `waiting` | Parser written and registered; no file has ever arrived (the rent roll, C4) |
+| `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
+| `manual` | No feed at all — `expense_trend`, `psf_vs_peers`, `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run |
+
+So the T12 points can report an arrival and not just a period,
+`store_expense_ratio` / `store_monthly_pl` / `store_expense_buckets` /
+`store_monthly_revenue` now record `landed_at` and `source_files` on each point
+(`build_metrics.arrival`). Points accumulated before that change carry neither,
+and the page says "arrival not recorded" rather than inventing one.
+
 ## Deployment
 
 GitHub Pages serves `docs/` from `main`. Pushing to `main` rebuilds the live
@@ -367,6 +427,9 @@ Committing the data JSON means every past month's financials stay readable in
 history forever. `.github/workflows/deploy.yml` fixes that: it deploys `docs/`
 to Pages from an artifact assembled at run time, taking the site shell from
 `main` and the data JSON from a `data` branch.
+
+`docs/lineage.json` travels with the other three data files — `update.yml`
+commits it, `publish_data.sh` publishes it and `deploy.yml` overlays it.
 
 `scripts/publish_data.sh` writes that branch as a **single commit with no
 parent**, force-replacing it each time, so only the current data exists in git —

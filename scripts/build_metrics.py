@@ -95,6 +95,19 @@ def latest_per_code(t12_parses):
     return latest
 
 
+def arrival(group):
+    """When the statements behind a period point landed, and what they were called.
+
+    A point is built from every code's statement for that period, so the
+    arrival is the newest of them. Recorded on the point because the data-flow
+    page reports arrival separately from the period the data covers, and a
+    period end cannot answer "has this feed stopped running".
+    """
+    landed = [pr.get("landed_at") for _, pr in group if pr.get("landed_at")]
+    names = sorted({pr.get("source_file") for _, pr in group if pr.get("source_file")})
+    return (max(landed) if landed else None), names
+
+
 def store_expense_ratio(prop, t12_parses):
     """Append/replace this property's rolling-T12 points, keyed by period_end.
 
@@ -141,8 +154,11 @@ def store_expense_ratio(prop, t12_parses):
             monthly = [round(100 * opex_m[i] / rev_m[i], 1) if rev_m[i] else None
                        for i in range(12)]
 
+        landed_at, source_files = arrival(group)
         point = {
             "period_end": period_end,
+            "landed_at": landed_at,
+            "source_files": source_files,
             "ratio_t12": round(100 * opex_t12 / rev_t12, 1) if rev_t12 else None,
             "revenue_t12": round(rev_t12, 2),
             "opex_recoverable_t12": round(opex_t12, 2),
@@ -224,8 +240,11 @@ def store_expense_buckets(prop, t12_parses):
             print(f"[warn] {prop['name']} {period_end}: previously reported "
                   f"code(s) absent from this statement: {', '.join(missing)} -- "
                   f"expenses may be understated if those codes still have activity")
+        landed_at, source_files = arrival(group)
         point = {
             "period_end": period_end,
+            "landed_at": landed_at,
+            "source_files": source_files,
             "labels": labels,
             "source_codes": codes,
             "buckets": {k: [round(v, 2) for v in vs] for k, vs in sorted(merged.items())},
@@ -278,8 +297,11 @@ def store_monthly_pl(prop, t12_parses):
             group = group[:1]
         rev = [sum(pr["revenue_monthly"][i] for _, pr in group) for i in range(12)]
         opex = [sum(pr["opex_recoverable_monthly"][i] for _, pr in group) for i in range(12)]
+        landed_at, source_files = arrival(group)
         point = {
             "period_end": period_end,
+            "landed_at": landed_at,
+            "source_files": source_files,
             "labels": labels,
             "source_codes": codes,
             "revenue": [round(v, 2) for v in rev],
@@ -319,9 +341,12 @@ def store_monthly_revenue(prop, t12_parses):
             continue
         codes[c] = {"month": p["labels"][idx], "revenue": rev[idx],
                     "period_end": p["period_end"]}
+    landed, names = arrival([(c, p) for c, p in latest_per_code(t12_parses).items()])
     out = {
         "revenue_month": round(sum(v["revenue"] for v in codes.values()), 2),
         "basis": "GL 4999-9999 total operating revenue, latest reported month per code",
+        "landed_at": landed,
+        "source_files": names,
         "codes": codes,
     }
     d = DATA / prop["slug"]
@@ -494,6 +519,10 @@ def process_manifest():
         # when the report landed rather than only what period it covers. Set
         # before the multi-section split below, which copies the parse.
         parsed["landed_at"] = item.get("landed_at")
+        # setdefault, not assignment: a parser that names its own source (the
+        # unit directory, the funnel) knows the name it was filed under, which
+        # can differ from Drive's date-prefixed copy.
+        parsed.setdefault("source_file", item.get("name"))
 
         if item["report_type"] != "t12_statement":
             # One export can cover several property codes (Palma arrives as

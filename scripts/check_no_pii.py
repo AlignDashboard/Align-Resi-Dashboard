@@ -36,7 +36,8 @@ except Exception:                                    # noqa: BLE001
     PII_FIELDS = ("resident_name", "resident_code", "resident", "tenant_name",
                   "tenant", "name")
 
-PUBLISHED = ["docs/metrics.json", "docs/landing.json", "docs/scorecard.json"]
+PUBLISHED = ["docs/metrics.json", "docs/landing.json", "docs/scorecard.json",
+             "docs/lineage.json"]
 # "name" appears legitimately as a label in aggregate structures (a floorplan's
 # name, a metric's name), so it is only a finding when the object it sits in
 # looks like a person rather than a thing.

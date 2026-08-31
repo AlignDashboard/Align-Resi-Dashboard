@@ -513,7 +513,7 @@
         <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
       </div>
       <!-- not a .tab: the tab machinery selects on that class -->
-      <a class="datalink" href="data.html">Data tables ↗</a>
+      <a class="datalink" href="data.html">Data flow &amp; tables ↗</a>
       <button class="tmode" id="themeToggle" type="button" role="switch" aria-checked="false">
         <span class="glyph" id="themeGlyph" aria-hidden="true">☾</span><span id="themeLabel">Dark</span>
       </button>
@@ -534,26 +534,26 @@
         <div class="sc-note" id="poscNote"></div>
       </div>
 
-      <div class="card wide">
+      <div class="card wide" id="cTradeOutsPortfolio">
         <h2>Trade Outs</h2>
         <span class="eyebrow" id="toEyebrow">NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT</span>
         <div class="chartwrap" id="tradeOutWrap"><canvas id="tradeOut"></canvas></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cExpTrend">
         <h2>Expense Trend</h2>
         <span class="eyebrow" id="evEyebrow">LOADING…</span>
         <div class="chartwrap"><canvas id="expVar"></canvas></div>
         <div id="evFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:8px;"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="cPsf">
         <h2>PSF vs Other Properties</h2>
         <span class="eyebrow" id="psfEyebrow">LOADING…</span>
         <div class="chartwrap"><canvas id="psf"></canvas></div>
       </div>
 
-      <div class="card wide">
+      <div class="card wide" id="cExpRatio">
         <div class="card-head">
           <div>
             <h2>Expense Ratio</h2>
@@ -735,6 +735,9 @@ function reveal() {
   gate.style.display = "none";
   app.style.display = "block";
   loadDashboard();
+  // A link from the data-flow page carries the card in the fragment; act on it
+  // now that the page is actually visible.
+  if (location.hash) setTimeout(focusCardFromHash, 0);
 }
 function tryUnlock() {
   if (pwInput.value === PASSWORD) {
@@ -891,6 +894,33 @@ function selectTab(tab) {
 }
 
 tabs.forEach(t => t.addEventListener("click", () => selectTab(t)));
+
+/* The data-flow page links straight to the card a number ends up on
+   (index.html#cGaps). The card is usually inside a hidden tab panel, where
+   scrollIntoView does nothing, so select the owning tab first and then flash
+   the card the way the KPI tiles do. */
+function focusCardFromHash() {
+  const id = decodeURIComponent((location.hash || "").slice(1));
+  if (!id || !/^[A-Za-z0-9_-]+$/.test(id)) return;
+  const card = document.getElementById(id);
+  if (!card) return;
+  const view = card.closest(".view");
+  if (view) {
+    const tab = tabs.find(t => t.getAttribute("aria-controls") === view.id);
+    if (tab && tab.getAttribute("aria-selected") !== "true") selectTab(tab);
+  }
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // The Landing view builds its cards lazily, so give the tab a frame to load
+  // before measuring where the card sits.
+  requestAnimationFrame(() => {
+    card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    card.classList.remove("flash");
+    void card.offsetWidth;
+    card.classList.add("flash");
+    card.addEventListener("animationend", () => card.classList.remove("flash"), { once: true });
+  });
+}
+window.addEventListener("hashchange", focusCardFromHash);
 
 // The Landing view loads its data lazily on first activation, which also
 // guarantees its canvases are visible (and therefore sized) when built.

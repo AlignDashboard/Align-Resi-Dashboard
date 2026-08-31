@@ -1,0 +1,1058 @@
+{
+ "meta": {
+  "generated_at": "2026-08-31T22:42:31.179756+00:00",
+  "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
+  "counts": {
+   "live": 8,
+   "partial": 3,
+   "waiting": 1,
+   "no-parser": 5,
+   "manual": 1
+  },
+  "warnings": []
+ },
+ "stages": [
+  {
+   "key": "source",
+   "label": "Source",
+   "hint": "Where the file comes from \u2014 a Google Drive folder, the dashboard mailbox, or a workbook someone refreshes by hand."
+  },
+  {
+   "key": "report",
+   "label": "The report",
+   "hint": "The export itself, and what it carries."
+  },
+  {
+   "key": "step",
+   "label": "Pipeline step",
+   "hint": "The script that reads it, and what it checks before believing it."
+  },
+  {
+   "key": "stored",
+   "label": "Stored",
+   "hint": "Scrubbed output kept in data/. Tenant names never get this far."
+  },
+  {
+   "key": "published",
+   "label": "Published",
+   "hint": "The JSON the site fetches: metrics.json, landing.json, scorecard.json."
+  },
+  {
+   "key": "dashboard",
+   "label": "On the dashboard",
+   "hint": "The card, chart or KPI cell the number ends up in."
+  }
+ ],
+ "flows": [
+  {
+   "id": "t12",
+   "title": "12-month accrual statement",
+   "origin_kind": "drive",
+   "source_label": "T12 Expenses",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "12_Month_Statement_Accrual.xlsx",
+   "carries": "Twelve months of GL revenue and expense for every building code in one file, on the JPM account tree.",
+   "report_type": "t12_statement",
+   "parser": "parse_t12_statement",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_t12_statement.py",
+     "does": "Reads each building-code block, translates JPM leaves to Align accounts through config/coa_map.json and groups them by the Align tree's own families.",
+     "checks": "Ties out against the statement's own TOTAL EXPENSES to the cent, per month. Unmapped JPM accounts are grouped by label and listed in the log (10 today, ~$115k)."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Routes each code to its property, appends to that property's history keyed by period, and stitches successive statements into one continuous month series.",
+     "checks": "A property whose source is known to be wrong is quarantined in config/properties.json and dropped rather than published (335 Third's dummy statement)."
+    }
+   ],
+   "stores": [
+    "data/<slug>/expense_ratio.json",
+    "data/<slug>/monthly_pl.json",
+    "data/<slug>/expense_buckets.json",
+    "data/<slug>/monthly_revenue.json"
+   ],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "expense_ratio"
+    },
+    {
+     "file": "metrics.json",
+     "key": "monthly_pl"
+    },
+    {
+     "file": "metrics.json",
+     "key": "expense_buckets"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Controllable OpEx/Unit"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Expense Ratio",
+     "tab": "Portfolio",
+     "anchor": "cExpRatio"
+    },
+    {
+     "card": "Operating Summary",
+     "tab": "The Landing",
+     "anchor": "cOpSummary"
+    },
+    {
+     "card": "Expense Deep Dive",
+     "tab": "The Landing",
+     "anchor": "cExpDeep"
+    },
+    {
+     "card": "Expense Load & NOI \u2014 controllable/door",
+     "tab": "The Landing",
+     "anchor": "cNoi"
+    }
+   ],
+   "tables": [
+    "t-expratio-*"
+   ],
+   "note": "The one Drive report that reaches the dashboard as a chart in its own right. Its monthly revenue also becomes the denominator under the delinquency KPI.",
+   "open_item": "A10",
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "palma",
+     "file": "data/palma/expense_ratio.json, data/palma/monthly_pl.json, data/palma/expense_buckets.json, data/palma/monthly_revenue.json",
+     "as_of": "Jun 2026",
+     "source_file": null,
+     "landed_at": null,
+     "detail": "1 statement period(s) accumulated"
+    },
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/expense_ratio.json, data/the-landing/monthly_pl.json, data/the-landing/expense_buckets.json, data/the-landing/monthly_revenue.json",
+     "as_of": "Jul 2026",
+     "source_file": null,
+     "landed_at": null,
+     "detail": "1 statement period(s) accumulated"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "delinquency",
+   "title": "Delinquency summary",
+   "origin_kind": "drive",
+   "source_label": "Residential AR Analytics",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "rs_rp_DelinquencySummaryReport.xlsx",
+   "carries": "Resident AR by unit, aged 0\u201330 / 31\u201360 / 61\u201390 / 90+.",
+   "report_type": "ar_analytics",
+   "parser": "parse_delinquency",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_delinquency.py",
+     "does": "Reads each property section and its aging buckets.",
+     "checks": "Buckets sum to gross owed; each section ties to its own Total row and the report's Grand Total."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Scrubs names out and stores the aggregate per property.",
+     "checks": "Central scrub in store_report, so a new parser is covered without remembering."
+    },
+    {
+     "script": "scripts/populate_scorecard.py --from-pipeline",
+     "does": "Grades gross AR over one month's billed rent, taking the denominator from the same property's T12 revenue.",
+     "checks": "Merges into measured[slug] rather than replacing it, so the other feeds' cells and arrival times survive."
+    }
+   ],
+   "stores": [
+    "data/<slug>/delinquency.json  (gitignored \u2014 unit level)"
+   ],
+   "publishes": [
+    {
+     "file": "scorecard.json",
+     "key": "Total Deliquency"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Split Between 30/60/90"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "KPI Scorecard \u2014 Total Deliquency",
+     "tab": "Scorecard",
+     "anchor": "cScorecard"
+    }
+   ],
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals"
+   ],
+   "note": "The 30/60/90 split is reported, never graded: a distribution has no single direction it can be good or bad in.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "Palma",
+     "file": "Delinquency_8_1_2026.xls.xlsx",
+     "as_of": "2026-08-10",
+     "source_file": "Delinquency_8_1_2026.xls.xlsx",
+     "landed_at": "2026-08-10T17:30:44.001Z",
+     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "delinquency_alt",
+   "title": "Delinquency summary (second folder)",
+   "origin_kind": "drive",
+   "source_label": "Delinquency",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "rs_rp_DelinquencySummaryReport.xlsx",
+   "carries": "The same report, filed in a second folder by the PM.",
+   "report_type": "ar_analytics",
+   "parser": "parse_delinquency",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_delinquency.py",
+     "does": "Same parser, same route.",
+     "checks": "A file present in both folders parses twice and the second store overwrites the first with identical content, which is harmless."
+    }
+   ],
+   "stores": [
+    "data/<slug>/delinquency.json  (gitignored \u2014 unit level)"
+   ],
+   "publishes": [
+    {
+     "file": "scorecard.json",
+     "key": "Total Deliquency"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Split Between 30/60/90"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "KPI Scorecard \u2014 Total Deliquency",
+     "tab": "Scorecard",
+     "anchor": "cScorecard"
+    }
+   ],
+   "tables": [
+    "t-sc-measured"
+   ],
+   "note": "Registered so a report filed here is not invisible. Nothing downstream is different.",
+   "open_item": null,
+   "same_as": "delinquency",
+   "evidence": [
+    {
+     "property": "Palma",
+     "file": "Delinquency_8_1_2026.xls.xlsx",
+     "as_of": "2026-08-10",
+     "source_file": "Delinquency_8_1_2026.xls.xlsx",
+     "landed_at": "2026-08-10T17:30:44.001Z",
+     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "bldg_metrics",
+   "title": "EliseAI building-metrics export",
+   "origin_kind": "drive",
+   "source_label": "EliseAI Reports",
+   "source_detail": "Drive folder \u00b7 *.csv",
+   "example": "metricsbuilding<YYYYMMDD>.csv",
+   "carries": "79 columns per property \u2014 exposure, trade-out, closing ratio, renewal rate, containment, response time.",
+   "report_type": "bldg_metrics_csv",
+   "parser": null,
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/populate_building_metrics.py",
+     "does": "Fills nine KPIs where the export's column means what the KPI means, for every property in the file. No parse or accumulate step \u2014 it writes the scorecard directly.",
+     "checks": "Never takes a cell another feed owns; a property under 50% occupancy is filled but left ungraded rather than scored red for not having opened; implausible cells (Chorus's +119.78% executed increase) are skipped and the skip recorded in the basis."
+    }
+   ],
+   "stores": [],
+   "publishes": [
+    {
+     "file": "scorecard.json",
+     "key": "Leased %"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Trade-out %"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Closing Ratio"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "# of Renewals"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "% Increase"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Total Deliquency"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "AI Containment Rate"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Avg First Response Time"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "# of Tours/Leads/Applications"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "KPI Scorecard (all properties)",
+     "tab": "Scorecard",
+     "anchor": "cScorecard"
+    },
+    {
+     "card": "Leased tile",
+     "tab": "The Landing",
+     "anchor": "lkpis"
+    }
+   ],
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals"
+   ],
+   "note": "The widest feed on the page: it is the only one that says anything at all about Chorus and Madelon.",
+   "open_item": "B6",
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "Landing",
+     "file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "as_of": "2026-08-31",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "landed_at": "2026-08-31T17:55:34.425Z",
+     "detail": "8 KPI cell(s): # of Renewals, # of Tours/Leads/Applications, % Increase, AI Containment Rate, Avg First Response Time, Closing Ratio, Leased %, Trade-out %"
+    },
+    {
+     "property": "335 Third",
+     "file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "as_of": "2026-08-31",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "landed_at": "2026-08-31T17:55:34.425Z",
+     "detail": "5 KPI cell(s): AI Containment Rate, Avg First Response Time, Closing Ratio, Leased %, Total Deliquency"
+    },
+    {
+     "property": "Chorus",
+     "file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "as_of": "2026-08-31",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "landed_at": "2026-08-31T17:55:34.425Z",
+     "detail": "9 KPI cell(s): # of Renewals, # of Tours/Leads/Applications, % Increase, AI Containment Rate, Avg First Response Time, Closing Ratio, Leased %, Total Deliquency, Trade-out %"
+    },
+    {
+     "property": "Madelon",
+     "file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "as_of": "2026-08-31",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
+     "landed_at": "2026-08-31T17:55:34.425Z",
+     "detail": "9 KPI cell(s): # of Renewals, # of Tours/Leads/Applications, % Increase, AI Containment Rate, Avg First Response Time, Closing Ratio, Leased %, Total Deliquency, Trade-out %"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "unit_directory",
+   "title": "Yardi unit directory",
+   "origin_kind": "drive",
+   "source_label": "Building Info",
+   "source_detail": "Drive folder \u00b7 UnitDirectory*.xlsx",
+   "example": "UnitDirectory<MM_DD_YYYY>.xlsx",
+   "carries": "Every unit's floorplan code, square footage, bedrooms and baths, for all properties in one export.",
+   "report_type": "unit_directory",
+   "parser": "parse_unit_directory",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_unit_directory.py",
+     "does": "Splits the file on its property-code rows and reads each section's floorplan table.",
+     "checks": "Each section ties out against its own Total row on unit count, rent and square footage, plus the file's Grand Total. A plan whose rows disagree on bedrooms is flagged, never averaged."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Merges the sections into one plan table per property.",
+     "checks": "Collision check across building codes rather than assuming plan codes are unique."
+    }
+   ],
+   "stores": [
+    "data/<slug>/unit_directory.json"
+   ],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "unit_directory"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
+     "tab": "The Landing",
+     "anchor": "cGaps"
+    }
+   ],
+   "tables": [
+    "t-l-units"
+   ],
+   "note": "It exists because nothing else says how many bedrooms a floorplan has: the rent roll and the workbook both name the plan and neither defines it.",
+   "open_item": "F3",
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/unit_directory.json",
+     "as_of": "2026-08-25",
+     "source_file": "UnitDirectory08_25_2026.xlsx",
+     "landed_at": "2026-08-26T00:46:52Z",
+     "detail": null
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "concessions",
+   "title": "Concession burn-off projection",
+   "origin_kind": "drive",
+   "source_label": "Concession Burnoff",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "Projection by Unit (concession burn-off).xlsx",
+   "carries": "Recurring and one-time concessions by unit, with an as-of date and the report's own totals.",
+   "report_type": "concession_burnoff",
+   "parser": "parse_concession_burnoff",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_concession_burnoff.py",
+     "does": "Walks the report as sections and totals the money.",
+     "checks": "Ties out against the report's own total row every run; resident names are read only to tell a data row from a total row and are never emitted."
+    }
+   ],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Parses clean and is stored nowhere. The export says only \"For Selected Properties\" and names no property, so attribution would be guesswork \u2014 one building's concessions filed under another.",
+   "open_item": "A6",
+   "same_as": null,
+   "evidence": [],
+   "status": "partial"
+  },
+  {
+   "id": "funnel",
+   "title": "EliseAI weekly leasing funnel",
+   "origin_kind": "drive",
+   "source_label": "EliseAI Reports",
+   "source_detail": "Drive folder \u00b7 *leasing_funnel_report*.xlsx",
+   "example": "leasing_funnel_report_<YYYY-MM-DD>.xlsx",
+   "carries": "Per-community funnel counts \u2014 prospects engaged, responses, follow-ups, appointments \u2014 by month.",
+   "report_type": "leasing_funnel",
+   "parser": "parse_leasing_funnel",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_leasing_funnel.py",
+     "does": "Reads the portfolio sheet and each community's section.",
+     "checks": "Every published field is tied out portfolio-vs-communities before it is stored."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Routes the community label through each property's aliases and stores its aggregates.",
+     "checks": "Aggregates only \u2014 the export carries no person-level data, verified on two exports."
+    }
+   ],
+   "stores": [
+    "data/<slug>/leasing_funnel.json"
+   ],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Parses, ties out and stops in data/. Nothing on the dashboard reads it yet \u2014 the daily emails and the building-metrics export answer the leasing KPIs it would fill.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "335-third-street",
+     "file": "data/335-third-street/leasing_funnel.json",
+     "as_of": "2026-08-04",
+     "source_file": "leasing_funnel_report_2026-08-04.xlsx",
+     "landed_at": "2026-08-13T16:47:11.514Z",
+     "detail": null
+    }
+   ],
+   "status": "partial"
+  },
+  {
+   "id": "funnel_alt",
+   "title": "Weekly leasing funnel (second folder)",
+   "origin_kind": "drive",
+   "source_label": "Weekly Leasing Reports",
+   "source_detail": "Drive folder \u00b7 *leasing_funnel_report*.xlsx",
+   "example": "leasing_funnel_report_<YYYY-MM-DD>.xlsx",
+   "carries": "The same weekly export, wherever the Gmail filing drops it.",
+   "report_type": "leasing_funnel",
+   "parser": "parse_leasing_funnel",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_leasing_funnel.py",
+     "does": "Same parser, same route.",
+     "checks": "The glob is anchored with a leading * so the filing step's date prefix does not hide the file."
+    }
+   ],
+   "stores": [
+    "data/<slug>/leasing_funnel.json"
+   ],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered against both folders so the weeklies parse wherever they land.",
+   "open_item": "C3",
+   "same_as": "funnel",
+   "evidence": [
+    {
+     "property": "335-third-street",
+     "file": "data/335-third-street/leasing_funnel.json",
+     "as_of": "2026-08-04",
+     "source_file": "leasing_funnel_report_2026-08-04.xlsx",
+     "landed_at": "2026-08-13T16:47:11.514Z",
+     "detail": null
+    }
+   ],
+   "status": "partial"
+  },
+  {
+   "id": "rent_roll",
+   "title": "Rent roll (SPV PM Deliverable Package)",
+   "origin_kind": "drive",
+   "source_label": "Rent Roll",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "<date> RentRoll<MM_DD_YYYY>.xlsx",
+   "carries": "Every unit: status, resident code, in-place and market rent, square footage, lease dates.",
+   "report_type": "rent_roll",
+   "parser": "parse_rent_roll",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_rent_roll.py",
+     "does": "Reads unit rows until the section marker; keeps the resident code only to tell an occupied unit from a vacant one.",
+     "checks": "Every published total ties to the report's own Total row; refuses the file if that row is missing."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Scrubs the parse through PII_FIELDS and writes it.",
+     "checks": "scripts/check_no_pii.py re-reads the output and fails the build if a person-shaped field survived."
+    }
+   ],
+   "stores": [
+    "data/<slug>/rent_roll.json  (gitignored \u2014 unit level)"
+   ],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Written, registered and never run: the registered Drive folder is empty and the actual file sits in the parent folder, which the fetcher does not scan. Every per-unit figure on the page therefore arrives through the analyst workbook instead. Moving the file is the whole fix.",
+   "open_item": "C4",
+   "same_as": null,
+   "evidence": [],
+   "status": "waiting"
+  },
+  {
+   "id": "airm-yardi-rev-management-revenue-mgmt",
+   "title": "AIRM - Yardi Rev Management",
+   "origin_kind": "drive",
+   "source_label": "AIRM - Yardi Rev Management",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": null,
+   "carries": "The market-rent and trade-out feed the Trade Outs card is waiting on.",
+   "report_type": "revenue_mgmt",
+   "parser": null,
+   "registered": "pending",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "no-parser"
+  },
+  {
+   "id": "ap-analytics-ap-analytics",
+   "title": "AP Analytics",
+   "origin_kind": "drive",
+   "source_label": "AP Analytics",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": null,
+   "carries": "POs over 30 days and invoices processed \u2014 two scorecard KPIs a resident AR report cannot answer.",
+   "report_type": "ap_analytics",
+   "parser": null,
+   "registered": "pending",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "no-parser"
+  },
+  {
+   "id": "property-status-property-status",
+   "title": "Property Status",
+   "origin_kind": "drive",
+   "source_label": "Property Status",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": null,
+   "carries": "Month-to-month counts per property, which today are derived from the rent roll instead.",
+   "report_type": "property_status",
+   "parser": null,
+   "registered": "pending",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "no-parser"
+  },
+  {
+   "id": "weekly-leasing-reports-leasing-report",
+   "title": "Weekly Leasing Reports",
+   "origin_kind": "drive",
+   "source_label": "Weekly Leasing Reports",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": null,
+   "carries": "The RealPage rate tracker behind the workbook's Lease Detail tab \u2014 the one input still typed in by hand.",
+   "report_type": "leasing_report",
+   "parser": null,
+   "registered": "pending",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "no-parser"
+  },
+  {
+   "id": "workorders-mainentance-workorders",
+   "title": "Workorders - Mainentance",
+   "origin_kind": "drive",
+   "source_label": "Workorders - Mainentance ",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": null,
+   "carries": "The maintenance KPI group, which no feed reaches today.",
+   "report_type": "workorders",
+   "parser": null,
+   "registered": "pending",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "no-parser"
+  },
+  {
+   "id": "eliseai_daily",
+   "example": "\"Leasing AI Daily Report\" email",
+   "title": "Leasing AI Daily Report emails",
+   "origin_kind": "email",
+   "source_label": "dashboard@alignrealestate.com",
+   "source_detail": "One email a day from EliseAI, per property.",
+   "carries": "Tours, leads and applications for the day, plus the pending-knowledge and escalation queues. The email lists prospects by name with email and phone.",
+   "steps": [
+    {
+     "script": "by hand, via the Gmail connector",
+     "does": "Counts are read out of the email and appended to the series. CI has no mailbox access, so this step is not automated.",
+     "checks": "Only counts leave the mailbox \u2014 the prospect roster is never written down. A section absent from an email means zero that day; EliseAI omits empty sections."
+    },
+    {
+     "script": "scripts/populate_eliseai.py",
+     "does": "Sums the trailing seven days and fills the scorecard.",
+     "checks": "Refuses a malformed arrival time and warns when one is missing, because the arrival is what the page reports as \"data last updated\"."
+    }
+   ],
+   "stores": [
+    "data/<slug>/eliseai_daily.json"
+   ],
+   "publishes": [
+    {
+     "file": "scorecard.json",
+     "key": "# of Tours/Leads/Applications"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Open Elise Tasks"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "KPI Scorecard \u2014 335 Third St",
+     "tab": "Scorecard",
+     "anchor": "cScorecard"
+    }
+   ],
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals"
+   ],
+   "note": "The T/L/A triple is shown and never graded: the published band is tours per available unit per month, which cannot grade a week's counts.",
+   "open_item": "B3",
+   "registered": null,
+   "parser": null,
+   "documented": true,
+   "evidence": [
+    {
+     "property": "335-third-street",
+     "file": "data/335-third-street/eliseai_daily.json",
+     "as_of": "2026-08-31",
+     "source_file": null,
+     "landed_at": "2026-08-31T15:37:37Z",
+     "detail": "20 day(s) recorded"
+    },
+    {
+     "property": "335 Third",
+     "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
+     "as_of": "2026-08-31",
+     "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
+     "landed_at": "2026-08-31T15:37:37Z",
+     "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "kpi_workbook",
+   "example": "KPI_Scorecard_Formatted_v10.xlsx",
+   "title": "KPI scorecard workbook",
+   "origin_kind": "workbook",
+   "source_label": "KPI_Scorecard_Formatted_v10.xlsx",
+   "source_detail": "The analyst's own grid: metric groups, hand-set symbols, published target ranges.",
+   "carries": "27 published KPIs across five groups, their bands, the legend, and the Palma lease-up overrides.",
+   "steps": [
+    {
+     "script": "scripts/extract_scorecard.py",
+     "does": "Builds the scorecard skeleton \u2014 groups, metrics, bands, legend \u2014 and resets every measured value to null, which is why it runs before the populate steps.",
+     "checks": "Fails loudly if the legend fills change rather than publishing stale semantics; warns when an omitted or renamed column stops matching."
+    }
+   ],
+   "stores": [],
+   "publishes": [
+    {
+     "file": "scorecard.json",
+     "key": "metrics, groups, thresholds, legend"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "KPI Scorecard",
+     "tab": "Scorecard",
+     "anchor": "cScorecard"
+    },
+    {
+     "card": "KPI Scorecard",
+     "tab": "Portfolio",
+     "anchor": "cPortfolioScorecard"
+    }
+   ],
+   "tables": [
+    "t-sc-matrix",
+    "t-sc-thresholds",
+    "t-sc-workbook",
+    "t-sc-overrides"
+   ],
+   "note": "The grid itself is not evidence: a cell carries colour and counts toward the tally only where a report supplied the number and the band could place it.",
+   "registered": null,
+   "parser": null,
+   "documented": true,
+   "evidence": [
+    {
+     "property": "all",
+     "file": "23f816cc-KPI_Scorecard_Formatted_v10.xlsx",
+     "as_of": null,
+     "source_file": "23f816cc-KPI_Scorecard_Formatted_v10.xlsx",
+     "landed_at": "2026-08-10T17:44:49.835728+00:00",
+     "detail": "sheet KPI (Flipped Axis)"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "analyst_workbook",
+   "example": "The_Landing_Dashboard_V37.xlsx",
+   "title": "The Landing analyst workbook",
+   "origin_kind": "workbook",
+   "source_label": "The_Landing_Dashboard_V37.xlsx",
+   "source_detail": "Refreshed by hand: reports are pasted into the grey Source tabs and Excel recalculates.",
+   "carries": "The whole Landing view \u2014 rent capture, expense and NOI, renewals, holdovers, unit-level gaps, delinquency, trade-outs, insights.",
+   "steps": [
+    {
+     "script": "scripts/extract_landing.py",
+     "does": "Reads the workbook's cached formula results off the anchor labels and writes docs/landing.json.",
+     "checks": "Prints a check table and refuses to write on a shifted month axis, a unit count that disagrees with Inputs, a broken statement tie-out or a renamed anchor. A workbook saved without recalculating has no cached results and is refused rather than published as nulls."
+    },
+    {
+     "script": "scripts/populate_scorecard.py --from-landing",
+     "does": "Fills the four KPIs a report cannot answer directly.",
+     "checks": "Every controllable-expense exclusion is matched by name against the statement's account groups and all of them must be found, or the figure goes unpublished."
+    }
+   ],
+   "stores": [],
+   "publishes": [
+    {
+     "file": "landing.json",
+     "key": "the whole Landing view"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Loss to Lease %"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "NOI Margin %"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Controllable OpEx/Unit"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Month to Month Leases"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Total Deliquency (The Landing)"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Split Between 30/60/90 (The Landing)"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Loss to Lease",
+     "tab": "The Landing",
+     "anchor": "cRentCapture"
+    },
+    {
+     "card": "Trade-outs",
+     "tab": "The Landing",
+     "anchor": "cTradeOuts"
+    },
+    {
+     "card": "Rollover Schedule",
+     "tab": "The Landing",
+     "anchor": "cRollover"
+    },
+    {
+     "card": "Expense Load & NOI",
+     "tab": "The Landing",
+     "anchor": "cNoi"
+    },
+    {
+     "card": "Largest Unit Gaps",
+     "tab": "The Landing",
+     "anchor": "cGaps"
+    },
+    {
+     "card": "Delinquency",
+     "tab": "The Landing",
+     "anchor": "cDelinquency"
+    },
+    {
+     "card": "Insights Scorecard",
+     "tab": "The Landing",
+     "anchor": "cInsights"
+    }
+   ],
+   "tables": [
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-units",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "note": "The workbook is fed by the same Yardi reports the Drive pipeline collects \u2014 pasted in rather than fetched. It is why The Landing has a full view while the rent roll has never reached the pipeline.",
+   "sub_sources": [
+    {
+     "tab": "Source CY25 / Source Aug25-Jul26",
+     "report": "12-month accrual statement",
+     "drive_folder": "T12 Expenses"
+    },
+    {
+     "tab": "Source Rent Roll Jul / Jun",
+     "report": "SPV PM Deliverable Package, Rent Roll tab",
+     "drive_folder": "Rent Roll"
+    },
+    {
+     "tab": "Source Delinquency",
+     "report": "rs_rp_DelinquencySummaryReport",
+     "drive_folder": "Residential AR Analytics"
+    },
+    {
+     "tab": "Source Renewal Tracker",
+     "report": "Landing 2025 Renewal Tracker",
+     "drive_folder": null
+    },
+    {
+     "tab": "Lease Detail",
+     "report": "RealPage rate tracker \u2014 typed in, not pasted",
+     "drive_folder": null
+    }
+   ],
+   "registered": null,
+   "parser": null,
+   "documented": true,
+   "evidence": [
+    {
+     "property": "The Landing (p0005611)",
+     "file": "102ebfe0-The_Landing_Dashboard_V37.xlsx",
+     "as_of": "2026-07-14",
+     "source_file": "102ebfe0-The_Landing_Dashboard_V37.xlsx",
+     "landed_at": "2026-08-03T21:15:23.385441+00:00",
+     "detail": "extract run; the workbook has no arrival time of its own, so this is when it was extracted"
+    },
+    {
+     "property": "Landing",
+     "file": "workbook Source Delinquency tab, via docs/landing.json",
+     "as_of": "2026-07-20",
+     "source_file": "workbook Source Delinquency tab, via docs/landing.json",
+     "landed_at": "2026-08-03T21:15:23.385441+00:00",
+     "detail": "6 KPI cell(s): Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "handset",
+   "example": "docs/metrics.json",
+   "title": "Hand-authored blocks in metrics.json",
+   "origin_kind": "manual",
+   "source_label": "docs/metrics.json, edited directly",
+   "source_detail": "Blocks the pipeline preserves rather than regenerates.",
+   "carries": "Expense Trend's three series, the PSF comp set, the trade-out placeholder, and the eleven planned-metric cards.",
+   "steps": [
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Loads the existing metrics.json and writes only the blocks it derives, so these survive every run.",
+     "checks": "None \u2014 nothing ties these out, which is the point of listing them here."
+    }
+   ],
+   "stores": [],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "expense_trend"
+    },
+    {
+     "file": "metrics.json",
+     "key": "psf_vs_peers"
+    },
+    {
+     "file": "metrics.json",
+     "key": "trade_outs"
+    },
+    {
+     "file": "metrics.json",
+     "key": "placeholders"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Expense Trend",
+     "tab": "Portfolio",
+     "anchor": "cExpTrend"
+    },
+    {
+     "card": "PSF vs Other Properties",
+     "tab": "Portfolio",
+     "anchor": "cPsf"
+    },
+    {
+     "card": "Trade Outs",
+     "tab": "Portfolio",
+     "anchor": "cTradeOutsPortfolio"
+    },
+    {
+     "card": "Planned Metrics",
+     "tab": "Portfolio",
+     "anchor": "placeholderGrid"
+    }
+   ],
+   "tables": [
+    "t-exptrend",
+    "t-psf",
+    "t-tradeouts",
+    "t-placeholders"
+   ],
+   "note": "No feed stands behind these. The PSF figures are hand-entered with no known date and say so on the card; Trade Outs is an empty state waiting on AIRM and the weekly leasing report.",
+   "open_item": "A4",
+   "registered": null,
+   "parser": null,
+   "documented": true,
+   "evidence": [
+    {
+     "property": "portfolio",
+     "file": "docs/metrics.json",
+     "as_of": null,
+     "source_file": null,
+     "landed_at": "2026-08-31T17:56:04.151880+00:00",
+     "detail": "carried through the last pipeline run untouched"
+    }
+   ],
+   "status": "manual"
+  }
+ ]
+}

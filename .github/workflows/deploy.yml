@@ -57,7 +57,7 @@ jobs:
             mkdir -p _data
             git archive FETCH_HEAD | tar -x -C _data
             found=0
-            for f in metrics.json landing.json scorecard.json; do
+            for f in metrics.json landing.json scorecard.json lineage.json; do
               if [ -f "_data/$f" ]; then
                 cp "_data/$f" "docs/$f"
                 echo "overlaid docs/$f from the data branch"
@@ -69,7 +69,7 @@ jobs:
             echo "no data branch yet — using the JSON committed in main"
           fi
           # Fail loudly rather than deploy a site whose charts cannot load.
-          for f in metrics.json landing.json scorecard.json; do
+          for f in metrics.json landing.json scorecard.json lineage.json; do
             test -s "docs/$f" || { echo "::error::docs/$f is missing or empty"; exit 1; }
           done
 
