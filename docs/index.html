@@ -393,14 +393,23 @@
   #lopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
   #lopTbl table.dt td { padding: 13px 10px 13px 0; }
   #lopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
-  /* Gap/yr is right-aligned and Expiry left-aligned, so without this the two
-     columns run together ("$45k MTM Feb 25"). */
-  #lgTbl table.dt th:nth-child(7), #lgTbl table.dt td:nth-child(7) { padding-left: 16px; }
-  /* Status is last and left-aligned, and a left-aligned last column is where an
-     auto-layout table's leftover width piles up. On the wide card that is ~145px
-     of it, so the pills sat marooned mid-row with a gap of dead space behind them
-     and the card's right edge. Right-aligning anchors them to that edge, under a
-     STATUS heading that now sits over the pills instead of adrift left of them. */
+  /* Expiry and Status close the row, and the card is far wider than its eight
+     columns need. An auto-layout table hands its leftover width to the columns
+     that will take it, and these two took most of it: Status alone carried ~145px
+     of empty box, Expiry ~215px. Because Expiry is left-aligned and Status is
+     right-aligned, both columns' slack pooled in the space between them -- a
+     ~270px void mid-row, with the pills stranded short of the card's edge.
+
+     Sizing the pair to their content (width:1% is the shrink-to-fit idiom; nowrap
+     keeps "MTM · Feb 25" and the pill on one line) hands that width back to the
+     six columns on the left and leaves these three as a tight group on the right,
+     each separated by the same deliberate 40px. The right padding on the last
+     column only held the pills off the card edge, so it goes. The 40px also does
+     the job the old 16px did here: keeping "$45k" from running into the Expiry
+     beside it. */
+  #lgTbl table.dt th:nth-child(7), #lgTbl table.dt td:nth-child(7),
+  #lgTbl table.dt th:last-child,   #lgTbl table.dt td:last-child {
+    width: 1%; white-space: nowrap; padding-left: 40px; }
   #lgTbl table.dt th:last-child,
   #lgTbl table.dt td:last-child { text-align: right; padding-right: 0; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
