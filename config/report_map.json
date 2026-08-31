@@ -26,9 +26,9 @@
    "drive_folder": "Weekly Leasing Reports",
    "report_type": "leasing_funnel",
    "parser": "parse_leasing_funnel",
-   "file_glob": "leasing_funnel_report*.xlsx",
+   "file_glob": "*leasing_funnel_report*.xlsx",
    "status": "active",
-   "_comment": "The EliseAI weekly funnel parses from here too, so it works wherever the gmail filing lands it. The pending entry below is for this folder's intended content -- the RealPage rate tracker -- which has never yet arrived."
+   "_comment": "The EliseAI weekly funnel parses from here too, so it works wherever the gmail filing lands it. The pending entry below is for this folder's intended content -- the RealPage rate tracker -- which has never yet arrived. The glob is anchored with a leading * because the Gmail-to-Drive filing prefixes the arrival date: '2026-08-25 leasing_funnel_report_2026-08-25.xlsx'. fnmatch matches the whole name, so a pattern starting at 'leasing_' silently skipped every prefixed file."
   },
   {
    "drive_folder": "Weekly Leasing Reports",
@@ -84,8 +84,9 @@
    "drive_folder": "EliseAI Reports",
    "report_type": "leasing_funnel",
    "parser": "parse_leasing_funnel",
-   "file_glob": "leasing_funnel_report*.xlsx",
-   "status": "active"
+   "file_glob": "*leasing_funnel_report*.xlsx",
+   "status": "active",
+   "_comment": "Leading * for the same reason as the Weekly Leasing Reports entry: filed copies carry a 'YYYY-MM-DD ' prefix."
   },
   {
    "drive_folder": "EliseAI Reports",
