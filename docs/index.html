@@ -453,6 +453,22 @@
   .prop-select:focus { border-color: var(--amber); }
   .prop-select option { background: var(--panel); color: var(--text); }
   .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  /* The deep dive's period toggle used to drop onto a line of its own the moment
+     Month was pressed: choosing it reveals the statement-month select, the
+     toggle row grew from 108px to 198px, and with the head set to wrap it no
+     longer fitted beside the heading. The button moved out from under the
+     cursor that had just pressed it.
+
+     Two halves keep it still. The select holds its box in both modes -- hidden
+     from sight and from screen readers, but still taking its width -- so the row
+     is one width whichever mode is on; and the heading block is given a zero
+     basis so it yields the space rather than pushing the row onto the next line.
+     The eyebrow rewraps instead, which it already did whenever the text changed.
+     flex-start pins the row to the top of the head, so a rewrap underneath it
+     cannot nudge it either. */
+  #cExpDeep .card-head > :first-child { flex: 1 1 0; min-width: 0; }
+  #cExpDeep .togrow { align-self: flex-start; }
+  #lcExpMonth[hidden] { display: block; visibility: hidden; }
 
   @media (max-width: 760px) {
     .grid { grid-template-columns: 1fr; }
@@ -2400,10 +2416,6 @@ async function loadLanding() {
         return;
       }
       const keys = monthKeys();
-      if (!sel.options.length) {
-        keys.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
-        sel.selectedIndex = keys.length - 1;
-      }
       sel.hidden = false;
       const i = +sel.value;
       const names = groupNames();
@@ -2448,6 +2460,14 @@ async function loadLanding() {
     }
     document.querySelectorAll("#cExpDeep .tog").forEach(t =>
       t.addEventListener("click", () => setMode(t.dataset.ep)));
+    // Fill the month list now rather than on the first switch to Month. The
+    // select holds its place in the header even while hidden (see the CSS), and
+    // an empty one would hold the wrong width until Month had been pressed once.
+    if (pt) {
+      const mk = monthKeys();
+      mk.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
+      sel.selectedIndex = mk.length - 1;
+    }
     sel.addEventListener("change", renderMonth);
     renderT12();
     buildTable(document.getElementById("lcExpTbl"),
