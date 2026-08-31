@@ -297,6 +297,13 @@
         <b>card</b> it finally shows up on. Where a chain stops short it is drawn stopping
         short — a report can arrive, parse and tie out and still feed nothing.
       </div>
+      <div class="lede">
+        Nothing in this repo puts files in Drive. A Gmail script reads
+        <b>dashboard@alignrealestate.com</b> hourly and files each attachment into a
+        folder by matching its name — so the first stage below names the words it
+        matches on, which is what actually decides where a report goes. Anything it
+        cannot place lands in <b>_Unsorted</b> and reaches nothing.
+      </div>
       <div class="stagekey" id="stagekey"></div>
       <div class="filters" id="flowFilters"></div>
       <div id="flows"></div>
@@ -674,6 +681,19 @@ function nodeSource(f, aliases) {
   const n = stepNode("Source", f.source_label || "—");
   addLine(n, ORIGIN_LABEL[f.origin_kind] || f.origin_kind);
   addLine(n, f.source_detail);
+  // How a file gets into that folder in the first place: a Gmail Apps Script
+  // matches the attachment name and files it. This is the answer to "which
+  // data goes where" at the front of the chain, so it is on the page rather
+  // than only in gmail_drive_filing.js.
+  const filed = (f.filed_by || []).concat(...aliases.map(a => a.filed_by || []));
+  if (filed.length) {
+    n.appendChild(el("div", "sep"));
+    addLine(n, "Filed here from the mailbox when the attachment name contains");
+    addLine(n, [...new Set(filed)].join(" · "), "mono");
+  } else if (f.origin_kind === "drive") {
+    n.appendChild(el("div", "sep"));
+    addLine(n, "Nothing files reports here — this folder fills by hand only.");
+  }
   aliases.forEach(a => addLine(n, "Also registered: " + a.source_label));
   return n;
 }

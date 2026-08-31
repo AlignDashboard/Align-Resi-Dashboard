@@ -567,6 +567,32 @@ PENDING_HINT = {
 # evidence
 # ---------------------------------------------------------------------------
 
+def filing_rules():
+    """folder -> the attachment-name patterns the Gmail filer routes there.
+
+    Nothing in this repo puts files in Drive: an Apps Script reads the mailbox
+    and files each attachment into a Report Lander subfolder. That rule is the
+    front of every Drive chain -- it is what decides which data goes where --
+    so the page shows it rather than starting at a folder that fills itself.
+
+    Read through test_routing's own loader, so the flow page and the contract
+    test cannot end up parsing the script differently. If the script's shape
+    changes the loader exits; that is test_routing's failure to report, not
+    this one's, so the lineage degrades to no filer line instead of refusing
+    to build.
+    """
+    try:
+        import test_routing
+        return {folder: pats for folder, pats in test_routing.load_rules()}
+    except SystemExit:
+        print("[warn] could not read ROUTING_RULES from gmail_drive_filing.js "
+              "-- run scripts/test_routing.py; the flow page omits the filer")
+        return {}
+    except Exception as e:                                  # noqa: BLE001
+        print(f"[warn] filing rules unavailable: {e}")
+        return {}
+
+
 def _load_json(path):
     p = ROOT / path
     if not p.exists():
@@ -778,6 +804,16 @@ def run_checks(flows):
                 f"report_map.json but has no entry in build_lineage.DRIVE_FLOWS "
                 f"— the page shows it with an unknown downstream")
 
+    # A registered folder with no filing rule fills only by hand. That is how a
+    # folder sits empty for weeks looking healthy, so the page says so.
+    rules = filing_rules()
+    if rules:
+        for f in flows:
+            if f.get("origin_kind") == "drive" and not f.get("filed_by"):
+                warnings.append(
+                    f"nothing in gmail_drive_filing.js files reports into "
+                    f"'{f['source_label']}' — it fills by hand only")
+
     # every parser the report map names must be a module in scripts/
     cfg = _load_json("config/report_map.json") or {}
     for e in cfg.get("subfolders") or []:
@@ -794,6 +830,7 @@ def run_checks(flows):
 
 def build():
     cfg = _load_json("config/report_map.json") or {}
+    rules = filing_rules()
     flows = []
 
     for entry in cfg.get("subfolders") or []:
@@ -808,10 +845,16 @@ def build():
             "source_label": folder,
             "source_detail": "Drive folder · " + (entry.get("file_glob") or "*"),
             "example": (decl or {}).get("example"),
+            # report_map's own _comment describes a folder nobody has written a
+            # flow for, so a newly registered one says something true about
+            # itself instead of falling through to boilerplate
             "carries": (decl or {}).get("carries")
                        or PENDING_HINT.get(folder)
+                       or (entry.get("_comment") or "").split(" -- ")[0]
                        or "No sample file has ever arrived, so nothing is known "
                           "about its shape yet.",
+            # which email attachments the Apps Script files into this folder
+            "filed_by": sorted(rules.get(folder) or []),
             "report_type": rtype,
             "parser": entry.get("parser"),
             "registered": entry.get("status"),

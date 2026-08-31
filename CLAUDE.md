@@ -429,7 +429,15 @@ reports what that run actually produced.
 - The **Drive side comes from `config/report_map.json`**. Every entry becomes a
   row whether or not anyone described it, so a folder registered tomorrow
   appears on the page by itself — flagged as undocumented rather than silently
-  missing.
+  missing, and described by its own `_comment` until someone writes it a flow.
+- The **first stage is the Gmail filer**, read out of `gmail_drive_filing.js`
+  through `test_routing.load_rules()` so the page and the contract test cannot
+  parse it differently. Each Drive row names the words the filer matches on to
+  put a report in that folder — which is the actual answer to "which report
+  goes where". A registered folder with no rule is reported as filling by hand
+  only. If the script's shape changes the loader bails and the page drops the
+  filer line rather than refusing to build; `test_routing.py` is what fails
+  loudly there.
 - The **downstream edges are declared** in `DRIVE_FLOWS` / `OTHER_FLOWS` in
   `build_lineage.py`. Nothing in the repo records that `metrics.json`'s
   `expense_buckets` block is what the Expense Deep Dive draws; that edge exists
