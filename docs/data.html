@@ -65,6 +65,10 @@
     letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; padding: 6px 11px;
     cursor: pointer; }
   .tmode:hover { color: var(--amber); border-color: var(--amber); }
+  /* ☾/Dark and ☀/Light do not measure the same, so without this the button
+     resizes by 7px as it is pressed. Same pinning as index.html. */
+  #themeGlyph { display: inline-block; width: 13px; text-align: center; }
+  #themeLabel { display: inline-block; min-width: 37px; text-align: left; }
 
   .lede { color: var(--muted); font-size: 11px; line-height: 1.7; max-width: 880px; margin-bottom: 18px; }
   .lede b { color: var(--text); font-weight: 600; }

@@ -1,6 +1,6 @@
 # Open Items
 
-State as of 2026-08-28, HEAD `4ab9111`. IDs are stable — when an item closes, move
+State as of 2026-08-31, HEAD `605aff3`. IDs are stable — when an item closes, move
 it to *Closed* rather than renumbering, so "A3" means the same thing next week.
 
 **Live and uncertain** marks an item where the dashboard is publishing something
@@ -17,6 +17,7 @@ first: everything else is a gap, but these are assertions.
 | A8 | Loss to Lease % now grades **red at 27%** against a band whose ceiling is 10%. The threshold sheet's own basis note warned about exactly this: if Yardi `Market rent potential` is aspirational rather than achievable, the KPI reads artificially high — and the market-rent table was revised up sharply from Apr 2026 (TTM reads 17.2% vs the current month's 27%). Wired per your instruction; whether the band or the denominator gets revisited is your call | Whether the red cell is a finding or an artifact of the denominator | **yes** — graded red off a disputed denominator |
 | A9 | Controllable OpEx/Unit's cutoffs ($7,200 / $8,600) were bracketed around the old basket's $7,784/unit T12 actual. The basket now excludes taxes, insurance, utilities **and the management fee** (set 2026-08-28), under which the twelve months run $5,659–$8,458 (avg ~$6,997) and July grades exceeding. Worth re-bracketing the cutoffs to the basket they now grade, in the ranges sheet | Whether "exceeding" means outperformance or a band calibrated to a bigger basket | contained — the page's `how` states the live basket; `how_workbook` keeps the sheet's |
 | A10 | Extend the COA mapping workbook to cover the 10 JPM accounts (~$115k of T12) it does not map: Carpets, Alarm monitoring, Courtesy patrol, two Turnover lines, Credit reports, Credit Card Fees, Courtesy/Concierge REIT-sensitive, Gross Rec./Bus. Lic. Tax, and a Professional Fees line. The pipeline groups them by label and logs them loudly meanwhile | Clean Align-tree grouping in the Expense Deep Dive and the controllable basket | contained — grouped by label, flagged each run |
+| A11 | Confirm the five new folder names and two inferences behind them, before the Apps Script paste makes them real: `Renewal Tracker`, `Prospect Reports`, `Daily Leasing Reports`, `Daily Tracker`, `Demographics`. Each is a one-line change in `gmail_drive_filing.js` + `report_map.json` now, a folder rename later. Two judgement calls inside them: the **box score goes to `Property Status`** (the SOP's own routing table says box score is the property-status report), and **`Daily Tracker` is kept separate from `Daily Leasing Reports`** — the names are confusingly close and I split them on file size (~157KB vs ~55KB) without opening either, so they may be one family | Which folder five report families land in; a parser can be written for each once they land | no — nothing publishes from them |
 
 ## B · Blocked on an answer from EliseAI
 
@@ -33,9 +34,10 @@ first: everything else is a gap, but these are assertions.
 
 | # | Item | Detail |
 | --- | --- | --- |
-| C2 | `Weekly Leasing Reports` is registered but absent from Drive | CLAUDE.md names it as the source for the workbook's `Lease Detail` tab, so either the folder or the documentation is wrong |
-| C3 | `_Unsorted` holds the Aug 18 weekly file | Owner is updating the gmail-filing script so weeklies land in `Weekly Leasing Reports`. Meanwhile the inspect workflow (`--all`) can read `_Unsorted` for parser work |
-| C4 | **Move the rent roll into the `Rent Roll` folder.** The registered folder is empty; the actual file (`2026-07-14 RentRoll07_14_2026.xlsx`) sits in the root Resi Dashboard folder, which the fetcher does not scan — so the rent roll has never reached the pipeline and every per-unit figure arrives via the workbook. The parser is written and registered; moving the file is the whole fix. It is also the prerequisite for feeding Month to Month Leases per property from the pipeline rather than the workbook |
+| C3 | **`_Unsorted` holds 22 files. The routing fix is written and tested; it needs pasting into Apps Script.** Not one weekly file but four weeks of five report families — the filer matched none of them. `scripts/gmail_drive_filing.js` now routes all 22 (verified against the real filenames by `scripts/test_routing.py`, 21 cases green). Deploy: paste the `.js` into the `file downloader` project, run `previewRouting` and `checkFolders`, then `resortExistingFiles` — `_Unsorted` is a retry queue, so all 22 are rescued in that one run. Nothing moves until that paste happens |
+| C4 | **Move the rent roll into the `Rent Roll` folder.** The registered folder is still empty (confirmed in the 2026-08-31 fetch log: `contains 0 file(s)`). The file (`2026-07-14 RentRoll07_14_2026.xlsx`) moved on 2026-08-31 but to `Archive Reports` under `Resi Dashboard` — still outside the folder the fetcher scans, and outside what `resortExistingFiles` can reach, so the script will not rescue it. The parser is written and registered; moving the file is the whole fix. It is also the prerequisite for feeding Month to Month Leases per property from the pipeline rather than the workbook |
+| C5 | **`Building Info` has left the scanned folder, and the unit directory has stopped arriving.** The 2026-08-31 fetch log warns `subfolder 'Building Info' not found in Drive parent`; it now sits under `Resi Dashboard` rather than `Report Lander`. Because `data/the-landing/unit_directory.json` is committed, the unit-gaps table still renders — frozen on the 2026-08-25 export, with no error anywhere. Moving the folder back is the fix. Do it **before** the Apps Script paste: the new `Building Info` rule would otherwise create a second, empty folder of that name inside `Report Lander` and orphan the original |
+| C6 | Rename `Workorders - Mainentance ` — a misspelling *and* a trailing space, carried in Drive and `report_map.json` both. Three changes that must land together (Drive folder, `report_map.json`, the `.js` rule); `test_routing.py` fails if only one moves. Harmless today because no work-order report has ever arrived |
 
 ## D · Parsers not built
 
@@ -46,13 +48,23 @@ A parser cannot be truthfully written without a sample file; these folders have
 never held one. The day a first file lands, the fetch log lists it (`[skip] …
 file(s) waiting`) and the inspect workflow can dump its structure.
 
+D1–D7 have never held a sample. **D9–D13 are different: their samples already
+exist**, sitting in `_Unsorted` today, and land in their own folders the moment
+C3 is deployed — so these five can be written against real files immediately
+after. D3 joins them: the two box-score exports are its first samples.
+
 | # | Drive folder |
 | --- | --- |
-| D1 | Weekly Leasing Reports — the folder's intended content, the RealPage rate tracker behind the workbook's `Lease Detail` tab, has never appeared (the funnel exports that pass through are D2's, and parse). Ties to C2 |
-| D3 | Property Status |
+| D1 | Weekly Leasing Reports — the folder's intended content, the RealPage rate tracker behind the workbook's `Lease Detail` tab, has never appeared (the funnel exports that pass through are D2's, and parse). The folder itself appears the first time a rate tracker arrives — see the closed C2 |
+| D3 | Property Status — the two `BoxScoreSummary` exports are its first samples, and land here when C3 is deployed |
 | D5 | AIRM - Yardi Rev Management |
 | D6 | AP Analytics |
 | D7 | `Workorders - Mainentance ` (note the typo and trailing space in the folder name) |
+| D9 | Renewal Tracker — `Landing 2025 Renewal Tracker` and `Renewals since 9.15.25`. The workbook's `Source Renewal Tracker` grey tab is pasted by hand today, so a parser here would replace a manual step |
+| D10 | Prospect Reports — `8.24-8.30 Prospect and applicant Report` |
+| D11 | Daily Leasing Reports — `Daily Report- Week Ending …`, and the Madelon and Chorus daily reports |
+| D12 | Daily Tracker — `Daily Tracker (14) (1) (43)` |
+| D13 | Demographics — `rs_sql_JPM_Demographics_Combined` |
 
 ## E · Keeping data out of git history
 
@@ -73,6 +85,20 @@ Documented in CLAUDE.md and built but not activated. Strictly ordered.
 | F3 | Unit 647 is classed `lab21` in the Yardi Unit Directory and `lab9` in the workbook. At 830 sqft it sits inside lab9's range (827–863) and far outside lab21's other units (1,022–1,069), so the directory looks wrong — worth a word to the PM to fix in Yardi. No bedroom impact (both plans are 2-bed) |
 
 ## Closed
+
+2026-08-31 — C2: not a discrepancy after all. `Weekly Leasing Reports` is absent
+from Drive because the Apps Script filer **creates a folder on first use** and no
+file has ever matched its patterns — the weekly funnel export does not, which was
+C3. Registering it was never wrong. The rule stays, narrowed to the folder's
+intended content (the RealPage rate tracker, `/ratetracker/` and `/realpage/`),
+and the funnel now routes to `EliseAI Reports`, which exists. Also closed: the
+`AIRM/Yardi Rev Management` and `Workorders/Maintaince` rules named folders that
+do not exist — a `/` is legal in a Drive folder name, so the first real report of
+either kind would have created a second folder the pipeline never reads, in
+silence. Both now name the real folders, and `test_routing.py` fails if either
+drifts again. The `Building Info` glob was anchored at `UnitDirectory*.xlsx`,
+which the filer's date prefix defeats — the same bug `605aff3` fixed for the
+funnel, found by the new check that every glob leads with `*`.
 
 2026-08-28 — a long dashboard session, all pushed to `main` through `4ab9111`:
 the scorecard now measures **11 of The Landing's KPIs** (was 7) — `--from-landing`

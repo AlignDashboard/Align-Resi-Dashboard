@@ -146,6 +146,15 @@
   .tmode:hover { color: var(--amber); border-color: var(--amber); }
   .tmode:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   .tmode .glyph { font-size: 12px; line-height: 1; }
+  /* Pressing this swaps both halves of the label -- ☾/Dark for ☀/Light -- and
+     the two sets do not measure the same, so the button resized by 7px under the
+     cursor that had just pressed it (and on index.html, where it is right
+     aligned, its left edge moved with it). Pin the two parts to the wider of
+     each pair. Sizing the parts rather than the button keeps it correct at phone
+     width, where the padding is larger and a min-width on the button would have
+     stopped covering the difference. */
+  #themeGlyph { display: inline-block; width: 13px; text-align: center; }
+  #themeLabel { display: inline-block; min-width: 37px; text-align: left; }
 
   /* Per-series show/hide chips in a card head. Pressed = drawn. */
   .togrow { display: flex; gap: 2px; align-self: center; margin-bottom: 6px; flex-wrap: wrap; }
@@ -453,6 +462,22 @@
   .prop-select:focus { border-color: var(--amber); }
   .prop-select option { background: var(--panel); color: var(--text); }
   .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  /* The deep dive's period toggle used to drop onto a line of its own the moment
+     Month was pressed: choosing it reveals the statement-month select, the
+     toggle row grew from 108px to 198px, and with the head set to wrap it no
+     longer fitted beside the heading. The button moved out from under the
+     cursor that had just pressed it.
+
+     Two halves keep it still. The select holds its box in both modes -- hidden
+     from sight and from screen readers, but still taking its width -- so the row
+     is one width whichever mode is on; and the heading block is given a zero
+     basis so it yields the space rather than pushing the row onto the next line.
+     The eyebrow rewraps instead, which it already did whenever the text changed.
+     flex-start pins the row to the top of the head, so a rewrap underneath it
+     cannot nudge it either. */
+  #cExpDeep .card-head > :first-child { flex: 1 1 0; min-width: 0; }
+  #cExpDeep .togrow { align-self: flex-start; }
+  #lcExpMonth[hidden] { display: block; visibility: hidden; }
 
   @media (max-width: 760px) {
     .grid { grid-template-columns: 1fr; }
@@ -463,6 +488,13 @@
        card. Tables narrower than their card are unaffected. */
     #lopTbl, #lgTbl, #ldTbl, #lcExpTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     #lopTbl table.dt { min-width: 620px; }
+    /* The two lines reserved for the headings above are one short down here:
+       pinned to that 620px the prev-month pair ("Current Month annualized")
+       takes three, so the header stood 3.5px taller on that horizon than on T3
+       or T12 and the whole page under this card moved as the toggle was pressed.
+       48px covers the tallest of the three, and the table's fixed width means
+       that figure is the same at every phone width rather than one per size. */
+    #lopTbl table.dt th { height: 48px; }
     #lgTbl table.dt { min-width: 680px; }
     /* 16px of gutter is more than the prose tables can give up here: liTbl's
        four columns pushed 13px past their card at 400px, and it is deliberately
@@ -1260,6 +1292,32 @@ const statusPill = s => {
     FLAG: "flag", PRIORITY: "flag", "AT RISK": "flag", MINOR: "mut" };
   return elc("span", "pill " + (map[String(s).trim()] || "mut"), s);
 };
+// Text that a toggle rewrites changes its element's height the moment the new
+// string wraps to a different number of lines, and everything below it moves --
+// the page jumps under a press that was meant only to change some numbers.
+// Reserve the tallest of the strings the element can ever hold, so the layout
+// stays put whichever one is showing. Height has to be measured rather than
+// declared: how many lines a string takes depends on the width it is given, so
+// this re-measures on resize and cannot be a fixed value in the stylesheet.
+function reserveTallest(el, texts) {
+  let pending = 0;
+  const apply = () => {
+    const shown = el.textContent;
+    el.style.minHeight = "";
+    let tallest = 0;
+    texts.forEach(t => {
+      el.textContent = t;
+      tallest = Math.max(tallest, el.getBoundingClientRect().height);
+    });
+    el.textContent = shown;
+    el.style.minHeight = tallest.toFixed(1) + "px";
+  };
+  apply();
+  addEventListener("resize", () => {
+    cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(apply);
+  });
+}
 function buildTable(host, heads, rows) {                 // rows: [[text|Node,...],...]
   host.textContent = "";
   const t = elc("table", "dt"), tr = elc("tr");
@@ -2155,8 +2213,19 @@ async function loadLanding() {
       // table, so a string that changed length with the toggle would rewrap at
       // narrow widths and push the whole table up and down. The column headings
       // say which horizon is showing.
-      document.getElementById("lopNote").textContent =
-        "The same statement the expense cards read, refreshed on the same daily run \u2014 "
+      document.getElementById("lopNote").textContent = noteFor(basisKey);
+      document.querySelectorAll("#cOpSummary .tog").forEach(t =>
+        t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));
+    }
+    // The note does change with the horizon, and this card sits above everything
+    // else in the view -- when its text gained a line the whole page below moved
+    // 10px. Built as a function of the horizon so all three can be measured and
+    // the tallest reserved; see reserveTallest.
+    function noteFor(basisKey) {
+      const B = BASES[basisKey] || BASES.prev;
+      const k = Math.min(B.k, n);
+      const factor = 12 / k;
+      return "The same statement the expense cards read, refreshed on the same daily run \u2014 "
         + "the current month follows the statement, so it moves to the new month when one "
         + "is posted. " + shortMo(key(cur)) + " is measured against " + B.blurb() + ". "
         + (k > 1
@@ -2175,12 +2244,11 @@ async function loadLanding() {
         + "items below that line are excluded. Variance is the percentage difference, "
         + "coloured by favourability rather than by sign: green is more revenue, more NOI, "
         + "or less expense.";
-      document.querySelectorAll("#cOpSummary .tog").forEach(t =>
-        t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));
     }
     document.querySelectorAll("#cOpSummary .tog").forEach(t =>
       t.addEventListener("click", () => render(t.dataset.basis)));
     render("prev");
+    reserveTallest(document.getElementById("lopNote"), Object.keys(BASES).map(noteFor));
   })();
 
   /* ---- Expense & NOI ---- */
@@ -2430,10 +2498,6 @@ async function loadLanding() {
         return;
       }
       const keys = monthKeys();
-      if (!sel.options.length) {
-        keys.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
-        sel.selectedIndex = keys.length - 1;
-      }
       sel.hidden = false;
       const i = +sel.value;
       const names = groupNames();
@@ -2478,6 +2542,24 @@ async function loadLanding() {
     }
     document.querySelectorAll("#cExpDeep .tog").forEach(t =>
       t.addEventListener("click", () => setMode(t.dataset.ep)));
+    // Fill the month list now rather than on the first switch to Month. The
+    // select holds its place in the header even while hidden (see the CSS), and
+    // an empty one would hold the wrong width until Month had been pressed once.
+    if (pt) {
+      const mk = monthKeys();
+      mk.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
+      sel.selectedIndex = mk.length - 1;
+    }
+    // The two modes word the eyebrow differently, and the heading block is
+    // narrow enough that the longer one wraps to a second line -- which pushed
+    // the boxes, the chart and the note down 11px on the press. Reserve the
+    // taller of the pair so switching leaves them where they are.
+    reserveTallest(document.getElementById("lcExpEyebrow"), pt
+      ? ["MONTHLY BY ALIGN-TREE GROUP · " + shortMo(monthKeys()[0]).toUpperCase()
+           + "–" + shortMo(monthKeys()[11]).toUpperCase(),
+         "MONTH BY ALIGN-TREE GROUP · FROM THE STATEMENT"]
+      : ["TTM BY BUCKET · WORKBOOK (LIKE-FOR-LIKE CHANGE)",
+         "MONTH BY BUCKET · AWAITING THE STATEMENT"]);
     sel.addEventListener("change", renderMonth);
     renderT12();
     buildTable(document.getElementById("lcExpTbl"),

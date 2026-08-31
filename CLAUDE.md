@@ -26,7 +26,7 @@ ask for the PR; do not open one preemptively.
 | `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
 | `docs/data.html` | Two views behind the same gate: the **data-flow** chain, and the **tables** holding every number the JSON carries |
 | `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand |
-| `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json` |
+| `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json`; `gmail_drive_filing.js` is the Apps Script that files reports into Drive in the first place |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
 
@@ -57,7 +57,7 @@ Which report feeds what (the workbook's own `Data Lineage` tab is authoritative)
 | `Source CY25`, `Source Aug25-Jul26` | 12-month accrual statement | T12 Expenses |
 | `Source Rent Roll Jul` / `Jun` | SPV PM Deliverable Package, Rent Roll tab | Rent Roll |
 | `Source Delinquency` | `rs_rp_DelinquencySummaryReport` | Residential AR Analytics |
-| `Source Renewal Tracker` | Landing 2025 Renewal Tracker (monthly + MTM tabs) | *(no Drive folder yet)* |
+| `Source Renewal Tracker` | Landing 2025 Renewal Tracker (monthly + MTM tabs) | Renewal Tracker |
 | `Lease Detail` | RealPage rate tracker — **typed in, not a grey tab** | Weekly Leasing Reports |
 
 T12, Rent Roll and Residential AR Analytics have parsers in
@@ -353,6 +353,55 @@ Where each arrival comes from:
 Past `SC_STALE_DAYS` (3, in `index.html`) the timestamp turns red: the daily
 EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
 "Feed arrival times" table lists every feed's arrival beside its as-of date.
+
+## How reports reach Drive
+
+Nothing in this repo puts files in Drive. A Google Apps Script running under
+`dashboard@alignrealestate.com` on an hourly trigger reads the mailbox, matches
+each attachment's name against a routing table, and files it into a subfolder of
+the Drive **Report Lander** folder — the same folder `fetch_drive.py` scans via
+the `GDRIVE_FOLDER_ID` secret. Anything it cannot identify goes to `_Unsorted`.
+
+`scripts/gmail_drive_filing.js` is the version of record for that script. It is
+not executed by anything here; it is checked in because **its routing table and
+`config/report_map.json` are two halves of one contract** — the script decides
+where a report lands, `report_map.json` decides where the pipeline looks — and
+when they disagree both sides still look healthy. Apps Script *creates* any
+folder it is asked for, and `fetch_drive.py` only logs a folder it does not
+recognise, so the report just never gets parsed. That is how the weekly EliseAI
+funnel sat in `_Unsorted` for six weeks, and how the `AIRM/Yardi Rev Management`
+and `Workorders/Maintaince` rules were one real report away from quietly
+starting a second folder each (a `/` is legal in a Drive folder name).
+
+`scripts/test_routing.py` is the check that they still agree. It reads the rules
+out of the `.js` directly, and asserts every rule's folder is a `drive_folder` in
+`report_map.json`, that no folder name contains `/`, that every `file_glob`
+starts with `*`, and that a list of real filenames still routes where it belongs.
+Run it after editing either file.
+
+Two traps worth knowing:
+
+- **The filer prefixes the arrival date** (`2026-08-25 leasing_funnel_report_…`),
+  and `fetch_drive` matches with `fnmatch`, which tests the whole filename. So
+  every `file_glob` must lead with `*`. An anchored pattern matches only the
+  hand-placed copies and silently skips everything the filer files.
+- **`Workorders - Mainentance `** carries a misspelling *and* a trailing space,
+  in Drive and in `report_map.json` both. Renaming it means the Drive folder,
+  `report_map.json` and the `.js` rule all change together; `test_routing.py`
+  fails if only one moves.
+
+To deploy a routing change: edit the `.js`, run `test_routing.py`, commit, then
+paste it into the Apps Script project (`script.google.com` → "file downloader"),
+re-enter `TARGET_FOLDER_ID` if a full paste blanked it, run `previewRouting` and
+`checkFolders` (both dry runs), and only then `resortExistingFiles`. `_Unsorted`
+doubles as a retry queue: `resortExistingFiles` re-scans it, so a new rule
+rescues files that arrived before the rule existed. Do **not** re-run
+`createHourlyTrigger` — the trigger survives edits, and running it again just
+creates a duplicate.
+
+`resortExistingFiles` only sees files loose in Report Lander or in `_Unsorted`.
+A file outside that folder, or already inside the wrong category folder, has to
+be moved by hand.
 
 ## The Data-Flow Page
 
