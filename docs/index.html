@@ -191,6 +191,15 @@
   .card .eyebrow { font-size: 10px; letter-spacing: 1px; color: var(--amber); margin-bottom: 12px; display:block; }
   .chartwrap { position: relative; height: 300px; }
   .card.wide .chartwrap { height: 320px; }
+  /* This card is shorter than the one it shares a grid row with, so the row
+     stretched it and left ~180px empty below the note -- every other card sits
+     at 13px. Give the chart the slack instead of the bottom of the card: the
+     column lays out as usual and the plot takes whatever height the row turns
+     out to be, keeping the 300px floor when the grid goes single-column and
+     there is no taller neighbour to match. Chart.js already draws this one with
+     maintainAspectRatio:false, so it redraws to the height it is handed. */
+  #cNoi { display: flex; flex-direction: column; }
+  #cNoi .chartwrap { flex: 1 1 auto; height: auto; min-height: 300px; }
 
   footer { margin-top: 30px; color: var(--muted); font-size: 10px; letter-spacing: 1px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
   .loaderr { color: var(--red); font-size: 12px; padding: 40px; text-align:center; }
@@ -377,6 +386,14 @@
   table.dt td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); color: var(--text); }
   table.dt td.num, table.dt th.num { text-align: right; }
   table.dt td.mut { color: var(--muted); }
+  /* The gutter is padding on the right of each cell and nothing on the left, so
+     it is the whole separation wherever a column has no slack to spread -- and at
+     8px that read as a collision in every table that runs out of room: Saving/yr
+     against Difficulty, Value against Status, Status against the prose beside it.
+     16px clears it. The last column keeps none, so tables still finish flush
+     against the card's edge rather than a cell's worth short of it. */
+  table.dt th, table.dt td { padding-right: 16px; }
+  table.dt th:last-child, table.dt td:last-child { padding-right: 0; }
   /* The operating summary rewrites its column headings when the horizon toggle
      moves -- "Jun 26" becomes "T12 (Aug 25-Jul 26)" -- and an auto-layout table
      re-measures on every press, sliding all five columns sideways. Fixed widths
@@ -447,6 +464,13 @@
     #lopTbl, #lgTbl, #ldTbl, #lcExpTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     #lopTbl table.dt { min-width: 620px; }
     #lgTbl table.dt { min-width: 680px; }
+    /* 16px of gutter is more than the prose tables can give up here: liTbl's
+       four columns pushed 13px past their card at 400px, and it is deliberately
+       not one of the scrollers above -- prose wraps rather than scrolling
+       sideways. Half the gutter at phone width, still clear of the 8px that was
+       colliding in the first place. */
+    table.dt th, table.dt td { padding-right: 10px; }
+    table.dt th:last-child, table.dt td:last-child { padding-right: 0; }
     /* Finger-sized controls: the tap targets that measured 25-26px tall. */
     .tab { padding: 14px 11px; }
     .tog { padding: 12px 14px; }
