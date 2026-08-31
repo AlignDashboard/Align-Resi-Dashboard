@@ -1,6 +1,6 @@
 # Open Items
 
-State as of 2026-08-24, HEAD `2837522`. IDs are stable — when an item closes, move
+State as of 2026-08-28, HEAD `4ab9111`. IDs are stable — when an item closes, move
 it to *Closed* rather than renumbering, so "A3" means the same thing next week.
 
 **Live and uncertain** marks an item where the dashboard is publishing something
@@ -14,6 +14,9 @@ first: everything else is a gap, but these are assertions.
 | A4 | Supply a market-survey export for the PSF chart (subject + comps, 30-day avg rent/sqft — the RealPage market survey or the AIRM feed both carry it). Owner confirmed the $4.01 is old | A live PSF card. The chart now says "hand-entered, date unknown — likely stale" on its face until a feed exists | contained — the staleness is disclosed on the card |
 | A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** The funnel parser is live for both the `EliseAI Reports` and `Weekly Leasing Reports` folders, so the weeklies parse wherever the gmail-filing fix (C3) lands them. The Aug 18 file parses the day it moves out of `_Unsorted` | C3 only | no |
 | A6 | Which property does the concession burn-off export cover? Settled empirically that the file itself cannot answer: the parser now walks it as sections and the only heading text is "Projection by Unit" — report structure, not a property name. Parses and ties out clean every run (−$54,990 recurring concessions as of 08/10), stored nowhere. Needs your word on what "For Selected Properties" selected, or a per-property re-export; the moment a heading or filename names a property, sections route and store by themselves | Concession Load % and the Effective-vs-Gross-Rent card | no — nothing publishes from it yet |
+| A8 | Loss to Lease % now grades **red at 27%** against a band whose ceiling is 10%. The threshold sheet's own basis note warned about exactly this: if Yardi `Market rent potential` is aspirational rather than achievable, the KPI reads artificially high — and the market-rent table was revised up sharply from Apr 2026 (TTM reads 17.2% vs the current month's 27%). Wired per your instruction; whether the band or the denominator gets revisited is your call | Whether the red cell is a finding or an artifact of the denominator | **yes** — graded red off a disputed denominator |
+| A9 | Controllable OpEx/Unit's cutoffs ($7,200 / $8,600) were bracketed around the old basket's $7,784/unit T12 actual. The basket now excludes taxes, insurance, utilities **and the management fee** (set 2026-08-28), under which the twelve months run $5,659–$8,458 (avg ~$6,997) and July grades exceeding. Worth re-bracketing the cutoffs to the basket they now grade, in the ranges sheet | Whether "exceeding" means outperformance or a band calibrated to a bigger basket | contained — the page's `how` states the live basket; `how_workbook` keeps the sheet's |
+| A10 | Extend the COA mapping workbook to cover the 10 JPM accounts (~$115k of T12) it does not map: Carpets, Alarm monitoring, Courtesy patrol, two Turnover lines, Credit reports, Credit Card Fees, Courtesy/Concierge REIT-sensitive, Gross Rec./Bus. Lic. Tax, and a Professional Fees line. The pipeline groups them by label and logs them loudly meanwhile | Clean Align-tree grouping in the Expense Deep Dive and the controllable basket | contained — grouped by label, flagged each run |
 
 ## B · Blocked on an answer from EliseAI
 
@@ -24,6 +27,7 @@ first: everything else is a gap, but these are assertions.
 | B4 | Which delinquency basis is right for The Landing — the export's 11.2% or the workbook's 4.6%? | Whether the export can ever own that cell. The workbook wins today and the export is skipped there | no — the tie-out basis is the one published |
 | B5 | Does the export really see 3 of 37 units leased at 335 Third? | Its Leased % of 8.1% is exactly 3/37, but no lease has been signed | no — filled but ungraded under the lease-up rule |
 | B6 | The bands for Trade-out %, Closing Ratio and # of Renewals are written for a trailing-3-month basis, but the export grading them is trailing-1-month (owner, 2026-08-20) — a volatile month swings the grade more than the bands assume. Either re-band for 1 month or accept the noise | How much a single month can move those three grades | **yes** — three KPIs graded on a shorter basis than their bands assume |
+| B7 | Ask EliseAI to add **Renewals Signed** and **Lease Expirations** columns to the building-metrics export — it publishes the rate and no count anywhere in its 79 columns. Today the `42/88.9%` cell splices the workbook tracker's count (to 2026-07-26) with the export's trailing rate; same-window columns would make the two halves one number, and give Chorus/Madelon a count at all | A single-basis # of Renewals cell for every property | contained — the split basis is stated on the cell |
 
 ## C · Drive housekeeping (surfaced by the pipeline logs)
 
@@ -31,6 +35,7 @@ first: everything else is a gap, but these are assertions.
 | --- | --- | --- |
 | C2 | `Weekly Leasing Reports` is registered but absent from Drive | CLAUDE.md names it as the source for the workbook's `Lease Detail` tab, so either the folder or the documentation is wrong |
 | C3 | `_Unsorted` holds the Aug 18 weekly file | Owner is updating the gmail-filing script so weeklies land in `Weekly Leasing Reports`. Meanwhile the inspect workflow (`--all`) can read `_Unsorted` for parser work |
+| C4 | **Move the rent roll into the `Rent Roll` folder.** The registered folder is empty; the actual file (`2026-07-14 RentRoll07_14_2026.xlsx`) sits in the root Resi Dashboard folder, which the fetcher does not scan — so the rent roll has never reached the pipeline and every per-unit figure arrives via the workbook. The parser is written and registered; moving the file is the whole fix. It is also the prerequisite for feeding Month to Month Leases per property from the pipeline rather than the workbook |
 
 ## D · Parsers not built
 
@@ -65,8 +70,31 @@ Documented in CLAUDE.md and built but not activated. Strictly ordered.
 | --- | --- |
 | F1 | The floorplan table is still on `data.html`. The card is off the Landing board; the data table stayed because that page exists to show everything the JSON holds |
 | F2 | The shared scorecard note prints on every property card, including the line about Palma's lease-up overrides, which reads oddly on Chorus. Can be scoped per property |
+| F3 | Unit 647 is classed `lab21` in the Yardi Unit Directory and `lab9` in the workbook. At 830 sqft it sits inside lab9's range (827–863) and far outside lab21's other units (1,022–1,069), so the directory looks wrong — worth a word to the PM to fix in Yardi. No bedroom impact (both plans are 2-bed) |
 
 ## Closed
+
+2026-08-28 — a long dashboard session, all pushed to `main` through `4ab9111`:
+the scorecard now measures **11 of The Landing's KPIs** (was 7) — `--from-landing`
+fills Loss to Lease % (current month, whole percent — spawned A8), NOI Margin %
+(current month, TTM recorded beside it per the owner), Controllable OpEx/Unit
+(less taxes, insurance, utilities and mgmt fee — spawned A9) and Month to Month
+Leases (31/11.8%, the holdover cohort; the tracker's 4-unit overlap is inside
+the 31, not beside it), and `# of Renewals` prints the tracker's signed count
+beside the export's rate (spawned B7). `# of offers that are 30 days` is dropped
+everywhere via `OMITTED_METRICS`; `# of month to month` publishes as
+`Month to Month Leases` via `RENAMES`; both survive re-extraction. The Unit
+Directory in Drive `Building Info` is parsed, registered and feeding bedrooms
+into the unit-gaps table (tie-outs to the cent; spawned F3). The Landing's
+scorecard slice hides AR/AP, Maintenance, Resident Experience and Open EliseAI
+Tasks with an honest per-tab roll-up. New Operating Summary card from the
+pipeline T12 (prev/T3/T12 toggle, columns pinned); Rent Capture is now Loss to
+Lease; Expense Load & NOI's third line is controllable expense/door; the unit
+gaps table carries beds/SF/expiry-MTM. The mobile layout is fixed (grid
+min-width, in-card table scroll, finger-sized controls; verified on seven
+device profiles). The rent roll's absence from the pipeline was traced to the
+file sitting outside its Drive folder (spawned C4). The data-source map is
+pinned as the "Landing Data Lineage" artifact.
 
 2026-08-26 — A7: the statement arrived the day after it was asked for —
 `12_Month_Statement_Accrual.xlsx` in `T12 Expenses`, covering all four Landing
