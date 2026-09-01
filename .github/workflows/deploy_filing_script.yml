@@ -93,6 +93,40 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
           chmod 600 "$HOME/.clasprc.json"
 
+      - name: Check the credential's shape before using it
+        if: steps.gate.outputs.ready == 'true'
+        # clasp fails an unreadable credential with "Cannot read properties of
+        # undefined (reading 'access_token')", which says nothing about why.
+        # This reports the shape instead -- key NAMES and booleans only, never a
+        # value, so nothing secret reaches the log.
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = process.env.HOME + "/.clasprc.json";
+            let raw;
+            try { raw = fs.readFileSync(path, "utf8"); }
+            catch (e) { console.log("::error::no credential file was written"); process.exit(1); }
+            console.log("bytes:", raw.length, "| lines:", raw.split("\n").length);
+            let j;
+            try { j = JSON.parse(raw); }
+            catch (e) {
+              console.log("::error::CLASPRC_JSON is not valid JSON, so the copy was "
+                + "truncated or line-broken on the way in: " + e.message);
+              process.exit(1);
+            }
+            console.log("top-level keys:", Object.keys(j).join(", "));
+            const tok = j.token || j;
+            console.log("refresh_token present:", Boolean(tok && tok.refresh_token));
+            console.log("access_token present: ", Boolean(tok && tok.access_token));
+            console.log("client settings:      ", Boolean(j.oauth2ClientSettings || j.clientId));
+            if (!(tok && tok.refresh_token)) {
+              console.log("::error::valid JSON, but no refresh_token in it -- this is not "
+                + "the whole ~/.clasprc.json");
+              process.exit(1);
+            }
+            console.log("credential looks well-formed");
+          '
+
       - name: Push the script
         if: steps.gate.outputs.ready == 'true'
         env:
