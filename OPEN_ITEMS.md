@@ -1,6 +1,6 @@
 # Open Items
 
-State as of 2026-09-01, HEAD `d4c7f51`. IDs are stable — when an item closes, move
+State as of 2026-09-01, HEAD `bcecf55`. IDs are stable — when an item closes, move
 it to *Closed* rather than renumbering, so "A3" means the same thing next week.
 
 **Live and uncertain** marks an item where the dashboard is publishing something
