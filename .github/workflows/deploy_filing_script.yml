@@ -97,8 +97,11 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         # clasp fails an unreadable credential with "Cannot read properties of
         # undefined (reading 'access_token')", which says nothing about why.
-        # This reports the shape instead -- key NAMES and booleans only, never a
-        # value, so nothing secret reaches the log.
+        # This prints the file's STRUCTURE instead -- key names and value types,
+        # never a value -- so a diagnosis costs nothing in secrecy. clasp has
+        # used three layouts across versions (flat, {token:...}, and a
+        # {default:{...}} profile map), and the runner's clasp must be able to
+        # read whichever one wrote the secret.
         run: |
           node -e '
             const fs = require("fs");
@@ -114,14 +117,19 @@ jobs:
                 + "truncated or line-broken on the way in: " + e.message);
               process.exit(1);
             }
-            console.log("top-level keys:", Object.keys(j).join(", "));
-            const tok = j.token || j;
-            console.log("refresh_token present:", Boolean(tok && tok.refresh_token));
-            console.log("access_token present: ", Boolean(tok && tok.access_token));
-            console.log("client settings:      ", Boolean(j.oauth2ClientSettings || j.clientId));
-            if (!(tok && tok.refresh_token)) {
-              console.log("::error::valid JSON, but no refresh_token in it -- this is not "
-                + "the whole ~/.clasprc.json");
+            const skeleton = (o, depth) => {
+              if (o === null || typeof o !== "object") return typeof o;
+              if (Array.isArray(o)) return "[" + o.length + " items]";
+              if (depth > 2) return "{...}";
+              return "{" + Object.keys(o).map(k => k + ": " + skeleton(o[k], depth + 1)).join(", ") + "}";
+            };
+            console.log("structure:", skeleton(j, 0));
+            const holder = j.token ? j : (j.default || j);
+            const tok = holder.token || holder;
+            const ok = Boolean(tok && tok.refresh_token);
+            console.log("refresh_token found:", ok);
+            if (!ok) {
+              console.log("::error::no refresh_token anywhere in this file");
               process.exit(1);
             }
             console.log("credential looks well-formed");
