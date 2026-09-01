@@ -373,6 +373,41 @@ funnel sat in `_Unsorted` for six weeks, and how the `AIRM/Yardi Rev Management`
 and `Workorders/Maintaince` rules were one real report away from quietly
 starting a second folder each (a `/` is legal in a Drive folder name).
 
+### Folders organise; filenames route
+
+`fetch_drive.py` runs **two passes**, and the difference matters:
+
+1. **The folder pass** — every active entry's own folder, as always. This is what
+   the Gmail filer's organisation is for, and it is unchanged. Drive stays
+   browsable, one folder per report type, for pulling source data by hand.
+2. **The rescue sweep** — then every other folder in the drop tree, `_Unsorted`
+   included, looking for unclaimed files matching an entry's `name_patterns`.
+
+The point is that folder organisation is no longer *load-bearing*. Before, a
+report's identity came from the folder it sat in, so a routing rule that didn't
+match a filename put the report somewhere nothing read — and nothing downstream
+could tell. That is how four weeks of reports sat in `_Unsorted`. Now a misfiled
+report still reaches its parser, and the log says where it was found
+(`[rescued] downloaded _Unsorted/… — filed outside its own folder`).
+
+`name_patterns` is opt-in per entry, matched case-insensitively, and only
+`active` entries take part. An entry without it stays strictly folder-bound.
+
+The sweep is scoped, and each limit exists for a reason:
+
+| Limit | Why |
+| --- | --- |
+| Never the `reference` tree | The library holds superseded copies on purpose. `Archive Reports` has a July rent roll beside four other July exports; sweeping it would publish a seven-week-old rent roll as current |
+| Never a folder in `NEVER_SWEEP` | Belt to the tree's braces — an archive stays safe even if it is moved into the drop tree |
+| Never a file the folder pass took | `claimed` tracks Drive ids, so nothing is counted twice |
+| Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
+| Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |
+
+`scripts/test_fetch_sweep.py` holds this down — 12 checks against a stubbed Drive
+mirroring the real layout, no network or fixtures. Both archive protections are
+tested *independently*: removing either one alone fails a check, since the name
+guard would otherwise cover for the missing tree scoping.
+
 ### Two Drive trees
 
 `fetch_drive.py` scans **two** parents, because two different kinds of thing live

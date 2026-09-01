@@ -20,6 +20,31 @@ Env vars (set as GitHub secrets):
 Reads config/report_map.json to know which subfolders to pull and what
 report_type to tag them with. Subfolders with status != "active" are skipped
 (they have no parser yet) but logged so you can see what's waiting.
+
+Two passes, in this order:
+
+  1. THE FOLDER PASS. Every active entry's own folder, exactly as before. This
+     is what the Gmail filer's organisation is for, and it is unchanged.
+
+  2. THE RESCUE SWEEP. Then every other folder in the drop tree, including
+     _Unsorted, looking for files nobody claimed that match an entry's
+     name_patterns. A report that was filed into the wrong folder still reaches
+     its parser, and the log says where it was found.
+
+The point of the second pass is that folder organisation stops being the only
+thing standing between a report and the pipeline. Before it existed, four weeks
+of reports sat in _Unsorted because no routing rule matched their names, and
+nothing downstream could tell. Organisation is still maintained -- it is just no
+longer load-bearing.
+
+The sweep is deliberately scoped and will not touch:
+  - the reference tree, which is the owner's curated library. Archived copies of
+    superseded reports live there; sweeping it would feed a seven-week-old rent
+    roll back into today's numbers.
+  - any folder named in NEVER_SWEEP, wherever it appears.
+  - a file already claimed by the folder pass.
+  - a file matching two entries with different report_types -- that is reported,
+    not guessed at.
 """
 
 import fnmatch
@@ -35,6 +60,12 @@ from googleapiclient.http import MediaIoBaseDownload
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 DL_ROOT = pathlib.Path("_downloads")
+
+# Folders the rescue sweep never reads, wherever they appear. An archive holds
+# superseded copies of live reports on purpose: "2026-07-14 RentRoll…" next to
+# four other July exports is a decision, not a misfile, and pulling it back in
+# would publish stale figures as current.
+NEVER_SWEEP = {"Archive Reports"}
 
 
 def _service():
@@ -128,8 +159,9 @@ def main():
                                       if e.get("tree", "reports") == "reports"})
     for name in unmapped:
         files = contents({"drive_folder": name})
-        print(f"[warn] '{name}' is not in report_map.json — "
-              f"{len(files)} file(s) ignored: {[f['name'] for f in files]}")
+        print(f"[warn] '{name}' is not in report_map.json — {len(files)} file(s) "
+              f"unclaimed by any folder (the name sweep below may still rescue "
+              f"some): {[f['name'] for f in files]}")
         # --all (the inspect workflow) downloads even these, into _pending/, so
         # a file mis-filed into _Unsorted can have its structure read from the
         # inspect log. The daily pipeline still ignores unmapped folders.
@@ -138,6 +170,36 @@ def main():
                 dest = DL_ROOT / "_pending" / name / f["name"]
                 _download(svc, f["id"], dest)
                 print(f"[ok] downloaded (unmapped) {name}/{f['name']}")
+
+    claimed = set()   # Drive file ids the folder pass took, so the sweep cannot double-count
+
+    def take(entry, f, found_in, rescued=False):
+        dest = DL_ROOT / entry["report_type"] / f["name"]
+        if dest.exists():
+            # Two folders holding the same filename would otherwise silently
+            # overwrite each other on disk and the second parse would win.
+            print(f"[note] {found_in}/{f['name']} skipped — a file of that name "
+                  f"was already downloaded for {entry['report_type']}")
+            return
+        _download(svc, f["id"], dest)
+        claimed.add(f["id"])
+        # landed_at: when this report showed up in Drive. createdTime is the
+        # arrival; modifiedTime is later only if someone edited it in place,
+        # and an edited report is newer data, so take the later of the two.
+        landed_at = max(x for x in (f.get("createdTime"), f.get("modifiedTime")) if x) \
+            if (f.get("createdTime") or f.get("modifiedTime")) else None
+        manifest.append({"report_type": entry["report_type"],
+                         "parser": entry["parser"],
+                         "path": str(dest), "name": f["name"],
+                         "landed_at": landed_at,
+                         "found_in": found_in,
+                         "rescued_by_name": rescued,
+                         "drive_created_time": f.get("createdTime"),
+                         "drive_modified_time": f.get("modifiedTime")})
+        print(f"[{'rescued' if rescued else 'ok'}] downloaded {found_in}/{f['name']}"
+              + (f" (landed in Drive {landed_at})" if landed_at else "")
+              + (f" — filed outside its own folder, matched on name as "
+                 f"{entry['report_type']}" if rescued else ""))
 
     for entry in cfg["subfolders"]:
         name = entry["drive_folder"]
@@ -181,21 +243,47 @@ def main():
             print(f"[note] '{name}': {len(skipped)} file(s) outside this "
                   f"entry's glob: {skipped}")
         for f in files:
-            dest = DL_ROOT / entry["report_type"] / f["name"]
-            _download(svc, f["id"], dest)
-            # landed_at: when this report showed up in Drive. createdTime is the
-            # arrival; modifiedTime is later only if someone edited it in place,
-            # and an edited report is newer data, so take the later of the two.
-            landed_at = max(x for x in (f.get("createdTime"), f.get("modifiedTime")) if x) \
-                if (f.get("createdTime") or f.get("modifiedTime")) else None
-            manifest.append({"report_type": entry["report_type"],
-                             "parser": entry["parser"],
-                             "path": str(dest), "name": f["name"],
-                             "landed_at": landed_at,
-                             "drive_created_time": f.get("createdTime"),
-                             "drive_modified_time": f.get("modifiedTime")})
-            print(f"[ok] downloaded {name}/{f['name']}"
-                  + (f" (landed in Drive {landed_at})" if landed_at else ""))
+            take(entry, f, name)
+
+    # ---------------------------------------------------------------- pass 2
+    # Any file in the drop tree that nobody claimed, matched on its own name.
+    named = [e for e in cfg["subfolders"]
+             if e.get("status") == "active" and e.get("name_patterns")]
+    if named:
+        def matches(filename, entry):
+            low = filename.lower()
+            return any(fnmatch.fnmatch(low, pat.lower())
+                       for pat in entry["name_patterns"])
+
+        rescued = ambiguous = 0
+        for folder_name, folder_id in sorted(trees["reports"].items()):
+            if folder_name in NEVER_SWEEP:
+                print(f"[info] sweep skips '{folder_name}' (NEVER_SWEEP: an archive "
+                      f"of superseded reports is not a misfile)")
+                continue
+            for f in _list_children(svc, folder_id):
+                if f["mimeType"] == FOLDER_MIME or f["id"] in claimed:
+                    continue
+                hits = [e for e in named if matches(f["name"], e)]
+                # Entries that agree on report_type AND parser are the same claim
+                # wearing two folder names (the funnel parses from two folders,
+                # delinquency from two). Only a genuine disagreement is ambiguous.
+                kinds = {(e["report_type"], e["parser"]) for e in hits}
+                if not hits:
+                    continue
+                if len(kinds) > 1:
+                    ambiguous += 1
+                    print(f"[warn] '{folder_name}/{f['name']}' matches more than one "
+                          f"report type ({sorted(k[0] for k in kinds)}) — not guessing; "
+                          f"file it into the right folder or tighten name_patterns")
+                    continue
+                take(hits[0], f, folder_name, rescued=True)
+                rescued += 1
+        if rescued or ambiguous:
+            print(f"[info] rescue sweep: {rescued} file(s) picked up outside their own "
+                  f"folder, {ambiguous} ambiguous")
+        else:
+            print("[info] rescue sweep: nothing outside its own folder")
 
     json.dump(manifest, open("_downloads/manifest.json", "w"), indent=2)
     print(f"\n{len(manifest)} file(s) downloaded.")
