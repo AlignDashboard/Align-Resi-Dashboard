@@ -1,0 +1,120 @@
+# Deploy scripts/gmail_drive_filing.js into the Apps Script project.
+#
+# WHY THIS EXISTS
+#   The filing script's routing table and config/report_map.json are two halves
+#   of one contract (see CLAUDE.md, "How reports reach Drive"). Keeping the
+#   script in the repo is what lets scripts/test_routing.py enforce that. But a
+#   repo copy that has to be pasted by hand can drift from the copy that runs.
+#   This closes the gap: the repo becomes the deployed version.
+#
+# WHAT IT NEEDS (two secrets, both optional -- without them this is a no-op)
+#   CLASPRC_JSON    the contents of ~/.clasprc.json, produced by `clasp login`
+#                   under dashboard@alignrealestate.com. Carries an OAuth
+#                   refresh token, so treat it as a credential.
+#   APPS_SCRIPT_ID  the Apps Script project id (the part of the editor URL after
+#                   /projects/ or /d/). Kept in a secret rather than committed,
+#                   for the same reason the Drive folder ids are.
+#
+#   The account also has to switch the Apps Script API on, once, at
+#   https://script.google.com/home/usersettings -- a per-user toggle, separate
+#   from any Cloud project setting. Without it clasp fails with "User has not
+#   enabled the Apps Script API".
+#
+# WHY NOT A SERVICE ACCOUNT
+#   projects.updateContent does not accept service-account credentials for a
+#   user-owned script, which is why this cannot reuse GDRIVE_SA_KEY.
+#
+# WHAT IT DOES NOT DO
+#   It does not run previewRouting, checkFolders or resortExistingFiles. Running
+#   a function remotely needs the script deployed as an API executable AND a
+#   token carrying the script's own scopes -- Gmail read and Drive write -- which
+#   is a much larger grant than pushing code. Those three stay manual on
+#   purpose: reading the dry-run log before moving files is the safety net.
+#
+#   It also does not touch the hourly trigger. Triggers reference the function
+#   name, not the code, so they survive a push -- do not re-run
+#   createHourlyTrigger afterwards or you get a duplicate.
+name: Deploy Gmail filing script
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/gmail_drive_filing.js
+      - .github/workflows/deploy_filing_script.yml
+
+# One deploy at a time: two overlapping pushes would race on project content.
+concurrency:
+  group: apps-script-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Refuse to deploy a script the guard test rejects
+        # The whole point of the repo copy is that this test can read it. Running
+        # it here means a routing table that disagrees with report_map.json never
+        # reaches the project -- which is the failure that stranded 22 reports.
+        run: python scripts/test_routing.py
+
+      - name: Check the script parses
+        run: node --check scripts/gmail_drive_filing.js
+
+      - name: Skip if the deploy secrets are not set
+        id: gate
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$APPS_SCRIPT_ID" ]; then
+            echo "::notice::CLASPRC_JSON and/or APPS_SCRIPT_ID not set — the script is validated but not deployed. Paste it into the Apps Script project by hand, or add the secrets. See the header of this workflow."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install clasp
+        if: steps.gate.outputs.ready == 'true'
+        run: npm install -g @google/clasp@2.4.2
+
+      - name: Authenticate
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+
+      - name: Push the script
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          printf '{"scriptId":"%s","rootDir":"%s"}\n' "$APPS_SCRIPT_ID" "$work" > .clasp.json
+
+          # Pull first, so the project's OWN manifest is what gets pushed back.
+          # appsscript.json carries the timezone, runtime version and any
+          # advanced services; reconstructing it from memory risks silently
+          # changing how the script runs, and clasp refuses to push without it.
+          clasp pull --force
+          test -f "$work/appsscript.json" \
+            || { echo "::error::clasp pull produced no appsscript.json — refusing to push"; exit 1; }
+
+          # Replace the code, keep the manifest. Code.js maps to the project's
+          # existing Code.gs, so this updates that file rather than adding a
+          # second one alongside it.
+          find "$work" -maxdepth 1 -type f \( -name '*.js' -o -name '*.gs' \) -delete
+          cp scripts/gmail_drive_filing.js "$work/Code.js"
+
+          clasp push --force
+          echo "::notice::Pushed. Run previewRouting and checkFolders in the editor before resortExistingFiles."

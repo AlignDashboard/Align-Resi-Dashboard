@@ -22,3 +22,6 @@ tests/fixtures/
 *.xlsx
 *.xlsm
 *.csv
+
+# clasp writes this at deploy time; it carries the Apps Script project id
+.clasp.json

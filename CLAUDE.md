@@ -417,14 +417,46 @@ Two traps worth knowing:
   `report_map.json` and the `.js` rule all change together; `test_routing.py`
   fails if only one moves.
 
-To deploy a routing change: edit the `.js`, run `test_routing.py`, commit, then
-paste it into the Apps Script project (`script.google.com` → "file downloader"),
-re-enter `TARGET_FOLDER_ID` if a full paste blanked it, run `previewRouting` and
-`checkFolders` (both dry runs), and only then `resortExistingFiles`. `_Unsorted`
-doubles as a retry queue: `resortExistingFiles` re-scans it, so a new rule
-rescues files that arrived before the rule existed. Do **not** re-run
-`createHourlyTrigger` — the trigger survives edits, and running it again just
-creates a duplicate.
+To deploy a routing change: edit the `.js`, run `test_routing.py`, commit, and
+get the code into the project — either by pasting it into `script.google.com` →
+"file downloader", or automatically via `.github/workflows/deploy_filing_script.yml`
+(below). Then run `previewRouting` and `checkFolders` (both dry runs), and only
+then `resortExistingFiles`. `_Unsorted` doubles as a retry queue:
+`resortExistingFiles` re-scans it, so a new rule rescues files that arrived
+before the rule existed. Do **not** re-run `createHourlyTrigger` — the trigger
+survives edits, and running it again just creates a duplicate.
+
+### Deploying the script automatically
+
+`deploy_filing_script.yml` runs `test_routing.py`, then pushes
+`scripts/gmail_drive_filing.js` into the Apps Script project with `clasp`. It is
+a **no-op until two secrets exist**, and says so in the run summary rather than
+failing:
+
+| Secret | What |
+| --- | --- |
+| `CLASPRC_JSON` | the contents of `~/.clasprc.json` after `clasp login` as `dashboard@alignrealestate.com`. Holds an OAuth refresh token — a real credential |
+| `APPS_SCRIPT_ID` | the project id from the editor URL. In a secret, not committed, like the Drive folder ids |
+
+The account also has to switch the Apps Script API on once, at
+`script.google.com/home/usersettings` — a per-user toggle, unrelated to any
+Cloud project setting.
+
+**A service account cannot do this.** `projects.updateContent` rejects
+service-account credentials for a user-owned script, so this cannot reuse
+`GDRIVE_SA_KEY`; it needs an end-user token.
+
+The workflow `clasp pull`s first and pushes the project's **own**
+`appsscript.json` back, replacing only the code. The manifest carries the
+timezone, runtime version and any advanced services — rebuilding it from memory
+would change how the script runs, and a pull that yields no manifest aborts the
+push rather than guessing.
+
+It deliberately does **not** run `previewRouting`, `checkFolders` or
+`resortExistingFiles`. Executing a function remotely needs the script published
+as an API executable *and* a token carrying the script's own scopes — Gmail read
+and Drive write — a far larger grant than pushing code. Reading the dry-run log
+before files move is the safety net, so those three stay manual.
 
 `resortExistingFiles` only sees files loose in Report Lander or in `_Unsorted`.
 A file outside that folder, or already inside the wrong category folder, has to
