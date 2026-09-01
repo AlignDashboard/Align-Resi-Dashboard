@@ -106,7 +106,9 @@ jobs:
           # appsscript.json carries the timezone, runtime version and any
           # advanced services; reconstructing it from memory risks silently
           # changing how the script runs, and clasp refuses to push without it.
-          clasp pull --force
+          # NB: pull takes no --force (that flag is push-only) -- passing it
+          # fails with "unknown option".
+          clasp pull
           test -f "$work/appsscript.json" \
             || { echo "::error::clasp pull produced no appsscript.json — refusing to push"; exit 1; }
 
