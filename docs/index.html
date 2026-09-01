@@ -689,7 +689,7 @@
         <div class="card-head">
           <div>
             <h2>Expense Deep Dive</h2>
-            <span class="eyebrow" id="lcExpEyebrow">TTM BY BUCKET · LIKE-FOR-LIKE CHANGE</span>
+            <span class="eyebrow" id="lcExpEyebrow">AUG 25–JUL 26</span>
           </div>
           <div class="togrow" role="group" aria-label="Deep dive period">
             <button class="tog" type="button" data-ep="t12" aria-pressed="true">T12</button>
@@ -2429,7 +2429,7 @@ async function loadLanding() {
             scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
               y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
         });
-        document.getElementById("lcExpEyebrow").textContent = "TTM BY BUCKET · WORKBOOK (LIKE-FOR-LIKE CHANGE)";
+        document.getElementById("lcExpEyebrow").textContent = "TTM · WORKBOOK";
         note.textContent = "";
         return;
       }
@@ -2473,8 +2473,10 @@ async function loadLanding() {
           chart.setDatasetVisibility(it.i, !hiddenCats.has(it.label));
           chart.update();
         });
+      // The eyebrow carries the period the chart covers and nothing else --
+      // what the bars are is the card's own title's job.
       document.getElementById("lcExpEyebrow").textContent =
-        "MONTHLY BY ALIGN-TREE GROUP · " + shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[11]).toUpperCase();
+        shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[11]).toUpperCase();
       const wbOpex = L.expense_noi.ttm.opex;
       note.textContent = "The boxes above switch categories on and off — Taxes dwarfs the "
         + "rest, so unticking it opens up the others. T12 total " + fm$(total) + " vs " + fm$(wbOpex)
@@ -2492,7 +2494,7 @@ async function loadLanding() {
           + '<div>A month-by-month split needs the property’s 12-month statement '
           + 'in the Drive "T12 Expenses" folder — the pipeline classifies, ties out '
           + 'and publishes it the day it lands.</div></div>';
-        document.getElementById("lcExpEyebrow").textContent = "MONTH BY BUCKET · AWAITING THE STATEMENT";
+        document.getElementById("lcExpEyebrow").textContent = "AWAITING THE STATEMENT";
         note.textContent = "";
         sel.hidden = true;
         return;
@@ -2520,7 +2522,7 @@ async function loadLanding() {
           else hiddenCats.add(it.label);
           renderMonth();
         });
-      document.getElementById("lcExpEyebrow").textContent = "MONTH BY ALIGN-TREE GROUP · FROM THE STATEMENT";
+      document.getElementById("lcExpEyebrow").textContent = shortMo(keys[i]).toUpperCase();
       const wbIdx = L.expense_noi.months.indexOf(keys[i]);
       const wbOpex = wbIdx >= 0 ? L.expense_noi.opex[wbIdx] : null;
       note.textContent = shortMo(keys[i]) + " total " + fm$(total)
@@ -2550,16 +2552,17 @@ async function loadLanding() {
       mk.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
       sel.selectedIndex = mk.length - 1;
     }
-    // The two modes word the eyebrow differently, and the heading block is
-    // narrow enough that the longer one wraps to a second line -- which pushed
-    // the boxes, the chart and the note down 11px on the press. Reserve the
-    // taller of the pair so switching leaves them where they are.
+    // The eyebrow's text changes with the mode, and the heading block is narrow
+    // enough that a long one wraps to a second line -- which pushed the boxes,
+    // the chart and the note down 11px on the press. Reserve the tallest of
+    // every string it can hold, so switching leaves them where they are. Now
+    // that the eyebrow is only ever a period none of them should wrap, but the
+    // reserve is what makes that true rather than something to be checked
+    // against the widest heading the page can produce.
     reserveTallest(document.getElementById("lcExpEyebrow"), pt
-      ? ["MONTHLY BY ALIGN-TREE GROUP · " + shortMo(monthKeys()[0]).toUpperCase()
-           + "–" + shortMo(monthKeys()[11]).toUpperCase(),
-         "MONTH BY ALIGN-TREE GROUP · FROM THE STATEMENT"]
-      : ["TTM BY BUCKET · WORKBOOK (LIKE-FOR-LIKE CHANGE)",
-         "MONTH BY BUCKET · AWAITING THE STATEMENT"]);
+      ? [shortMo(monthKeys()[0]).toUpperCase() + "–" + shortMo(monthKeys()[11]).toUpperCase(),
+         ...monthKeys().map(k => shortMo(k).toUpperCase())]
+      : ["TTM · WORKBOOK", "AWAITING THE STATEMENT"]);
     sel.addEventListener("change", renderMonth);
     renderT12();
     buildTable(document.getElementById("lcExpTbl"),
