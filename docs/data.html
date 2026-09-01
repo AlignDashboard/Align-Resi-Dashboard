@@ -1791,7 +1791,13 @@ function focusHashTarget() {
   const id = decodeURIComponent((location.hash || "").slice(1));
   if (!id) return;
   if (id === "flow" || id === "tables") { showView(id === "flow" ? "viewFlow" : "viewTables"); return; }
-  const target = document.getElementById(id);
+  // A per-property table family is one table per property (t-expratio-palma,
+  // t-expratio-the-landing), so nothing can link to "the expense ratio table"
+  // by name. A hash that is a prefix of one resolves to the first that exists,
+  // which is what the dashboard's Expense Ratio card links to.
+  const target = document.getElementById(id)
+    || [...document.querySelectorAll('#tables .tbl, #flows .flow')]
+         .find(n => n.id.startsWith(id + "-"));
   if (!target) return;
   // A deep link names a row or a table, both of which live in the tables view,
   // or a flow. Switch first: scrollIntoView on a hidden section does nothing.

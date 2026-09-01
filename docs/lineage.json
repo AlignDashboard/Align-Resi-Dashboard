@@ -1,6 +1,288 @@
 {
+ "cards": {
+  "cExpRatio": {
+   "card": "Expense Ratio",
+   "tab": "Portfolio",
+   "tables": [
+    "t-expratio"
+   ],
+   "flows": [
+    "t12"
+   ],
+   "primary": "t-expratio",
+   "holds": "Expense Ratio"
+  },
+  "cOpSummary": {
+   "card": "Operating Summary",
+   "tab": "The Landing",
+   "tables": [
+    "t-expratio"
+   ],
+   "flows": [
+    "t12"
+   ],
+   "primary": "t-expratio",
+   "holds": "Expense Ratio"
+  },
+  "cExpDeep": {
+   "card": "Expense Deep Dive",
+   "tab": "The Landing",
+   "tables": [
+    "t-expratio"
+   ],
+   "flows": [
+    "t12"
+   ],
+   "primary": "t-expratio",
+   "holds": "Expense Ratio"
+  },
+  "cNoi": {
+   "card": "Expense Load & NOI \u2014 controllable/door",
+   "tab": "The Landing",
+   "tables": [
+    "t-expratio",
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-units",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "flows": [
+    "t12",
+    "analyst_workbook"
+   ],
+   "primary": "t-expratio",
+   "holds": "Expense Ratio"
+  },
+  "cScorecard": {
+   "card": "KPI Scorecard \u2014 Total Deliquency",
+   "tab": "Scorecard",
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals",
+    "t-sc-matrix",
+    "t-sc-thresholds",
+    "t-sc-workbook",
+    "t-sc-overrides"
+   ],
+   "flows": [
+    "delinquency",
+    "bldg_metrics",
+    "eliseai_daily",
+    "kpi_workbook"
+   ],
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
+  },
+  "lkpis": {
+   "card": "Leased tile",
+   "tab": "The Landing",
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals"
+   ],
+   "flows": [
+    "bldg_metrics"
+   ],
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
+  },
+  "cGaps": {
+   "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
+   "tab": "The Landing",
+   "tables": [
+    "t-l-units",
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "flows": [
+    "unit_directory",
+    "analyst_workbook"
+   ],
+   "primary": "t-l-units",
+   "holds": "Unit-level gap analysis"
+  },
+  "cPortfolioScorecard": {
+   "card": "KPI Scorecard",
+   "tab": "Portfolio",
+   "tables": [
+    "t-sc-matrix",
+    "t-sc-thresholds",
+    "t-sc-workbook",
+    "t-sc-overrides"
+   ],
+   "flows": [
+    "kpi_workbook"
+   ],
+   "primary": "t-sc-matrix",
+   "holds": "KPI Scorecard matrix"
+  },
+  "cRentCapture": {
+   "card": "Loss to Lease",
+   "tab": "The Landing",
+   "tables": [
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-units",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "flows": [
+    "analyst_workbook"
+   ],
+   "primary": "t-l-capture",
+   "holds": "Rent capture"
+  },
+  "cTradeOuts": {
+   "card": "Trade-outs",
+   "tab": "The Landing",
+   "tables": [
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-units",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "flows": [
+    "analyst_workbook"
+   ],
+   "primary": "t-l-capture",
+   "holds": "Rent capture"
+  },
+  "cRollover": {
+   "card": "Rollover Schedule",
+   "tab": "The Landing",
+   "tables": [
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-units",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "flows": [
+    "analyst_workbook"
+   ],
+   "primary": "t-l-capture",
+   "holds": "Rent capture"
+  },
+  "cDelinquency": {
+   "card": "Delinquency",
+   "tab": "The Landing",
+   "tables": [
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-units",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "flows": [
+    "analyst_workbook"
+   ],
+   "primary": "t-l-capture",
+   "holds": "Rent capture"
+  },
+  "cInsights": {
+   "card": "Insights Scorecard",
+   "tab": "The Landing",
+   "tables": [
+    "t-l-capture",
+    "t-l-noi",
+    "t-l-renewal",
+    "t-l-units",
+    "t-l-delq-aging",
+    "t-l-rollover",
+    "t-l-insights",
+    "t-l-meta"
+   ],
+   "flows": [
+    "analyst_workbook"
+   ],
+   "primary": "t-l-capture",
+   "holds": "Rent capture"
+  },
+  "cExpTrend": {
+   "card": "Expense Trend",
+   "tab": "Portfolio",
+   "tables": [
+    "t-exptrend",
+    "t-psf",
+    "t-tradeouts",
+    "t-placeholders"
+   ],
+   "flows": [
+    "handset"
+   ],
+   "primary": "t-exptrend",
+   "holds": "Expense Trend"
+  },
+  "cPsf": {
+   "card": "PSF vs Other Properties",
+   "tab": "Portfolio",
+   "tables": [
+    "t-exptrend",
+    "t-psf",
+    "t-tradeouts",
+    "t-placeholders"
+   ],
+   "flows": [
+    "handset"
+   ],
+   "primary": "t-exptrend",
+   "holds": "Expense Trend"
+  },
+  "cTradeOutsPortfolio": {
+   "card": "Trade Outs",
+   "tab": "Portfolio",
+   "tables": [
+    "t-exptrend",
+    "t-psf",
+    "t-tradeouts",
+    "t-placeholders"
+   ],
+   "flows": [
+    "handset"
+   ],
+   "primary": "t-exptrend",
+   "holds": "Expense Trend"
+  },
+  "placeholderGrid": {
+   "card": "Planned Metrics",
+   "tab": "Portfolio",
+   "tables": [
+    "t-exptrend",
+    "t-psf",
+    "t-tradeouts",
+    "t-placeholders"
+   ],
+   "flows": [
+    "handset"
+   ],
+   "primary": "t-exptrend",
+   "holds": "Expense Trend"
+  }
+ },
  "meta": {
-  "generated_at": "2026-08-31T23:21:23.419806+00:00",
+  "generated_at": "2026-09-01T18:26:36.054653+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 8,

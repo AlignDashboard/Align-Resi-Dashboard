@@ -767,19 +767,96 @@ def page_ids(path, patterns):
     return found, text
 
 
+def data_table_titles():
+    """data.html table id -> its heading, for the card link's tooltip.
+
+    Read out of the renderTable specs rather than restated here: a table that
+    gets renamed should rename itself on the dashboard's links too.
+    """
+    text = (ROOT / "docs/data.html").read_text(encoding="utf-8")
+    out = {}
+    for m in re.finditer(r'id:\s*"([\w-]+)"(.{0,400}?)title:\s*"((?:[^"\\]|\\.)*)"',
+                         text, re.S):
+        out.setdefault(m.group(1), m.group(3).replace('\\"', '"'))
+    # dynamic families are built as a prefix plus a slug; the prefix is what a
+    # card links to, and data.html resolves it to the first table that exists
+    for m in re.finditer(r'id:\s*"([\w-]+-)"\s*\+(.{0,240}?)title:\s*"((?:[^"\\]|\\.)*)"',
+                         text, re.S):
+        out.setdefault(m.group(1).rstrip("-"), m.group(3).replace('\\"', '"').strip(" \u2014-"))
+    return out
+
+
+def card_index(flows, titles):
+    """anchor -> where that dashboard card's numbers live on data.html.
+
+    index.html reads this to put a link in each card's corner. Several feeds
+    can land on one card (four of them fill the scorecard), so the entry
+    carries every flow behind it and the union of their tables, with the
+    primary being the first table declared for that card.
+    """
+    cards = {}
+    for f in flows:
+        if f.get("same_as"):
+            continue                     # an alias route, folded into its primary
+        for d in f.get("dashboard") or []:
+            e = cards.setdefault(d["anchor"], {
+                "card": d["card"], "tab": d["tab"],
+                "tables": [], "flows": [], "primary": None, "holds": None,
+            })
+            if f["id"] not in e["flows"]:
+                e["flows"].append(f["id"])
+            # a card's own tables where declared, else the flow's
+            for t in (d.get("tables") if d.get("tables") is not None
+                      else (f.get("tables") or [])):
+                if t not in e["tables"]:
+                    e["tables"].append(t)
+    for anchor, e in cards.items():
+        # A wildcard is a family of per-property tables; the prefix is the
+        # link target and data.html resolves it to the first one that exists.
+        tables = [t[:-1].rstrip("-") if t.endswith("*") else t for t in e["tables"]]
+        e["tables"] = tables
+        # No table holds this card's numbers -- the placeholder cards, and any
+        # card whose feed stops short -- so the link goes to the flow row that
+        # explains why instead of nowhere.
+        e["primary"] = tables[0] if tables else "f-" + e["flows"][0]
+        e["holds"] = titles.get(e["primary"])
+    return cards
+
+
 def run_checks(flows):
     problems, warnings = [], []
 
     idx_ids, idx_text = page_ids("docs/index.html", [r'id="([A-Za-z0-9_-]+)"'])
+    # Cards built in JavaScript name themselves by concatenation
+    # (sc.id = "psc-" + p.slug), so record the prefix and accept any anchor
+    # under it -- otherwise every property tab's card reads as undefined.
+    idx_prefixes = set(re.findall(r'\.id\s*=\s*"([A-Za-z0-9_-]+-)"\s*\+', idx_text))
+
+    def index_defines(anchor):
+        return anchor in idx_ids or any(anchor.startswith(p) and len(anchor) > len(p)
+                                        for p in idx_prefixes)
     # data.html builds its table ids in renderTable specs: id: "t-…"
     data_ids, data_text = page_ids("docs/data.html", [r'id:\s*"([A-Za-z0-9_-]+)"'])
 
     for f in flows:
         for d in f.get("dashboard") or []:
-            if d["anchor"] not in idx_ids:
+            if not index_defines(d["anchor"]):
                 problems.append(
                     f"{f['id']}: dashboard anchor '{d['anchor']}' "
                     f"({d['card']}) is not an id in docs/index.html")
+        for d in f.get("dashboard") or []:
+            for t in d.get("tables") or []:
+                if t.endswith("*"):
+                    stem = t[:-1]
+                    if not any(i.startswith(stem) for i in data_ids) \
+                            and ('"' + stem) not in data_text:
+                        problems.append(
+                            f"{f['id']}: card '{d['card']}' names table prefix "
+                            f"'{stem}', which no table in docs/data.html starts with")
+                elif t not in data_ids:
+                    problems.append(
+                        f"{f['id']}: card '{d['card']}' names table '{t}', "
+                        f"which docs/data.html does not build")
         for t in f.get("tables") or []:
             if t.endswith("*"):
                 stem = t[:-1]
@@ -908,7 +985,11 @@ def build():
     for f in flows:
         counts[f["status"]] = counts.get(f["status"], 0) + 1
 
+    titles = data_table_titles()
+    cards = card_index(flows, titles)
+
     return {
+        "cards": cards,
         "meta": {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "note": "The chain from a report in Google Drive to a card on the "

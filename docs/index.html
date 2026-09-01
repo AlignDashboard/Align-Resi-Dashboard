@@ -193,8 +193,31 @@
      phone the whole page scrolls sideways to fit it. Zero floor lets cards
      track the viewport; the charts are responsive and redraw to fit. */
   .grid > * { min-width: 0; }
-  .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 18px 12px;
+    position: relative; }
   .card.wide { grid-column: 1 / -1; }
+
+  /* "where this data lives" — every card links to its own row on data.html.
+     Visible at rest rather than hover-only like the KPI tiles' jump arrow: the
+     whole point is that you can see, without hunting, that the working behind
+     a card is one click away. Quiet enough to read as chrome. */
+  .cardsrc { position: absolute; top: 16px; right: 16px; z-index: 2;
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;
+    color: var(--muted); text-decoration: none; white-space: nowrap;
+    border-bottom: 1px solid transparent; transition: color .15s; }
+  .cardsrc:hover, .cardsrc:focus-visible { color: var(--amber); border-bottom-color: var(--amber); }
+  .cardsrc:focus-visible { outline: none; }
+  /* Reserve the corner. A card-head puts its own controls hard against the
+     right edge (the property select, the period toggles), which is exactly
+     where the link sits — so the head stops short of it rather than the link
+     being moved somewhere less predictable on those five cards. The direct-
+     child h2 is the same problem on the cards with no head: a long title would
+     otherwise run under the link. Not .card h2, which would double up the
+     inset on the cards that have both. */
+  .card-head { padding-right: 62px; }
+  .card > h2 { padding-right: 62px; }
+  .ph-card { position: relative; }
+  .ph-card h3 { padding-right: 56px; }
   .card h2 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
     font-weight: 600; margin-bottom: 2px; }
   .card .eyebrow { font-size: 10px; letter-spacing: 1px; color: var(--amber); margin-bottom: 12px; display:block; }
@@ -853,6 +876,9 @@ const PLACEHOLDER_PROPERTIES = [
       };
       const sc = document.createElement("div");
       sc.className = "card wide";
+      // Named so the data page can link to it and it can carry a corner link
+      // of its own, like every card in the static markup does.
+      sc.id = "psc-" + p.slug;
       const head = document.createElement("div");
       head.className = "card-head";
       const hleft = document.createElement("div");
@@ -1093,6 +1119,42 @@ let _metricsPromise = null;
 const metricsJson = () => (_metricsPromise = _metricsPromise
   || fetch("metrics.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
 
+/* ---- where each card's numbers live, for the corner link ----
+   The targets come from lineage.json rather than a map kept here, so
+   build_lineage.py's checks cover them: it refuses to write a lineage naming a
+   card anchor this page does not define or a table data.html does not build.
+   A card with no entry simply gets no link — better than a link to nowhere. */
+let _lineagePromise = null;
+const lineageJson = () => (_lineagePromise = _lineagePromise
+  || fetch("lineage.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
+
+function cardSrcLink(entry, label) {
+  const a = elc("a", "cardsrc", "Data \u2197");
+  a.href = "data.html#" + entry.primary;
+  a.title = entry.holds
+    ? "The numbers behind this card: " + entry.holds + " on the data page"
+    : "Where this card's data comes from";
+  a.setAttribute("aria-label",
+    "Data behind " + (label || "this card") + (entry.holds ? ": " + entry.holds : "")
+    + " \u2014 opens the data flow and tables page");
+  return a;
+}
+
+/* Runs once the placeholder cards exist; idempotent, so a later call is a
+   no-op rather than a second link in the corner. */
+async function mountCardLinks() {
+  const ln = await lineageJson();
+  const cards = (ln && ln.cards) || null;
+  if (!cards) return;
+  Object.keys(cards).forEach(id => {
+    const host = document.getElementById(id);
+    if (!host || !host.classList.contains("card")) return;
+    if (host.querySelector(":scope > .cardsrc")) return;
+    const h2 = host.querySelector("h2");
+    host.appendChild(cardSrcLink(cards[id], h2 ? h2.textContent : null));
+  });
+}
+
 /* ============================================================
    LOAD DATA + RENDER
    ============================================================ */
@@ -1255,19 +1317,36 @@ async function loadDashboard() {
   if (phGrid && Array.isArray(d.placeholders) && d.placeholders.length) {
     // deterministic stub bar heights so cards look intentional, not random each load
     const stubHeights = [40, 65, 30, 80, 55, 70, 45, 60];
-    let html = '<div class="section-label">Planned Metrics · Awaiting Data Feeds</div>';
+    // Built node by node rather than as an HTML string: ph.title and ph.source
+    // come out of metrics.json, and pipeline data interpolated into innerHTML
+    // is markup injection waiting for a report with a bracket in its name.
+    phGrid.textContent = "";
+    const label = elc("div", "section-label", "Planned Metrics · Awaiting Data Feeds");
+    phGrid.appendChild(label);
+    const phEntry = ((await lineageJson()) || {}).cards || {};
     d.placeholders.forEach(ph => {
-      const bars = stubHeights.map(h => `<i style="height:${h}%"></i>`).join("");
-      html +=
-        '<div class="ph-card">' +
-          '<h3>' + ph.title + '</h3>' +
-          '<div class="src">Source: ' + ph.source + '</div>' +
-          '<div class="stub">' + bars + '</div>' +
-          '<div class="await">■ Awaiting data</div>' +
-        '</div>';
+      const card = elc("div", "ph-card");
+      card.appendChild(elc("h3", null, ph.title));
+      card.appendChild(elc("div", "src", "Source: " + ph.source));
+      const stub = elc("div", "stub");
+      stubHeights.forEach(h => {
+        const bar = document.createElement("i");
+        bar.style.height = h + "%";
+        stub.appendChild(bar);
+      });
+      card.appendChild(stub);
+      card.appendChild(elc("div", "await", "■ Awaiting data"));
+      // Every planned metric is one row of the same table, so they all point
+      // at it — the row says what feed it is waiting on.
+      if (phEntry.placeholderGrid) {
+        card.appendChild(cardSrcLink(phEntry.placeholderGrid, ph.title));
+      }
+      phGrid.appendChild(card);
     });
-    phGrid.innerHTML = html;
   }
+
+  // Last: the placeholder cards above have to exist before they can be linked.
+  mountCardLinks();
 }
 
 /* ============================================================

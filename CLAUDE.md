@@ -418,7 +418,32 @@ so the scorecard's per-cell links from `index.html` are unaffected.
 Each row also links **out**: a card name under "On the dashboard" goes to
 `index.html#<cardId>`, and the dashboard selects the owning tab and flashes the
 card. Every Portfolio card now carries an id for this (`cExpRatio`, `cExpTrend`,
-`cPsf`, `cTradeOutsPortfolio`); the Landing cards already had them.
+`cPsf`, `cTradeOutsPortfolio`); the Landing cards already had them, and the
+property tabs' scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
+
+**And every card links back.** Each card on the dashboard carries a small
+`Data ↗` in its **top-right corner** that jumps to where its own numbers live
+on `data.html` — the table holding them, or the flow row explaining why nothing
+holds them yet. The targets are not written into `index.html`: it reads the
+`cards` block of `lineage.json`, keyed by card id, so the same generator run
+that checks a card anchor exists also checks the table it points at exists.
+A card with no entry gets no link, rather than a link to nowhere.
+
+    "cards": { "cRollover": { "primary": "t-l-rollover", "holds": "Rollover schedule",
+                              "tables": [...], "flows": ["analyst_workbook"], ... } }
+
+Two details worth knowing:
+
+- The link is **absolutely positioned** in the card's corner, so `.card-head`
+  (which puts the property select and the period toggles hard against the right
+  edge) and a direct-child `<h2>` both carry `padding-right` to keep clear of
+  it. Verified at 1440 / 900 / 390px with a text-level overlap probe — the
+  element boxes still span the full width, so only the painted text tells you
+  whether anything actually collides.
+- A per-property table family has no single id (`t-expratio-the-landing`,
+  `t-expratio-palma`), so a card links to the **prefix** and `data.html`'s
+  `focusHashTarget` resolves a fragment that is a prefix of a real id to the
+  first table that exists.
 
 Regenerate with `python scripts/build_lineage.py` (`--check` verifies and writes
 nothing). `update.yml` runs it after the scorecard fills, so the published chain
