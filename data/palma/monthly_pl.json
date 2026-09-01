@@ -2,6 +2,11 @@
   "points": [
     {
       "period_end": "Jun 2026",
+      "landed_at": "2026-07-16T19:26:04.709Z",
+      "source_files": [
+        "2026-07-16 12_Month_Statement_rspalman_Accrual (3).xlsx",
+        "2026-07-16 12_Month_Statement_rspalmas_accrual.xlsx"
+      ],
       "labels": [
         "Jul",
         "Aug",

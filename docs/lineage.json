@@ -300,7 +300,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-01T19:07:14.387200+00:00",
+  "generated_at": "2026-09-01T23:27:18.693688+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 8,
@@ -451,16 +451,16 @@
      "property": "palma",
      "file": "data/palma/expense_ratio.json, data/palma/monthly_pl.json, data/palma/expense_buckets.json, data/palma/monthly_revenue.json",
      "as_of": "Jun 2026",
-     "source_file": null,
-     "landed_at": null,
+     "source_file": "2026-07-16 12_Month_Statement_rspalman_Accrual (3).xlsx, 2026-07-16 12_Month_Statement_rspalmas_accrual.xlsx",
+     "landed_at": "2026-07-16T19:26:04.709Z",
      "detail": "1 statement period(s) accumulated"
     },
     {
      "property": "the-landing",
      "file": "data/the-landing/expense_ratio.json, data/the-landing/monthly_pl.json, data/the-landing/expense_buckets.json, data/the-landing/monthly_revenue.json",
      "as_of": "Jul 2026",
-     "source_file": null,
-     "landed_at": null,
+     "source_file": "12_Month_Statement_Accrual.xlsx",
+     "landed_at": "2026-08-26T23:15:02.942Z",
      "detail": "1 statement period(s) accumulated"
     }
    ],
@@ -547,6 +547,14 @@
    "same_as": null,
    "evidence": [
     {
+     "property": "Landing",
+     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "as_of": null,
+     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "landed_at": "2026-08-31T18:28:44.598Z",
+     "detail": "6 KPI cell(s): Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
+    },
+    {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
      "as_of": "2026-08-10",
@@ -606,6 +614,14 @@
    "open_item": null,
    "same_as": "delinquency",
    "evidence": [
+    {
+     "property": "Landing",
+     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "as_of": null,
+     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "landed_at": "2026-08-31T18:28:44.598Z",
+     "detail": "6 KPI cell(s): Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
+    },
     {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
@@ -1375,17 +1391,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-08-31",
+     "as_of": "2026-09-01",
      "source_file": null,
-     "landed_at": "2026-08-31T15:37:37Z",
-     "detail": "20 day(s) recorded"
+     "landed_at": "2026-09-01T15:37:43Z",
+     "detail": "21 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-08-31",
+     "as_of": "2026-09-01",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-08-31T15:37:37Z",
+     "landed_at": "2026-09-01T15:37:43Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -1647,14 +1663,6 @@
      "source_file": "102ebfe0-The_Landing_Dashboard_V37.xlsx",
      "landed_at": "2026-08-03T21:15:23.385441+00:00",
      "detail": "extract run; the workbook has no arrival time of its own, so this is when it was extracted"
-    },
-    {
-     "property": "Landing",
-     "file": "workbook Source Delinquency tab, via docs/landing.json",
-     "as_of": "2026-07-20",
-     "source_file": "workbook Source Delinquency tab, via docs/landing.json",
-     "landed_at": "2026-08-03T21:15:23.385441+00:00",
-     "detail": "6 KPI cell(s): Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     }
    ],
    "status": "live"
@@ -1744,7 +1752,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-08-31T17:56:04.151880+00:00",
+     "landed_at": "2026-09-01T15:24:21.919798+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

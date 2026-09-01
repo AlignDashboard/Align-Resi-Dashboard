@@ -15,6 +15,8 @@ those two rules named folders ("AIRM/Yardi Rev Management") that do not exist.
 Checks, all fixture-free:
 
   - every routing rule's folder is a drive_folder in report_map.json
+  - the script's EXTERNAL_FOLDERS and report_map's "tree": "reference" name the
+    same folders -- the two ways of saying "this one is not in the drop tree"
   - report_map folders with no rule are reported (a report nothing files there)
   - no folder name contains "/" (legal in Drive, so it fails silently)
   - every file_glob starts with "*" (the filer prefixes the arrival date)
@@ -56,6 +58,16 @@ def load_rules():
     if not rules:
         sys.exit("FAIL: ROUTING_RULES parsed to nothing -- has the format changed?")
     return rules
+
+
+def load_external():
+    """Folder names the script resolves by absolute ID (outside the drop tree)."""
+    text = SCRIPT.read_text()
+    block = re.search(r"const EXTERNAL_FOLDERS = \{(.*?)\n\};", text, re.S)
+    if not block:
+        sys.exit("FAIL: could not find EXTERNAL_FOLDERS in " + str(SCRIPT))
+    return dict(re.findall(r"'((?:[^'\\]|\\.)*)'\s*:\s*'((?:[^'\\]|\\.)*)'",
+                           block.group(1)))
 
 
 def normalize(s):
@@ -109,6 +121,7 @@ CASES = [
 
 def main():
     rules = load_rules()
+    external = load_external()
     cfg = json.loads(REPORT_MAP.read_text())
     mapped = {e["drive_folder"] for e in cfg["subfolders"]}
     rule_folders = [f for f, _ in rules]
@@ -150,7 +163,37 @@ def main():
                   f"'<date> {glob.lstrip('*')}'")
             failures.append(f"anchored glob {glob!r} for {e['drive_folder']!r}")
 
-    print(f"\n5. real filenames route where they belong ({len(CASES)} case(s))")
+    print("\n5. the two ways of saying \"not in the drop tree\" agree")
+    trees = {}
+    for e in cfg["subfolders"]:
+        tree = e.get("tree", "reports")
+        if tree not in ("reports", "reference"):
+            print(f"   FAIL {e['drive_folder']!r} has tree {tree!r} -- "
+                  f"fetch_drive knows only 'reports' and 'reference'")
+            failures.append(f"unknown tree {tree!r} for {e['drive_folder']!r}")
+        trees.setdefault(e["drive_folder"], set()).add(tree)
+    referenced = {f for f, ts in trees.items() if "reference" in ts}
+    for folder in sorted(set(external) | referenced):
+        in_script = folder in external
+        in_map = folder in referenced
+        if in_script and in_map:
+            print(f"   PASS {folder!r} external in both (script property "
+                  f"{external[folder]})")
+        elif in_script:
+            print(f"   FAIL {folder!r} is EXTERNAL_FOLDERS in the script but not "
+                  f'"tree": "reference" in report_map -- the fetcher would look '
+                  f"for it in the drop tree")
+            failures.append(f"{folder!r} external in script only")
+        else:
+            print(f"   FAIL {folder!r} is \"tree\": \"reference\" in report_map but "
+                  f"not EXTERNAL_FOLDERS in the script -- the filer would create a "
+                  f"second copy inside the drop tree")
+            failures.append(f"{folder!r} reference in report_map only")
+    for folder, ts in sorted(trees.items()):
+        if ts == {"reports"} and folder in external:
+            failures.append(f"{folder!r} split across trees")
+
+    print(f"\n6. real filenames route where they belong ({len(CASES)} case(s))")
     for name, want in CASES:
         got = route(name, rules)
         if got == want:

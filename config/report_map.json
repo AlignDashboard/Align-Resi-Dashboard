@@ -1,11 +1,14 @@
 {
- "_comment": "Maps each Drive subfolder name to a report type and the parser module that handles it. Add entries as new report parsers are built. Subfolders without a parser are ignored (logged) until one is added. Rent Roll and Residential AR Analytics now have parsers (parse_rent_roll, parse_delinquency); both expose parse(path) and tie out against the report's own total rows. Weekly Leasing Reports is still pending and trade-out data is hand-entered in the workbook's Lease Detail tab.",
+ "_comment": "Maps each Drive subfolder name to a report type and the parser module that handles it. Add entries as new report parsers are built. Subfolders without a parser are ignored (logged) until one is added. Rent Roll and Residential AR Analytics now have parsers (parse_rent_roll, parse_delinquency); both expose parse(path) and tie out against the report's own total rows. Weekly Leasing Reports is still pending and trade-out data is hand-entered in the workbook's Lease Detail tab. name_patterns is what lets the pipeline find a report that was filed into the wrong folder: fetch_drive first does its normal folder pass, then sweeps the drop tree (including _Unsorted) for unclaimed files matching these, case-insensitively. Folder organisation is unchanged and still what the Gmail filer maintains -- it is simply no longer the only way a report can be identified. An entry with no name_patterns stays strictly folder-bound.",
  "subfolders": [
   {
    "drive_folder": "T12 Expenses",
    "report_type": "t12_statement",
    "parser": "parse_t12_statement",
    "file_glob": "*.xlsx",
+   "name_patterns": [
+    "*12_month_statement*"
+   ],
    "status": "active"
   },
   {
@@ -13,6 +16,10 @@
    "report_type": "rent_roll",
    "parser": "parse_rent_roll",
    "file_glob": "*.xlsx",
+   "name_patterns": [
+    "*rentroll*",
+    "*rent_roll*"
+   ],
    "status": "active"
   },
   {
@@ -27,6 +34,9 @@
    "report_type": "leasing_funnel",
    "parser": "parse_leasing_funnel",
    "file_glob": "*leasing_funnel_report*.xlsx",
+   "name_patterns": [
+    "*leasing_funnel_report*"
+   ],
    "status": "active",
    "_comment": "The EliseAI weekly funnel parses from here too, so it works wherever the gmail filing lands it. The pending entry below is for this folder's intended content -- the RealPage rate tracker -- which has never yet arrived. The glob is anchored with a leading * because the Gmail-to-Drive filing prefixes the arrival date: '2026-08-25 leasing_funnel_report_2026-08-25.xlsx'. fnmatch matches the whole name, so a pattern starting at 'leasing_' silently skipped every prefixed file."
   },
@@ -42,6 +52,10 @@
    "report_type": "concession_burnoff",
    "parser": "parse_concession_burnoff",
    "file_glob": "*.xlsx",
+   "name_patterns": [
+    "*concessionburnoff*",
+    "*concession_burnoff*"
+   ],
    "status": "active"
   },
   {
@@ -63,6 +77,9 @@
    "report_type": "ar_analytics",
    "parser": "parse_delinquency",
    "file_glob": "*.xlsx",
+   "name_patterns": [
+    "*delinquency*"
+   ],
    "status": "active"
   },
   {
@@ -70,6 +87,9 @@
    "report_type": "ar_analytics",
    "parser": "parse_delinquency",
    "file_glob": "*.xlsx",
+   "name_patterns": [
+    "*delinquency*"
+   ],
    "status": "active",
    "_comment": "Same report type as Residential AR Analytics -- the PM files delinquency summaries in both. A file present in both folders parses twice and the second store overwrites the first with identical content, which is harmless."
   },
@@ -85,6 +105,9 @@
    "report_type": "leasing_funnel",
    "parser": "parse_leasing_funnel",
    "file_glob": "*leasing_funnel_report*.xlsx",
+   "name_patterns": [
+    "*leasing_funnel_report*"
+   ],
    "status": "active",
    "_comment": "Leading * for the same reason as the Weekly Leasing Reports entry: filed copies carry a 'YYYY-MM-DD ' prefix."
   },
@@ -93,16 +116,24 @@
    "report_type": "bldg_metrics_csv",
    "parser": null,
    "file_glob": "*.csv",
+   "name_patterns": [
+    "metrics-building*.csv",
+    "metricsbuilding*.csv"
+   ],
    "status": "active",
    "_comment": "The building-metrics CSV. No parse/accumulate step -- update.yml runs populate_building_metrics.py on the newest one after the scorecard fill, passing Drive's landed_at as the arrival time."
   },
   {
    "drive_folder": "Building Info",
+   "tree": "reference",
    "report_type": "unit_directory",
    "parser": "parse_unit_directory",
    "file_glob": "*UnitDirectory*.xlsx",
+   "name_patterns": [
+    "*unitdirectory*"
+   ],
    "status": "active",
-   "_comment": "The Yardi Unit Directory: every unit's floorplan, square footage, bedrooms and baths, for all properties in one export. Routed by the property-code rows inside it and tied out against each section's own Total row. The glob leads with * because the Gmail-to-Drive filer prefixes the arrival date; fnmatch tests the whole filename, so an anchored pattern would skip every automatically filed copy."
+   "_comment": "The Yardi Unit Directory: every unit's floorplan, square footage, bedrooms and baths, for all properties in one export. Routed by the property-code rows inside it and tied out against each section's own Total row. Lives in the REFERENCE tree (GDRIVE_REFERENCE_FOLDER_ID), not the Gmail filer's drop folder: Building Info is the owner's hand-curated library of keys and long-lived documents, and the unit directory is exactly that -- the buildings' fixed description, not a periodic report. The glob leads with * because the filer prefixes the arrival date; fnmatch tests the whole filename, so an anchored pattern would skip every automatically filed copy."
   },
   {
    "drive_folder": "Renewal Tracker",

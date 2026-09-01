@@ -2,6 +2,10 @@
   "points": [
     {
       "period_end": "Jul 2026",
+      "landed_at": "2026-08-26T23:15:02.942Z",
+      "source_files": [
+        "12_Month_Statement_Accrual.xlsx"
+      ],
       "ratio_t12": 32.7,
       "revenue_t12": 14194490.28,
       "opex_recoverable_t12": 4635006.69,

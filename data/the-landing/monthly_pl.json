@@ -2,6 +2,10 @@
   "points": [
     {
       "period_end": "Jul 2026",
+      "landed_at": "2026-08-26T23:15:02.942Z",
+      "source_files": [
+        "12_Month_Statement_Accrual.xlsx"
+      ],
       "labels": [
         "Aug",
         "Sep",

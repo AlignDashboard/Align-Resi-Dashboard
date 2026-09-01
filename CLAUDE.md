@@ -373,11 +373,73 @@ funnel sat in `_Unsorted` for six weeks, and how the `AIRM/Yardi Rev Management`
 and `Workorders/Maintaince` rules were one real report away from quietly
 starting a second folder each (a `/` is legal in a Drive folder name).
 
+### Folders organise; filenames route
+
+`fetch_drive.py` runs **two passes**, and the difference matters:
+
+1. **The folder pass** — every active entry's own folder, as always. This is what
+   the Gmail filer's organisation is for, and it is unchanged. Drive stays
+   browsable, one folder per report type, for pulling source data by hand.
+2. **The rescue sweep** — then every other folder in the drop tree, `_Unsorted`
+   included, looking for unclaimed files matching an entry's `name_patterns`.
+
+The point is that folder organisation is no longer *load-bearing*. Before, a
+report's identity came from the folder it sat in, so a routing rule that didn't
+match a filename put the report somewhere nothing read — and nothing downstream
+could tell. That is how four weeks of reports sat in `_Unsorted`. Now a misfiled
+report still reaches its parser, and the log says where it was found
+(`[rescued] downloaded _Unsorted/… — filed outside its own folder`).
+
+`name_patterns` is opt-in per entry, matched case-insensitively, and only
+`active` entries take part. An entry without it stays strictly folder-bound.
+
+The sweep is scoped, and each limit exists for a reason:
+
+| Limit | Why |
+| --- | --- |
+| Never the `reference` tree | The library holds superseded copies on purpose. `Archive Reports` has a July rent roll beside four other July exports; sweeping it would publish a seven-week-old rent roll as current |
+| Never a folder in `NEVER_SWEEP` | Belt to the tree's braces — an archive stays safe even if it is moved into the drop tree |
+| Never a file the folder pass took | `claimed` tracks Drive ids, so nothing is counted twice |
+| Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
+| Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |
+
+`scripts/test_fetch_sweep.py` holds this down — 12 checks against a stubbed Drive
+mirroring the real layout, no network or fixtures. Both archive protections are
+tested *independently*: removing either one alone fails a check, since the name
+guard would otherwise cover for the missing tree scoping.
+
+### Two Drive trees
+
+`fetch_drive.py` scans **two** parents, because two different kinds of thing live
+in Drive:
+
+| Tree | Env var | What it is |
+| --- | --- | --- |
+| `reports` (default) | `GDRIVE_FOLDER_ID` | **Report Lander** — the Gmail filer's drop folder, one subfolder per report type, churning daily |
+| `reference` | `GDRIVE_REFERENCE_FOLDER_ID` | **Resi Dashboard** — the owner's hand-curated library: keys, long-lived documents, the unit directory |
+
+A `report_map.json` entry names its tree; omitted means `reports`. `Building
+Info` is the one `reference` entry today: the unit directory is the buildings'
+fixed description, not a periodic report, so it belongs in the library rather
+than the drop tree — and the pipeline reaches into the library for it instead of
+the folder being dragged into Report Lander. `GDRIVE_REFERENCE_FOLDER_ID` is
+optional; unset, those entries are skipped with a line in the log rather than a
+crash.
+
+The filing script needs the same distinction from the other side, since Apps
+Script can only find and create folders *inside* its target folder. A rule whose
+folder is in `EXTERNAL_FOLDERS` is resolved by absolute ID, read from a **script
+property** (`BUILDING_INFO_FOLDER_ID`) rather than written into the file —
+script properties survive a full paste, and this file is public. Unset, matching
+files stay in `_Unsorted` and every run logs why; they are never filed somewhere
+wrong. `test_routing.py` asserts `EXTERNAL_FOLDERS` and `"tree": "reference"`
+name the same folders, so the two halves cannot drift apart.
+
 `scripts/test_routing.py` is the check that they still agree. It reads the rules
 out of the `.js` directly, and asserts every rule's folder is a `drive_folder` in
 `report_map.json`, that no folder name contains `/`, that every `file_glob`
-starts with `*`, and that a list of real filenames still routes where it belongs.
-Run it after editing either file.
+starts with `*`, that the two trees agree, and that a list of real filenames
+still routes where it belongs. Run it after editing either file.
 
 Two traps worth knowing:
 
@@ -390,14 +452,46 @@ Two traps worth knowing:
   `report_map.json` and the `.js` rule all change together; `test_routing.py`
   fails if only one moves.
 
-To deploy a routing change: edit the `.js`, run `test_routing.py`, commit, then
-paste it into the Apps Script project (`script.google.com` → "file downloader"),
-re-enter `TARGET_FOLDER_ID` if a full paste blanked it, run `previewRouting` and
-`checkFolders` (both dry runs), and only then `resortExistingFiles`. `_Unsorted`
-doubles as a retry queue: `resortExistingFiles` re-scans it, so a new rule
-rescues files that arrived before the rule existed. Do **not** re-run
-`createHourlyTrigger` — the trigger survives edits, and running it again just
-creates a duplicate.
+To deploy a routing change: edit the `.js`, run `test_routing.py`, commit, and
+get the code into the project — either by pasting it into `script.google.com` →
+"file downloader", or automatically via `.github/workflows/deploy_filing_script.yml`
+(below). Then run `previewRouting` and `checkFolders` (both dry runs), and only
+then `resortExistingFiles`. `_Unsorted` doubles as a retry queue:
+`resortExistingFiles` re-scans it, so a new rule rescues files that arrived
+before the rule existed. Do **not** re-run `createHourlyTrigger` — the trigger
+survives edits, and running it again just creates a duplicate.
+
+### Deploying the script automatically
+
+`deploy_filing_script.yml` runs `test_routing.py`, then pushes
+`scripts/gmail_drive_filing.js` into the Apps Script project with `clasp`. It is
+a **no-op until two secrets exist**, and says so in the run summary rather than
+failing:
+
+| Secret | What |
+| --- | --- |
+| `CLASPRC_JSON` | the contents of `~/.clasprc.json` after `clasp login` as `dashboard@alignrealestate.com`. Holds an OAuth refresh token — a real credential |
+| `APPS_SCRIPT_ID` | the project id from the editor URL. In a secret, not committed, like the Drive folder ids |
+
+The account also has to switch the Apps Script API on once, at
+`script.google.com/home/usersettings` — a per-user toggle, unrelated to any
+Cloud project setting.
+
+**A service account cannot do this.** `projects.updateContent` rejects
+service-account credentials for a user-owned script, so this cannot reuse
+`GDRIVE_SA_KEY`; it needs an end-user token.
+
+The workflow `clasp pull`s first and pushes the project's **own**
+`appsscript.json` back, replacing only the code. The manifest carries the
+timezone, runtime version and any advanced services — rebuilding it from memory
+would change how the script runs, and a pull that yields no manifest aborts the
+push rather than guessing.
+
+It deliberately does **not** run `previewRouting`, `checkFolders` or
+`resortExistingFiles`. Executing a function remotely needs the script published
+as an API executable *and* a token carrying the script's own scopes — Gmail read
+and Drive write — a far larger grant than pushing code. Reading the dry-run log
+before files move is the safety net, so those three stay manual.
 
 `resortExistingFiles` only sees files loose in Report Lander or in `_Unsorted`.
 A file outside that folder, or already inside the wrong category folder, has to

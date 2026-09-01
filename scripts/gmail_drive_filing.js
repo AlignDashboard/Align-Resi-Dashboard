@@ -66,6 +66,28 @@ const CONFIG = {
 };
 
 /**
+ * Folders that live OUTSIDE the target folder, addressed by absolute ID.
+ *
+ * The target folder is the Gmail filer's drop tree -- one subfolder per report
+ * type, churning daily. The Drive library ("Resi Dashboard") is a different
+ * thing: hand-curated, long-lived material -- keys, reference documents, the
+ * unit directory -- deliberately kept out of the drop tree so automation does
+ * not churn it. getSubfolder_ can only create and find folders INSIDE the
+ * target folder, so a rule pointing at the library needs its ID.
+ *
+ * The ID is read from a Script Property, not written here: script properties
+ * survive a full paste (unlike CONFIG constants -- see the SOP's warning that
+ * TARGET_FOLDER_ID resets), and this file is committed to a public repo.
+ * Set it once: Project Settings -> Script Properties -> Add script property,
+ * name BUILDING_INFO_FOLDER_ID, value the part of the folder URL after
+ * /folders/. Until it is set, matching files stay in _Unsorted and each run
+ * logs why -- they are never filed into a wrong folder, and never lost.
+ */
+const EXTERNAL_FOLDERS = {
+  'Building Info': 'BUILDING_INFO_FOLDER_ID',
+};
+
+/**
  * ROUTING RULES — the part you'll actually maintain.
  *
  * HOW MATCHING WORKS (deliberately forgiving):
@@ -89,6 +111,7 @@ const ROUTING_RULES = [
   { folder: 'Concession Burnoff',         patterns: [/concession/, /burnoff/] },
   // The box score IS the property-status report (per the SOP's routing table).
   { folder: 'Property Status',            patterns: [/propertystatus/, /propstatus/, /boxscore/] },
+  // Lives in the Drive library, not the drop tree -- see EXTERNAL_FOLDERS.
   { folder: 'Building Info',              patterns: [/unitdirectory/, /unitdir/] },
   // The weekly EliseAI funnel export. Its real name is
   // "leasing_funnel_report_<date>.xlsx", which contains neither "weeklyleasing"
@@ -165,7 +188,11 @@ function fileGmailPdfsToDrive() {
           ? dateStr + ' ' + att.getName()
           : att.getName();
 
-        const dest = getSubfolder_(root, target, cache);
+        let dest = getSubfolder_(root, target, cache);
+        if (dest === null) {   // external folder unresolved -- park it, don't guess
+          dest = getSubfolder_(root, CONFIG.UNSORTED_FOLDER, cache);
+          unsorted++;
+        }
         const finalName = resolveName_(dest, wanted, att);
 
         if (finalName === null) return; // identical file already filed — skip
@@ -236,7 +263,15 @@ function checkFolders() {
   while (it.hasNext()) have[it.next().getName()] = true;
 
   Logger.log('Target folder: ' + root.getName());
+  const props = PropertiesService.getScriptProperties();
   ROUTING_RULES.forEach(function (rule) {
+    const property = EXTERNAL_FOLDERS[rule.folder];
+    if (property) {
+      const id = props.getProperty(property);
+      Logger.log((id ? 'external' : 'UNSET   ') + ' "' + rule.folder + '" (outside the ' +
+        'target folder; script property ' + property + (id ? ')' : ' is NOT SET)'));
+      return;
+    }
     Logger.log((have[rule.folder] ? 'exists  ' : 'MISSING ') + '"' + rule.folder + '"');
   });
 
@@ -266,6 +301,7 @@ function resortExistingFiles() {
     if (target === item.from) { stayed++; return; }
 
     const dest = getSubfolder_(root, target, cache);
+    if (dest === null) { stayed++; return; }   // reason already logged
     if (fileExists_(dest, item.file.getName())) { stayed++; return; }
 
     item.file.moveTo(dest);
@@ -367,9 +403,42 @@ function getRootFolder_() {
   }
 }
 
-/** Find a subfolder by name inside root, creating it if absent. Cached per run. */
+/**
+ * Find the destination folder for a category name.
+ *
+ * A name in EXTERNAL_FOLDERS is resolved by absolute ID, because it sits
+ * outside the target folder. Everything else is a subfolder of the target
+ * folder, created if absent. Cached per run.
+ *
+ * Returns null when an external folder cannot be resolved -- the caller leaves
+ * the file where it is rather than creating a same-named folder inside the drop
+ * tree, which would silently shadow the real one.
+ */
 function getSubfolder_(root, name, cache) {
   if (cache[name]) return cache[name];
+
+  const property = EXTERNAL_FOLDERS[name];
+  if (property) {
+    const id = PropertiesService.getScriptProperties().getProperty(property);
+    if (!id) {
+      Logger.log('SKIPPED "' + name + '": it lives outside the target folder and ' +
+        'script property ' + property + ' is not set, so its ID is unknown. ' +
+        'Project Settings -> Script Properties -> add ' + property + '. ' +
+        'Files that route here stay in ' + CONFIG.UNSORTED_FOLDER + ' meanwhile.');
+      return null;
+    }
+    let folder;
+    try {
+      folder = DriveApp.getFolderById(resolveFolderId_(id));
+    } catch (e) {
+      Logger.log('SKIPPED "' + name + '": script property ' + property + ' is set to "' +
+        id + '", which this account cannot open as a folder.');
+      return null;
+    }
+    cache[name] = folder;
+    return folder;
+  }
+
   const it = root.getFoldersByName(name);
   const folder = it.hasNext() ? it.next() : root.createFolder(name);
   cache[name] = folder;
