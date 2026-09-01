@@ -432,7 +432,16 @@ A card with no entry gets no link, rather than a link to nowhere.
     "cards": { "cRollover": { "primary": "t-l-rollover", "holds": "Rollover schedule",
                               "tables": [...], "flows": ["analyst_workbook"], ... } }
 
-Two details worth knowing:
+A `dashboard` entry in `build_lineage.py` carries its own `tables`, and
+optionally a `primary`. Both matter: without per-card `tables` a card inherits
+its whole flow's list, so the seven cards on the analyst workbook all pointed at
+"Rent capture"; and without an explicit `primary` the target is whichever flow
+happens to sort first, which is the page's reading order, not an answer to
+"where are this card's numbers". A `"tile": true` entry stays on the flow page
+and out of the card index — the Leased tile is genuinely fed by the export but
+is one tile in a row, with no corner to hang a link in.
+
+Three details worth knowing:
 
 - The link is **absolutely positioned** in the card's corner, so `.card-head`
   (which puts the property select and the period toggles hard against the right
@@ -444,6 +453,12 @@ Two details worth knowing:
   `t-expratio-palma`), so a card links to the **prefix** and `data.html`'s
   `focusHashTarget` resolves a fragment that is a prefix of a real id to the
   first table that exists.
+- Three `metrics.json` blocks had **no table on the data page at all** —
+  `monthly_pl`, `expense_buckets` and `unit_directory`, i.e. everything the
+  Drive T12 and the unit directory produce. The page claims to hold every
+  number the JSON carries and did not, which is why the Operating Summary card
+  had nowhere to link. `t-monthlypl-<slug>`, `t-buckets-<slug>` and
+  `t-unitdir-<slug>` now cover them.
 
 Regenerate with `python scripts/build_lineage.py` (`--check` verifies and writes
 nothing). `update.yml` runs it after the scorecard fills, so the published chain

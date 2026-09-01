@@ -123,11 +123,15 @@ DRIVE_FLOWS = {
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
         ],
         "dashboard": [
-            {"card": "Expense Ratio", "tab": "Portfolio", "anchor": "cExpRatio"},
-            {"card": "Operating Summary", "tab": "The Landing", "anchor": "cOpSummary"},
-            {"card": "Expense Deep Dive", "tab": "The Landing", "anchor": "cExpDeep"},
+            {"card": "Expense Ratio", "tab": "Portfolio", "anchor": "cExpRatio",
+             "tables": ["t-expratio-*"]},
+            {"card": "Operating Summary", "tab": "The Landing", "anchor": "cOpSummary",
+             "tables": ["t-monthlypl-*"]},
+            {"card": "Expense Deep Dive", "tab": "The Landing", "anchor": "cExpDeep",
+             "primary": "t-l-buckets",
+             "tables": ["t-buckets-*", "t-l-opps"]},
             {"card": "Expense Load & NOI — controllable/door", "tab": "The Landing",
-             "anchor": "cNoi"},
+             "anchor": "cNoi", "primary": "t-l-noi", "tables": ["t-buckets-*"]},
         ],
         "tables": ["t-expratio-*"],
         "note": "The one Drive report that reaches the dashboard as a chart in "
@@ -192,7 +196,11 @@ DRIVE_FLOWS = {
         ],
         "dashboard": [
             {"card": "KPI Scorecard — Total Deliquency", "tab": "Scorecard",
-             "anchor": "cScorecard"},
+             "anchor": "cScorecard", "primary": "t-sc-matrix",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
+            {"card": "KPI Scorecard — Palma", "tab": "Palma",
+             "anchor": "psc-palma", "primary": "t-sc-measured",
+             "tables": ["t-sc-overrides", "t-sc-arrivals", "t-sc-matrix"]},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The 30/60/90 split is reported, never graded: a distribution "
@@ -255,8 +263,24 @@ DRIVE_FLOWS = {
         ],
         "dashboard": [
             {"card": "KPI Scorecard (all properties)", "tab": "Scorecard",
-             "anchor": "cScorecard"},
-            {"card": "Leased tile", "tab": "The Landing", "anchor": "lkpis"},
+             "anchor": "cScorecard", "primary": "t-sc-matrix",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
+            {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
+             "anchor": "cLandingScorecard", "primary": "t-sc-measured",
+             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
+            {"card": "KPI Scorecard — Chorus", "tab": "Chorus",
+             "anchor": "psc-chorus", "primary": "t-sc-measured",
+             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
+            {"card": "KPI Scorecard — Madelon", "tab": "Madelon",
+             "anchor": "psc-madelon", "primary": "t-sc-measured",
+             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
+            {"card": "KPI Scorecard — 335 Third St", "tab": "335 Third St",
+             "anchor": "psc-335-third-street", "primary": "t-sc-measured",
+             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
+            # A tile in a row, not a card: it has no corner to hang a link in,
+            # so it belongs on the flow page and not in the card index.
+            {"card": "Leased tile", "tab": "The Landing", "anchor": "lkpis",
+             "tile": True},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The widest feed on the page: it is the only one that says "
@@ -331,7 +355,8 @@ DRIVE_FLOWS = {
         "publishes": [{"file": "metrics.json", "key": "unit_directory"}],
         "dashboard": [
             {"card": "Largest Unit Gaps — beds and plan sq ft",
-             "tab": "The Landing", "anchor": "cGaps"},
+             "tab": "The Landing", "anchor": "cGaps", "primary": "t-l-units",
+             "tables": ["t-unitdir-*"]},
         ],
         "tables": ["t-l-units"],
         "note": "It exists because nothing else says how many bedrooms a "
@@ -398,7 +423,11 @@ OTHER_FLOWS = [
         ],
         "dashboard": [
             {"card": "KPI Scorecard — 335 Third St", "tab": "Scorecard",
-             "anchor": "cScorecard"},
+             "anchor": "cScorecard", "primary": "t-sc-matrix",
+             "tables": ["t-sc-measured", "t-sc-arrivals"]},
+            {"card": "KPI Scorecard — 335 Third St", "tab": "335 Third St",
+             "anchor": "psc-335-third-street", "primary": "t-sc-measured",
+             "tables": ["t-sc-arrivals"]},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The T/L/A triple is shown and never graded: the published band "
@@ -444,13 +473,26 @@ OTHER_FLOWS = [
             {"file": "scorecard.json", "key": "Split Between 30/60/90 (The Landing)"},
         ],
         "dashboard": [
-            {"card": "Loss to Lease", "tab": "The Landing", "anchor": "cRentCapture"},
-            {"card": "Trade-outs", "tab": "The Landing", "anchor": "cTradeOuts"},
-            {"card": "Rollover Schedule", "tab": "The Landing", "anchor": "cRollover"},
-            {"card": "Expense Load & NOI", "tab": "The Landing", "anchor": "cNoi"},
-            {"card": "Largest Unit Gaps", "tab": "The Landing", "anchor": "cGaps"},
-            {"card": "Delinquency", "tab": "The Landing", "anchor": "cDelinquency"},
-            {"card": "Insights Scorecard", "tab": "The Landing", "anchor": "cInsights"},
+            {"card": "Loss to Lease", "tab": "The Landing", "anchor": "cRentCapture",
+             "tables": ["t-l-capture", "t-l-capture-ttm", "t-l-revcompare"]},
+            {"card": "Trade-outs", "tab": "The Landing", "anchor": "cTradeOuts",
+             "tables": ["t-l-leases", "t-l-offers", "t-l-lease-summary",
+                        "t-l-renewact", "t-l-bands"]},
+            {"card": "Rollover Schedule", "tab": "The Landing", "anchor": "cRollover",
+             "tables": ["t-l-rollover"]},
+            {"card": "Expense Load & NOI", "tab": "The Landing", "anchor": "cNoi",
+             "tables": ["t-l-noi", "t-l-noi-ttm", "t-l-tax"]},
+            {"card": "Largest Unit Gaps", "tab": "The Landing", "anchor": "cGaps",
+             "tables": ["t-l-units", "t-l-hold-units", "t-l-hold-summary",
+                        "t-l-inputs", "t-l-meta"]},
+            {"card": "Delinquency", "tab": "The Landing", "anchor": "cDelinquency",
+             "tables": ["t-l-delq-aging", "t-l-delq-top", "t-l-delq-summary",
+                        "t-l-delq-531"]},
+            {"card": "Insights Scorecard", "tab": "The Landing", "anchor": "cInsights",
+             "tables": ["t-l-insights", "t-l-flags"]},
+            {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
+             "anchor": "cLandingScorecard", "primary": "t-sc-measured",
+             "tables": ["t-sc-arrivals", "t-sc-matrix"]},
         ],
         "tables": ["t-l-capture", "t-l-noi", "t-l-renewal", "t-l-units",
                    "t-l-delq-aging", "t-l-rollover", "t-l-insights", "t-l-meta"],
@@ -496,8 +538,14 @@ OTHER_FLOWS = [
             {"file": "scorecard.json", "key": "metrics, groups, thresholds, legend"},
         ],
         "dashboard": [
-            {"card": "KPI Scorecard", "tab": "Scorecard", "anchor": "cScorecard"},
-            {"card": "KPI Scorecard", "tab": "Portfolio", "anchor": "cPortfolioScorecard"},
+            {"card": "KPI Scorecard", "tab": "Scorecard", "anchor": "cScorecard",
+             "primary": "t-sc-matrix",
+             "tables": ["t-sc-thresholds", "t-sc-props", "t-sc-metrics",
+                        "t-sc-workbook"]},
+            {"card": "KPI Scorecard", "tab": "Portfolio", "anchor": "cPortfolioScorecard",
+             "primary": "t-sc-matrix",
+             "tables": ["t-sc-props", "t-sc-metrics", "t-sc-thresholds",
+                        "t-sc-measured", "t-sc-arrivals", "t-sc-workbook"]},
         ],
         "tables": ["t-sc-matrix", "t-sc-thresholds", "t-sc-workbook",
                    "t-sc-overrides"],
@@ -531,10 +579,14 @@ OTHER_FLOWS = [
             {"file": "metrics.json", "key": "placeholders"},
         ],
         "dashboard": [
-            {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend"},
-            {"card": "PSF vs Other Properties", "tab": "Portfolio", "anchor": "cPsf"},
-            {"card": "Trade Outs", "tab": "Portfolio", "anchor": "cTradeOutsPortfolio"},
-            {"card": "Planned Metrics", "tab": "Portfolio", "anchor": "placeholderGrid"},
+            {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",
+             "tables": ["t-exptrend"]},
+            {"card": "PSF vs Other Properties", "tab": "Portfolio", "anchor": "cPsf",
+             "tables": ["t-psf"]},
+            {"card": "Trade Outs", "tab": "Portfolio", "anchor": "cTradeOutsPortfolio",
+             "tables": ["t-tradeouts"]},
+            {"card": "Planned Metrics", "tab": "Portfolio", "anchor": "placeholderGrid",
+             "tables": ["t-placeholders"]},
         ],
         "tables": ["t-exptrend", "t-psf", "t-tradeouts", "t-placeholders"],
         "note": "No feed stands behind these. The PSF figures are hand-entered "
@@ -799,12 +851,24 @@ def card_index(flows, titles):
         if f.get("same_as"):
             continue                     # an alias route, folded into its primary
         for d in f.get("dashboard") or []:
+            # Not every surface a feed lands on is a card. The Leased tile is
+            # real and fed by the export, but it is one tile in a row, not a
+            # card with a corner to hang a link in -- so it stays on the flow
+            # page and out of this index rather than sitting here inert.
+            if d.get("tile"):
+                continue
             e = cards.setdefault(d["anchor"], {
                 "card": d["card"], "tab": d["tab"],
                 "tables": [], "flows": [], "primary": None, "holds": None,
             })
             if f["id"] not in e["flows"]:
                 e["flows"].append(f["id"])
+            # An explicit primary beats table order. Several feeds land on one
+            # card and the flows are sorted for the page's reading order, not
+            # for which table a reader most wants -- without this, whichever
+            # flow happens to sort first picks the link target.
+            if d.get("primary"):
+                e["primary_declared"] = d["primary"]
             # a card's own tables where declared, else the flow's
             for t in (d.get("tables") if d.get("tables") is not None
                       else (f.get("tables") or [])):
@@ -818,7 +882,8 @@ def card_index(flows, titles):
         # No table holds this card's numbers -- the placeholder cards, and any
         # card whose feed stops short -- so the link goes to the flow row that
         # explains why instead of nowhere.
-        e["primary"] = tables[0] if tables else "f-" + e["flows"][0]
+        e["primary"] = (e.pop("primary_declared", None)
+                        or (tables[0] if tables else "f-" + e["flows"][0]))
         e["holds"] = titles.get(e["primary"])
     return cards
 
@@ -845,7 +910,7 @@ def run_checks(flows):
                     f"{f['id']}: dashboard anchor '{d['anchor']}' "
                     f"({d['card']}) is not an id in docs/index.html")
         for d in f.get("dashboard") or []:
-            for t in d.get("tables") or []:
+            for t in ([d["primary"]] if d.get("primary") else []) + (d.get("tables") or []):
                 if t.endswith("*"):
                     stem = t[:-1]
                     if not any(i.startswith(stem) for i in data_ids) \

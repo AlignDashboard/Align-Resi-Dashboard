@@ -1169,6 +1169,83 @@ async function loadAll() {
       });
     });
 
+    // The pipeline's own three blocks. They had no table here at all, which is
+    // how the Operating Summary card ended up with nowhere to link: the page
+    // claims to hold every number the JSON carries, and these are the numbers
+    // the Drive T12 and the unit directory actually produce.
+    const pl = d.monthly_pl || {};
+    (pl.properties || []).forEach((pr, i) => {
+      renderTable(host, {
+        id: "t-monthlypl-" + (pr.slug || i), group: "Portfolio",
+        title: "Monthly P&L — " + (pr.name || pr.slug),
+        feeds: "Operating Summary card (The Landing tab)",
+        note: [pr.basis, "statement period ending " + (pr.period_end || "—"),
+               "codes " + ((pr.source_codes || []).join("+") || "—"),
+               "Successive T12 statements stitched into one continuous series; "
+               + "the newest statement wins where two report the same month."]
+                .filter(Boolean).join(" · "),
+        cols: [{ key: "month", label: "Month" },
+               { key: "revenue", label: "Operating revenue", fmt: "money" },
+               { key: "opex", label: "Operating expense", fmt: "money" },
+               { key: "noi", label: "NOI", fmt: "money" },
+               { key: "margin", label: "NOI margin", fmt: "pct1" }],
+        rows: (pr.months || []).map((m, j) => {
+          const rev = (pr.revenue || [])[j], op = (pr.opex || [])[j];
+          return { month: m, revenue: rev, opex: op, noi: (pr.noi || [])[j],
+                   margin: isNum(rev) && rev ? ((pr.noi || [])[j]) / rev : null };
+        }),
+        filterable: true,
+      });
+    });
+
+    const eb = d.expense_buckets || {};
+    (eb.properties || []).forEach((pr, i) => {
+      const names = Object.keys(pr.buckets || {}).sort();
+      renderTable(host, {
+        id: "t-buckets-" + (pr.slug || i), group: "Portfolio",
+        title: "Expense buckets, by month — " + (pr.name || pr.slug),
+        feeds: "Expense Deep Dive card, Month view (The Landing tab)",
+        note: [pr.basis, "statement period ending " + (pr.period_end || "—")]
+                .filter(Boolean).join(" · "),
+        cols: [{ key: "month", label: "Month" }].concat(
+          names.map(n => ({ key: n, label: n, fmt: "money" }))),
+        rows: (pr.labels || []).map((lab, j) => {
+          const row = { month: lab };
+          names.forEach(n => { row[n] = (pr.buckets[n] || [])[j]; });
+          return row;
+        }),
+        filterable: true,
+      });
+    });
+
+    const ud = d.unit_directory || {};
+    (ud.properties || []).forEach((pr, i) => {
+      const plans = pr.plans || {};
+      renderTable(host, {
+        id: "t-unitdir-" + (pr.slug || i), group: "Portfolio",
+        title: "Unit directory — floorplans — " + (pr.name || pr.slug),
+        feeds: "Largest Unit Gaps card — the bedrooms and plan sq ft column",
+        note: "From " + (pr.source_file || "the Yardi unit directory")
+            + " as of " + (pr.as_of || "—") + ". " + (pr.units || "—")
+            + " units in the export, " + (pr.residential_units || "—")
+            + " residential — the difference is Yardi's WAITLIST placeholders, "
+            + "counted because the export's own total counts them. Bedrooms "
+            + "belong to the plan, not the unit; nothing else in the pipeline "
+            + "says how many a plan has.",
+        cols: [{ key: "plan", label: "Floorplan" },
+               { key: "bedrooms", label: "Beds", fmt: "int" },
+               { key: "baths", label: "Baths", fmt: "num" },
+               { key: "units", label: "Units", fmt: "int" },
+               { key: "sqft_min", label: "Sq ft min", fmt: "int" },
+               { key: "sqft_max", label: "Sq ft max", fmt: "int" },
+               { key: "sqft_avg", label: "Sq ft avg", fmt: "int" },
+               { key: "rent_min", label: "Rent min", fmt: "money0" },
+               { key: "rent_max", label: "Rent max", fmt: "money0" }],
+        rows: Object.keys(plans).sort().map(k => Object.assign({ plan: k }, plans[k])),
+        filterable: true,
+      });
+    });
+
     renderTable(host, {
       id: "t-placeholders", group: "Portfolio", title: "Planned Metrics (placeholders)",
       feeds: "Planned Metrics placeholder cards",

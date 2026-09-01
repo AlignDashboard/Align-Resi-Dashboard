@@ -16,46 +16,42 @@
    "card": "Operating Summary",
    "tab": "The Landing",
    "tables": [
-    "t-expratio"
+    "t-monthlypl"
    ],
    "flows": [
     "t12"
    ],
-   "primary": "t-expratio",
-   "holds": "Expense Ratio"
+   "primary": "t-monthlypl",
+   "holds": "Monthly P&L"
   },
   "cExpDeep": {
    "card": "Expense Deep Dive",
    "tab": "The Landing",
    "tables": [
-    "t-expratio"
+    "t-buckets",
+    "t-l-opps"
    ],
    "flows": [
     "t12"
    ],
-   "primary": "t-expratio",
-   "holds": "Expense Ratio"
+   "primary": "t-l-buckets",
+   "holds": "Expense deep dive \u2014 buckets"
   },
   "cNoi": {
    "card": "Expense Load & NOI \u2014 controllable/door",
    "tab": "The Landing",
    "tables": [
-    "t-expratio",
-    "t-l-capture",
+    "t-buckets",
     "t-l-noi",
-    "t-l-renewal",
-    "t-l-units",
-    "t-l-delq-aging",
-    "t-l-rollover",
-    "t-l-insights",
-    "t-l-meta"
+    "t-l-noi-ttm",
+    "t-l-tax"
    ],
    "flows": [
     "t12",
     "analyst_workbook"
    ],
-   "primary": "t-expratio",
-   "holds": "Expense Ratio"
+   "primary": "t-l-noi",
+   "holds": "Expense load & NOI"
   },
   "cScorecard": {
    "card": "KPI Scorecard \u2014 Total Deliquency",
@@ -63,10 +59,10 @@
    "tables": [
     "t-sc-measured",
     "t-sc-arrivals",
-    "t-sc-matrix",
+    "t-sc-props",
     "t-sc-thresholds",
-    "t-sc-workbook",
-    "t-sc-overrides"
+    "t-sc-metrics",
+    "t-sc-workbook"
    ],
    "flows": [
     "delinquency",
@@ -74,18 +70,77 @@
     "eliseai_daily",
     "kpi_workbook"
    ],
+   "primary": "t-sc-matrix",
+   "holds": "KPI Scorecard matrix"
+  },
+  "psc-palma": {
+   "card": "KPI Scorecard \u2014 Palma",
+   "tab": "Palma",
+   "tables": [
+    "t-sc-overrides",
+    "t-sc-arrivals",
+    "t-sc-matrix"
+   ],
+   "flows": [
+    "delinquency"
+   ],
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
   },
-  "lkpis": {
-   "card": "Leased tile",
+  "cLandingScorecard": {
+   "card": "KPI Scorecard \u2014 The Landing",
    "tab": "The Landing",
    "tables": [
-    "t-sc-measured",
-    "t-sc-arrivals"
+    "t-sc-arrivals",
+    "t-sc-matrix",
+    "t-sc-thresholds"
+   ],
+   "flows": [
+    "bldg_metrics",
+    "analyst_workbook"
+   ],
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
+  },
+  "psc-chorus": {
+   "card": "KPI Scorecard \u2014 Chorus",
+   "tab": "Chorus",
+   "tables": [
+    "t-sc-arrivals",
+    "t-sc-matrix",
+    "t-sc-thresholds"
    ],
    "flows": [
     "bldg_metrics"
+   ],
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
+  },
+  "psc-madelon": {
+   "card": "KPI Scorecard \u2014 Madelon",
+   "tab": "Madelon",
+   "tables": [
+    "t-sc-arrivals",
+    "t-sc-matrix",
+    "t-sc-thresholds"
+   ],
+   "flows": [
+    "bldg_metrics"
+   ],
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
+  },
+  "psc-335-third-street": {
+   "card": "KPI Scorecard \u2014 335 Third St",
+   "tab": "335 Third St",
+   "tables": [
+    "t-sc-arrivals",
+    "t-sc-matrix",
+    "t-sc-thresholds"
+   ],
+   "flows": [
+    "bldg_metrics",
+    "eliseai_daily"
    ],
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
@@ -94,13 +149,11 @@
    "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
    "tab": "The Landing",
    "tables": [
+    "t-unitdir",
     "t-l-units",
-    "t-l-capture",
-    "t-l-noi",
-    "t-l-renewal",
-    "t-l-delq-aging",
-    "t-l-rollover",
-    "t-l-insights",
+    "t-l-hold-units",
+    "t-l-hold-summary",
+    "t-l-inputs",
     "t-l-meta"
    ],
    "flows": [
@@ -114,10 +167,12 @@
    "card": "KPI Scorecard",
    "tab": "Portfolio",
    "tables": [
-    "t-sc-matrix",
+    "t-sc-props",
+    "t-sc-metrics",
     "t-sc-thresholds",
-    "t-sc-workbook",
-    "t-sc-overrides"
+    "t-sc-measured",
+    "t-sc-arrivals",
+    "t-sc-workbook"
    ],
    "flows": [
     "kpi_workbook"
@@ -130,13 +185,8 @@
    "tab": "The Landing",
    "tables": [
     "t-l-capture",
-    "t-l-noi",
-    "t-l-renewal",
-    "t-l-units",
-    "t-l-delq-aging",
-    "t-l-rollover",
-    "t-l-insights",
-    "t-l-meta"
+    "t-l-capture-ttm",
+    "t-l-revcompare"
    ],
    "flows": [
     "analyst_workbook"
@@ -148,86 +198,63 @@
    "card": "Trade-outs",
    "tab": "The Landing",
    "tables": [
-    "t-l-capture",
-    "t-l-noi",
-    "t-l-renewal",
-    "t-l-units",
-    "t-l-delq-aging",
-    "t-l-rollover",
-    "t-l-insights",
-    "t-l-meta"
+    "t-l-leases",
+    "t-l-offers",
+    "t-l-lease-summary",
+    "t-l-renewact",
+    "t-l-bands"
    ],
    "flows": [
     "analyst_workbook"
    ],
-   "primary": "t-l-capture",
-   "holds": "Rent capture"
+   "primary": "t-l-leases",
+   "holds": "New-lease trade-outs \u2014 lease detail"
   },
   "cRollover": {
    "card": "Rollover Schedule",
    "tab": "The Landing",
    "tables": [
-    "t-l-capture",
-    "t-l-noi",
-    "t-l-renewal",
-    "t-l-units",
-    "t-l-delq-aging",
-    "t-l-rollover",
-    "t-l-insights",
-    "t-l-meta"
+    "t-l-rollover"
    ],
    "flows": [
     "analyst_workbook"
    ],
-   "primary": "t-l-capture",
-   "holds": "Rent capture"
+   "primary": "t-l-rollover",
+   "holds": "Rollover schedule"
   },
   "cDelinquency": {
    "card": "Delinquency",
    "tab": "The Landing",
    "tables": [
-    "t-l-capture",
-    "t-l-noi",
-    "t-l-renewal",
-    "t-l-units",
     "t-l-delq-aging",
-    "t-l-rollover",
-    "t-l-insights",
-    "t-l-meta"
+    "t-l-delq-top",
+    "t-l-delq-summary",
+    "t-l-delq-531"
    ],
    "flows": [
     "analyst_workbook"
    ],
-   "primary": "t-l-capture",
-   "holds": "Rent capture"
+   "primary": "t-l-delq-aging",
+   "holds": "Delinquency \u2014 aging"
   },
   "cInsights": {
    "card": "Insights Scorecard",
    "tab": "The Landing",
    "tables": [
-    "t-l-capture",
-    "t-l-noi",
-    "t-l-renewal",
-    "t-l-units",
-    "t-l-delq-aging",
-    "t-l-rollover",
     "t-l-insights",
-    "t-l-meta"
+    "t-l-flags"
    ],
    "flows": [
     "analyst_workbook"
    ],
-   "primary": "t-l-capture",
-   "holds": "Rent capture"
+   "primary": "t-l-insights",
+   "holds": "Insights scorecard"
   },
   "cExpTrend": {
    "card": "Expense Trend",
    "tab": "Portfolio",
    "tables": [
-    "t-exptrend",
-    "t-psf",
-    "t-tradeouts",
-    "t-placeholders"
+    "t-exptrend"
    ],
    "flows": [
     "handset"
@@ -239,50 +266,41 @@
    "card": "PSF vs Other Properties",
    "tab": "Portfolio",
    "tables": [
-    "t-exptrend",
-    "t-psf",
-    "t-tradeouts",
-    "t-placeholders"
+    "t-psf"
    ],
    "flows": [
     "handset"
    ],
-   "primary": "t-exptrend",
-   "holds": "Expense Trend"
+   "primary": "t-psf",
+   "holds": "PSF vs Other Properties"
   },
   "cTradeOutsPortfolio": {
    "card": "Trade Outs",
    "tab": "Portfolio",
    "tables": [
-    "t-exptrend",
-    "t-psf",
-    "t-tradeouts",
-    "t-placeholders"
+    "t-tradeouts"
    ],
    "flows": [
     "handset"
    ],
-   "primary": "t-exptrend",
-   "holds": "Expense Trend"
+   "primary": "t-tradeouts",
+   "holds": "Trade Outs"
   },
   "placeholderGrid": {
    "card": "Planned Metrics",
    "tab": "Portfolio",
    "tables": [
-    "t-exptrend",
-    "t-psf",
-    "t-tradeouts",
     "t-placeholders"
    ],
    "flows": [
     "handset"
    ],
-   "primary": "t-exptrend",
-   "holds": "Expense Trend"
+   "primary": "t-placeholders",
+   "holds": "Planned Metrics (placeholders)"
   }
  },
  "meta": {
-  "generated_at": "2026-09-01T18:26:36.054653+00:00",
+  "generated_at": "2026-09-01T19:07:14.387200+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 8,
@@ -389,22 +407,37 @@
     {
      "card": "Expense Ratio",
      "tab": "Portfolio",
-     "anchor": "cExpRatio"
+     "anchor": "cExpRatio",
+     "tables": [
+      "t-expratio-*"
+     ]
     },
     {
      "card": "Operating Summary",
      "tab": "The Landing",
-     "anchor": "cOpSummary"
+     "anchor": "cOpSummary",
+     "tables": [
+      "t-monthlypl-*"
+     ]
     },
     {
      "card": "Expense Deep Dive",
      "tab": "The Landing",
-     "anchor": "cExpDeep"
+     "anchor": "cExpDeep",
+     "primary": "t-l-buckets",
+     "tables": [
+      "t-buckets-*",
+      "t-l-opps"
+     ]
     },
     {
      "card": "Expense Load & NOI \u2014 controllable/door",
      "tab": "The Landing",
-     "anchor": "cNoi"
+     "anchor": "cNoi",
+     "primary": "t-l-noi",
+     "tables": [
+      "t-buckets-*"
+     ]
     }
    ],
    "tables": [
@@ -485,7 +518,24 @@
     {
      "card": "KPI Scorecard \u2014 Total Deliquency",
      "tab": "Scorecard",
-     "anchor": "cScorecard"
+     "anchor": "cScorecard",
+     "primary": "t-sc-matrix",
+     "tables": [
+      "t-sc-measured",
+      "t-sc-arrivals",
+      "t-sc-props"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 Palma",
+     "tab": "Palma",
+     "anchor": "psc-palma",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-overrides",
+      "t-sc-arrivals",
+      "t-sc-matrix"
+     ]
     }
    ],
    "tables": [
@@ -634,12 +684,63 @@
     {
      "card": "KPI Scorecard (all properties)",
      "tab": "Scorecard",
-     "anchor": "cScorecard"
+     "anchor": "cScorecard",
+     "primary": "t-sc-matrix",
+     "tables": [
+      "t-sc-measured",
+      "t-sc-arrivals",
+      "t-sc-props"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 The Landing",
+     "tab": "The Landing",
+     "anchor": "cLandingScorecard",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-arrivals",
+      "t-sc-matrix",
+      "t-sc-thresholds"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 Chorus",
+     "tab": "Chorus",
+     "anchor": "psc-chorus",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-arrivals",
+      "t-sc-matrix",
+      "t-sc-thresholds"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 Madelon",
+     "tab": "Madelon",
+     "anchor": "psc-madelon",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-arrivals",
+      "t-sc-matrix",
+      "t-sc-thresholds"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 335 Third St",
+     "tab": "335 Third St",
+     "anchor": "psc-335-third-street",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-arrivals",
+      "t-sc-matrix",
+      "t-sc-thresholds"
+     ]
     },
     {
      "card": "Leased tile",
      "tab": "The Landing",
-     "anchor": "lkpis"
+     "anchor": "lkpis",
+     "tile": true
     }
    ],
    "tables": [
@@ -726,7 +827,11 @@
     {
      "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
      "tab": "The Landing",
-     "anchor": "cGaps"
+     "anchor": "cGaps",
+     "primary": "t-l-units",
+     "tables": [
+      "t-unitdir-*"
+     ]
     }
    ],
    "tables": [
@@ -1240,7 +1345,21 @@
     {
      "card": "KPI Scorecard \u2014 335 Third St",
      "tab": "Scorecard",
-     "anchor": "cScorecard"
+     "anchor": "cScorecard",
+     "primary": "t-sc-matrix",
+     "tables": [
+      "t-sc-measured",
+      "t-sc-arrivals"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 335 Third St",
+     "tab": "335 Third St",
+     "anchor": "psc-335-third-street",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-arrivals"
+     ]
     }
    ],
    "tables": [
@@ -1298,12 +1417,28 @@
     {
      "card": "KPI Scorecard",
      "tab": "Scorecard",
-     "anchor": "cScorecard"
+     "anchor": "cScorecard",
+     "primary": "t-sc-matrix",
+     "tables": [
+      "t-sc-thresholds",
+      "t-sc-props",
+      "t-sc-metrics",
+      "t-sc-workbook"
+     ]
     },
     {
      "card": "KPI Scorecard",
      "tab": "Portfolio",
-     "anchor": "cPortfolioScorecard"
+     "anchor": "cPortfolioScorecard",
+     "primary": "t-sc-matrix",
+     "tables": [
+      "t-sc-props",
+      "t-sc-metrics",
+      "t-sc-thresholds",
+      "t-sc-measured",
+      "t-sc-arrivals",
+      "t-sc-workbook"
+     ]
     }
    ],
    "tables": [
@@ -1383,37 +1518,84 @@
     {
      "card": "Loss to Lease",
      "tab": "The Landing",
-     "anchor": "cRentCapture"
+     "anchor": "cRentCapture",
+     "tables": [
+      "t-l-capture",
+      "t-l-capture-ttm",
+      "t-l-revcompare"
+     ]
     },
     {
      "card": "Trade-outs",
      "tab": "The Landing",
-     "anchor": "cTradeOuts"
+     "anchor": "cTradeOuts",
+     "tables": [
+      "t-l-leases",
+      "t-l-offers",
+      "t-l-lease-summary",
+      "t-l-renewact",
+      "t-l-bands"
+     ]
     },
     {
      "card": "Rollover Schedule",
      "tab": "The Landing",
-     "anchor": "cRollover"
+     "anchor": "cRollover",
+     "tables": [
+      "t-l-rollover"
+     ]
     },
     {
      "card": "Expense Load & NOI",
      "tab": "The Landing",
-     "anchor": "cNoi"
+     "anchor": "cNoi",
+     "tables": [
+      "t-l-noi",
+      "t-l-noi-ttm",
+      "t-l-tax"
+     ]
     },
     {
      "card": "Largest Unit Gaps",
      "tab": "The Landing",
-     "anchor": "cGaps"
+     "anchor": "cGaps",
+     "tables": [
+      "t-l-units",
+      "t-l-hold-units",
+      "t-l-hold-summary",
+      "t-l-inputs",
+      "t-l-meta"
+     ]
     },
     {
      "card": "Delinquency",
      "tab": "The Landing",
-     "anchor": "cDelinquency"
+     "anchor": "cDelinquency",
+     "tables": [
+      "t-l-delq-aging",
+      "t-l-delq-top",
+      "t-l-delq-summary",
+      "t-l-delq-531"
+     ]
     },
     {
      "card": "Insights Scorecard",
      "tab": "The Landing",
-     "anchor": "cInsights"
+     "anchor": "cInsights",
+     "tables": [
+      "t-l-insights",
+      "t-l-flags"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 The Landing",
+     "tab": "The Landing",
+     "anchor": "cLandingScorecard",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-arrivals",
+      "t-sc-matrix"
+     ]
     }
    ],
    "tables": [
@@ -1515,22 +1697,34 @@
     {
      "card": "Expense Trend",
      "tab": "Portfolio",
-     "anchor": "cExpTrend"
+     "anchor": "cExpTrend",
+     "tables": [
+      "t-exptrend"
+     ]
     },
     {
      "card": "PSF vs Other Properties",
      "tab": "Portfolio",
-     "anchor": "cPsf"
+     "anchor": "cPsf",
+     "tables": [
+      "t-psf"
+     ]
     },
     {
      "card": "Trade Outs",
      "tab": "Portfolio",
-     "anchor": "cTradeOutsPortfolio"
+     "anchor": "cTradeOutsPortfolio",
+     "tables": [
+      "t-tradeouts"
+     ]
     },
     {
      "card": "Planned Metrics",
      "tab": "Portfolio",
-     "anchor": "placeholderGrid"
+     "anchor": "placeholderGrid",
+     "tables": [
+      "t-placeholders"
+     ]
     }
    ],
    "tables": [
