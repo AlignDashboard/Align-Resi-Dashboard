@@ -2,6 +2,11 @@
   "points": [
     {
       "period_end": "Jun 2026",
+      "landed_at": "2026-07-16T19:26:04.709Z",
+      "source_files": [
+        "2026-07-16 12_Month_Statement_rspalman_Accrual (3).xlsx",
+        "2026-07-16 12_Month_Statement_rspalmas_accrual.xlsx"
+      ],
       "ratio_t12": 56.1,
       "revenue_t12": 2749240.21,
       "opex_recoverable_t12": 1542304.29,
