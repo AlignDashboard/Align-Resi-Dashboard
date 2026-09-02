@@ -1,4 +1,11 @@
-# Deploy scripts/gmail_drive_filing.js into the Apps Script project.
+# Deploy scripts/gmail_drive_filing.js into the Apps Script project, by calling
+# the Apps Script REST API directly (scripts/deploy_apps_script.py).
+#
+# This used clasp and no longer does. clasp is a wrapper around the same two
+# endpoints, and depending on it coupled the deploy to its CLI and its on-disk
+# credential format -- both of which broke: `clasp pull --force` is not a valid
+# flag, and a credential written by clasp 3.x is unreadable by clasp 2.4.2.
+# Neither had anything to do with the job.
 #
 # WHY THIS EXISTS
 #   The filing script's routing table and config/report_map.json are two halves
@@ -9,16 +16,17 @@
 #
 # WHAT IT NEEDS (two secrets, both optional -- without them this is a no-op)
 #   CLASPRC_JSON    the contents of ~/.clasprc.json, produced by `clasp login`
-#                   under dashboard@alignrealestate.com. Carries an OAuth
-#                   refresh token, so treat it as a credential.
+#                   under dashboard@alignrealestate.com. Any clasp version's
+#                   layout works -- only the client id, client secret and
+#                   refresh token inside it are used. Treat it as a credential.
 #   APPS_SCRIPT_ID  the Apps Script project id (the part of the editor URL after
 #                   /projects/ or /d/). Kept in a secret rather than committed,
 #                   for the same reason the Drive folder ids are.
 #
 #   The account also has to switch the Apps Script API on, once, at
 #   https://script.google.com/home/usersettings -- a per-user toggle, separate
-#   from any Cloud project setting. Without it clasp fails with "User has not
-#   enabled the Apps Script API".
+#   from any Cloud project setting. Without it the API returns 403 "Apps Script
+#   API has not been used in project ... before or it is disabled".
 #
 # WHY NOT A SERVICE ACCOUNT
 #   projects.updateContent does not accept service-account credentials for a
@@ -81,84 +89,12 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install clasp
-        if: steps.gate.outputs.ready == 'true'
-        run: npm install -g @google/clasp@2.4.2
+      - name: Check the deployer's own guard tests
+        run: python scripts/test_deploy_apps_script.py
 
-      - name: Authenticate
+      - name: Deploy
         if: steps.gate.outputs.ready == 'true'
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-        run: |
-          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
-          chmod 600 "$HOME/.clasprc.json"
-
-      - name: Check the credential's shape before using it
-        if: steps.gate.outputs.ready == 'true'
-        # clasp fails an unreadable credential with "Cannot read properties of
-        # undefined (reading 'access_token')", which says nothing about why.
-        # This prints the file's STRUCTURE instead -- key names and value types,
-        # never a value -- so a diagnosis costs nothing in secrecy. clasp has
-        # used three layouts across versions (flat, {token:...}, and a
-        # {default:{...}} profile map), and the runner's clasp must be able to
-        # read whichever one wrote the secret.
-        run: |
-          node -e '
-            const fs = require("fs");
-            const path = process.env.HOME + "/.clasprc.json";
-            let raw;
-            try { raw = fs.readFileSync(path, "utf8"); }
-            catch (e) { console.log("::error::no credential file was written"); process.exit(1); }
-            console.log("bytes:", raw.length, "| lines:", raw.split("\n").length);
-            let j;
-            try { j = JSON.parse(raw); }
-            catch (e) {
-              console.log("::error::CLASPRC_JSON is not valid JSON, so the copy was "
-                + "truncated or line-broken on the way in: " + e.message);
-              process.exit(1);
-            }
-            const skeleton = (o, depth) => {
-              if (o === null || typeof o !== "object") return typeof o;
-              if (Array.isArray(o)) return "[" + o.length + " items]";
-              if (depth > 2) return "{...}";
-              return "{" + Object.keys(o).map(k => k + ": " + skeleton(o[k], depth + 1)).join(", ") + "}";
-            };
-            console.log("structure:", skeleton(j, 0));
-            const holder = j.token ? j : (j.default || j);
-            const tok = holder.token || holder;
-            const ok = Boolean(tok && tok.refresh_token);
-            console.log("refresh_token found:", ok);
-            if (!ok) {
-              console.log("::error::no refresh_token anywhere in this file");
-              process.exit(1);
-            }
-            console.log("credential looks well-formed");
-          '
-
-      - name: Push the script
-        if: steps.gate.outputs.ready == 'true'
-        env:
           APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
-        run: |
-          set -euo pipefail
-          work="$(mktemp -d)"
-          printf '{"scriptId":"%s","rootDir":"%s"}\n' "$APPS_SCRIPT_ID" "$work" > .clasp.json
-
-          # Pull first, so the project's OWN manifest is what gets pushed back.
-          # appsscript.json carries the timezone, runtime version and any
-          # advanced services; reconstructing it from memory risks silently
-          # changing how the script runs, and clasp refuses to push without it.
-          # NB: pull takes no --force (that flag is push-only) -- passing it
-          # fails with "unknown option".
-          clasp pull
-          test -f "$work/appsscript.json" \
-            || { echo "::error::clasp pull produced no appsscript.json — refusing to push"; exit 1; }
-
-          # Replace the code, keep the manifest. Code.js maps to the project's
-          # existing Code.gs, so this updates that file rather than adding a
-          # second one alongside it.
-          find "$work" -maxdepth 1 -type f \( -name '*.js' -o -name '*.gs' \) -delete
-          cp scripts/gmail_drive_filing.js "$work/Code.js"
-
-          clasp push --force
-          echo "::notice::Pushed. Run previewRouting and checkFolders in the editor before resortExistingFiles."
+        run: python scripts/deploy_apps_script.py
