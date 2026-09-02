@@ -159,9 +159,15 @@ def main():
                                       if e.get("tree", "reports") == "reports"})
     for name in unmapped:
         files = contents({"drive_folder": name})
-        print(f"[warn] '{name}' is not in report_map.json — {len(files)} file(s) "
-              f"unclaimed by any folder (the name sweep below may still rescue "
-              f"some): {[f['name'] for f in files]}")
+        # The Gmail filer names a folder after the report type when nothing
+        # matches a rule, so a folder appearing here is usually a NEW REPORT
+        # TYPE arriving rather than a mistake. Say that plainly -- this line is
+        # the daily prompt to add a parser.
+        label = ("NEW REPORT TYPE" if name != "_Unsorted"
+                 else "unnamed files")
+        print(f"[warn] {label}: '{name}' is not in report_map.json — {len(files)} "
+              f"file(s) not read by the pipeline (the name sweep below may still "
+              f"rescue some): {[f['name'] for f in files]}")
         # --all (the inspect workflow) downloads even these, into _pending/, so
         # a file mis-filed into _Unsorted can have its structure read from the
         # inspect log. The daily pipeline still ignores unmapped folders.

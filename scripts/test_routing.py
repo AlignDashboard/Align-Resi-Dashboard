@@ -70,6 +70,47 @@ def load_external():
                            block.group(1)))
 
 
+def load_property_words():
+    """PROPERTY_WORDS from the Apps Script -- stripped before naming a report type."""
+    text = SCRIPT.read_text()
+    block = re.search(r"const PROPERTY_WORDS = \[(.*?)\n\];", text, re.S)
+    if not block:
+        sys.exit("FAIL: could not find PROPERTY_WORDS in " + str(SCRIPT))
+    return re.findall(r'"((?:[^"\\]|\\.)*)"', block.group(1))
+
+
+AUTO_EXTS = ("xlsx", "xls", "csv", "pdf", "docx", "doc")
+AUTO_FILLER = r"(?:^|\s)(week ending|weekending|as of|since|thru|through|updated|copy of)(?=\s|$)"
+
+
+def report_type(filename, words):
+    """Mirror of reportTypeFor_() in the Apps Script. '' means 'cannot name it'."""
+    s = str(filename or "")
+    for _ in range(3):
+        m = re.search(r"\.([A-Za-z0-9]+)$", s)
+        if m and m.group(1).lower() in AUTO_EXTS:
+            s = s[:m.start()]
+        else:
+            break
+    s = re.sub(r"^\d{4}-\d{2}-\d{2}\s+", "", s)
+    s = re.sub(r"\([^)]*\d[^)]*\)", " ", s)
+    s = re.sub(r"_+", " ", s)
+    s = re.sub(r"([A-Za-z])(\d)", r"\1 \2", s)
+    s = re.sub(r"\b\d+\s*Days?\b", " ", s, flags=re.I)
+    for w in words:
+        s = re.sub(r"\b" + re.escape(w) + r"\b", " ", s, flags=re.I)
+    for _ in range(3):
+        s = re.sub(r"\b\d{1,4}[._\-/]\d{1,2}(?:[._\-/]\d{1,4})?\b", " ", s)
+    s = re.sub(r"\b\d{1,8}\b", " ", s)
+    s = re.sub(r"\s*[-\u2013\u2014]+\s*", " ", s)
+    s = re.sub(r"\s{2,}", " ", s).strip(" -\u2013\u2014_.")
+    s = re.sub(AUTO_FILLER, " ", s, flags=re.I)
+    s = re.sub(r"\s{2,}", " ", s).strip(" -\u2013\u2014_.")
+    if len(s) < 4 or not re.search(r"[A-Za-z]{3}", s):
+        return ""
+    return s[:60].rstrip(" -\u2013\u2014_.")
+
+
 def normalize(s):
     """Mirror of normalize_() in the Apps Script."""
     return re.sub(r"[\s_\-.]", "", (s or "").lower())
@@ -91,6 +132,29 @@ def route(filename, rules, subject=""):
 # Real filenames, copied verbatim from Drive on 2026-08-31, and the folder each
 # belongs in. Add a line here whenever a new report shape starts arriving.
 # --------------------------------------------------------------------------
+
+# Filenames no routing rule claims, and the folder each should make for itself.
+# "" means the name cannot be derived and the file belongs in _Unsorted.
+NEW_TYPE_CASES = [
+    ("2026-09-05 AP Aging Detail 09_05_2026 - Chorus.xlsx",        "AP Aging Detail"),
+    ("2026-09-05 WorkOrder Summary - The Madelon (2).xlsx",        "WorkOrder Summary"),
+    ("2026-09-05 8.24-8.30 Prospect and applicant Report  (1).xlsx", "Prospect and applicant Report"),
+    ("2026-09-05 BoxScoreSummary09_05_2026 - 30Days - The Landing.xlsx", "BoxScoreSummary"),
+    ("2026-09-05 BoxScoreSummary09_05_2026 - 60Days - The Landing.xlsx", "BoxScoreSummary"),
+    # three spellings of one report must land on one folder, not three
+    ("2026-09-05 8.30.26 - The Madelon - Daily Report.xlsx",        "Daily Report"),
+    ("2026-09-05 08.24.2026- 08.30.2026- Chorus - Daily Report (3).xlsx", "Daily Report"),
+    ("2026-09-05 Daily Report- Week Ending 8.30.26 (2).xlsx",       "Daily Report"),
+    # nothing nameable survives the date, the copy suffix and the property name
+    ("2026-09-05 (2).xlsx",                                        ""),
+    ("2026-09-05 2026.xlsx",                                       ""),
+    ("2026-09-05 The Landing.xlsx",                                ""),
+    ("2026-09-05 08_31_2026.xlsx",                                 ""),
+    # these two exist to exercise the "too short to be a name" floor itself:
+    # both leave a real remnant, and both must still be refused
+    ("2026-09-05 Ops.xlsx",                                        ""),
+    ("2026-09-05 A B C - Chorus.xlsx",                             ""),
+]
 
 CASES = [
     # (filename, folder it must reach)
@@ -201,6 +265,46 @@ def main():
         else:
             print(f"   FAIL {name!r}\n        wanted {want!r}, got {got!r}")
             failures.append(f"{name!r} routed to {got!r}, wanted {want!r}")
+
+    words = load_property_words()
+
+    print("\n7. PROPERTY_WORDS still matches config/properties.json")
+    props = json.loads((ROOT / "config" / "properties.json").read_text())["properties"]
+    expected = ({a for x in props for a in x.get("aliases", [])}
+                | {x["name"] for x in props}
+                | {c for x in props for c in x.get("codes", [])})
+    missing, extra = expected - set(words), set(words) - expected
+    if missing:
+        print(f"   FAIL {len(missing)} name(s) in properties.json are not in the script: "
+              f"{sorted(missing)[:6]}")
+        failures.append("PROPERTY_WORDS is missing names from properties.json")
+    if extra:
+        print(f"   FAIL the script strips {len(extra)} name(s) properties.json does not "
+              f"know: {sorted(extra)[:6]}")
+        failures.append("PROPERTY_WORDS has names properties.json does not")
+    if not missing and not extra:
+        print(f"   PASS all {len(words)} names, aliases and codes agree")
+
+    print(f"\n8. a new report type names its own folder ({len(NEW_TYPE_CASES)} case(s))")
+    for filename, want in NEW_TYPE_CASES:
+        got = report_type(filename, words)
+        label = repr(want) if want else "_Unsorted (refuses to guess)"
+        if got == want:
+            print(f"   PASS {label:33} <- {filename[:46]}")
+        else:
+            print(f"   FAIL {filename!r}\n        wanted {want!r}, got {got!r}")
+            failures.append(f"{filename!r} named {got!r}, wanted {want!r}")
+
+    print("\n9. auto-naming never steals a file a rule owns")
+    stolen = 0
+    for filename, want in CASES:
+        got = route(filename, rules)
+        if got != want:
+            print(f"   FAIL {filename!r} routes to {got!r}, not {want!r}")
+            failures.append(f"auto-naming hijacked {filename!r}")
+            stolen += 1
+    if not stolen:
+        print(f"   PASS all {len(CASES)} rule-owned files still reach their rule")
 
     print()
     if failures:

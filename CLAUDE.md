@@ -373,6 +373,48 @@ funnel sat in `_Unsorted` for six weeks, and how the `AIRM/Yardi Rev Management`
 and `Workorders/Maintaince` rules were one real report away from quietly
 starting a second folder each (a `/` is legal in a Drive folder name).
 
+### A new report type makes its own folder
+
+A report matching no rule used to land in `_Unsorted`, which is how four weeks
+of arrivals piled up unnoticed. Now the filer boils the filename down to a report
+type and files it under that name, so a new type is visible and grouped from the
+first email it arrives in. `reportTypeFor_` in `gmail_drive_filing.js` does the
+boiling: it strips the extension, the arrival date the filer itself prefixed,
+`(1)`-style copy suffixes, `30Days`/`60Days` window markers, every property name,
+alias and code from `properties.json`, and any date or bare number left over.
+
+    2026-09-05 8.30.26 - The Madelon - Daily Report.xlsx      -> Daily Report
+    2026-09-05 BoxScoreSummary09_05_2026 - 30Days - The Landing.xlsx -> BoxScoreSummary
+    2026-09-05 AP Aging Detail 09_05_2026 - Chorus.xlsx       -> AP Aging Detail
+
+**The derived name is a starting point, not an answer.** It can be clumsy
+(`Renewals`, `rs sql JPM Demographics Combined`), and two spellings of one report
+can make two folders. Both are fixed the same way — add a routing rule naming the
+folder you want, and the next `resortExistingFiles` merges them — and the fix is
+obvious because the folders are sitting there in Drive. That is the trade: a
+slightly untidy tree you can see, instead of a tidy `_Unsorted` you cannot.
+
+Four things stop it running away:
+
+| Guard | Why |
+| --- | --- |
+| It refuses to guess | A name under 4 characters, or with no run of 3 letters, is not a name. `2026-09-05 The Landing.xlsx` has nothing left after the date and the property, so it goes to `_Unsorted` |
+| It reuses an existing folder | Matched on `normalize_`, so "Daily report" files into "Daily Report" rather than starting a sibling |
+| `MAX_NEW_PER_RUN` (5) | A mailbox full of one-off attachments cannot carpet the drop tree in one execution. Past the cap, files park in `_Unsorted` and the log says so |
+| A rule always wins | Auto-naming only runs when no rule matched, so registered reports are untouched. `test_routing.py` checks all 21 |
+
+`fetch_drive.py` then reports the new folder as `[warn] NEW REPORT TYPE: '…' is
+not in report_map.json`, which is the daily prompt to write it a parser.
+Promoting a type to a real feed is: add a rule here, add a `report_map.json`
+entry, write the parser.
+
+`PROPERTY_WORDS` in the `.js` is generated from `config/properties.json`;
+`test_routing.py` fails if a property is added to one and not the other, since a
+new property name that is not stripped would end up inside folder names.
+
+Set `AUTO_FOLDER.ENABLED = false` to go back to everything unmatched landing in
+`_Unsorted`.
+
 ### Folders organise; filenames route
 
 `fetch_drive.py` runs **two passes**, and the difference matters:

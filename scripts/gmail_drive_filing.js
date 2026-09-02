@@ -148,9 +148,115 @@ const ROUTING_RULES = [
 ];
 // ================================================================
 
+/**
+ * NEW REPORT TYPES MAKE THEIR OWN FOLDER.
+ *
+ * A report matching no rule used to land in _Unsorted, where four weeks of
+ * arrivals once piled up unnoticed. Instead, its filename is boiled down to a
+ * report type and that becomes a folder. New types are visible and grouped from
+ * the first email, and promoting one to a real feed is then: add a rule here,
+ * add an entry to config/report_map.json, write a parser.
+ *
+ * The name is a starting point, not an answer. It is derived, so it can be
+ * clumsy ("Renewals", "rs sql JPM Demographics Combined") and two spellings of
+ * one report can make two folders. Both are fixed the same way -- add a routing
+ * rule naming the folder you want -- and the fix is visible because the folders
+ * are sitting there. That is the trade: a slightly untidy Drive you can see,
+ * rather than a tidy _Unsorted you cannot.
+ *
+ * Set ENABLED false to go back to everything unmatched landing in _Unsorted.
+ */
+const AUTO_FOLDER = {
+  ENABLED: true,
+
+  // A cap, so a mailbox full of one-off attachments cannot carpet the drop tree
+  // in a single run. Past it, files park in _Unsorted and the log says so.
+  MAX_NEW_PER_RUN: 5,
+
+  // Names never auto-created, whatever a filename boils down to.
+  NEVER: ['_Unsorted', 'Archive Reports', 'Report Lander'],
+};
+
+/**
+ * Property names, aliases and codes, stripped out before naming a report type
+ * -- "8.30.26 - The Madelon - Daily Report" is a Daily Report, not a Madelon
+ * report. Generated from config/properties.json; scripts/test_routing.py fails
+ * if the two drift apart.
+ */
+const PROPERTY_WORDS = [
+  "Sequoia Living Project", "Walnut Creek Center", "Sequoia Living Inc", "335 Third Street",
+  "California Plaza", "3350 Mission St", "15 Marina Blvd", "335 3rd Street",
+  "Burbank Empire", "1023 Mission", "1335 Webster", "2101 Mission",
+  "5727 College", "850 La Playa", "Essex PropCo", "The Exchange",
+  "123 Mission", "667 Mission", "Align So FS", "The Landing",
+  "The Madelon", "Wood Hollow", "Essex OpCo", "Livermore",
+  "dnccasofs", ".Landing", "1655 ECR", "251 Post",
+  "Bellevue", "camadelo", "camadret", "dnc1335w",
+  "dnc15mar", "dnc1655e", "dnc3350m", "dnc5727c",
+  "dnc850la", "dncsequi", "dncsequo", "esx00141",
+  "esx00142", "esx00143", "esx00144", "esx00145",
+  "esx00146", "esx00147", "esx00149", "exc00130",
+  "p0003872", "p0004764", "p0005215", "p0005611",
+  "p0005612", "p0005640", "p0005671", "rspalman",
+  "rspalmas", ".Chorus", "1023070", "1230090",
+  "2101121", "2101122", "2101123", "2510150",
+  "6670040", "Madelon", "WCC0050", "bec0100",
+  "bec0101", "bec0102", "bpc0010", "cp00080",
+  "lm00030", "lm00031", "lm00032", "lm00033",
+  "madelon", "owcc051", "p000611", "twcc052",
+  "wh00020", ".palma", "Chorus", "Palma",
+  "rs335",
+];
+
+const AUTO_EXTS = ['xlsx', 'xls', 'csv', 'pdf', 'docx', 'doc'];
+const AUTO_FILLER = /(?:^|\s)(week ending|weekending|as of|since|thru|through|updated|copy of)(?=\s|$)/gi;
+
+/**
+ * Boil a filename down to the report type it represents, or '' if it cannot be
+ * named. Order matters throughout -- see the comment on each step.
+ */
+function reportTypeFor_(filename) {
+  var s = String(filename || '');
+
+  // Repeated, because real files carry doubled extensions: "….xls.xlsx".
+  for (var i = 0; i < 3; i++) {
+    var m = s.match(/\.([A-Za-z0-9]+)$/);
+    if (m && AUTO_EXTS.indexOf(m[1].toLowerCase()) !== -1) s = s.slice(0, m.index);
+    else break;
+  }
+
+  s = s.replace(/^\d{4}-\d{2}-\d{2}\s+/, '');   // the date this filer prefixed
+  s = s.replace(/\([^)]*\d[^)]*\)/g, ' ');       // "(1)", "(1a)", "(updated 8.30.26)"
+  s = s.replace(/_+/g, ' ');                      // BEFORE any \b rule: _ is a word char
+  s = s.replace(/([A-Za-z])(\d)/g, '$1 $2');      // "RentRoll07" -> "RentRoll 07"
+  s = s.replace(/\b\d+\s*Days?\b/gi, ' ');       // 30Days / 60Days: one report, two windows
+
+  for (var p = 0; p < PROPERTY_WORDS.length; p++) {
+    s = s.replace(new RegExp('\\b' + PROPERTY_WORDS[p].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      + '\\b', 'gi'), ' ');
+  }
+
+  // Three passes because dates come in ranges: "08.24.2026- 08.30.2026".
+  for (var d = 0; d < 3; d++) {
+    s = s.replace(/\b\d{1,4}[._\-\/]\d{1,2}(?:[._\-\/]\d{1,4})?\b/g, ' ');
+  }
+  s = s.replace(/\b\d{1,8}\b/g, ' ');            // whatever number is left is date debris
+  s = s.replace(/\s*[-–—]+\s*/g, ' ');
+  s = s.replace(/\s{2,}/g, ' ').replace(/^[\s\-–—_.]+|[\s\-–—_.]+$/g, '');
+  s = s.replace(AUTO_FILLER, ' ');
+  s = s.replace(/\s{2,}/g, ' ').replace(/^[\s\-–—_.]+|[\s\-–—_.]+$/g, '');
+
+  // Too short, or no real word in it, means we are guessing. Say so instead.
+  if (s.length < 4 || !/[A-Za-z]{3}/.test(s)) return '';
+  if (AUTO_FOLDER.NEVER.indexOf(s) !== -1) return '';
+  return s.slice(0, 60).replace(/[\s\-–—_.]+$/, '');
+}
+
+
 
 /** Main job. This is the function the trigger calls. */
 function fileGmailPdfsToDrive() {
+  AUTO_STATE.created = 0;
   const root = getRootFolder_();
   const label = getOrCreateLabel_(CONFIG.PROCESSED_LABEL);
   const cache = {};
@@ -236,10 +342,15 @@ function previewRouting() {
   const items = gatherResortable_(root);
   const tally = {};
 
+  const have = {};
+  const walk = root.getFolders();
+  while (walk.hasNext()) have[normalize_(walk.next().getName())] = true;
+
   items.forEach(function (item) {
     const target = routeFor_(item.file.getName(), '');
     tally[target] = (tally[target] || 0) + 1;
-    const flag = (target === item.from) ? '   (already correct)' : '';
+    var flag = (target === item.from) ? '   (already correct)' : '';
+    if (!have[normalize_(target)]) flag += '   [NEW FOLDER]';
     Logger.log(pad_(target) + ' <- ' + item.file.getName() + flag);
   });
 
@@ -290,6 +401,7 @@ function checkFolders() {
  * Run once after previewRouting looks right. Safe to re-run.
  */
 function resortExistingFiles() {
+  AUTO_STATE.created = 0;
   const root = getRootFolder_();
   const cache = {};
   let moved = 0, stayed = 0;
@@ -355,6 +467,13 @@ function routeFor_(filename, subject) {
         if (rule.patterns[p].test(haystacks[h])) return rule.folder;
       }
     }
+  }
+  // No rule matched. Name the report type from the filename so it gets its own
+  // folder. This is PURE -- it returns a name and creates nothing, so
+  // previewRouting can show what would happen without touching Drive.
+  if (AUTO_FOLDER.ENABLED) {
+    var derived = reportTypeFor_(filename) || reportTypeFor_(subject);
+    if (derived) return derived;
   }
   return CONFIG.UNSORTED_FOLDER;
 }
@@ -440,10 +559,50 @@ function getSubfolder_(root, name, cache) {
   }
 
   const it = root.getFoldersByName(name);
-  const folder = it.hasNext() ? it.next() : root.createFolder(name);
-  cache[name] = folder;
-  return folder;
+  if (it.hasNext()) {
+    cache[name] = it.next();
+    return cache[name];
+  }
+
+  // The folder does not exist. If a rule asked for it, create it as always --
+  // that is the long-standing behaviour and the rule is a deliberate decision.
+  const fromRule = ROUTING_RULES.some(function (r) { return r.folder === name; });
+  if (fromRule || !AUTO_FOLDER.ENABLED || name === CONFIG.UNSORTED_FOLDER) {
+    cache[name] = root.createFolder(name);
+    return cache[name];
+  }
+
+  // An auto-derived name. Before making a folder, see whether one already there
+  // means the same thing -- "Daily report" and "Daily Report" are one type, and
+  // silently splitting them is how a drop tree turns into a junk drawer.
+  const wanted = normalize_(name);
+  const existing = root.getFolders();
+  while (existing.hasNext()) {
+    const f = existing.next();
+    if (normalize_(f.getName()) === wanted) {
+      Logger.log('auto-folder: "' + name + '" matches the existing "' + f.getName() +
+        '" — filing there rather than making a second one');
+      cache[name] = f;
+      return cache[name];
+    }
+  }
+
+  if (AUTO_STATE.created >= AUTO_FOLDER.MAX_NEW_PER_RUN) {
+    Logger.log('auto-folder: already made ' + AUTO_STATE.created + ' new folder(s) this ' +
+      'run, so "' + name + '" goes to ' + CONFIG.UNSORTED_FOLDER + ' instead. Raise ' +
+      'AUTO_FOLDER.MAX_NEW_PER_RUN or run again.');
+    return getSubfolder_(root, CONFIG.UNSORTED_FOLDER, cache);
+  }
+
+  AUTO_STATE.created++;
+  Logger.log('auto-folder: NEW REPORT TYPE "' + name + '" — created a folder for it. ' +
+    'Add a rule and a config/report_map.json entry to make it a real feed.');
+  cache[name] = root.createFolder(name);
+  return cache[name];
 }
+
+// Reset per run by the entry points, so the cap counts one execution.
+var AUTO_STATE = { created: 0 };
 
 function isAllowed_(att) {
   const name = (att.getName() || '').toLowerCase();
