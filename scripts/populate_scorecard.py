@@ -48,6 +48,17 @@ Which KPIs a delinquency report can actually answer:
                             the workbook's; its "how" line described an older
                             basket, so the fill restates it and keeps the sheet's
                             wording in "how_workbook".
+  Concession Load %         the current month's concessions over market rent
+                            potential less loss to lease less vacancy loss --
+                            the T12 statement's rent income before concessions
+                            and the employee allowance -- from the same Rent
+                            Capture series as Loss to Lease. Equation set by the
+                            owner 2026-09-03; the ranges sheet's own "how" named
+                            gross potential rent as the denominator and a
+                            trailing-3-months window, so "how" is restated (the
+                            sheet's wording kept in "how_workbook") and the
+                            trailing-3 figure is recorded beside the graded
+                            month.
 
 "POs over 30 days" and "# of invoices processed" are accounts *payable*; a
 resident AR report cannot speak to them and they are left alone.
@@ -91,6 +102,7 @@ KPI_LTL = "Loss to Lease %"
 KPI_NOI = "NOI Margin %"
 KPI_CTRL = "Controllable OpEx/Unit"
 KPI_MTM = "Month to Month Leases"
+KPI_CONC = "Concession Load %"
 
 # The rent roll's own classification, as the workbook reads it: every unit is in
 # exactly one of these. There is no separate month-to-month state, so a unit the
@@ -112,6 +124,14 @@ NOT_CONTROLLABLE = ("tax", "insurance", "utilit", "management fee")
 # follow.
 CONTROLLABLE_HOW = ("Operating expense less taxes, insurance, utilities and the "
                     "management fee, per unit, current month x12")
+# The owner's equation (2026-09-03): concessions over the T12 statement's rent
+# income before concessions and the employee allowance. The ranges sheet's own
+# "how" divided by gross potential rent over a trailing 3 months instead, so the
+# published definition is restated to match the published number, with the
+# sheet's wording kept in "how_workbook" -- same treatment as the controllable
+# basket above.
+CONCESSION_HOW = ("Concessions over market rent potential less loss to lease "
+                  "less vacancy loss, current month")
 
 
 def pct1(v):
@@ -198,6 +218,28 @@ def facts_from_landing(path="docs/landing.json"):
     # which one the band is meant to grade is the owner's call.
     en = doc.get("expense_noi") or {}
     noi_series, noi_months = en.get("noi_margin") or [], en.get("months") or []
+    # Concession load, from the same Rent Capture series as loss to lease. The
+    # four series reconcile exactly to the workbook's own rental-income line
+    # (GPR - L2L - vacancy - concessions - allowance = rental income, to the
+    # cent), so the denominator is the statement's rent income before
+    # concessions and the employee allowance. Vacancy loss can run negative in
+    # a true-up month (Jul 2026 does), which per the equation ADDS to the
+    # denominator rather than being clamped.
+    conc = rc.get("concessions") or []
+    mp = rc.get("market_potential") or []
+    l2l = rc.get("loss_to_lease") or []
+    vac = rc.get("vacancy_loss") or []
+    n = min(len(conc), len(mp), len(l2l), len(vac))
+    conc_load = conc_load_t3 = conc_parts = None
+    if n:
+        denom = mp[n - 1] - l2l[n - 1] - vac[n - 1]
+        if denom > 0:
+            conc_load = conc[n - 1] / denom
+            conc_parts = (conc[n - 1], mp[n - 1], l2l[n - 1], vac[n - 1])
+        k = min(3, n)
+        d3 = sum(mp[n - k:n]) - sum(l2l[n - k:n]) - sum(vac[n - k:n])
+        if d3 > 0:
+            conc_load_t3 = sum(conc[n - k:n]) / d3
     units = (doc.get("meta") or {}).get("units")
     ctrl, ctrl_month, ctrl_why = controllable_per_unit("the-landing", units)
 
@@ -224,6 +266,10 @@ def facts_from_landing(path="docs/landing.json"):
         "noi_margin": noi_series[-1] if noi_series else None,
         "noi_margin_month": noi_months[-1] if noi_months else None,
         "noi_margin_ttm": (en.get("ttm") or {}).get("noi_margin"),
+        "concession_load": conc_load,
+        "concession_load_month": months[-1] if months else None,
+        "concession_load_t3": conc_load_t3,
+        "concession_parts": conc_parts,
         "ctrl_per_unit_yr": ctrl,
         "ctrl_month": ctrl_month,
         "ctrl_units": units,
@@ -337,6 +383,16 @@ def measurements(f):
     else:
         out[KPI_NOI] = (None, None,
                         "this source carries no monthly revenue-and-NOI series")
+
+    if f.get("concession_load") is not None:
+        v = f["concession_load"]
+        # two decimals: the whole band lives under 2%, and the property sits
+        # near zero -- one decimal would print the difference between "none"
+        # and "some" as the same figure
+        out[KPI_CONC] = (v, f"{v * 100:.2f}%", None)
+    else:
+        out[KPI_CONC] = (None, None,
+                         "this source carries no concessions series")
 
     if f.get("ctrl_per_unit_yr") is not None:
         v = f["ctrl_per_unit_yr"]
@@ -578,6 +634,19 @@ def main():
         if t and t.get("how") != CONTROLLABLE_HOW:
             t.setdefault("how_workbook", t.get("how"))
             t["how"] = CONTROLLABLE_HOW
+    if facts.get("concession_load") is not None:
+        c, g, l, v = facts["concession_parts"]
+        meas[slug]["concession_basis"] = (
+            f"{facts['concession_load_month']}: ${c:,.0f} concessions over "
+            f"${g:,.0f} market rent potential less ${l:,.0f} loss to lease "
+            f"less ${v:,.0f} vacancy loss")
+        # the window the ranges sheet itself names, kept beside the graded month
+        if facts.get("concession_load_t3") is not None:
+            meas[slug]["concession_load_t3"] = round(facts["concession_load_t3"], 6)
+        t = thresholds.get(KPI_CONC)
+        if t and t.get("how") != CONCESSION_HOW:
+            t.setdefault("how_workbook", t.get("how"))
+            t["how"] = CONCESSION_HOW
     if facts.get("noi_margin_month"):
         meas[slug]["noi_margin_month"] = facts["noi_margin_month"]
         # the T12 figure the band's own basis names, kept beside the month that

@@ -134,6 +134,23 @@ reads 72.6% and grades green against a T12 of 66.8%). The month is what is
 graded, per the owner; `noi_margin_ttm` is recorded beside it in
 `measured[slug]` so the two are never confused.
 
+`--from-landing` also fills **`Concession Load %`** — the current month's
+concessions over **market rent potential less loss to lease less vacancy
+loss**, per the owner's equation set 2026-09-03. All four series come from the
+Rent Capture block behind the Loss to Lease card — the same T12 statement
+revenue lines that fill loss to lease — and they reconcile exactly to the
+workbook's own rental-income line (GPR − L2L − vacancy − concessions −
+allowance = rental income, to the cent), so the denominator is the statement's
+rent income before concessions and the employee allowance. The Landing reads
+**0.37%** for Jul 2026, exceeding; the workbook's hand-set symbol said in-range
+and is kept in `status_workbook`. The ranges sheet's own "how" divided by gross
+potential rent over a trailing 3-month window, so `how` is restated
+(`CONCESSION_HOW` in `populate_scorecard.py`) with the sheet's wording kept in
+`how_workbook`, and the trailing-3 figure (0.14%) is recorded as
+`concession_load_t3` in `measured[slug]` beside the graded month. Vacancy loss
+can run negative in a true-up month — Jul 2026 does — which per the equation
+adds to the denominator rather than being clamped.
+
 `--from-landing` also fills **`Month to Month Leases`** — the workbook's grid
 calls that column `# of month to month`, and `RENAMES` in
 `extract_scorecard.py` is what publishes it under the clearer name (the ranges
