@@ -1758,6 +1758,7 @@ function scFeeds() {
       const when = recv ? new Date(recv) : (asOf ? new Date(asOf + "T12:00:00") : null);
       out.push({
         slug,
+        prefix,
         label: (prop && prop.label) || slug,
         when: when && !isNaN(when) ? when : null,
         exact: !!recv,                       // false = fell back to the as-of date
@@ -1780,8 +1781,13 @@ function scAgo(when, now) {
 }
 // The freshness line for the scorecard head. `slug` limits it to one property's
 // feeds, for a property view; omitted, it covers every feed on the scorecard.
-function scUpdatedEl(slug) {
-  const feeds = scFeeds().filter(f => (slug ? f.slug === slug : true) && f.when);
+// `allow` narrows it further to named feed prefixes, for a card that shows only
+// some of them -- the Drive-only tab would otherwise headline a workbook feed's
+// arrival and list the workbook's cells under "fills", on a card built to
+// exclude exactly those.
+function scUpdatedEl(slug, allow) {
+  const feeds = scFeeds().filter(f => (slug ? f.slug === slug : true) && f.when
+    && (!allow || allow.indexOf(f.prefix) >= 0));
   if (!feeds.length) return null;
   const now = new Date();
   const newest = feeds[0];
@@ -3449,7 +3455,8 @@ async function loadLandingDrive() {
     health.appendChild(elc("div", "lbl", roll.scored
       ? "at or above target · " + roll.scored + " of " + shown + " graded"
       : "nothing graded yet"));
-    const upd = scUpdatedEl(SCD_SLUG);
+    const upd = scUpdatedEl(SCD_SLUG,
+      SCD_DRIVE_FEEDS.filter(f => scdFeedIsDrive(f, meas)).map(f => f.prefix));
     if (upd) health.appendChild(upd);
 
     const strip = document.getElementById("dscStrip");
