@@ -53,6 +53,58 @@
    "primary": "t-l-noi",
    "holds": "Expense load & NOI"
   },
+  "cdOpSummary": {
+   "card": "Operating Summary",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-monthlypl"
+   ],
+   "flows": [
+    "t12"
+   ],
+   "primary": "t-monthlypl",
+   "holds": "Monthly P&L"
+  },
+  "cdNoi": {
+   "card": "Expense Load & NOI",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-monthlypl",
+    "t-buckets",
+    "t-unitdir"
+   ],
+   "flows": [
+    "t12"
+   ],
+   "primary": "t-monthlypl",
+   "holds": "Monthly P&L"
+  },
+  "cdExpDeep": {
+   "card": "Expense Deep Dive",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-buckets",
+    "t-monthlypl"
+   ],
+   "flows": [
+    "t12"
+   ],
+   "primary": "t-buckets",
+   "holds": "Expense buckets, by month"
+  },
+  "cdFeeds": {
+   "card": "What Feeds This Tab",
+   "tab": "Landing (Drive)",
+   "tables": [],
+   "flows": [
+    "t12",
+    "delinquency",
+    "bldg_metrics",
+    "unit_directory"
+   ],
+   "primary": "f-t12",
+   "holds": null
+  },
   "cScorecard": {
    "card": "KPI Scorecard \u2014 Total Deliquency",
    "tab": "Scorecard",
@@ -83,6 +135,35 @@
    ],
    "flows": [
     "delinquency"
+   ],
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
+  },
+  "cdDelq": {
+   "card": "Delinquency",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals"
+   ],
+   "flows": [
+    "delinquency"
+   ],
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
+  },
+  "cdScorecard": {
+   "card": "KPI Scorecard \u2014 Drive feeds only",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals",
+    "t-sc-thresholds",
+    "t-sc-matrix"
+   ],
+   "flows": [
+    "delinquency",
+    "bldg_metrics"
    ],
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
@@ -162,6 +243,18 @@
    ],
    "primary": "t-l-units",
    "holds": "Unit-level gap analysis"
+  },
+  "cdInventory": {
+   "card": "Unit Inventory",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-unitdir"
+   ],
+   "flows": [
+    "unit_directory"
+   ],
+   "primary": "t-unitdir",
+   "holds": "Unit directory \u2014 floorplans"
   },
   "cPortfolioScorecard": {
    "card": "KPI Scorecard",
@@ -300,7 +393,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-03T14:54:11.733773+00:00",
+  "generated_at": "2026-09-03T19:38:09.635746+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 8,
@@ -438,6 +531,42 @@
      "tables": [
       "t-buckets-*"
      ]
+    },
+    {
+     "card": "Operating Summary",
+     "tab": "Landing (Drive)",
+     "anchor": "cdOpSummary",
+     "primary": "t-monthlypl-*",
+     "tables": [
+      "t-monthlypl-*"
+     ]
+    },
+    {
+     "card": "Expense Load & NOI",
+     "tab": "Landing (Drive)",
+     "anchor": "cdNoi",
+     "primary": "t-monthlypl-*",
+     "tables": [
+      "t-monthlypl-*",
+      "t-buckets-*",
+      "t-unitdir-*"
+     ]
+    },
+    {
+     "card": "Expense Deep Dive",
+     "tab": "Landing (Drive)",
+     "anchor": "cdExpDeep",
+     "primary": "t-buckets-*",
+     "tables": [
+      "t-buckets-*",
+      "t-monthlypl-*"
+     ]
+    },
+    {
+     "card": "What Feeds This Tab",
+     "tab": "Landing (Drive)",
+     "anchor": "cdFeeds",
+     "tables": []
     }
    ],
    "tables": [
@@ -536,6 +665,33 @@
       "t-sc-arrivals",
       "t-sc-matrix"
      ]
+    },
+    {
+     "card": "Delinquency",
+     "tab": "Landing (Drive)",
+     "anchor": "cdDelq",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-measured",
+      "t-sc-arrivals"
+     ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 Drive feeds only",
+     "tab": "Landing (Drive)",
+     "anchor": "cdScorecard",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-measured",
+      "t-sc-arrivals",
+      "t-sc-thresholds"
+     ]
+    },
+    {
+     "card": "What Feeds This Tab",
+     "tab": "Landing (Drive)",
+     "anchor": "cdFeeds",
+     "tables": []
     }
    ],
    "tables": [
@@ -546,14 +702,6 @@
    "open_item": null,
    "same_as": null,
    "evidence": [
-    {
-     "property": "Landing",
-     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "as_of": null,
-     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "landed_at": "2026-08-31T18:28:44.598Z",
-     "detail": "6 KPI cell(s): Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
-    },
     {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
@@ -614,14 +762,6 @@
    "open_item": null,
    "same_as": "delinquency",
    "evidence": [
-    {
-     "property": "Landing",
-     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "as_of": null,
-     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "landed_at": "2026-08-31T18:28:44.598Z",
-     "detail": "6 KPI cell(s): Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
-    },
     {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
@@ -718,6 +858,23 @@
       "t-sc-matrix",
       "t-sc-thresholds"
      ]
+    },
+    {
+     "card": "KPI Scorecard \u2014 Drive feeds only",
+     "tab": "Landing (Drive)",
+     "anchor": "cdScorecard",
+     "primary": "t-sc-measured",
+     "tables": [
+      "t-sc-arrivals",
+      "t-sc-matrix",
+      "t-sc-thresholds"
+     ]
+    },
+    {
+     "card": "What Feeds This Tab",
+     "tab": "Landing (Drive)",
+     "anchor": "cdFeeds",
+     "tables": []
     },
     {
      "card": "KPI Scorecard \u2014 Chorus",
@@ -848,6 +1005,21 @@
      "tables": [
       "t-unitdir-*"
      ]
+    },
+    {
+     "card": "Unit Inventory",
+     "tab": "Landing (Drive)",
+     "anchor": "cdInventory",
+     "primary": "t-unitdir-*",
+     "tables": [
+      "t-unitdir-*"
+     ]
+    },
+    {
+     "card": "What Feeds This Tab",
+     "tab": "Landing (Drive)",
+     "anchor": "cdFeeds",
+     "tables": []
     }
    ],
    "tables": [
@@ -1391,17 +1563,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-02",
+     "as_of": "2026-09-03",
      "source_file": null,
-     "landed_at": "2026-09-02T15:37:47Z",
-     "detail": "22 day(s) recorded"
+     "landed_at": "2026-09-03T15:37:43Z",
+     "detail": "23 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-02",
+     "as_of": "2026-09-03",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-02T15:37:47Z",
+     "landed_at": "2026-09-03T15:37:43Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -1663,6 +1835,14 @@
      "source_file": "102ebfe0-The_Landing_Dashboard_V37.xlsx",
      "landed_at": "2026-08-03T21:15:23.385441+00:00",
      "detail": "extract run; the workbook has no arrival time of its own, so this is when it was extracted"
+    },
+    {
+     "property": "Landing",
+     "file": "workbook Source Delinquency tab, via docs/landing.json",
+     "as_of": "2026-07-20",
+     "source_file": "workbook Source Delinquency tab, via docs/landing.json",
+     "landed_at": "2026-08-03T21:15:23.385441+00:00",
+     "detail": "7 KPI cell(s): Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     }
    ],
    "status": "live"
@@ -1752,7 +1932,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-03T14:54:11.425508+00:00",
+     "landed_at": "2026-09-03T19:03:50.991907+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

@@ -431,17 +431,22 @@
      re-measures on every press, sliding all five columns sideways. Fixed widths
      pin them, so pressing a toggle changes the numbers and nothing else. The
      header height is reserved for two lines for the same reason: a heading that
-     wraps at one width and not another would otherwise nudge the rows down. */
-  #lopTbl table.dt { table-layout: fixed; }
-  #lopTbl table.dt th, #lopTbl table.dt td { width: 15.6%; }
-  #lopTbl table.dt th:first-child, #lopTbl table.dt td:first-child { width: 22%; }
-  #lopTbl table.dt th { vertical-align: bottom; height: 44px; }
+     wraps at one width and not another would otherwise nudge the rows down.
+     Both Landing tabs carry this card and it is one renderer, so it is one set
+     of rules rather than a copy that drifts. */
+  #lopTbl table.dt, #dopTbl table.dt { table-layout: fixed; }
+  #lopTbl table.dt th, #lopTbl table.dt td,
+  #dopTbl table.dt th, #dopTbl table.dt td { width: 15.6%; }
+  #lopTbl table.dt th:first-child, #lopTbl table.dt td:first-child,
+  #dopTbl table.dt th:first-child, #dopTbl table.dt td:first-child { width: 22%; }
+  #lopTbl table.dt th, #dopTbl table.dt th { vertical-align: bottom; height: 44px; }
   /* It is the board's header table -- three rows above everything else -- so it
      is set larger than the data tables further down the page. */
-  #lopTbl table.dt { font-size: 15px; margin-top: 14px; }
-  #lopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
-  #lopTbl table.dt td { padding: 13px 10px 13px 0; }
-  #lopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
+  #lopTbl table.dt, #dopTbl table.dt { font-size: 15px; margin-top: 14px; }
+  #lopTbl table.dt th, #dopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
+  #lopTbl table.dt td, #dopTbl table.dt td { padding: 13px 10px 13px 0; }
+  #lopTbl table.dt td:first-child,
+  #dopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
   /* This card is far wider than its eight columns need -- about 350px of text in
      a 1100px table -- and an auto-layout table gives the surplus to whichever
      columns will take it. That is what kept opening voids in one place after
@@ -509,15 +514,22 @@
        operating summary they also keep the fixed column geometry its toggle
        relies on, since the percentages resolve against the table, not the
        card. Tables narrower than their card are unaffected. */
-    #lopTbl, #lgTbl, #ldTbl, #lcExpTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #lopTbl table.dt { min-width: 620px; }
+    #lopTbl, #lgTbl, #ldTbl, #lcExpTbl,
+    #dopTbl, #dexpTbl, #diTbl, #dfTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #lopTbl table.dt, #dopTbl table.dt { min-width: 620px; }
+    /* The unit directory's six columns and the feed table's five hold short
+       values, so they need far less room than the operating summary -- but more
+       than 390px. dfMissing is deliberately not a scroller: it is three columns
+       of prose, and prose wraps. */
+    #diTbl table.dt { min-width: 460px; }
+    #dfTbl table.dt { min-width: 480px; }
     /* The two lines reserved for the headings above are one short down here:
        pinned to that 620px the prev-month pair ("Current Month annualized")
        takes three, so the header stood 3.5px taller on that horizon than on T3
        or T12 and the whole page under this card moved as the toggle was pressed.
        48px covers the tallest of the three, and the table's fixed width means
        that figure is the same at every phone width rather than one per size. */
-    #lopTbl table.dt th { height: 48px; }
+    #lopTbl table.dt th, #dopTbl table.dt th { height: 48px; }
     #lgTbl table.dt { min-width: 680px; }
     /* 16px of gutter is more than the prose tables can give up here: liTbl's
        four columns pushed 13px past their card at 400px, and it is deliberately
@@ -566,6 +578,7 @@
         <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">Portfolio</button>
         <button class="tab" role="tab" id="tabScorecard" aria-controls="viewScorecard" aria-selected="false" tabindex="-1">Scorecard</button>
         <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
+        <button class="tab" role="tab" id="tabView2d" aria-controls="view2d" aria-selected="false" tabindex="-1">Landing (Drive)</button>
       </div>
       <!-- not a .tab: the tab machinery selects on that class -->
       <a class="datalink" href="data.html">Data flow &amp; tables ↗</a>
@@ -756,6 +769,110 @@
     </div>
     <div class="blu-note" id="lMeta" style="color:var(--muted);margin-top:14px;"></div>
     </div><!-- /view2 -->
+
+    <!-- =========================================================
+         LANDING (DRIVE) — the same building, built only from what
+         Google Drive delivers. Nothing on this tab comes from the
+         analyst workbook: every number moves when a fresh export
+         lands in Drive and the pipeline runs. The workbook-fed
+         Landing tab is the fuller view; this is the one that cannot
+         quietly go stale, because everything on it has a feed.
+         ========================================================= -->
+    <div class="view" id="view2d" role="tabpanel" aria-labelledby="tabView2d" tabindex="0" hidden>
+    <div class="blu-note" id="dIntro" style="color:var(--muted);margin-bottom:14px;"></div>
+    <div class="grid">
+
+      <div class="card wide" id="cdOpSummary">
+        <div class="card-head">
+          <div>
+            <h2>Operating Summary</h2>
+            <span class="eyebrow" id="dopEyebrow">CURRENT MONTH vs A TRAILING WINDOW · ANNUALIZED · FROM THE T12 STATEMENT</span>
+          </div>
+          <div class="togrow" role="group" aria-label="Comparison basis">
+            <button class="tog" type="button" data-basis="prev" aria-pressed="true">Prev month</button>
+            <button class="tog" type="button" data-basis="t3" aria-pressed="false">T3</button>
+            <button class="tog" type="button" data-basis="t12" aria-pressed="false">T12</button>
+          </div>
+        </div>
+        <div id="dopTbl"></div>
+        <div class="blu-note" id="dopNote" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cdScorecard">
+        <div class="card-head">
+          <div>
+            <h2>KPI Scorecard — Drive feeds only</h2>
+            <span class="eyebrow" id="dscEyebrow">LOADING…</span>
+          </div>
+          <div class="sc-health" id="dscHealth"></div>
+        </div>
+        <div class="sc-strip" id="dscStrip"></div>
+        <div class="sc-legend" id="dscLegend"></div>
+        <div class="sc-note" id="dscNote"></div>
+      </div>
+
+      <div class="kpis" id="dkpis"></div>
+
+      <div class="card" id="cdNoi">
+        <h2>Expense Load &amp; NOI</h2>
+        <span class="eyebrow" id="dnoiEyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR</span>
+        <div class="ckgrid" id="dnoiCks" role="group" aria-label="Series shown"></div>
+        <div class="chartwrap"><canvas id="dcNoi"></canvas></div>
+        <div class="blu-note" id="dnoiFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card" id="cdExpDeep">
+        <div class="card-head">
+          <div>
+            <h2>Expense Deep Dive</h2>
+            <span class="eyebrow" id="dexpEyebrow">AUG 25–JUL 26</span>
+          </div>
+          <div class="togrow" role="group" aria-label="Deep dive period">
+            <button class="tog" type="button" data-ep="t12" aria-pressed="true">T12</button>
+            <button class="tog" type="button" data-ep="month" aria-pressed="false">Month</button>
+            <select id="dexpMonth" class="prop-select" hidden aria-label="Statement month"></select>
+          </div>
+        </div>
+        <div class="ckgrid" id="dexpCks" role="group" aria-label="Categories shown"></div>
+        <div class="chartwrap" id="dexpWrap" style="height:250px;"><canvas id="dcExp"></canvas></div>
+        <div class="blu-note" id="dexpNote" style="color:var(--muted);"></div>
+        <div id="dexpTbl" style="max-height:180px;overflow-y:auto;"></div>
+      </div>
+
+      <div class="card wide" id="cdDelq">
+        <h2>Delinquency</h2>
+        <span class="eyebrow" id="ddEyebrow">RESIDENT AR · FROM THE DRIVE DELINQUENCY REPORT</span>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;">
+          <div style="flex:0 0 auto;min-width:170px;" id="ddStats"></div>
+          <div class="chartwrap" style="flex:1 1 260px;height:200px;"><canvas id="dcDelq"></canvas></div>
+        </div>
+        <div class="blu-note" id="ddNote" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cdInventory">
+        <h2>Unit Inventory</h2>
+        <span class="eyebrow" id="diEyebrow">FLOORPLANS · BEDROOMS · ASKING RENT RANGE · FROM THE YARDI UNIT DIRECTORY</span>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;">
+          <div style="flex:0 0 auto;min-width:170px;" id="diStats"></div>
+          <div class="chartwrap" style="flex:1 1 300px;height:210px;"><canvas id="dcInv"></canvas></div>
+        </div>
+        <div id="diTbl" style="max-height:240px;overflow-y:auto;margin-top:12px;"></div>
+        <div class="blu-note" id="diNote" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cdFeeds">
+        <h2>What Feeds This Tab</h2>
+        <span class="eyebrow">EVERY NUMBER ABOVE, ITS DRIVE REPORT AND WHEN IT LAST ARRIVED · AND WHAT THE WORKBOOK STILL OWNS</span>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;">
+          <div style="flex:1 1 420px;" id="dfTbl"></div>
+          <div style="flex:1 1 380px;" id="dfMissing"></div>
+        </div>
+        <div class="blu-note" id="dfNote" style="color:var(--muted);"></div>
+      </div>
+
+    </div>
+    <div class="blu-note" id="dMeta" style="color:var(--muted);margin-top:14px;"></div>
+    </div><!-- /view2d -->
 
     <div id="propPanels"></div>
 
@@ -980,11 +1097,15 @@ function focusCardFromHash() {
 }
 window.addEventListener("hashchange", focusCardFromHash);
 
-// The Landing view loads its data lazily on first activation, which also
-// guarantees its canvases are visible (and therefore sized) when built.
-let landingStarted = false;
+// The two Landing views load their data lazily on first activation, which also
+// guarantees their canvases are visible (and therefore sized) when built.
+let landingStarted = false, landingDriveStarted = false;
 function maybeLoadLanding(tab) {
   if (tab.id === "tabView2" && !landingStarted) { landingStarted = true; loadLanding(); }
+  if (tab.id === "tabView2d" && !landingDriveStarted) {
+    landingDriveStarted = true;
+    loadLandingDrive();
+  }
 }
 
 // Left/Right arrows move between tabs, per the tablist keyboard convention.
@@ -1360,6 +1481,25 @@ const fm$ = n => {                                   // $1.23M / $432k / $512
   return (n < 0 ? "-$" : "$") + Math.round(a).toLocaleString();
 };
 const fmPct = (x, d = 1) => (x * 100).toFixed(d) + "%";
+const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+// "2026-08" -> "Aug 26". Hoisted out of the property views: three of them
+// label the same month series, and a month key formatted two ways would read
+// as two different periods.
+const shortMo = m => {
+  const [y, mm] = String(m).split("-");
+  return MONTH_ABBR[+mm - 1] + " " + y.slice(2);
+};
+// The month keys a 12-point statement series covers, from its own period_end
+// ("Jul 2026") and length. Published series carry labels ("Aug".."Jul") that
+// cannot say which year, so the keys are counted back from the end instead.
+const monthKeysBack = (periodEnd, n) => {
+  const [em, ey] = String(periodEnd).split(" ");
+  const end = (+ey) * 12 + MONTH_ABBR.indexOf(em);
+  return Array.from({ length: n }, (_, i) => {
+    const t = end - (n - 1 - i);
+    return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
+  });
+};
 const elc = (tag, cls, text) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -2076,6 +2216,446 @@ function renderPropertyScorecard(slug, ids) {
     SC.meta.note;
 }
 
+/* ---- Operating summary (a trailing window vs the window before it) ----
+   Shared by the workbook-fed Landing tab and the Drive-only one, because it
+   never read the workbook: the pipeline parses each T12 from Drive, stitches
+   successive statements into one continuous month series and publishes it
+   through metrics.json, so this card refreshes when they do and lengthens as
+   more statements arrive. Two copies of it would drift the moment one was
+   edited. */
+async function renderOpSummary(slug, ids) {
+  const card = document.getElementById(ids.card);
+  const m = await metricsJson();
+  const pt = (((m || {}).monthly_pl || {}).properties || [])
+    .find(x => x.slug === slug) || null;
+  if (!pt || pt.revenue.length < 2) { card.hidden = true; return null; }
+
+  // Which expense row the series is. The pipeline anchors on the statement's
+  // TOTAL EXPENSES line (jpm 549999-9999), which carries the non-operating
+  // 52xxxx region as well as operating expense; a statement on the Align
+  // tree has no such row and falls back to the operating total. The two are
+  // materially different -- ~$4.4k a month for The Landing, $55k in Jul 2026
+  // -- so the rows are labelled from the scope rather than assuming either.
+  const totalScope = (pt.expense_scope || "operating") === "total";
+  const expLabel = totalScope ? "Total expenses" : "Operating expenses";
+  // Plain "NOI" on the total anchor because revenue less that row *is* the
+  // statement's own 599999-9999 TOTAL NET OPERATING INCOME line. On the
+  // operating fallback it is not -- it stops short of the non-operating
+  // region -- so that case keeps the qualifier. "Net operating income" spelled
+  // out wrapped the first column at 900px; "NOI" is what the rest of the page
+  // calls it anyway.
+  const noiLabel = totalScope ? "NOI" : "Operating NOI";
+
+  const n = pt.revenue.length, cur = n - 1;
+  // The series can run longer than one statement: the pipeline stitches
+  // successive T12s into a continuous run of months, newest reading winning
+  // on the eleven each pair shares. So index arithmetic hangs off the newest
+  // month, not off a fixed twelve.
+  const keys = pt.months && pt.months.length === n
+    ? pt.months : monthKeysBack(pt.period_end, n);
+  const key = i => keys[i];
+
+  // Each basis puts a trailing window on the left and the current month
+  // scaled to the same length on the right: T3 is the last three months
+  // against July run three times over, T12 the last twelve against July run
+  // twelve times. The right-hand column is therefore the current month's rate
+  // held for the window, not three or twelve actual months -- which is the
+  // comparison, "is this month running above or below the trailing average".
+  const sum = (a, from, len) => a.slice(from, from + len).reduce((x, y) => x + y, 0);
+  const trail = (a, k) => sum(a, n - Math.min(k, n), Math.min(k, n));
+  const span = k => shortMo(key(n - Math.min(k, n))) + "–" + shortMo(key(cur));
+  const BASES = {
+    prev: { k: 1,
+            base: series => series[cur - 1],
+            head: () => shortMo(key(cur - 1)),
+            label: () => shortMo(key(cur - 1)),
+            curHead: () => "Current Month (" + shortMo(key(cur)) + ")",
+            curLabel: () => "Current Month",
+            blurb: () => "the prior month, " + shortMo(key(cur - 1)) },
+    t3:   { k: 3,
+            base: series => trail(series, 3),
+            head: () => "T3 (" + span(3) + ")",
+            label: () => "T3",
+            curHead: () => "Current ×3 (" + shortMo(key(cur)) + ")",
+            curLabel: () => "Current ×3",
+            blurb: () => "the trailing " + Math.min(3, n) + " months, " + span(3) },
+    t12:  { k: 12,
+            base: series => trail(series, 12),
+            head: () => "T12 (" + span(12) + ")",
+            label: () => "T12",
+            curHead: () => "Current ×12 (" + shortMo(key(cur)) + ")",
+            curLabel: () => "Current ×12",
+            blurb: () => "the trailing " + Math.min(12, n) + " months, " + span(12) },
+  };
+
+  // Variance is the change between the two columns as a percentage, coloured
+  // by favourability rather than by sign: more revenue and more NOI are good,
+  // more expense is not, so the expense row's colour is inverted. Without that
+  // inversion July's $24k saving would print red for being a negative number.
+  // The percentage keeps its own sign -- what flips is the colour.
+  const vcell = (pctChange, goodWhenUp) => {
+    const favourable = goodWhenUp ? pctChange > 0 : pctChange < 0;
+    const e = elc("span", null,
+      (pctChange > 0 ? "+" : "") + (pctChange * 100).toFixed(1) + "%");
+    e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
+    return e;
+  };
+  function render(basisKey) {
+    const B = BASES[basisKey] || BASES.prev;
+    const k = Math.min(B.k, n);
+    // 12 / window: what turns either column into an annual figure. Both are
+    // scaled by the same factor, so the right-hand column always annualizes
+    // to the current month x 12 whichever basis is showing.
+    const factor = 12 / k;
+    const row = (label, series, goodWhenUp) => {
+      const a = B.base(series), b = series[cur] * k;
+      const aYr = a * factor, bYr = b * factor;
+      const pct = aYr ? (bYr - aYr) / Math.abs(aYr) : null;
+      return [label, fm$(a), fm$(b), fm$(aYr), fm$(bYr),
+              pct === null ? "—" : vcell(pct, goodWhenUp)];
+    };
+    buildTable(document.getElementById(ids.tbl),
+      [{ t: "" },
+       { t: B.head(), num: true },
+       { t: B.curHead(), num: true },
+       { t: B.label() + " annualized", num: true },
+       { t: B.curLabel() + " annualized", num: true },
+       { t: "Variance", num: true }],
+      [row("Operating revenue", pt.revenue, true),
+       row(expLabel, pt.opex, false),
+       row(noiLabel, pt.noi, true)]);
+
+    // Deliberately does not name the horizon: the eyebrow sits above the
+    // table, so a string that changed length with the toggle would rewrap at
+    // narrow widths and push the whole table up and down. The column headings
+    // say which horizon is showing.
+    document.getElementById(ids.note).textContent = noteFor(basisKey);
+    card.querySelectorAll(".tog").forEach(t =>
+      t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));
+  }
+  // The note does change with the horizon, and this card sits above everything
+  // else in the view -- when its text gained a line the whole page below moved
+  // 10px. Built as a function of the horizon so all three can be measured and
+  // the tallest reserved; see reserveTallest.
+  function noteFor(basisKey) {
+    const B = BASES[basisKey] || BASES.prev;
+    const k = Math.min(B.k, n);
+    const factor = 12 / k;
+    return "The same statement the expense cards read, refreshed on the same daily run — "
+      + "the current month follows the statement, so it moves to the new month when one "
+      + "is posted. " + shortMo(key(cur)) + " is measured against " + B.blurb() + ". "
+      + (k > 1
+          ? "The left column is " + k + " real months; the right is "
+            + shortMo(key(cur)) + " multiplied by " + k + " — that month's rate held "
+            + "for the same span, not " + k + " actual months — so the two sides carry "
+            + "the same weight and the variance reads as how far above or below the "
+            + "trailing average the current month is running. "
+          : "The left column is the month before and the right is "
+            + shortMo(key(cur)) + " itself — one real month on each side, no scaling "
+            + "— so the two sides carry the same weight and the variance reads as how "
+            + "far above or below last month the current month is running. ")
+      + "Annualized scales both columns by ×" + factor + " to a full year, which is the "
+      + "frame the variance is taken in, not a forecast. "
+      + (totalScope
+          ? "The expense row is the statement's own total expenses line ("
+            + (pt.basis || "") + ") — the whole expense load, operating and "
+            + "non-operating, not the operating slice alone — and NOI is revenue "
+            + "less it, so the three rows reconcile. Financing sits below that line and "
+            + "is excluded. "
+          : "NOI is revenue less operating expense (" + (pt.basis || "") + "), so the "
+            + "three rows reconcile; non-operating items below that line are excluded. ")
+      + "Variance is the percentage difference, "
+      + "coloured by favourability rather than by sign: green is more revenue, more NOI, "
+      + "or less expense.";
+  }
+  card.querySelectorAll(".tog").forEach(t =>
+    t.addEventListener("click", () => render(t.dataset.basis)));
+  render("prev");
+  reserveTallest(document.getElementById(ids.note), Object.keys(BASES).map(noteFor));
+  return pt;
+}
+
+/* ---- Expense deep dive ----
+   Shared by both Landing tabs. Both views draw from the property's own T12
+   statement, translated to the Align account tree through the COA mapping and
+   published via metrics.json: T12 sums the twelve months per group, Month shows
+   one at a time. `wb` is the analyst workbook's own read of the same expense,
+   passed only by the workbook-fed tab -- it supplies the fallback chart for a
+   property with no statement yet, the tie-out figures and the opportunities
+   table. The Drive-only tab passes null, and ties the statement out against its
+   own P&L line instead. */
+async function renderExpenseDeep(slug, ids, wb) {
+  const wrap = document.getElementById(ids.wrap);
+  const note = document.getElementById(ids.note);
+  const sel = document.getElementById(ids.sel);
+  const cks = document.getElementById(ids.cks);
+  const card = document.getElementById(ids.card);
+  const eyebrow = document.getElementById(ids.eyebrow);
+  let chart = null;
+  const hiddenCats = new Set();     // survives T12 <-> Month round trips
+
+  const m = await metricsJson();
+  const pt = (((m || {}).expense_buckets || {}).properties || [])
+    .find(x => x.slug === slug) || null;
+  // The P&L's own expense line for the same months, so a Drive-only tab can tie
+  // the grouping out against a second Drive number rather than the workbook.
+  const pl = (((m || {}).monthly_pl || {}).properties || [])
+    .find(x => x.slug === slug) || null;
+
+  const b = wb ? (wb.buckets || []).filter(x => x.name !== "Total") : [];
+  const statusColor = x => x === "FLAG" ? C.red : x === "WATCH" ? C.amber : C.green;
+  const monthKeys = () => monthKeysBack(pt.period_end, pt.labels.length);
+  // largest first, Other last -- a stable order both views share
+  const groupNames = () => Object.keys(pt.buckets).sort((a, b2) => {
+    const oa = a.startsWith("Other"), ob = b2.startsWith("Other");
+    if (oa !== ob) return oa ? 1 : -1;
+    const t = n => pt.buckets[n].reduce((x, y) => x + y, 0);
+    return t(b2) - t(a);
+  });
+  const barColor = n => n.startsWith("Other") ? C.muted : C.teal;
+  // The P&L expense for one of the statement's months, matched on the month key
+  // rather than on position: the two series can start in different months.
+  const plOpexAt = key => {
+    if (!pl) return null;
+    const keys = (pl.months && pl.months.length === pl.opex.length)
+      ? pl.months : monthKeysBack(pl.period_end, pl.opex.length);
+    const i = keys.indexOf(key);
+    return i >= 0 ? pl.opex[i] : null;
+  };
+  const tieOut = (total, against, tol) => against == null ? ""
+    : (Math.abs(total - against) < tol ? "ties out" : "gap " + fm$(total - against));
+
+  function canvas() {
+    wrap.textContent = "";
+    const cv = elc("canvas");
+    cv.id = ids.canvas;
+    wrap.appendChild(cv);
+    return cv;
+  }
+  function drawBars(names, vals, tipTotal, moneyTick) {
+    if (chart) { chart.destroy(); chart = null; }
+    chart = new Chart(canvas(), {
+      type: "bar",
+      data: { labels: names, datasets: [{ data: vals,
+        backgroundColor: names.map(barColor) }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => `${fm$(c.parsed.x)} · ${(100 * c.parsed.x / tipTotal).toFixed(0)}% of total` } } },
+        scales: { x: { grid: gridCfg, ticks: { callback: moneyTick } },
+          y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
+    });
+  }
+  function noStatement(what) {
+    cks.hidden = true;
+    sel.hidden = true;
+    if (chart) { chart.destroy(); chart = null; }
+    wrap.textContent = "";
+    const empty = elc("div", "empty");
+    empty.appendChild(elc("div", "dash"));
+    empty.appendChild(elc("div", "big", what));
+    empty.appendChild(elc("div",  null,
+      'A month-by-month split needs the property’s 12-month statement in the '
+      + 'Drive "T12 Expenses" folder — the pipeline classifies, ties out and '
+      + 'publishes it the day it lands.'));
+    wrap.appendChild(empty);
+    eyebrow.textContent = "AWAITING THE STATEMENT";
+    note.textContent = "";
+  }
+  function renderT12() {
+    sel.hidden = true;
+    cks.hidden = true;
+    if (!pt) {
+      // fallback: the workbook's analyst buckets, statuses and all -- where a
+      // workbook is in play at all. The Drive-only tab has nothing to fall back
+      // on and says so instead of borrowing one.
+      if (!wb) { noStatement("The statement has not arrived"); return; }
+      if (chart) { chart.destroy(); chart = null; }
+      chart = new Chart(canvas(), {
+        type: "bar",
+        data: { labels: b.map(x => x.name),
+          datasets: [{ data: b.map(x => x.ttm),
+                       backgroundColor: b.map(x => statusColor(x.status)) }] },
+        options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+          plugins: { legend: { display: false }, tooltip: { callbacks: {
+            label: c => `TTM ${fm$(c.parsed.x)} · like-for-like ${(b[c.dataIndex].change * 100).toFixed(0)}% · ${b[c.dataIndex].status}` } } },
+          scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
+            y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
+      });
+      eyebrow.textContent = "TTM · WORKBOOK";
+      note.textContent = "";
+      return;
+    }
+    // Twelve months on the x axis, one line per Align-tree group, in the
+    // Expense Load & NOI card's idiom. Categories toggle from the legend --
+    // each click shows or hides that line, which matters here because Taxes
+    // runs 3-30x every other group and hiding it opens up the rest.
+    const names = groupNames();
+    const keys = monthKeys();
+    const total = names.reduce((t, n) => t + pt.buckets[n].reduce((x, y) => x + y, 0), 0);
+    // muted grey is this page's "soft number" colour and stays reserved for
+    // Other / unclassified; every real category cycles the palette
+    const PAL = [C.teal, C.amber, C.red, C.green, "#6aa9e9", "#b58fd6",
+                 "#d98fb0", "#8fd6a8", "#d6c88f", "#8fa3d6", "#d68f6a",
+                 "#7fc4d6", "#c4a3e0"];
+    const color = (n, i) => n.startsWith("Other") ? C.muted : PAL[i % PAL.length];
+    if (chart) { chart.destroy(); chart = null; }
+    chart = new Chart(canvas(), {
+      type: "line",
+      data: { labels: keys.map(shortMo),
+        datasets: names.map((n, i) => ({ label: n, data: pt.buckets[n],
+          hidden: hiddenCats.has(n),
+          borderColor: color(n, i), backgroundColor: color(n, i),
+          borderWidth: 1.5, pointRadius: 1.5, tension: .25 })) },
+      options: { maintainAspectRatio: false, responsive: true,
+        // the checkbox grid above the chart is the legend and the switch
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: {
+            label: c => `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
+        scales: { y: { grid: gridCfg, beginAtZero: true,
+            ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+          x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+    });
+    cks.hidden = false;
+    ckGrid(cks,
+      names.map((n, i) => ({ label: n, color: color(n, i), i })),
+      it => !hiddenCats.has(it.label),
+      it => {
+        if (hiddenCats.has(it.label)) hiddenCats.delete(it.label);
+        else hiddenCats.add(it.label);
+        chart.setDatasetVisibility(it.i, !hiddenCats.has(it.label));
+        chart.update();
+      });
+    // The eyebrow carries the period the chart covers and nothing else --
+    // what the bars are is the card's own title's job.
+    eyebrow.textContent =
+      shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[keys.length - 1]).toUpperCase();
+    const head = "The boxes above switch categories on and off — Taxes dwarfs the "
+      + "rest, so unticking it opens up the others. T12 total " + fm$(total);
+    // Against the workbook where there is one, and against the pipeline's own
+    // P&L line where there is not -- so the Drive-only tab still shows a
+    // tie-out rather than an unchecked number.
+    const plT12 = pl ? keys.reduce((t, k) => {
+      const v = plOpexAt(k);
+      return v == null ? t : t + v;
+    }, 0) : null;
+    note.textContent = head
+      + (wb
+          ? " vs " + fm$(wb.ttmOpex) + " workbook TTM opex ("
+            + tieOut(total, wb.ttmOpex, 5000) + ")."
+          : (plT12
+              ? " against " + fm$(plT12) + " on the Operating Summary's expense line ("
+                + tieOut(total, plT12, 5000) + ")"
+                + ((pl.expense_scope || "operating") === "total"
+                    ? " — both are the statement's own total expenses ("
+                      + (pl.basis || "") + "), so the top box and this card cover the "
+                      + "same expense load rather than two slices of it."
+                    : ". This card groups the statement's total expenses; that line is "
+                      + "its operating total (" + (pl.basis || "") + "), so the gap is "
+                      + "the non-operating region rather than a disagreement.")
+              : "."))
+      + " Grouped on the Align account tree via the COA mapping and tied out"
+      + " against the statement's own total expenses each month.";
+  }
+  function renderMonth() {
+    if (!pt) {
+      noStatement("Monthly view awaits the statement");
+      return;
+    }
+    const keys = monthKeys();
+    sel.hidden = false;
+    const i = +sel.value;
+    const names = groupNames();
+    // The total stays the statement's own — every group, ticked or not — so
+    // the tie-out below and the tooltip's share-of-total keep meaning the same
+    // thing however the boxes are set. Only the bars drawn are filtered.
+    const total = names.reduce((t, n) => t + pt.buckets[n][i], 0);
+    const shown = names.filter(n => !hiddenCats.has(n));
+    drawBars(shown, shown.map(n => pt.buckets[n][i]), total,
+      v => "$" + (v / 1e3).toFixed(0) + "k");
+    // This view's bars carry no per-group palette, so the swatch is the bar's
+    // own colour. The set is shared with T12, so a group unticked there is
+    // still unticked here.
+    cks.hidden = false;
+    ckGrid(cks,
+      names.map(n => ({ label: n, color: barColor(n) })),
+      it => !hiddenCats.has(it.label),
+      it => {
+        if (hiddenCats.has(it.label)) hiddenCats.delete(it.label);
+        else hiddenCats.add(it.label);
+        renderMonth();
+      });
+    eyebrow.textContent = shortMo(keys[i]).toUpperCase();
+    const wbIdx = wb ? (wb.months || []).indexOf(keys[i]) : -1;
+    const wbOpex = wbIdx >= 0 ? wb.opex[wbIdx] : null;
+    const plOpex = plOpexAt(keys[i]);
+    note.textContent = shortMo(keys[i]) + " total " + fm$(total)
+      + (wb
+          ? (wbOpex != null
+              ? " vs " + fm$(wbOpex) + " workbook opex ("
+                + tieOut(total, wbOpex, 500) + ")."
+              : " — outside the workbook's month range.")
+          : (plOpex != null
+              ? " against " + fm$(plOpex) + " on the Operating Summary's expense line ("
+                + tieOut(total, plOpex, 500) + ")"
+                + ((pl.expense_scope || "operating") === "total"
+                    ? "." : " — total expenses against the operating total.")
+              : "."))
+      + (shown.length < names.length
+          ? " " + (names.length - shown.length) + " of " + names.length
+            + " groups unticked — the total above still counts every one of them."
+          : "")
+      + " Grouped on the Align account tree via the COA mapping, tied out against"
+      + " the statement's own total expenses each month.";
+  }
+  function setMode(mode) {
+    card.querySelectorAll(".tog").forEach(t =>
+      t.setAttribute("aria-pressed", String(t.dataset.ep === mode)));
+    if (mode === "t12") renderT12(); else renderMonth();
+  }
+  card.querySelectorAll(".tog").forEach(t =>
+    t.addEventListener("click", () => setMode(t.dataset.ep)));
+  // Fill the month list now rather than on the first switch to Month. The
+  // select holds its place in the header even while hidden (see the CSS), and
+  // an empty one would hold the wrong width until Month had been pressed once.
+  if (pt) {
+    const mk = monthKeys();
+    mk.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
+    sel.selectedIndex = mk.length - 1;
+  }
+  // The eyebrow's text changes with the mode, and the heading block is narrow
+  // enough that a long one wraps to a second line -- which pushed the boxes,
+  // the chart and the note down 11px on the press. Reserve the tallest of
+  // every string it can hold, so switching leaves them where they are.
+  reserveTallest(eyebrow, pt
+    ? [shortMo(monthKeys()[0]).toUpperCase() + "–"
+       + shortMo(monthKeys()[monthKeys().length - 1]).toUpperCase(),
+       ...monthKeys().map(k => shortMo(k).toUpperCase())]
+    : ["TTM · WORKBOOK", "AWAITING THE STATEMENT"]);
+  sel.addEventListener("change", renderMonth);
+  renderT12();
+  // The table under the chart: the workbook's own opportunity list where there
+  // is a workbook, and the statement's own groups where there is not -- the
+  // Drive-only tab has no analyst read to show, and an empty space under the
+  // chart would just look like something failed to load.
+  if (wb) {
+    buildTable(document.getElementById(ids.tbl),
+      [{ t: "Opportunity" }, { t: "Saving/yr", num: true }, { t: "Difficulty", mut: true }],
+      (wb.opportunities || []).map(o =>
+        [o.name, fm$(o.saving), String(o.difficulty).split(" - ")[0]]));
+  } else if (pt) {
+    const names = groupNames();
+    const keys = monthKeys();
+    const t12 = n => pt.buckets[n].reduce((x, y) => x + y, 0);
+    const grand = names.reduce((t, n) => t + t12(n), 0);
+    buildTable(document.getElementById(ids.tbl),
+      [{ t: "Account group" }, { t: "T12", num: true }, { t: "Share", num: true },
+       { t: shortMo(keys[keys.length - 1]), num: true }],
+      names.map(n => [n, fm$(t12(n)), fmPct(t12(n) / grand, 1),
+                      fm$(pt.buckets[n][pt.buckets[n].length - 1])]));
+  }
+  return pt;
+}
+
 /* ============================================================
    THE LANDING — property deep-dive view (data: landing.json)
    Blue-bordered inputs mirror the workbook's blue "changeable"
@@ -2101,10 +2681,6 @@ async function loadLanding() {
   });
 
   const units = L.units;
-  const shortMo = m => { // "2026-08" -> "Aug 26"
-    const [y, mm] = m.split("-");
-    return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+mm - 1] + " " + y.slice(2);
-  };
 
   /* ---- KPI strip ---- */
   // Each tile jumps to the card that shows the working behind its number.
@@ -2192,166 +2768,11 @@ async function loadLanding() {
       "Dollar axis starts at " + fm$(yMin) + ", not $0, to make the income-vs-potential gap visible.";
   })();
 
-  /* ---- Operating summary (a trailing window vs the window before it) ---- */
-  (async function opSummary() {
-    // Same statement, same schedule as the other two expense cards: the
-    // pipeline parses each T12 from Drive, stitches successive statements into
-    // one continuous month series and publishes it through metrics.json, so this
-    // card refreshes when they do and lengthens as more statements arrive.
-    const card = document.getElementById("cOpSummary");
-    let pt = null;
-    try {
-      const res = await fetch("metrics.json", { cache: "no-store" });
-      const m = await res.json();
-      pt = ((m.monthly_pl || {}).properties || []).find(x => x.slug === "the-landing") || null;
-    } catch (e) { pt = null; }
-    if (!pt || pt.revenue.length < 2) { card.hidden = true; return; }
-
-    // Which expense row the series is. The pipeline anchors on the statement's
-    // TOTAL EXPENSES line (jpm 549999-9999), which carries the non-operating
-    // 52xxxx region as well as operating expense; a statement on the Align
-    // tree has no such row and falls back to the operating total. The two are
-    // materially different -- ~$4.4k a month for The Landing, $55k in Jul 2026
-    // -- so the rows are labelled from the scope rather than assuming either.
-    const totalScope = (pt.expense_scope || "operating") === "total";
-    const expLabel = totalScope ? "Total expenses" : "Operating expenses";
-    // Plain "NOI" on the total anchor because revenue less that row *is* the
-    // statement's own 599999-9999 TOTAL NET OPERATING INCOME line. On the
-    // operating fallback it is not -- it stops short of the non-operating
-    // region -- so that case keeps the qualifier. "Net operating income" spelled
-    // out wrapped the first column at 900px; "NOI" is what the rest of the page
-    // calls it anyway.
-    const noiLabel = totalScope ? "NOI" : "Operating NOI";
-
-    const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const [em, ey] = pt.period_end.split(" ");
-    const end = (+ey) * 12 + MO.indexOf(em);
-    const n = pt.revenue.length, cur = n - 1;
-    // The series can run longer than one statement: the pipeline stitches
-    // successive T12s into a continuous run of months, newest reading winning
-    // on the eleven each pair shares. So index arithmetic hangs off the newest
-    // month, not off a fixed twelve.
-    const key = i => { const t = end - (cur - i);
-      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0"); };
-
-    // Each basis puts a trailing window on the left and the current month
-    // scaled to the same length on the right: T3 is the last three months
-    // against July run three times over, T12 the last twelve against July run
-    // twelve times. The right-hand column is therefore the current month's rate
-    // held for the window, not three or twelve actual months -- which is the
-    // comparison, "is this month running above or below the trailing average".
-    const sum = (a, from, len) => a.slice(from, from + len).reduce((x, y) => x + y, 0);
-    const trail = (a, k) => sum(a, n - Math.min(k, n), Math.min(k, n));
-    const span = k => shortMo(key(n - Math.min(k, n))) + "\u2013" + shortMo(key(cur));
-    const BASES = {
-      prev: { k: 1,
-              base: series => series[cur - 1],
-              head: () => shortMo(key(cur - 1)),
-              label: () => shortMo(key(cur - 1)),
-              curHead: () => "Current Month (" + shortMo(key(cur)) + ")",
-              curLabel: () => "Current Month",
-              blurb: () => "the prior month, " + shortMo(key(cur - 1)) },
-      t3:   { k: 3,
-              base: series => trail(series, 3),
-              head: () => "T3 (" + span(3) + ")",
-              label: () => "T3",
-              curHead: () => "Current \u00d73 (" + shortMo(key(cur)) + ")",
-              curLabel: () => "Current \u00d73",
-              blurb: () => "the trailing " + Math.min(3, n) + " months, " + span(3) },
-      t12:  { k: 12,
-              base: series => trail(series, 12),
-              head: () => "T12 (" + span(12) + ")",
-              label: () => "T12",
-              curHead: () => "Current \u00d712 (" + shortMo(key(cur)) + ")",
-              curLabel: () => "Current \u00d712",
-              blurb: () => "the trailing " + Math.min(12, n) + " months, " + span(12) },
-    };
-
-    // Variance is the change between the two columns as a percentage, coloured
-    // by favourability rather than by sign: more revenue and more NOI are good,
-    // more expense is not, so the expense row's colour is inverted. Without that
-    // inversion July's $24k saving would print red for being a negative number.
-    // The percentage keeps its own sign -- what flips is the colour.
-    const vcell = (pctChange, goodWhenUp) => {
-      const favourable = goodWhenUp ? pctChange > 0 : pctChange < 0;
-      const e = elc("span", null,
-        (pctChange > 0 ? "+" : "") + (pctChange * 100).toFixed(1) + "%");
-      e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
-      return e;
-    };
-    function render(basisKey) {
-      const B = BASES[basisKey] || BASES.prev;
-      const k = Math.min(B.k, n);
-      // 12 / window: what turns either column into an annual figure. Both are
-      // scaled by the same factor, so the right-hand column always annualizes
-      // to the current month x 12 whichever basis is showing.
-      const factor = 12 / k;
-      const row = (label, series, goodWhenUp) => {
-        const a = B.base(series), b = series[cur] * k;
-        const aYr = a * factor, bYr = b * factor;
-        const pct = aYr ? (bYr - aYr) / Math.abs(aYr) : null;
-        return [label, fm$(a), fm$(b), fm$(aYr), fm$(bYr),
-                pct === null ? "\u2014" : vcell(pct, goodWhenUp)];
-      };
-      buildTable(document.getElementById("lopTbl"),
-        [{ t: "" },
-         { t: B.head(), num: true },
-         { t: B.curHead(), num: true },
-         { t: B.label() + " annualized", num: true },
-         { t: B.curLabel() + " annualized", num: true },
-         { t: "Variance", num: true }],
-        [row("Operating revenue", pt.revenue, true),
-         row(expLabel, pt.opex, false),
-         row(noiLabel, pt.noi, true)]);
-
-      // Deliberately does not name the horizon: the eyebrow sits above the
-      // table, so a string that changed length with the toggle would rewrap at
-      // narrow widths and push the whole table up and down. The column headings
-      // say which horizon is showing.
-      document.getElementById("lopNote").textContent = noteFor(basisKey);
-      document.querySelectorAll("#cOpSummary .tog").forEach(t =>
-        t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));
-    }
-    // The note does change with the horizon, and this card sits above everything
-    // else in the view -- when its text gained a line the whole page below moved
-    // 10px. Built as a function of the horizon so all three can be measured and
-    // the tallest reserved; see reserveTallest.
-    function noteFor(basisKey) {
-      const B = BASES[basisKey] || BASES.prev;
-      const k = Math.min(B.k, n);
-      const factor = 12 / k;
-      return "The same statement the expense cards read, refreshed on the same daily run \u2014 "
-        + "the current month follows the statement, so it moves to the new month when one "
-        + "is posted. " + shortMo(key(cur)) + " is measured against " + B.blurb() + ". "
-        + (k > 1
-            ? "The left column is " + k + " real months; the right is "
-              + shortMo(key(cur)) + " multiplied by " + k + " \u2014 that month's rate held "
-              + "for the same span, not " + k + " actual months \u2014 so the two sides carry "
-              + "the same weight and the variance reads as how far above or below the "
-              + "trailing average the current month is running. "
-            : "The left column is the month before and the right is "
-              + shortMo(key(cur)) + " itself \u2014 one real month on each side, no scaling "
-              + "\u2014 so the two sides carry the same weight and the variance reads as how "
-              + "far above or below last month the current month is running. ")
-        + "Annualized scales both columns by \u00d7" + factor + " to a full year, which is the "
-        + "frame the variance is taken in, not a forecast. "
-        + (totalScope
-            ? "The expense row is the statement's own total expenses line ("
-              + (pt.basis || "") + ") \u2014 the whole expense load, operating and "
-              + "non-operating, not the operating slice alone \u2014 and NOI is revenue "
-              + "less it, so the three rows reconcile. Financing sits below that line and "
-              + "is excluded. "
-            : "NOI is revenue less operating expense (" + (pt.basis || "") + "), so the "
-              + "three rows reconcile; non-operating items below that line are excluded. ")
-        + "Variance is the percentage difference, "
-        + "coloured by favourability rather than by sign: green is more revenue, more NOI, "
-        + "or less expense.";
-    }
-    document.querySelectorAll("#cOpSummary .tog").forEach(t =>
-      t.addEventListener("click", () => render(t.dataset.basis)));
-    render("prev");
-    reserveTallest(document.getElementById("lopNote"), Object.keys(BASES).map(noteFor));
-  })();
+  /* ---- Operating summary ---- */
+  // Shared with the Drive-only tab; see renderOpSummary. It never read the
+  // workbook -- it draws the pipeline's own T12 series -- which is why both
+  // tabs can show the same card.
+  renderOpSummary("the-landing", { card: "cOpSummary", tbl: "lopTbl", note: "lopNote" });
 
   /* ---- Expense & NOI ---- */
   (async function noi() {
@@ -2456,221 +2877,16 @@ async function loadLanding() {
   })();
 
   /* ---- Expense deep dive ---- */
-  (async function expenses() {
-    // Both views draw from the property's own T12 statement, translated to the
-    // Align account tree through the COA mapping and published via metrics.json:
-    // T12 sums the twelve months per group, Month shows one at a time. The
-    // workbook's analyst buckets render only as the fallback when no statement
-    // has reached the pipeline yet -- they are period aggregates and cannot say
-    // anything about a single month.
-    const b = L.expense_overview.buckets.filter(x => x.name !== "Total");
-    const statusColor = x => x === "FLAG" ? C.red : x === "WATCH" ? C.amber : C.green;
-    const wrap = document.getElementById("lcExpWrap");
-    const note = document.getElementById("lcExpNote");
-    const sel = document.getElementById("lcExpMonth");
-    const cks = document.getElementById("lcExpCks");
-    let chart = null, pt = null;
-    const hiddenCats = new Set();     // survives T12 <-> Month round trips
-
-    try {
-      const res = await fetch("metrics.json", { cache: "no-store" });
-      const m = await res.json();
-      pt = ((m.expense_buckets || {}).properties || [])
-        .find(x => x.slug === "the-landing") || null;
-    } catch (e) { pt = null; }
-
-    const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const monthKeys = () => {
-      const [em, ey] = pt.period_end.split(" ");
-      const end = (+ey) * 12 + MO.indexOf(em);
-      return pt.labels.map((_, i) => {
-        const t = end - (11 - i);
-        return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
-      });
-    };
-    // largest first, Other last -- a stable order both views share
-    const groupNames = () => Object.keys(pt.buckets).sort((a, b2) => {
-      const oa = a.startsWith("Other"), ob = b2.startsWith("Other");
-      if (oa !== ob) return oa ? 1 : -1;
-      const t = n => pt.buckets[n].reduce((x, y) => x + y, 0);
-      return t(b2) - t(a);
-    });
-    const barColor = n => n.startsWith("Other") ? C.muted : C.teal;
-
-    function canvas() {
-      wrap.innerHTML = '<canvas id="lcExp"></canvas>';
-      return document.getElementById("lcExp");
-    }
-    function drawBars(names, vals, tipTotal, moneyTick) {
-      if (chart) { chart.destroy(); chart = null; }
-      chart = new Chart(canvas(), {
-        type: "bar",
-        data: { labels: names, datasets: [{ data: vals,
-          backgroundColor: names.map(barColor) }] },
-        options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-          plugins: { legend: { display: false }, tooltip: { callbacks: {
-            label: c => `${fm$(c.parsed.x)} · ${(100 * c.parsed.x / tipTotal).toFixed(0)}% of total` } } },
-          scales: { x: { grid: gridCfg, ticks: { callback: moneyTick } },
-            y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
-      });
-    }
-    function renderT12() {
-      sel.hidden = true;
-      cks.hidden = true;
-      if (!pt) {
-        // fallback: the workbook's analyst buckets, statuses and all
-        if (chart) { chart.destroy(); chart = null; }
-        chart = new Chart(canvas(), {
-          type: "bar",
-          data: { labels: b.map(x => x.name),
-            datasets: [{ data: b.map(x => x.ttm),
-                         backgroundColor: b.map(x => statusColor(x.status)) }] },
-          options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-            plugins: { legend: { display: false }, tooltip: { callbacks: {
-              label: c => `TTM ${fm$(c.parsed.x)} · like-for-like ${(b[c.dataIndex].change * 100).toFixed(0)}% · ${b[c.dataIndex].status}` } } },
-            scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e6).toFixed(1) + "M" } },
-              y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
-        });
-        document.getElementById("lcExpEyebrow").textContent = "TTM · WORKBOOK";
-        note.textContent = "";
-        return;
-      }
-      // Twelve months on the x axis, one line per Align-tree group, in the
-      // Expense Load & NOI card's idiom. Categories toggle from the legend --
-      // each click shows or hides that line, which matters here because Taxes
-      // runs 3-30x every other group and hiding it opens up the rest.
-      const names = groupNames();
-      const keys = monthKeys();
-      const total = names.reduce((t, n) => t + pt.buckets[n].reduce((x, y) => x + y, 0), 0);
-      // muted grey is this page's "soft number" colour and stays reserved for
-      // Other / unclassified; every real category cycles the palette
-      const PAL = [C.teal, C.amber, C.red, C.green, "#6aa9e9", "#b58fd6",
-                   "#d98fb0", "#8fd6a8", "#d6c88f", "#8fa3d6", "#d68f6a",
-                   "#7fc4d6", "#c4a3e0"];
-      const color = (n, i) => n.startsWith("Other") ? C.muted : PAL[i % PAL.length];
-      if (chart) { chart.destroy(); chart = null; }
-      chart = new Chart(canvas(), {
-        type: "line",
-        data: { labels: keys.map(shortMo),
-          datasets: names.map((n, i) => ({ label: n, data: pt.buckets[n],
-            hidden: hiddenCats.has(n),
-            borderColor: color(n, i), backgroundColor: color(n, i),
-            borderWidth: 1.5, pointRadius: 1.5, tension: .25 })) },
-        options: { maintainAspectRatio: false, responsive: true,
-          // the checkbox grid above the chart is the legend and the switch
-          plugins: { legend: { display: false },
-            tooltip: { callbacks: {
-              label: c => `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
-          scales: { y: { grid: gridCfg, beginAtZero: true,
-              ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
-            x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
-      });
-      cks.hidden = false;
-      ckGrid(cks,
-        names.map((n, i) => ({ label: n, color: color(n, i), i })),
-        it => !hiddenCats.has(it.label),
-        it => {
-          if (hiddenCats.has(it.label)) hiddenCats.delete(it.label);
-          else hiddenCats.add(it.label);
-          chart.setDatasetVisibility(it.i, !hiddenCats.has(it.label));
-          chart.update();
-        });
-      // The eyebrow carries the period the chart covers and nothing else --
-      // what the bars are is the card's own title's job.
-      document.getElementById("lcExpEyebrow").textContent =
-        shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[11]).toUpperCase();
-      const wbOpex = L.expense_noi.ttm.opex;
-      note.textContent = "The boxes above switch categories on and off — Taxes dwarfs the "
-        + "rest, so unticking it opens up the others. T12 total " + fm$(total) + " vs " + fm$(wbOpex)
-        + " workbook TTM opex (" + (Math.abs(total - wbOpex) < 5000 ? "ties out"
-            : "gap " + fm$(total - wbOpex)) + ")."
-        + " Grouped on the Align account tree via the COA mapping and tied out"
-        + " against the statement's own total expenses each month.";
-    }
-    function renderMonth() {
-      if (!pt) {
-        cks.hidden = true;
-        if (chart) { chart.destroy(); chart = null; }
-        wrap.innerHTML = '<div class="empty"><div class="dash"></div>'
-          + '<div class="big">Monthly view awaits the statement</div>'
-          + '<div>A month-by-month split needs the property’s 12-month statement '
-          + 'in the Drive "T12 Expenses" folder — the pipeline classifies, ties out '
-          + 'and publishes it the day it lands.</div></div>';
-        document.getElementById("lcExpEyebrow").textContent = "AWAITING THE STATEMENT";
-        note.textContent = "";
-        sel.hidden = true;
-        return;
-      }
-      const keys = monthKeys();
-      sel.hidden = false;
-      const i = +sel.value;
-      const names = groupNames();
-      // The total stays the statement's own — every group, ticked or not — so
-      // the tie-out below and the tooltip's share-of-total keep meaning the same
-      // thing however the boxes are set. Only the bars drawn are filtered.
-      const total = names.reduce((t, n) => t + pt.buckets[n][i], 0);
-      const shown = names.filter(n => !hiddenCats.has(n));
-      drawBars(shown, shown.map(n => pt.buckets[n][i]), total,
-        v => "$" + (v / 1e3).toFixed(0) + "k");
-      // This view's bars carry no per-group palette, so the swatch is the bar's
-      // own colour. The set is shared with T12, so a group unticked there is
-      // still unticked here.
-      cks.hidden = false;
-      ckGrid(cks,
-        names.map(n => ({ label: n, color: barColor(n) })),
-        it => !hiddenCats.has(it.label),
-        it => {
-          if (hiddenCats.has(it.label)) hiddenCats.delete(it.label);
-          else hiddenCats.add(it.label);
-          renderMonth();
-        });
-      document.getElementById("lcExpEyebrow").textContent = shortMo(keys[i]).toUpperCase();
-      const wbIdx = L.expense_noi.months.indexOf(keys[i]);
-      const wbOpex = wbIdx >= 0 ? L.expense_noi.opex[wbIdx] : null;
-      note.textContent = shortMo(keys[i]) + " total " + fm$(total)
-        + (wbOpex != null
-            ? " vs " + fm$(wbOpex) + " workbook opex ("
-              + (Math.abs(total - wbOpex) < 500 ? "ties out" : "gap " + fm$(total - wbOpex)) + ")."
-            : " — outside the workbook's month range.")
-        + (shown.length < names.length
-            ? " " + (names.length - shown.length) + " of " + names.length
-              + " groups unticked — the total above still counts every one of them."
-            : "")
-        + " Grouped on the Align account tree via the COA mapping, tied out against"
-        + " the statement's own total expenses each month.";
-    }
-    function setMode(mode) {
-      document.querySelectorAll("#cExpDeep .tog").forEach(t =>
-        t.setAttribute("aria-pressed", String(t.dataset.ep === mode)));
-      if (mode === "t12") renderT12(); else renderMonth();
-    }
-    document.querySelectorAll("#cExpDeep .tog").forEach(t =>
-      t.addEventListener("click", () => setMode(t.dataset.ep)));
-    // Fill the month list now rather than on the first switch to Month. The
-    // select holds its place in the header even while hidden (see the CSS), and
-    // an empty one would hold the wrong width until Month had been pressed once.
-    if (pt) {
-      const mk = monthKeys();
-      mk.forEach((k, i) => sel.appendChild(new Option(shortMo(k), i)));
-      sel.selectedIndex = mk.length - 1;
-    }
-    // The eyebrow's text changes with the mode, and the heading block is narrow
-    // enough that a long one wraps to a second line -- which pushed the boxes,
-    // the chart and the note down 11px on the press. Reserve the tallest of
-    // every string it can hold, so switching leaves them where they are. Now
-    // that the eyebrow is only ever a period none of them should wrap, but the
-    // reserve is what makes that true rather than something to be checked
-    // against the widest heading the page can produce.
-    reserveTallest(document.getElementById("lcExpEyebrow"), pt
-      ? [shortMo(monthKeys()[0]).toUpperCase() + "–" + shortMo(monthKeys()[11]).toUpperCase(),
-         ...monthKeys().map(k => shortMo(k).toUpperCase())]
-      : ["TTM · WORKBOOK", "AWAITING THE STATEMENT"]);
-    sel.addEventListener("change", renderMonth);
-    renderT12();
-    buildTable(document.getElementById("lcExpTbl"),
-      [{ t: "Opportunity" }, { t: "Saving/yr", num: true }, { t: "Difficulty", mut: true }],
-      L.expense_overview.opportunities.map(o => [o.name, fm$(o.saving), String(o.difficulty).split(" - ")[0]]));
-  })();
+  // Shared with the Drive-only tab; see renderExpenseDeep. The workbook side
+  // of the card -- the no-statement fallback, the tie-out figures and the
+  // opportunities table -- is passed in, so the Drive-only tab gets the same
+  // chart with none of it.
+  renderExpenseDeep("the-landing",
+    { card: "cExpDeep", eyebrow: "lcExpEyebrow", cks: "lcExpCks", wrap: "lcExpWrap",
+      canvas: "lcExp", note: "lcExpNote", sel: "lcExpMonth", tbl: "lcExpTbl" },
+    { buckets: L.expense_overview.buckets, ttmOpex: L.expense_noi.ttm.opex,
+      months: L.expense_noi.months, opex: L.expense_noi.opex,
+      opportunities: L.expense_overview.opportunities });
 
 
   /* ---- Trade-outs ---- */
@@ -2939,6 +3155,701 @@ async function loadLanding() {
     L.meta.property + " · " + L.meta.units + " units · " + L.meta.rentable_sqft.toLocaleString() +
     " sq ft · rent roll as of " + L.meta.rent_roll_as_of + " · source: " + L.meta.source_workbook +
     " (rent roll, GL/T12, delinquency — same report types as the Drive pipeline; refresh on command)";
+}
+
+/* ============================================================
+   LANDING (DRIVE) — the same building as The Landing, built only
+   from what Google Drive delivers.
+
+   The Landing tab is fed by the analyst workbook (V37), which is
+   refreshed by pasting reports into grey tabs, recalculating in
+   Excel and re-running scripts/extract_landing.py. Everything it
+   shows is real; none of it moves on its own. This tab is the
+   subset that does: every number below comes from a report the
+   Gmail filer drops into Drive and the daily pipeline parses, so
+   dropping a fresh export in Drive is the whole refresh.
+
+   The rule, applied per number rather than per card: if a fresh
+   direct export cannot update it today, with the parsers that
+   already exist, it is not here. What that leaves out is listed
+   on the "What Feeds This Tab" card rather than quietly dropped —
+   a shorter page that does not say what it is missing reads as a
+   complete one.
+   ============================================================ */
+const SCD_SLUG = "the-landing";
+
+// Which of this property's scorecard cells a Google Drive report owns.
+//
+// measured[slug]["<prefix>kpis"] is the feed's own list, except for the
+// unprefixed family: populate_scorecard writes it from prop.values, which
+// earlier runs also wrote, so it lists six cells where the Drive delinquency
+// report can only answer two — the other four come from the analyst workbook
+// through --from-landing. `only` narrows that family to what
+// populate_scorecard.facts_from_pipeline actually produces.
+const SCD_DRIVE_FEEDS = [
+  { prefix: "bldg_", only: null,
+    what: "EliseAI building-metrics export · Drive “EliseAI Reports”" },
+  // The unprefixed family is whichever populate_scorecard run wrote last, and
+  // that is either the Drive AR report (--from-pipeline) or the analyst
+  // workbook (--from-landing) -- they own the same cells and overwrite each
+  // other. Only the first belongs here, so the feed is taken only when the
+  // recorded source is not the workbook. Naming the two KPIs is not enough on
+  // its own: on 2026-09-03 a --from-landing run for Concession Load % put the
+  // workbook back in front of a same-week Drive report, and a filter that read
+  // the KPI list alone would have published a workbook number on this tab.
+  { prefix: "", only: ["Total Deliquency", "Split Between 30/60/90"],
+    what: "delinquency summary · Drive “Residential AR Analytics”",
+    fromDrive: m => !/workbook|landing\.json|analyst/i.test(
+      String(m.source || "") + " " + String(m.received_what || "")) },
+];
+
+// Is a feed family currently a Drive report? Used both by the scorecard filter
+// and by the delinquency card, which has to tell "no report has ever arrived"
+// apart from "one has, and something else owns the cell today".
+function scdFeedIsDrive(feed, meas) {
+  const listed = meas[feed.prefix + "kpis"];
+  if (!listed || !listed.length) return false;
+  return feed.fromDrive ? !!feed.fromDrive(prefixed(meas, feed.prefix)) : true;
+}
+// measured[slug] flattened to one feed's own keys, so a predicate can read
+// `source` and `received_what` without knowing the prefix.
+function prefixed(meas, prefix) {
+  if (!prefix) return meas;
+  const out = {};
+  Object.keys(meas).forEach(k => {
+    if (k.indexOf(prefix) === 0) out[k.slice(prefix.length)] = meas[k];
+  });
+  return out;
+}
+
+// "42/88.9%" splices the analyst workbook's renewal count (populate_
+// building_metrics.RENEWAL_COUNT_SOURCE, from landing.json, to its own tracker
+// date) onto the export's trailing rate. The rate is the export's and is what
+// the band grades; the count is not, so this tab shows the rate alone rather
+// than half a workbook cell.
+const SCD_RATE_ONLY = {
+  "# of Renewals": v => (v && v.raw != null)
+    ? { raw: v.raw, display: fmPct(v.raw, 1) } : v,
+};
+
+// The Drive flows behind this tab, and what each one puts on it. Arrival times
+// are read from lineage.json's evidence rather than restated here, so the card
+// reports what the last pipeline run actually found.
+const SCD_FEED_ROWS = [
+  { flow: "t12", fills: "Operating Summary · Expense Load & NOI · Expense Deep Dive" },
+  { flow: "bldg_metrics", fills: "Eight scorecard cells · the Leased tile" },
+  // What this one fills depends on which populate_scorecard run wrote last, so
+  // it is asked rather than asserted.
+  { flow: "delinquency", fills: "Delinquency card · two scorecard cells",
+    fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
+  { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door" },
+];
+
+// What the workbook-fed Landing tab shows that this one cannot, and what would
+// put it here. Written down rather than inferred: a card that is absent for a
+// good reason and a card that is absent by accident look identical.
+const SCD_MISSING = [
+  { what: "Loss to Lease · rent capture",
+    why: "Needs market rent against in-place rent, unit by unit — only the rent roll carries it",
+    fix: "A rent roll in the Drive “Rent Roll” folder. The parser is written and registered; no file has ever arrived (open item C4)",
+    needs: "the rent roll" },
+  { what: "Rollover schedule",
+    why: "Needs every lease's expiry date, which is the rent roll again",
+    fix: "The same rent roll",
+    needs: "the rent roll" },
+  { what: "Largest unit gaps",
+    why: "Per-unit in-place and market rent, joined to the floorplan",
+    fix: "The same rent roll. The floorplan half is already here, under Unit Inventory",
+    needs: "the rent roll" },
+  { what: "Holdovers · month-to-month",
+    why: "Needs lease status per unit, and the renewal tracker to reconcile against",
+    fix: "The rent roll and a parser for the Drive “Renewal Tracker” folder (open item D9) — two things, not one",
+    needs: null },
+  { what: "Trade-outs by month",
+    why: "The workbook's Lease Detail tab is typed in from the RealPage rate tracker by hand",
+    fix: "A rate tracker in “Weekly Leasing Reports” (open item D1). The EliseAI export already covers the trade-out and % increase cells above",
+    needs: "a RealPage rate tracker" },
+  { what: "Delinquency aging · balances by unit",
+    why: "The report parses from Drive and ties out, but the aging stops in data/ — it is unit level and arrives with resident names — and the two aggregates it does publish are owned by the workbook today, so the card is empty either way",
+    fix: "No new report at all: publish an aggregate aging block out of the parse that already runs, and run populate_scorecard --from-pipeline so Drive owns the two cells again (open item G3)",
+    needs: null },
+  { what: "Insights scorecard",
+    why: "The analyst's own scored read of the workbook — a judgement, not a feed",
+    fix: "No report produces it",
+    needs: null },
+  { what: "Concession load",
+    why: "The burn-off export parses and ties out, but names no property, so it is stored nowhere",
+    fix: "A per-property re-export, or a heading that names the building (open item A6)",
+    needs: "a concession burn-off naming its property" },
+];
+
+async function loadLandingDrive() {
+  const m = await metricsJson();
+  await scPromise;
+  const pick = (block, slug) => (((m || {})[block] || {}).properties || [])
+    .find(x => x.slug === slug) || null;
+  const pl = pick("monthly_pl", SCD_SLUG);
+  const eb = pick("expense_buckets", SCD_SLUG);
+  const er = pick("expense_ratio", SCD_SLUG);
+  const dir = pick("unit_directory", SCD_SLUG);
+  const prop = SC && (SC.properties || []).find(x => x.slug === SCD_SLUG);
+  const meas = ((SC && SC.measured) || {})[SCD_SLUG] || {};
+
+  document.getElementById("dIntro").textContent =
+    "The Landing, built only from Google Drive. Every number on this tab comes from a "
+    + "report the pipeline fetches and parses, so a fresh direct export dropped in Drive "
+    + "is the whole refresh — nothing here is typed in, pasted into a grey tab or carried "
+    + "over from the analyst workbook. The Landing tab beside it is the fuller view and "
+    + "the two will disagree where the workbook is more recent, or where it measures "
+    + "something on a basis no report publishes. What this tab cannot show, and why, is "
+    + "on the last card.";
+
+  /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
+  renderOpSummary(SCD_SLUG, { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote" });
+
+  /* ---- The doors, and the controllable series both the NOI card and the
+          tiles need. Unit count comes from the Yardi unit directory rather
+          than the workbook: residential_units is the apartment count with
+          Yardi's two waitlist placeholders taken out. ---- */
+  const doors = dir ? dir.residential_units : null;
+  const NOT_CONTROLLABLE = [/^tax/i, /^insurance/i, /^utilit/i, /^management fee/i];
+  // Every exclusion has to be found by name. A renamed group that silently
+  // stopped matching would leave taxes inside "controllable" and the figure
+  // would read a third too high with nothing to show for it, so it is withheld
+  // instead — the same rule the workbook-fed card applies.
+  let ctrl = null, ctrlWhy = "";
+  if (!eb) {
+    ctrlWhy = "no T12 statement has reached the pipeline";
+  } else if (!doors) {
+    ctrlWhy = "the unit directory has not been fetched, so there is no door count to divide by";
+  } else if (NOT_CONTROLLABLE.some(re => !Object.keys(eb.buckets).some(n => re.test(n)))) {
+    ctrlWhy = "the statement's account groups no longer name taxes, insurance, "
+            + "utilities and the management fee the way this excludes them";
+  } else {
+    ctrl = eb.labels.map((_, i) => {
+      let total = 0, excluded = 0;
+      Object.keys(eb.buckets).forEach(n => {
+        const v = eb.buckets[n][i] || 0;
+        total += v;
+        if (NOT_CONTROLLABLE.some(re => re.test(n))) excluded += v;
+      });
+      return total - excluded;
+    });
+  }
+  const ctrlKeys = eb ? monthKeysBack(eb.period_end, eb.labels.length) : [];
+  const ctrlPerDoorMo = ctrl ? ctrl.map(v => v / doors) : null;
+
+  /* ---- KPI strip ---- */
+  (function kpis() {
+    const host = document.getElementById("dkpis");
+    const jump = id => {
+      const card = document.getElementById(id);
+      if (!card) return;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      card.classList.remove("flash");
+      void card.offsetWidth;
+      card.classList.add("flash");
+      card.addEventListener("animationend", () => card.classList.remove("flash"), { once: true });
+    };
+    const plKeys = pl
+      ? ((pl.months && pl.months.length === pl.revenue.length)
+          ? pl.months : monthKeysBack(pl.period_end, pl.revenue.length))
+      : [];
+    const last = pl ? pl.revenue.length - 1 : -1;
+    const sum = a => a.reduce((x, y) => x + y, 0);
+    const cell = scored => (prop && scValue(prop, scored)) || null;
+    const asOf = k => { const d = scKpiAsOf(SCD_SLUG, k); return d ? " · as of " + d : ""; };
+
+    const tiles = [];
+    if (pl) {
+      tiles.push([fm$(pl.revenue[last]), "Operating revenue",
+                  shortMo(plKeys[last]) + " · T12 " + fm$(sum(pl.revenue)),
+                  "cdOpSummary", "the operating summary"]);
+      tiles.push([fmPct(pl.noi[last] / pl.revenue[last]), "NOI margin",
+                  shortMo(plKeys[last]) + " · T12 " + fmPct(sum(pl.noi) / sum(pl.revenue)),
+                  "cdNoi", "expense load & NOI"]);
+      tiles.push([fm$(sum(pl.noi)), "T12 NOI",
+                  plKeys.length + " months to " + shortMo(plKeys[last]),
+                  "cdOpSummary", "the operating summary"]);
+    }
+    tiles.push(ctrlPerDoorMo
+      ? [fm$(ctrlPerDoorMo[ctrlPerDoorMo.length - 1] * 12), "Controllable / door",
+         "per year at " + shortMo(ctrlKeys[ctrlKeys.length - 1]) + " · " + doors + " doors",
+         "cdNoi", "expense load & NOI"]
+      : ["—", "Controllable / door", ctrlWhy, "cdNoi", "expense load & NOI"]);
+    const leased = cell("Leased %");
+    tiles.push(leased && leased.display
+      ? [leased.display, "Leased", "100 − exposure" + asOf("Leased %"),
+         "cdScorecard", "the Drive scorecard"]
+      : ["—", "Leased", "awaiting the leasing feed", "cdScorecard", "the Drive scorecard"]);
+    // Same gate as the card: a value exists, but the workbook may own it today.
+    const arFeed = SCD_DRIVE_FEEDS.find(f => f.prefix === "");
+    const delq = scdFeedIsDrive(arFeed, meas) ? cell("Total Deliquency") : null;
+    tiles.push(delq && delq.display
+      ? [delq.display, "Delinquency", "resident AR over one month's revenue",
+         "cdDelq", "the delinquency card"]
+      : ["—", "Delinquency", "not Drive-fed today", "cdDelq", "the delinquency card"]);
+
+    host.textContent = "";
+    tiles.forEach(([v, k, s, target, where]) => {
+      const kp = elc("button", "kpi");
+      kp.type = "button";
+      kp.appendChild(elc("div", "v amber", v));
+      kp.appendChild(elc("div", "k", k));
+      kp.appendChild(elc("div", "s", s));
+      const arrow = elc("span", "jump", "↓");
+      arrow.setAttribute("aria-hidden", "true");
+      kp.appendChild(arrow);
+      kp.setAttribute("aria-label", k + ": " + v + ". Jump to " + where + ".");
+      kp.addEventListener("click", () => jump(target));
+      host.appendChild(kp);
+    });
+  })();
+
+  /* ---- KPI scorecard, Drive-owned cells only ---- */
+  (function scorecard() {
+    const eyebrow = document.getElementById("dscEyebrow");
+    const note = document.getElementById("dscNote");
+    if (!SC || !prop) {
+      eyebrow.textContent = "SCORECARD UNAVAILABLE";
+      return;
+    }
+    // kpi -> the feed that owns it
+    const owned = new Map();
+    SCD_DRIVE_FEEDS.forEach(f => {
+      if (!scdFeedIsDrive(f, meas)) return;
+      (meas[f.prefix + "kpis"] || []).forEach(k => {
+        if (f.only && f.only.indexOf(k) < 0) return;
+        if (!owned.has(k)) owned.set(k, f);
+      });
+    });
+    const groups = SC.groups
+      .map(g => ({ name: g.name, metrics: g.metrics.filter(k => owned.has(k)) }))
+      .filter(g => g.metrics.length);
+    const shown = groups.reduce((t, g) => t + g.metrics.length, 0);
+    if (!shown) {
+      eyebrow.textContent = "NO DRIVE FEED HAS FILLED A KPI HERE YET";
+      note.textContent = "Every measured cell on this property's scorecard came from the "
+        + "analyst workbook, so none of them belongs on this tab.";
+      return;
+    }
+    const roll = scRollUp(prop, groups);
+    eyebrow.textContent = roll.scored === 0
+      ? shown + " DRIVE-FED CELLS · NONE GRADED"
+      : roll.counts.below === 0
+        ? "ALL " + roll.scored + " GRADED DRIVE-FED KPIs AT OR ABOVE TARGET"
+        : roll.counts.below + " OF " + roll.scored + " GRADED DRIVE-FED KPIs BELOW TARGET";
+
+    const health = document.getElementById("dscHealth");
+    health.textContent = "";
+    const big = elc("div", "big", roll.at_or_above == null ? "—" : fmPct(roll.at_or_above, 0));
+    if (roll.scored) big.classList.add("sc-state-" + scTone(roll.counts));
+    health.appendChild(big);
+    health.appendChild(elc("div", "lbl", roll.scored
+      ? "at or above target · " + roll.scored + " of " + shown + " graded"
+      : "nothing graded yet"));
+    const upd = scUpdatedEl(SCD_SLUG);
+    if (upd) health.appendChild(upd);
+
+    const strip = document.getElementById("dscStrip");
+    strip.textContent = "";
+    const unscored = scUnscoredSet();
+    groups.forEach(g => {
+      strip.appendChild(elc("div", "g", g.name));
+      g.metrics.forEach(name => {
+        const row = elc("div", "m");
+        const st = prop.statuses[name];
+        const raw = scValue(prop, name);
+        const v = SCD_RATE_ONLY[name] ? SCD_RATE_ONLY[name](raw) : raw;
+        const un = unscored.has(name);
+        const src = (prop.status_source || {})[name];
+        row.appendChild(elc("span", "nm", name));
+        row.appendChild(scChip(st, v, un, prop.label, name, src));
+        row.title = scCellTitle(name, st, v, un, null, src)
+          + "\n\nFeed: " + owned.get(name).what
+          + (SCD_RATE_ONLY[name]
+              ? "\nShown as the rate alone here: the published cell splices a renewal "
+                + "count from the analyst workbook onto the export's rate, and only the "
+                + "rate comes from Drive."
+              : "");
+        strip.appendChild(row);
+      });
+    });
+
+    scLegendInto(document.getElementById("dscLegend"));
+    // A Drive feed whose cells something else owns today takes its cells out of
+    // this card -- and out of the tally with them. The Landing's one below-target
+    // AR cell leaving that way turns 6-of-7 into a clean 6-of-6, which would read
+    // as an improvement rather than as a cell going missing.
+    const displaced = SCD_DRIVE_FEEDS.filter(f =>
+      (meas[f.prefix + "kpis"] || []).length && !scdFeedIsDrive(f, meas));
+    const displacedNote = displaced.length
+      ? "Another feed currently owns the cells the "
+        + displaced.map(f => f.what.split(" · ")[0]).join(" and ")
+        + " fills, so they are off this card and out of the tally above. That is a cell "
+        + "leaving, not a score improving; the card below says which and why. "
+      : "";
+    const off = SC.groups.reduce((t, g) => t + g.metrics.length, 0) - shown;
+    note.textContent =
+      (roll.below_metrics.length
+        ? "Below target: " + roll.below_metrics.join(", ") + ". " : "")
+      + displacedNote
+      + "These are the " + shown + " cells a Drive report fills; the other " + off
+      + " on the scorecard are either awaiting a feed or measured from the analyst "
+      + "workbook, and stay on The Landing's own card and the portfolio scorecard. "
+      + "The bands and the KPI list "
+      + "themselves come from the KPI scorecard workbook — a scoring rubric, not a "
+      + "number that refreshes — so the cells move with Drive and the thresholds they "
+      + "are graded against do not. "
+      + SC.meta.note;
+  })();
+
+  /* ---- Expense load & NOI, entirely from the statement ---- */
+  (function noi() {
+    const foot = document.getElementById("dnoiFoot");
+    if (!pl) {
+      document.getElementById("dnoiEyebrow").textContent = "AWAITING THE STATEMENT";
+      foot.textContent = "No T12 statement has reached the pipeline for this property, "
+        + "so there is no margin, ratio or expense split to draw.";
+      return;
+    }
+    const keys = (pl.months && pl.months.length === pl.revenue.length)
+      ? pl.months : monthKeysBack(pl.period_end, pl.revenue.length);
+    const totalScope = (pl.expense_scope || "operating") === "total";
+    // Both ratio lines come off the same three published series, so NOI margin
+    // and expense ratio always sum to 100% here -- they are two readings of one
+    // statement rather than two measurements that might disagree.
+    const margin = pl.revenue.map((r, i) => r ? (pl.noi[i] / r) * 100 : null);
+    const ratio = pl.revenue.map((r, i) => r ? (pl.opex[i] / r) * 100 : null);
+    // The controllable series is keyed on its own months: the buckets and the
+    // P&L come from the same statement today, but a stitched series can outrun
+    // the newest bucket file, and padding by position would slide it.
+    const byKey = {};
+    if (ctrlPerDoorMo) ctrlKeys.forEach((k, i) => { byKey[k] = ctrlPerDoorMo[i]; });
+    const perDoor = keys.map(k => (byKey[k] == null ? null : byKey[k]));
+
+    const chart = new Chart(document.getElementById("dcNoi"), {
+      type: "line",
+      data: { labels: keys.map(shortMo),
+        datasets: [
+          { label: "NOI margin", data: margin, yAxisID: "y", borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: totalScope ? "Total expense ratio" : "Expense ratio", data: ratio, yAxisID: "y", borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: "Controllable expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
+        ] },
+      options: { maintainAspectRatio: false, responsive: true,
+        // the checkbox grid above the chart is both the legend and the switch
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => c.dataset.yAxisID === "y2"
+            ? `${c.dataset.label}: ${fm$(c.parsed.y)}/mo`
+            : `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
+        scales: { y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
+          y2: { position: "right", grid: { display: false }, beginAtZero: true,
+                ticks: { callback: v => "$" + (v / 1e3).toFixed(1) + "k" } },
+          x: { grid: { display: false } } } }
+    });
+    ckGrid(document.getElementById("dnoiCks"),
+      chart.data.datasets.map((d, i) => ({ label: d.label, color: d.borderColor, i })),
+      it => chart.isDatasetVisible(it.i),
+      it => {
+        chart.setDatasetVisibility(it.i, !chart.isDatasetVisible(it.i));
+        // the dollar axis has one tenant; an axis for nothing keeps claiming
+        // the right margin, so it leaves with its series
+        chart.options.scales.y2.display = chart.isDatasetVisible(2);
+        chart.update();
+      });
+    document.getElementById("dnoiEyebrow").textContent =
+      shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[keys.length - 1]).toUpperCase()
+      + " · NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR";
+    const sum = a => a.reduce((x, y) => x + y, 0);
+    const ttmRev = sum(pl.revenue), ttmNoi = sum(pl.noi), ttmOpex = sum(pl.opex);
+    const ctrlAvg = ctrlPerDoorMo
+      ? ctrlPerDoorMo.reduce((t, v) => t + v, 0) / ctrlPerDoorMo.length : null;
+    // The ratio drawn here is the statement's expense over its own revenue. On a
+    // total-anchored statement that is NOT the Align expense ratio the Portfolio
+    // card publishes, which stays on the operating/recoverable line by
+    // definition -- 33.3% against 32.7% for the same twelve months. Two cards
+    // showing an "expense ratio" half a point apart with no explanation is how a
+    // reader stops trusting both, so the number the other card carries is named
+    // here rather than left to be found.
+    let alt = "";
+    if (totalScope && er && er.ratio_t12 != null) {
+      alt = "This ratio is the statement's whole expense load over its revenue. The "
+          + "Expense Ratio card on the Portfolio tab is a different measure and stays "
+          + "so on purpose — Align defines it on the operating, recoverable line, which "
+          + "reads " + er.ratio_t12.toFixed(1) + "% over the same twelve months against "
+          + fmPct(ttmOpex / ttmRev) + " here. Neither is wrong; they are different "
+          + "expense lines of one statement. ";
+    }
+    foot.textContent =
+      "T12 NOI " + fm$(ttmNoi) + " (" + fmPct(ttmNoi / ttmRev) + " margin) on revenue "
+      + fm$(ttmRev) + ", expense ratio " + fmPct(ttmOpex / ttmRev) + ". Margin and ratio "
+      + "are both taken off the statement's own revenue, expense and NOI lines ("
+      + (pl.basis || "") + "), so the two sum to 100% by construction rather than by "
+      + "agreement, and the same expense line feeds the deep dive beside this card. "
+      + alt
+      + (ctrlAvg
+          ? "Controllable expense/door is the month's operating expense less taxes, "
+            + "insurance, utilities and the management fee, over " + doors + " doors, on "
+            + "the right axis — " + fm$(ctrlAvg) + "/mo averaged across the "
+            + ctrlPerDoorMo.length + " months the statement covers, against "
+            + fm$(ttmOpex / 12 / doors) + "/mo for total expense. The door count is the "
+            + "unit directory's residential_units, not the workbook's."
+          : "Controllable expense/door is not drawn: " + ctrlWhy + ".");
+  })();
+
+  /* ---- Expense deep dive — the same card as The Landing, with no workbook ---- */
+  renderExpenseDeep(SCD_SLUG,
+    { card: "cdExpDeep", eyebrow: "dexpEyebrow", cks: "dexpCks", wrap: "dexpWrap",
+      canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null);
+
+  /* ---- Delinquency, from what the Drive AR report actually publishes ---- */
+  (function delq() {
+    const eyebrow = document.getElementById("ddEyebrow");
+    const note = document.getElementById("ddNote");
+    // Only if a Drive report owns these cells right now. The workbook fills the
+    // same two through --from-landing and the last run wins, so "there is a
+    // value" is not the same question as "Drive put it there".
+    const feed = SCD_DRIVE_FEEDS.find(f => f.prefix === "");
+    const driveOwns = scdFeedIsDrive(feed, meas);
+    const rate = driveOwns && prop && scValue(prop, "Total Deliquency");
+    const split = driveOwns && prop && scValue(prop, "Split Between 30/60/90");
+    const parts = (split && split.parts) || null;
+    const labels = (split && split.parts_labels) || null;
+    if (!rate && !parts) {
+      // Two different empty states, and telling them apart is the point of this
+      // tab: no report has ever arrived, against a cell that exists and belongs
+      // to something else today. Both are read off measured[slug] rather than
+      // asserted -- lineage.json attributes its evidence to whichever feed owns
+      // the cell, so once the workbook takes it there is no Drive row left to
+      // quote, and naming a file the page cannot see would be inventing one.
+      const hasCells = prop && feed.only
+        .some(k => (scValue(prop, k) || {}).display != null);
+      eyebrow.textContent = hasCells ? "NOT DRIVE-FED TODAY" : "AWAITING THE AR REPORT";
+      note.textContent = hasCells
+        ? "This property's delinquency cells carry numbers, and they are not Drive's. "
+          + "The Drive report and the analyst workbook fill the same two KPIs — "
+          + "populate_scorecard --from-pipeline against the report, --from-landing "
+          + "against the workbook's own delinquency tab — so they overwrite each other "
+          + "and the last run wins. Today that is the workbook ("
+          + (meas.source || "source not recorded")
+          + (meas.as_of ? ", covering " + meas.as_of : "") + "), which is why the "
+          + "figures are on the scorecard and not here: real, but not something a fresh "
+          + "Drive export would move. Running --from-pipeline for this property puts "
+          + "the card back, and nothing on this tab needs editing when it does."
+        : "No delinquency report has reached the pipeline for this property. The parser "
+          + "is live and the Drive folder is registered.";
+      return;
+    }
+    eyebrow.textContent = "RESIDENT AR · " + (meas.source || "FROM THE DRIVE AR REPORT");
+    const stats = [];
+    if (rate && rate.display) stats.push([rate.display, "of one month's revenue"]);
+    if (parts) {
+      stats.push([fm$(parts.reduce((t, v) => t + v, 0)), "past 30 days"]);
+      const over90 = parts[parts.length - 1];
+      stats.push([fm$(over90), "over 90 days"]);
+    }
+    statBlock(document.getElementById("ddStats"), stats);
+    document.getElementById("ddStats").querySelectorAll(".st")
+      .forEach(st => { st.style.marginBottom = "10px"; });
+
+    if (parts && labels) {
+      new Chart(document.getElementById("dcDelq"), {
+        type: "bar",
+        data: { labels: labels,
+          datasets: [{ label: "Amount", data: parts,
+            backgroundColor: [C.amber, C.amber, C.red] }] },
+        options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+          plugins: { legend: { display: false }, tooltip: { callbacks: {
+            label: c => fm$(c.parsed.x) } } },
+          scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(1) + "k" } },
+            y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+      });
+    }
+    note.textContent =
+      "The report's own past-due buckets, in dollars. The split is reported and never "
+      + "graded — a distribution has no single direction it can be good or bad in — so it "
+      + "carries no colour and no place in the scorecard's tally. "
+      + (meas.denominator
+          ? "The rate is gross resident AR over " + meas.denominator + ". "
+          : "")
+      + "The 0–30 bucket, the balance per unit and the largest balances are parsed and "
+      + "tied out but stop in data/: they are unit level and the report arrives with "
+      + "resident names, so nothing publishes them. The Landing tab shows them from the "
+      + "workbook's own scrubbed copy instead.";
+  })();
+
+  /* ---- Unit inventory, from the Yardi unit directory ---- */
+  (function inventory() {
+    const note = document.getElementById("diNote");
+    if (!dir) {
+      document.getElementById("diEyebrow").textContent = "AWAITING THE UNIT DIRECTORY";
+      note.textContent = "No unit directory has been fetched. It lives in the Drive "
+        + "library rather than the drop tree, so GDRIVE_REFERENCE_FOLDER_ID has to be "
+        + "set for the pipeline to reach it (open item C5).";
+      return;
+    }
+    const plans = dir.plans || {};
+    const codes = Object.keys(plans).sort();
+    const unitsOf = c => plans[c].units || 0;
+    const totalPlanUnits = codes.reduce((t, c) => t + unitsOf(c), 0);
+    // Bedrooms belong to the plan, not the unit, which is the whole reason this
+    // export exists: the rent roll and the workbook both name the plan and
+    // neither defines it.
+    const beds = {};
+    codes.forEach(c => {
+      const b = plans[c].bedrooms;
+      const k = b == null ? "?" : b;
+      beds[k] = (beds[k] || 0) + unitsOf(c);
+    });
+    const bedKeys = Object.keys(beds).sort((a, b) => (a === "?") - (b === "?") || a - b);
+    const bedLabel = k => k === "?" ? "Unknown" : k === "0" || k === 0 ? "Studio" : k + " bed";
+    // Weighted by units, not a mean of plans: a 90-unit plan and a 1-unit plan
+    // are not two equal readings of the building.
+    const wAvg = f => totalPlanUnits
+      ? codes.reduce((t, c) => t + (f(plans[c]) || 0) * unitsOf(c), 0) / totalPlanUnits : null;
+    const avgSqft = wAvg(p => p.sqft_avg);
+    const avgRent = wAvg(p => (p.rent_min != null && p.rent_max != null)
+      ? (p.rent_min + p.rent_max) / 2 : null);
+
+    statBlock(document.getElementById("diStats"), [
+      [String(dir.residential_units), "apartments"],
+      [String(codes.length), "floorplans"],
+      [avgSqft ? Math.round(avgSqft).toLocaleString() + " sf" : "—", "average, by unit"],
+      [avgRent ? fm$(avgRent) : "—", "average directory rent"],
+    ]);
+    document.getElementById("diStats").querySelectorAll(".st")
+      .forEach(st => { st.style.marginBottom = "10px"; });
+
+    new Chart(document.getElementById("dcInv"), {
+      type: "bar",
+      data: { labels: bedKeys.map(bedLabel),
+        datasets: [{ data: bedKeys.map(k => beds[k]),
+          backgroundColor: bedKeys.map(k => k === "?" ? C.muted : C.teal) }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => c.parsed.x + " of the " + totalPlanUnits
+            + " units the directory lists · "
+            + fmPct(c.parsed.x / totalPlanUnits, 0) } } },
+        scales: { x: { grid: gridCfg, beginAtZero: true, ticks: { precision: 0 } },
+          y: { grid: { display: false } } } }
+    });
+
+    const range = (lo, hi, fmt) => lo == null ? "—"
+      : (lo === hi ? fmt(lo) : fmt(lo) + "–" + fmt(hi));
+    const sqft = n => Math.round(n).toLocaleString();
+    buildTable(document.getElementById("diTbl"),
+      [{ t: "Plan" }, { t: "Beds" }, { t: "Baths", num: true }, { t: "Units", num: true },
+       { t: "SF", num: true }, { t: "Directory rent", num: true }],
+      codes.sort((a, b) => unitsOf(b) - unitsOf(a) || a.localeCompare(b)).map(c => {
+        const p = plans[c];
+        return [c,
+          p.bedrooms == null ? "—" : p.bedrooms === 0 ? "Studio" : p.bedrooms + " BR",
+          p.baths == null ? "—" : String(p.baths),
+          String(p.units),
+          range(p.sqft_min, p.sqft_max, sqft),
+          range(p.rent_min, p.rent_max, fm$)];
+      }));
+
+    document.getElementById("diEyebrow").textContent =
+      codes.length + " FLOORPLANS · " + dir.residential_units + " APARTMENTS · AS OF "
+      + dir.as_of;
+    const placeholders = (dir.units || 0) - (dir.residential_units || 0);
+    note.textContent =
+      "The building's fixed description, from " + dir.source_file + " of " + dir.as_of
+      + ". " + (placeholders > 0
+        ? "The export counts " + dir.units + " units where " + dir.residential_units
+          + " are apartments: the other " + placeholders + " are Yardi waitlist "
+          + "placeholders, kept in the count because the export's own total row "
+          + "includes them and the tie-out has to as well. "
+        : "")
+      + "Rent is the directory's own Rent column, shown per plan as the range across "
+      + "that plan's units. This is a description of the building, not a lease report — "
+      + "it carries no resident, no lease and no occupancy, which is why nothing here "
+      + "needs scrubbing. Bedrooms belong to the plan rather than the unit; a plan whose "
+      + "rows disagree is flagged by the parser, never averaged.";
+  })();
+
+  /* ---- What feeds this tab, and what it cannot show ---- */
+  (async function feeds() {
+    const ln = await lineageJson();
+    const flows = ((ln || {}).flows || []);
+    const isLanding = s => String(s || "").toLowerCase().indexOf("landing") >= 0;
+    const when = iso => {
+      if (!iso) return null;
+      const d = new Date(iso);
+      return isNaN(d) ? null : d;
+    };
+    const now = new Date();
+    let newest = null;
+    const rows = SCD_FEED_ROWS.map(r => {
+      const f = flows.find(x => x.id === r.flow);
+      const ev = f && (f.evidence || []).find(e => isLanding(e.property));
+      const d = ev ? when(ev.landed_at) : null;
+      if (d && (!newest || d > newest)) newest = d;
+      const arrived = elc("span", null, d
+        ? d.toLocaleString([], { month: "short", day: "numeric", year: "numeric" })
+          + " · " + scAgo(d, now)
+        : "not recorded");
+      if (d) arrived.title = ev.source_file + "\narrived " + d.toISOString();
+      let fills = r.fills;
+      if (r.fillsIf) {
+        const feed = SCD_DRIVE_FEEDS.find(x => x.prefix === r.fillsIf.prefix);
+        if (feed && !scdFeedIsDrive(feed, meas)) fills = r.fillsIf.idle;
+      }
+      return [
+        f ? f.title : r.flow,
+        f ? f.source_label : "—",
+        (ev && ev.as_of) || "—",
+        arrived,
+        fills,
+      ];
+    });
+    buildTable(document.getElementById("dfTbl"),
+      [{ t: "Report" }, { t: "Drive folder" }, { t: "Covers" }, { t: "Arrived" },
+       { t: "Fills here", mut: true }],
+      rows);
+    buildTable(document.getElementById("dfMissing"),
+      [{ t: "Not on this tab" }, { t: "Why", mut: true }, { t: "What would put it here", mut: true }],
+      SCD_MISSING.map(r => [r.what, r.why, r.fix]));
+    // Counted rather than written down: the point of the list is which single
+    // report unlocks the most of it, and a hand-typed "six of the eight" goes
+    // wrong the first time a row moves.
+    const single = SCD_MISSING.filter(r => r.needs);
+    const tally = {};
+    single.forEach(r => { tally[r.needs] = (tally[r.needs] || 0) + 1; });
+    const top = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0];
+    // The page's notes are prose; a bare digit mid-sentence reads as a figure
+    // rather than a count.
+    const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven",
+                   "eight", "nine", "ten", "eleven", "twelve"];
+    const spell = n => WORDS[n] || String(n);
+    const oneReport = single.length
+      ? spell(single.length) + " of the " + spell(SCD_MISSING.length)
+        + " would be answered by a single report" + (top && tally[top] > 1
+            ? ", and " + spell(tally[top]) + " of those " + spell(single.length)
+              + " by the same one — " + top + "." : ".")
+      : "None of them is one report away.";
+    document.getElementById("dfNote").textContent =
+      "Arrival, not coverage: “Arrived” is when the report landed in Drive, “Covers” is "
+      + "the period it describes. A report can be about July and have arrived this "
+      + "morning, or be dated today and have sat unfetched for a week, and only the "
+      + "arrival can show a feed that has stopped running"
+      + (newest
+          ? " — the newest here is " + scAgo(newest, now) + "."
+          : ".")
+      + " The right-hand table is the price of this tab: " + spell(SCD_MISSING.length)
+      + " things The Landing shows that no Drive export can refresh today. "
+      + oneReport.charAt(0).toUpperCase() + oneReport.slice(1);
+  })();
+
+  document.getElementById("dMeta").textContent =
+    (dir ? dir.name : "The Landing") + " · "
+    + (dir ? dir.residential_units + " apartments · " : "")
+    + (pl ? "statement to " + pl.period_end + " · " : "")
+    + "sources: " + SCD_FEED_ROWS.length + " Google Drive reports, no analyst workbook. "
+    + "Refreshed by scripts/fetch_drive.py and scripts/build_metrics.py on the daily "
+    + "cron — drop a fresh export in Drive and the next run picks it up.";
 }
 
 /* ============================================================

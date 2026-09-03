@@ -132,6 +132,20 @@ DRIVE_FLOWS = {
              "tables": ["t-buckets-*", "t-l-opps"]},
             {"card": "Expense Load & NOI — controllable/door", "tab": "The Landing",
              "anchor": "cNoi", "primary": "t-l-noi", "tables": ["t-buckets-*"]},
+            # The Drive-only tab. Same statement, same three cards, none of the
+            # workbook: the Landing tab overlays the analyst numbers on these,
+            # this one shows the statement on its own.
+            {"card": "Operating Summary", "tab": "Landing (Drive)",
+             "anchor": "cdOpSummary", "primary": "t-monthlypl-*",
+             "tables": ["t-monthlypl-*"]},
+            {"card": "Expense Load & NOI", "tab": "Landing (Drive)",
+             "anchor": "cdNoi", "primary": "t-monthlypl-*",
+             "tables": ["t-monthlypl-*", "t-buckets-*", "t-unitdir-*"]},
+            {"card": "Expense Deep Dive", "tab": "Landing (Drive)",
+             "anchor": "cdExpDeep", "primary": "t-buckets-*",
+             "tables": ["t-buckets-*", "t-monthlypl-*"]},
+            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+             "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-expratio-*"],
         "note": "The one Drive report that reaches the dashboard as a chart in "
@@ -201,6 +215,17 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard — Palma", "tab": "Palma",
              "anchor": "psc-palma", "primary": "t-sc-measured",
              "tables": ["t-sc-overrides", "t-sc-arrivals", "t-sc-matrix"]},
+            # The Drive-only tab shows the rate and the 30/60/90 split -- the
+            # two cells this report fills. The per-unit aging behind them stops
+            # in data/, so that tab has no aging chart of its own.
+            {"card": "Delinquency", "tab": "Landing (Drive)",
+             "anchor": "cdDelq", "primary": "t-sc-measured",
+             "tables": ["t-sc-measured", "t-sc-arrivals"]},
+            {"card": "KPI Scorecard — Drive feeds only", "tab": "Landing (Drive)",
+             "anchor": "cdScorecard", "primary": "t-sc-measured",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-thresholds"]},
+            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+             "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The 30/60/90 split is reported, never graded: a distribution "
@@ -268,6 +293,14 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
              "anchor": "cLandingScorecard", "primary": "t-sc-measured",
              "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
+            # Eight of the ten cells on the Drive-only tab's scorecard are this
+            # export's; # of Renewals shows there as the rate alone, since the
+            # count half of the published cell comes from the analyst workbook.
+            {"card": "KPI Scorecard — Drive feeds only", "tab": "Landing (Drive)",
+             "anchor": "cdScorecard", "primary": "t-sc-measured",
+             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
+            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+             "anchor": "cdFeeds", "tables": []},
             {"card": "KPI Scorecard — Chorus", "tab": "Chorus",
              "anchor": "psc-chorus", "primary": "t-sc-measured",
              "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
@@ -357,6 +390,14 @@ DRIVE_FLOWS = {
             {"card": "Largest Unit Gaps — beds and plan sq ft",
              "tab": "The Landing", "anchor": "cGaps", "primary": "t-l-units",
              "tables": ["t-unitdir-*"]},
+            # On the Drive-only tab the directory is the whole card rather than
+            # one join onto the workbook's unit list: floorplans, bedrooms,
+            # square footage and the door count under controllable/door.
+            {"card": "Unit Inventory", "tab": "Landing (Drive)",
+             "anchor": "cdInventory", "primary": "t-unitdir-*",
+             "tables": ["t-unitdir-*"]},
+            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+             "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-l-units"],
         "note": "It exists because nothing else says how many bedrooms a "
@@ -882,8 +923,15 @@ def card_index(flows, titles):
         # No table holds this card's numbers -- the placeholder cards, and any
         # card whose feed stops short -- so the link goes to the flow row that
         # explains why instead of nowhere.
-        e["primary"] = (e.pop("primary_declared", None)
-                        or (tables[0] if tables else "f-" + e["flows"][0]))
+        # A declared primary goes through the same wildcard stripping as the
+        # table list: "t-buckets-*" names the family, and data.html resolves the
+        # stem to the first table that exists. Left as-is it would be an href to
+        # a literal asterisk -- a link to nowhere, which is the one thing the
+        # corner link is not allowed to be.
+        declared = e.pop("primary_declared", None)
+        if declared and declared.endswith("*"):
+            declared = declared[:-1].rstrip("-")
+        e["primary"] = declared or (tables[0] if tables else "f-" + e["flows"][0])
         e["holds"] = titles.get(e["primary"])
     return cards
 

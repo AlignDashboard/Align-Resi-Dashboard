@@ -73,6 +73,80 @@ landing page's Insights card) and `Source Renewal Tracker` are new. The
 renewal/holdover scenario models charge a recurring incremental-vacancy haircut
 on the new run-rate instead of one-time make-ready/downtime costs.
 
+## The Drive-Only Landing Tab
+
+`Landing (Drive)` sits beside `The Landing` and shows the same building with the
+V37 workbook taken out of it: every number on it comes from a report the Gmail
+filer drops into Drive and the pipeline parses, so **dropping a fresh direct
+export in Drive is the whole refresh**. The Landing tab is still the fuller
+view — it just cannot move on its own, because refreshing it means pasting into
+grey tabs, recalculating in Excel and re-running `extract_landing.py`.
+
+The rule is applied **per number, not per card**. A card is on the tab only if
+every figure on it would move on the next pipeline run.
+
+| Card | Drive source |
+| --- | --- |
+| Operating Summary | T12 statement → `metrics.json` `monthly_pl` |
+| KPI Scorecard — Drive feeds only | the ten `scorecard.json` cells a Drive report fills |
+| Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
+| Expense Deep Dive | `expense_buckets` |
+| Delinquency | the two cells the Drive AR report fills — empty whenever the workbook owns them |
+| Unit Inventory | `unit_directory` |
+| What Feeds This Tab | `lineage.json` — arrivals, and what is missing |
+
+`renderOpSummary` and `renderExpenseDeep` are **shared** with The Landing rather
+than copied. Neither ever read the workbook; the workbook half of the deep dive
+(its no-statement fallback chart, the tie-out figures and the opportunities
+table) is passed in as `wb`, and the Drive tab passes `null` — which is what
+makes it tie the statement out against its own P&L line instead. A second copy
+of a 200-line chart renderer would have drifted the first time one was edited.
+
+Three things the tab is careful about, because getting them wrong would put an
+unrefreshable number on a page that promises only live ones:
+
+- **`measured[slug].kpis` over-reports.** `populate_scorecard` builds it from
+  `prop.values`, which earlier runs also wrote, so The Landing's list names
+  every cell any run has filled rather than the ones this feed filled. `only`
+  in `SCD_DRIVE_FEEDS` narrows the unprefixed family to what
+  `facts_from_pipeline` produces. (Same over-report is why the data-flow page
+  credits the AR report with more cells than it answers; see open item G1.)
+- **Naming the KPIs is not enough — the source has to be checked too.** The
+  Drive AR report and the workbook fill *the same two cells* through
+  `--from-pipeline` and `--from-landing`, and the last run wins. On 2026-09-03 a
+  `--from-landing` run for Concession Load % put the workbook of 2026-07-20 back
+  in front of a Drive report of 2026-08-31, so a filter reading the KPI list
+  alone would have published a workbook number here. `fromDrive` in
+  `SCD_DRIVE_FEEDS` reads the recorded `source` / `received_what` and drops the
+  family when the workbook wrote last, which is why the Delinquency card is
+  currently empty and says why (open item G3). It fills itself back in the next
+  time `--from-pipeline` runs — nothing here needs editing. Note the card cannot
+  quote the Drive report's filename in that state: `build_lineage` attributes
+  evidence to whichever feed owns the cell, so the Landing row disappears from
+  the `delinquency` flow the moment the workbook takes it.
+- **`# of Renewals` prints as the rate alone.** The published `42/88.9%` splices
+  the workbook tracker's count onto the export's rate, and only the rate comes
+  from Drive.
+- **NOI margin and controllable/door are derived, not borrowed.** The
+  scorecard's cells for both are workbook-owned, so the tab computes them from
+  `monthly_pl` / `expense_buckets` and the directory's `residential_units`.
+
+Since `1819adb` anchored `monthly_pl` on the statement's **total expenses**
+line, the tab's NOI margin agrees with the workbook's (72.5% against 72.6% for
+Jul 2026, the difference being the revenue basis) and the deep dive ties out
+against the top box exactly. What does *not* agree is the **expense ratio**:
+this card draws the statement's whole expense load over its revenue (33.3% T12)
+while the Portfolio tab's Expense Ratio card stays on Align's operating,
+recoverable definition (32.7%). Two cards an "expense ratio" apart with no
+explanation is how a reader stops trusting both, so the footnote names the
+other card's number.
+
+`SCD_MISSING` is the honesty block: eight things The Landing shows that no Drive
+export can refresh today, each with why and what would fix it. The counts in the
+note under it are computed from the list rather than typed, so they cannot go
+stale when a row moves. Five of the eight are one report away and three of those
+five are the same one — the rent roll (open item C4).
+
 ## Refreshing The KPI Scorecard
 
 `docs/scorecard.json` comes from the KPI scorecard workbook, in two steps that
