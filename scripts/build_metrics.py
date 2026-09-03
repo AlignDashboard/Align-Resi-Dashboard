@@ -108,6 +108,74 @@ def arrival(group):
     return (max(landed) if landed else None), names
 
 
+def ratio_trend(points, label=""):
+    """The run of ratio points the card can plot as one line.
+
+    One point per statement period, drawn as a line -- so a point measured on a
+    different expense anchor than the newest would draw the anchor change as a
+    move in the ratio. Only the trailing run measured the same way as the newest
+    point is returned, and it re-lengthens as statements re-arrive on the
+    current anchor. Points stored before `expense_scope` existed are the
+    operating-slice ones, so an absent value counts as "operating" rather than
+    as "matches whatever is newest".
+    """
+    scope_of = lambda pt: pt.get("expense_scope") or "operating"
+    scope = scope_of(points[-1])
+    run = points
+    while len(run) > 1 and scope_of(run[0]) != scope:
+        run = run[1:]
+    if len(run) < len(points):
+        print(f"[warn] {label or 'expense-ratio'} trend cut to {len(run)} of "
+              f"{len(points)} point(s): earlier periods are on a different "
+              f"expense anchor than '{scope}'")
+    return run, scope
+
+
+def ratio_basis(scope, anchor):
+    """The prose the Expense Ratio card prints under its own property.
+
+    Composed here rather than reused from the parse's `basis`, which describes
+    the expense row alone and not the quotient the card is showing.
+    """
+    # Kept close to the length of the operating line it replaced: this string
+    # is the card's eyebrow, and a longer one knocks the property select off the
+    # title row at 1440 and wraps to five lines at 390. What the anchor spans is
+    # in the footnote, which has room for it.
+    if scope == "total":
+        return f"Total expenses ({anchor}) \u00f7 Total revenue (T12)"
+    return "Recoverable opex \u00f7 Operating revenue (T12)"
+
+
+def expense_anchor_for(prop, period_end, group):
+    """Which expense row this period's codes are measured on.
+
+    The statement carries two expense totals and the dashboard reads the outer
+    one: TOTAL EXPENSES (jpm 549999-9999), operating plus the non-operating
+    52xxxx region. Statements on the Align tree have no such row -- below their
+    5999-9998 recoverable total sit the NOI line and then 6xxx sections with no
+    grand total -- so those fall back to the operating anchor.
+
+    All-or-nothing across the property's building codes, and that is the point of
+    hoisting this out of the two stores that need it: adding one building's total
+    expenses to another's operating expenses gives a figure that is neither, and
+    nothing downstream could tell. One rule, one warning, both stores.
+
+    Returns (scope, anchor, basis, t12_key, monthly_key) -- the last two naming
+    the parse fields to read, so callers sum one series or the other without
+    branching twice.
+    """
+    anchors = {pr.get("expenses_total_anchor") for _, pr in group}
+    if len(anchors) == 1 and None not in anchors:
+        return ("total", anchors.pop(), group[0][1].get("expenses_total_basis"),
+                "expenses_total_t12", "expenses_total_monthly")
+    if anchors != {None}:
+        print(f"[warn] {prop['name']} {period_end}: codes disagree on the "
+              f"total-expense anchor {sorted(str(a) for a in anchors)} -- "
+              f"falling back to operating expenses for this period")
+    return ("operating", None, group[0][1].get("opex_basis"),
+            "opex_recoverable_t12", "opex_recoverable_monthly")
+
+
 def store_expense_ratio(prop, t12_parses):
     """Append/replace this property's rolling-T12 points, keyed by period_end.
 
@@ -117,6 +185,20 @@ def store_expense_ratio(prop, t12_parses):
     a single building as if it were the whole: Palma's ratio read 127.3% off
     Palma South alone, whose lease-up revenue is near zero, while Palma North
     was billing $264k that month and was not in the figure at all.
+
+    The numerator is the statement's TOTAL EXPENSES row (jpm 549999-9999) where
+    the statement has one, matching the Operating Summary card. This departs
+    from the Align definition of the ratio, which is the recoverable/operating
+    line over operating revenue; it is the owner's call, made 2026-09-03, so
+    that the two cards drawing the same statement stop reporting two different
+    expense loads. The Landing reads 33.3% on the total anchor against 32.7% on
+    the operating one.
+
+    A statement with no total-expense row keeps the operating anchor, so the
+    ratio is not comparable across properties on different account trees --
+    Palma's 56.1% is recoverable opex, The Landing's 33.3% is total expenses.
+    `expense_scope` and `expense_anchor` on the point are what let the card say
+    so per property instead of printing one basis over both.
     """
     # Grouped by period, so codes are only ever summed with each other when
     # they cover the same twelve months. Codes reporting different periods
@@ -133,35 +215,45 @@ def store_expense_ratio(prop, t12_parses):
 
     for period_end, group in by_period.items():
         codes = sorted({c2 for c, p in group for c2 in (p.get("property_codes") or [c])})
+        scope, anchor, exp_basis, t12_key, monthly_key = \
+            expense_anchor_for(prop, period_end, group)
         rev_t12 = sum(p["revenue_t12"] for _, p in group)
-        opex_t12 = sum(p["opex_recoverable_t12"] for _, p in group)
+        exp_t12 = sum(p[t12_key] for _, p in group)
 
         # The monthly detail sums position by position, so the month columns
         # have to line up. They do for one period end; if that ever stops
         # holding, say so and publish the leading code's detail unsummed rather
-        # than adding March to April.
+        # than adding March to April. Computed from the chosen anchor either
+        # way, rather than from the parse's own precomputed ratio, so the
+        # monthly detail can never sit on a different row than ratio_t12.
+        pct = lambda e, r: round(100 * e / r, 1) if r else None
         labels = group[0][1]["labels"]
         mismatched = next((c for c, p in group[1:] if p["labels"] != labels), None)
         if mismatched:
             print(f"[warn] {prop['name']} {period_end}: code '{mismatched}' has "
                   f"different month labels than '{codes[0]}' -- monthly detail "
                   f"is from '{codes[0]}' alone for this period")
-            monthly = group[0][1]["expense_ratio_monthly"]
+            lead = group[0][1]
+            monthly = [pct(lead[monthly_key][i], lead["revenue_monthly"][i])
+                       for i in range(12)]
         else:
             rev_m = [sum(p["revenue_monthly"][i] for _, p in group) for i in range(12)]
-            opex_m = [sum(p["opex_recoverable_monthly"][i] for _, p in group)
-                      for i in range(12)]
-            monthly = [round(100 * opex_m[i] / rev_m[i], 1) if rev_m[i] else None
-                       for i in range(12)]
+            exp_m = [sum(p[monthly_key][i] for _, p in group) for i in range(12)]
+            monthly = [pct(exp_m[i], rev_m[i]) for i in range(12)]
 
         landed_at, source_files = arrival(group)
         point = {
             "period_end": period_end,
             "landed_at": landed_at,
             "source_files": source_files,
-            "ratio_t12": round(100 * opex_t12 / rev_t12, 1) if rev_t12 else None,
+            "ratio_t12": pct(exp_t12, rev_t12),
             "revenue_t12": round(rev_t12, 2),
-            "opex_recoverable_t12": round(opex_t12, 2),
+            # Named for what it is rather than for the anchor it used to be:
+            # on the total anchor this is not recoverable opex.
+            "expense_t12": round(exp_t12, 2),
+            "expense_scope": scope,
+            "expense_anchor": anchor,
+            "basis": exp_basis,
             # Which building codes the point was built from. Without this a
             # point cannot be told apart from one stored against the wrong
             # property, which is how a statement for 335 Third sat in Palma's
@@ -279,14 +371,13 @@ def store_monthly_pl(prop, t12_parses):
     once did. For The Landing that is ~$4.4k a month for most of the year and
     $55k in Jul 2026, so the two anchors are not interchangeable: the summary is
     now the whole expense load rather than the operating slice of it. The
-    expense *ratio* still anchors on the operating line, per the Align
-    definition -- these are two questions of one statement, not one number
-    published twice.
+    Expense Ratio card was moved onto the same anchor on 2026-09-03, so the two
+    cards drawing this statement no longer report two different expense loads.
 
     `expense_scope` says which anchor a point used ("total" or "operating") and
-    `expense_anchor` names the code, because the Align tree has no total-expense
-    row to anchor on and those points still have to be readable. The page picks
-    its row labels off the scope rather than parsing the basis prose.
+    `expense_anchor` names the code -- chosen by expense_anchor_for, which the
+    ratio store shares. The page picks its row labels off the scope rather than
+    parsing the basis prose.
 
     NOI stays revenue minus that expense row rather than the statement's own NOI
     line, so the card's three rows reconcile by construction. On the JPM tree
@@ -312,25 +403,10 @@ def store_monthly_pl(prop, t12_parses):
             group = group[:1]
         rev = [sum(pr["revenue_monthly"][i] for _, pr in group) for i in range(12)]
 
-        # Every code has to be measured on the same expense row before they can
-        # be summed: adding one building's total expenses to another's operating
-        # expenses would produce a figure that is neither, and nothing
-        # downstream could tell. All-or-nothing, and the fallback is named.
-        anchors = {pr.get("expenses_total_anchor") for _, pr in group}
-        if len(anchors) == 1 and None not in anchors:
-            expense = [sum(pr["expenses_total_monthly"][i] for _, pr in group)
-                       for i in range(12)]
-            scope, anchor = "total", anchors.pop()
-            basis = group[0][1].get("expenses_total_basis")
-        else:
-            if anchors != {None}:
-                print(f"[warn] {prop['name']} {period_end}: codes disagree on the "
-                      f"total-expense anchor {sorted(str(a) for a in anchors)} -- "
-                      f"falling back to operating expenses for this period")
-            expense = [sum(pr["opex_recoverable_monthly"][i] for _, pr in group)
-                       for i in range(12)]
-            scope, anchor = "operating", None
-            basis = group[0][1].get("opex_basis")
+        # Same anchor rule as the ratio, in one place: see expense_anchor_for.
+        scope, anchor, basis, _, monthly_key = \
+            expense_anchor_for(prop, period_end, group)
+        expense = [sum(pr[monthly_key][i] for _, pr in group) for i in range(12)]
 
         landed_at, source_files = arrival(group)
         point = {
@@ -744,14 +820,27 @@ def build_metrics_json():
         if not pts:
             continue
         latest = pts[-1]
+        # The trend is one point per statement period, and the card plots it as
+        # a line -- so a point measured on a different expense anchor than the
+        # newest would draw the anchor change as a move in the ratio. Keep the
+        # trailing run measured the same way as the newest point; the line
+        # re-lengthens as statements re-arrive on the current anchor. Points
+        # stored before expense_scope existed are the operating-slice ones.
+        trend, scope = ratio_trend(pts, f"{p['name']} expense-ratio")
         expense_ratio_props.append({
             "slug": p["slug"],
             "name": p["name"],
             "ratio_t12": latest["ratio_t12"],
-            "trend_labels": [pt["period_end"] for pt in pts],
-            "trend_values": [pt["ratio_t12"] for pt in pts],
+            "trend_labels": [pt["period_end"] for pt in trend],
+            "trend_values": [pt["ratio_t12"] for pt in trend],
             "latest_monthly_labels": latest["labels"],
             "latest_monthly_ratio": latest["monthly_ratio"],
+            # Per property, not per block: two properties on different account
+            # trees are on different anchors, and one basis line over both
+            # would describe only whichever sorted first.
+            "expense_scope": scope,
+            "expense_anchor": latest.get("expense_anchor"),
+            "basis": ratio_basis(scope, latest.get("expense_anchor")),
         })
 
     # Load existing metrics.json to preserve the other (manual/demo) blocks
@@ -840,11 +929,19 @@ def build_metrics_json():
     if expense_ratio_props:
         metrics["expense_ratio"] = {
             "available": True,
-            "basis": "Recoverable Opex \u00f7 Operating Revenue (T12)",
+            # A fallback only: each property carries its own basis, because
+            # the anchor depends on which account tree its statement is on.
+            "basis": "Statement expenses \u00f7 Operating revenue (T12)",
             "properties": expense_ratio_props,
             "footnote": "Rolling T12 expense ratio per property; one point per monthly "
                         "statement. Monthly ratios within a statement are volatile on an "
-                        "accrual basis \u2014 the T12 figure is the reliable KPI.",
+                        "accrual basis \u2014 the T12 figure is the reliable KPI. The "
+                        "numerator is the statement's total expenses row where it has "
+                        "one (the same figure the Operating Summary card shows), and its "
+                        "recoverable operating total where it does not \u2014 so the "
+                        "ratio is not comparable between properties whose statements are "
+                        "on different account trees \u2014 the basis above the chart is "
+                        "the selected property's own.",
         }
     else:
         # No property history found. Leave any existing expense_ratio block

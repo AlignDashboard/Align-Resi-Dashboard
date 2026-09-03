@@ -1389,9 +1389,14 @@ async function loadDashboard() {
       document.getElementById(ids.big).textContent =
         (p.ratio_t12 != null ? p.ratio_t12 + unit : "—");
       const multi = p.trend_labels && p.trend_labels.length > 1;
+      // Per-property basis, falling back to the block's. Two properties can be
+      // on different expense anchors -- The Landing's statement has a TOTAL
+      // EXPENSES row and Palma's does not -- so one basis line printed over
+      // both would describe only one of them.
+      const basis = p.basis || metric.basis;
       document.getElementById(ids.eyebrow).textContent = multi
-        ? metric.basis + " · rolling T12 by statement period"
-        : metric.basis + " · monthly (T12 trend builds as more statements arrive)";
+        ? basis + " · rolling T12 by statement period"
+        : basis + " · monthly (T12 trend builds as more statements arrive)";
       if (chart) chart.destroy();
       chart = new Chart(document.getElementById(ids.canvas), {
         type: multi ? "line" : "bar",

@@ -5,16 +5,23 @@ Parses a Yardi 12-Month (T12) Statement export and extracts the expense-ratio
 inputs. Anchors on Yardi ACCOUNT CODES (column A), not row positions, so it is
 robust to suppress-zero exports and minor layout shifts.
 
-Expense ratio (per Align definition) =
-    TOTAL OPERATING EXPENSE RECOVERABLE (code 5999-9998)
-    -------------------------------------------------------
-    TOTAL OPERATING REVENUE            (code 4999-9999)
+Two expense anchors are published, not one, because a statement carries two
+expense totals and which one a figure used has to be recorded rather than
+inferred:
 
-Two expense anchors are published, not one, because two cards ask different
-questions of the same statement. The ratio above is the recoverable/operating
-line; the Operating Summary card wants the statement's TOTAL EXPENSES row
-(jpm 549999-9999), which also carries the non-operating 52xxxx region. Both are
-returned so neither card has to redefine the other's number.
+    519999-9999 (jpm) / 5999-9998 (align)   TOTAL OPERATING EXPENSES
+    549999-9999 (jpm)                       TOTAL EXPENSES
+                                            (operating + non-operating 52xxxx)
+
+Both the Expense Ratio and the Operating Summary card read the outer one, over
+TOTAL REVENUE (499999-9999 jpm / 4999-9999 align). That is the owner's call of
+2026-09-03 and it departs from the Align definition of the ratio, which is the
+recoverable line over operating revenue -- 32.7% for The Landing against 33.3%
+on the total anchor. The recoverable figures are still published, unchanged, so
+the older definition is one field away and nothing has been lost.
+
+The Align tree has no total-expense row, so build_metrics falls back to the
+operating anchor for those statements and records that it did.
 
 Usage:
     from parse_t12_statement import parse_t12

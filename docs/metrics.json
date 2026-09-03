@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-03T19:03:50.991907+00:00",
+    "generated_at": "2026-09-03T19:47:29.838590+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -187,17 +187,17 @@
   ],
   "expense_ratio": {
     "available": true,
-    "basis": "Recoverable Opex \u00f7 Operating Revenue (T12)",
+    "basis": "Statement expenses \u00f7 Operating revenue (T12)",
     "properties": [
       {
         "slug": "the-landing",
         "name": "The Landing",
-        "ratio_t12": 32.7,
+        "ratio_t12": 33.3,
         "trend_labels": [
           "Jul 2026"
         ],
         "trend_values": [
-          32.7
+          33.3
         ],
         "latest_monthly_labels": [
           "Aug",
@@ -214,19 +214,22 @@
           "Jul"
         ],
         "latest_monthly_ratio": [
-          32.3,
-          31.0,
-          31.0,
-          29.0,
-          33.9,
-          29.9,
-          33.7,
-          35.8,
-          52.8,
+          32.6,
+          31.4,
+          31.5,
+          29.3,
+          34.2,
+          30.3,
+          34.1,
+          36.0,
+          52.9,
           32.5,
           27.7,
-          23.4
-        ]
+          27.5
+        ],
+        "expense_scope": "total",
+        "expense_anchor": "549999-9999",
+        "basis": "Total expenses (549999-9999) \u00f7 Total revenue (T12)"
       },
       {
         "slug": "palma",
@@ -265,10 +268,13 @@
           55.0,
           38.8,
           -36.0
-        ]
+        ],
+        "expense_scope": "operating",
+        "expense_anchor": null,
+        "basis": "Recoverable opex \u00f7 Operating revenue (T12)"
       }
     ],
-    "footnote": "Rolling T12 expense ratio per property; one point per monthly statement. Monthly ratios within a statement are volatile on an accrual basis \u2014 the T12 figure is the reliable KPI."
+    "footnote": "Rolling T12 expense ratio per property; one point per monthly statement. Monthly ratios within a statement are volatile on an accrual basis \u2014 the T12 figure is the reliable KPI. The numerator is the statement's total expenses row where it has one (the same figure the Operating Summary card shows), and its recoverable operating total where it does not \u2014 so the ratio is not comparable between properties whose statements are on different account trees \u2014 the basis above the chart is the selected property's own."
   },
   "expense_buckets": {
     "available": true,

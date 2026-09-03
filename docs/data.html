@@ -1159,7 +1159,9 @@ async function loadAll() {
         id: "t-expratio-" + (pr.slug || i), group: "Portfolio",
         title: "Expense Ratio — " + (pr.name || pr.slug),
         feeds: "Expense Ratio chart (property selector)",
-        note: [er.basis, "T12 ratio " + (pr.ratio_t12 != null ? pr.ratio_t12 + "%" : "—"),
+        // pr.basis before er.basis: the anchor is per property, not per block.
+        note: [pr.basis || er.basis,
+               "T12 ratio " + (pr.ratio_t12 != null ? pr.ratio_t12 + "%" : "—"),
                er.footnote].filter(Boolean).join(" · "),
         cols: [{ key: "period", label: "Period" }, { key: "value", label: "Ratio %", fmt: "num" }],
         rows: (pr.trend_labels && pr.trend_labels.length > 1

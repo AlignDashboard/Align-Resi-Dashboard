@@ -1,15 +1,16 @@
 """
 test_monthly_pl.py
 ------------------
-Guards the Operating Summary card's expense row. That row is the statement's
-TOTAL EXPENSES line (jpm 549999-9999), not TOTAL OPERATING EXPENSES
-(519999-9999), and the difference between the two is real money -- so the two
-things that can go wrong silently are checked here:
+Guards the expense row behind the Operating Summary and Expense Ratio cards.
+That row is the statement's TOTAL EXPENSES line (jpm 549999-9999), not TOTAL
+OPERATING EXPENSES (519999-9999), and the difference between the two is real
+money -- so the two things that can go wrong silently are checked here:
 
   * the wrong anchor being stored, or two building codes being summed across
     different anchors, which would produce a figure that is neither total nor
     operating expense;
-  * a trailing window straddling the anchor change, which would read the gap
+  * a series straddling the anchor change -- a trailing window in the monthly
+    P&L, or a plotted point in the ratio trend -- which would read the gap
     between the anchors as a swing in spending.
 
 No network and no fixtures on disk: the statements are built in a temp dir by
@@ -44,12 +45,12 @@ def ok(label, cond, detail=None):
         print(f"  FAIL  {label}" + (f"\n        {detail}" if detail is not None else ""))
 
 
-def store(tmp, parses, slug="fixture"):
-    """Run store_monthly_pl against a throwaway data/ and return its one point."""
+def store(tmp, parses, slug="fixture", fn=None):
+    """Run a store against a throwaway data/ and return its newest point."""
     prev = bm.DATA
     bm.DATA = pathlib.Path(tmp) / "data"
     try:
-        hist = bm.store_monthly_pl({"name": "Fixture", "slug": slug}, parses)
+        hist = (fn or bm.store_monthly_pl)({"name": "Fixture", "slug": slug}, parses)
     finally:
         bm.DATA = prev
     return hist["points"][-1]
@@ -157,6 +158,77 @@ def main():
            s3["opex"])
         ok("scope published once for the run", s3["expense_scope"] == "total",
            s3["expense_scope"])
+        print("\nthe expense ratio reads the same anchor as the summary")
+        r = store(tmp, [jpm], slug="ratio", fn=bm.store_expense_ratio)
+        ok("ratio anchored on 549999-9999",
+           r["expense_anchor"] == "549999-9999" and r["expense_scope"] == "total",
+           (r["expense_anchor"], r["expense_scope"]))
+        # 268300*12 / 700000*12 = 38.3%, against 268000/700000 = 38.3% -- too
+        # close on this fixture, so check the numerator itself.
+        ok("numerator is total expenses, not the operating slice",
+           r["expense_t12"] == 268300 * 12, r["expense_t12"])
+        ok("ratio is that numerator over revenue",
+           r["ratio_t12"] == round(100 * (268300 * 12) / (700000 * 12), 1),
+           r["ratio_t12"])
+        ok("monthly detail sits on the same anchor as ratio_t12",
+           r["monthly_ratio"] == [round(100 * 268300 / 700000, 1)] * 12,
+           r["monthly_ratio"][:2])
+        ok("basis recorded on the point", "549999-9999" in (r["basis"] or ""),
+           r["basis"])
+        ok("the recoverable figure is still available on the parse",
+           jpm["opex_recoverable_t12"] == 268000 * 12, jpm["opex_recoverable_t12"])
+
+        ar = store(tmp, [align], slug="ratio-align", fn=bm.store_expense_ratio)
+        ok("align tree ratio falls back to the operating anchor",
+           ar["expense_scope"] == "operating" and ar["expense_anchor"] is None,
+           (ar["expense_scope"], ar["expense_anchor"]))
+        ok("...on the align recoverable total", ar["expense_t12"] == 1500.0 * 12,
+           ar["expense_t12"])
+
+        mr = store(tmp, [jpm, other], slug="ratio-mixed", fn=bm.store_expense_ratio)
+        ok("mixed anchors fall back for the ratio too",
+           mr["expense_scope"] == "operating"
+           and mr["expense_t12"] == (268000.0 + 1500.0) * 12,
+           (mr["expense_scope"], mr["expense_t12"]))
+
+        print("\nthe ratio trend never plots two anchors as one line")
+        pt = lambda per, val, sc: {"period_end": per, "ratio_t12": val,
+                                   "labels": [""] * 12,
+                                   "monthly_ratio": [val] * 12,
+                                   "expense_scope": sc,
+                                   "expense_anchor": ("549999-9999"
+                                                      if sc == "total" else None)}
+        mixed = [pt("May 2026", 30.0, "operating"),
+                 pt("Jun 2026", 31.0, "operating"),
+                 pt("Jul 2026", 33.3, "total")]
+        run, scope = bm.ratio_trend(mixed, "fixture")
+        ok("trend keeps only the run on the newest anchor",
+           [x["period_end"] for x in run] == ["Jul 2026"] and scope == "total",
+           ([x["period_end"] for x in run], scope))
+
+        # A point predating expense_scope is an operating one, so it must not be
+        # read as matching a "total" newest point.
+        legacy = pt("May 2026", 30.0, "operating")
+        del legacy["expense_scope"]
+        run2, _ = bm.ratio_trend([legacy, pt("Jul 2026", 33.3, "total")], "fixture")
+        ok("a point predating expense_scope counts as operating",
+           [x["period_end"] for x in run2] == ["Jul 2026"],
+           [x["period_end"] for x in run2])
+
+        same = [pt("May 2026", 30.0, "total"), pt("Jun 2026", 31.0, "total"),
+                pt("Jul 2026", 33.3, "total")]
+        run3, _ = bm.ratio_trend(same, "fixture")
+        ok("one anchor throughout keeps the whole trend", len(run3) == 3, len(run3))
+
+        # The newest point is what the card's big number is, so it is never cut.
+        run4, _ = bm.ratio_trend([pt("Jul 2026", 33.3, "total")], "fixture")
+        ok("a single point survives", len(run4) == 1, len(run4))
+
+        ok("basis prose follows the scope",
+           "549999-9999" in bm.ratio_basis("total", "549999-9999")
+           and "Recoverable" in bm.ratio_basis("operating", None),
+           (bm.ratio_basis("total", "549999-9999"),
+            bm.ratio_basis("operating", None)))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

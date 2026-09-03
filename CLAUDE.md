@@ -447,53 +447,87 @@ EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
 
 ## The T12 statement's two expense anchors
 
-The 12-month accrual statement carries more than one expense total, and two
-cards ask different questions of it, so `parse_t12_statement.py` publishes both
-rather than letting one card redefine the other's number:
+The 12-month accrual statement carries more than one expense total, and which
+one a published figure used has to be recorded rather than inferred:
 
-| Anchor | Row | Feeds |
-| --- | --- | --- |
-| `519999-9999` (jpm) / `5999-9998` (align) | TOTAL OPERATING EXPENSES / TOTAL OPERATING EXPENSE RECOVERABLE | the **Expense Ratio** card, per the Align definition of the ratio |
-| `549999-9999` (jpm) | TOTAL EXPENSES — operating plus the non-operating 52xxxx region | the **Operating Summary** card, the top box on The Landing tab |
+| Anchor | Row |
+| --- | --- |
+| `519999-9999` (jpm) / `5999-9998` (align) | TOTAL OPERATING EXPENSES / TOTAL OPERATING EXPENSE RECOVERABLE |
+| `549999-9999` (jpm) | TOTAL EXPENSES — operating plus the non-operating 52xxxx region |
+
+**Everything the pipeline publishes now reads the outer one**: the Operating
+Summary card (the top box on The Landing tab, moved 2026-09-03), the Expense
+Ratio card (moved the same day), and the expense buckets behind the Expense Deep
+Dive, which had tied out against `549999-9999` all along. So the three cards
+drawing this statement cover the same expense load, which they did not before.
 
 They are not interchangeable. For The Landing the gap is ~$4.4k a month for most
 of the year and **$55k in Jul 2026**, so the summary reads $365k for that month
-against the $310k the operating anchor gives. The gap is the 52xxxx lines —
-gross receipts/business licence tax, non-recoverable concierge, professional
-fees. Because `549999-9999` is the row immediately above `599999-9999 TOTAL NET
-OPERATING INCOME`, revenue less it reproduces the statement's own NOI line, which
-is why that card's third row is plain **NOI** rather than "Operating NOI".
+against the $310k the operating anchor gives, and the T12 ratio reads **33.3%
+against 32.7%**. The gap is the 52xxxx lines — gross receipts/business licence
+tax, non-recoverable concierge, professional fees. Because `549999-9999` is the
+row immediately above `599999-9999 TOTAL NET OPERATING INCOME`, revenue less it
+reproduces the statement's own NOI line, which is why the summary's third row is
+plain **NOI** rather than "Operating NOI".
 
-The Align tree has no counterpart: below its `5999-9998` sit the NOI line and
-then `6000-0000 OTHER EXPENSES` in sections with no grand total. So a statement
-on that tree publishes no total-expense row and `store_monthly_pl` falls back to
-the operating anchor. Which anchor a point used is recorded, not inferred:
+**The ratio's move departs from the Align definition**, which is the recoverable
+line over operating revenue. That is the owner's call, taken so the cards stop
+disagreeing; the recoverable figures are still parsed and unchanged
+(`opex_recoverable_t12` / `_monthly` on the parse), so the older definition is
+one field away. `ratio_basis()` composes the prose the card prints.
+
+**The analyst workbook turns out to have been on the total-expense basis all
+along**, which is corroboration rather than coincidence: `landing.json`'s
+`expense_noi.ttm.opex_ratio` is 33.15% on opex of $4,728,562, against the
+statement's `549999-9999` total of $4,725,421 — a $3,141 gap, 0.07%. So the
+Expense Load & NOI card (workbook-fed) and the Expense Ratio card (pipeline-fed)
+were reporting the same property on two different expense loads, worst for
+**Jul 2026: 27.4% in the workbook against the pipeline's 23.4%**. On the total
+anchor the pipeline reads 27.5% and the two agree to a tenth. The workbook's
+number was never wrong; the pipeline's denominator of accounts was.
+
+The Align tree has no counterpart to `549999-9999`: below its `5999-9998` sit the
+NOI line and then `6000-0000 OTHER EXPENSES` in sections with no grand total. So
+a statement on that tree publishes no total-expense row and falls back to the
+operating anchor — which means **the ratio is not comparable across account
+trees**: Palma's 56.1% is recoverable opex, The Landing's 33.3% is total
+expenses. That is why the basis is published per property and the card's eyebrow
+reads off the selected one, rather than one basis line printed over both.
+
+Which anchor a point used is recorded on the point:
 
 | Field | Meaning |
 | --- | --- |
-| `expense_scope` | `"total"` or `"operating"` — the page picks its row labels off this |
+| `expense_scope` | `"total"` or `"operating"` — the page picks its row and column labels off this |
 | `expense_anchor` | the account code, or `null` on the fallback |
 | `basis` | the prose the card and the data page print |
 
-Two guards, because both failures would be invisible in the numbers:
+`expense_anchor_for()` in `build_metrics.py` makes the choice once for both
+stores. Three guards, because all three failures would be invisible in the
+numbers:
 
 - **Codes are never summed across anchors.** A property reporting under several
   building codes needs every code on the same row before they can be added;
   one building's total expenses plus another's operating expenses is a figure
   that is neither. Mixed anchors drop to the operating anchor, with a warning.
-- **The stitched series stops where the anchor changes.** `stitch_monthly_pl`
-  joins successive statements into one month run, and the card compares a
-  trailing window against the current month — so a window straddling the switch
-  would read the gap between the two anchors as a swing in spending. Points
-  stored before `expense_scope` existed count as `operating`. The series
-  re-lengthens as statements re-arrive on the current anchor.
+- **The stitched month series stops where the anchor changes.**
+  `stitch_monthly_pl` joins successive statements into one month run, and the
+  summary compares a trailing window against the current month — so a window
+  straddling the switch would read the gap between the two anchors as a swing in
+  spending.
+- **The ratio trend stops there too.** `ratio_trend` keeps only the run of
+  statement periods measured like the newest one, since the card plots them as a
+  line and a point on the other anchor would draw the change as a move in the
+  ratio.
 
-`scripts/test_monthly_pl.py` holds all of this down — 18 checks against
+Points stored before `expense_scope` existed count as `operating` in both
+guards — an absent value is not "matches whatever is newest". Both series
+re-lengthen as statements re-arrive on the current anchor.
+
+`scripts/test_monthly_pl.py` holds all of this down — 32 checks against
 statements built in a temp dir by `test_expense_buckets`' own builders, no
-network and no fixtures. Note the **expense buckets** behind the Expense Deep
-Dive already tie out against `549999-9999`, so that card and the top box have
-covered the same expense load all along; it was the summary that was reading the
-operating slice.
+network and no fixtures. Each guard has a check that fails when the guard is
+removed (verified by mutation).
 
 ## How reports reach Drive
 

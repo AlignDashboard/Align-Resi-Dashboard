@@ -6,9 +6,12 @@
       "source_files": [
         "12_Month_Statement_Accrual.xlsx"
       ],
-      "ratio_t12": 32.7,
+      "ratio_t12": 33.3,
       "revenue_t12": 14194490.28,
-      "opex_recoverable_t12": 4635006.69,
+      "expense_t12": 4725421.42,
+      "expense_scope": "total",
+      "expense_anchor": "549999-9999",
+      "basis": "jpm 549999-9999 total expenses (operating and non-operating)",
       "source_codes": [
         "p0005611",
         "p0005612",
@@ -30,18 +33,18 @@
         "Jul"
       ],
       "monthly_ratio": [
-        32.3,
-        31.0,
-        31.0,
-        29.0,
-        33.9,
-        29.9,
-        33.7,
-        35.8,
-        52.8,
+        32.6,
+        31.4,
+        31.5,
+        29.3,
+        34.2,
+        30.3,
+        34.1,
+        36.0,
+        52.9,
         32.5,
         27.7,
-        23.4
+        27.5
       ]
     }
   ]
