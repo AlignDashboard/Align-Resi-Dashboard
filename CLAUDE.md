@@ -92,7 +92,7 @@ every figure on it would move on the next pipeline run.
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
 | Delinquency | the two cells the Drive AR report fills — empty whenever the workbook owns them |
-| Unit Inventory | `unit_directory` |
+| Unit Inventory | `unit_directory` — **frozen until C5**, see below |
 | What Feeds This Tab | `lineage.json` — arrivals, and what is missing |
 
 `renderOpSummary` and `renderExpenseDeep` are **shared** with The Landing rather
@@ -131,15 +131,24 @@ unrefreshable number on a page that promises only live ones:
   scorecard's cells for both are workbook-owned, so the tab computes them from
   `monthly_pl` / `expense_buckets` and the directory's `residential_units`.
 
-Since `1819adb` anchored `monthly_pl` on the statement's **total expenses**
-line, the tab's NOI margin agrees with the workbook's (72.5% against 72.6% for
-Jul 2026, the difference being the revenue basis) and the deep dive ties out
-against the top box exactly. What does *not* agree is the **expense ratio**:
-this card draws the statement's whole expense load over its revenue (33.3% T12)
-while the Portfolio tab's Expense Ratio card stays on Align's operating,
-recoverable definition (32.7%). Two cards an "expense ratio" apart with no
-explanation is how a reader stops trusting both, so the footnote names the
-other card's number.
+Since `1819adb` and `2f34b17` moved `monthly_pl` and the expense ratio onto the
+statement's **total expenses** line, everything on this card reconciles: NOI
+margin agrees with the workbook's (72.5% against 72.6% for Jul 2026, the
+difference being the revenue basis), the deep dive ties out against the top box
+exactly, and the ratio agrees with the Portfolio tab's Expense Ratio card to a
+tenth (33.3%). None of that is assumed — the card compares its own figure
+against `expense_ratio.ratio_t12` and prints either the agreement or the two
+bases, because the anchor is now recorded per property and Palma still keeps the
+recoverable one.
+
+One feed on the tab is **Drive-derived but not currently refreshable**, and the
+page says so twice — on the Unit Inventory card and under the feed table —
+because a frozen feed with a plausible arrival date is worse than a missing one.
+`Building Info` sits in the Drive library rather than the drop tree, on purpose,
+and `fetch_drive` only scans that tree when `GDRIVE_REFERENCE_FOLDER_ID` is set;
+it is not, so the entry is skipped with a log line every run (open item C5). The
+`blocked` field on that row in `SCD_FEED_ROWS` is what both notes read, so
+closing C5 means deleting one field rather than hunting for prose.
 
 `SCD_MISSING` is the honesty block: eight things The Landing shows that no Drive
 export can refresh today, each with why and what would fix it. The counts in the

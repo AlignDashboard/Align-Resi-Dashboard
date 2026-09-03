@@ -3253,8 +3253,20 @@ const SCD_FEED_ROWS = [
   // it is asked rather than asserted.
   { flow: "delinquency", fills: "Delinquency card · two scorecard cells",
     fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
-  { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door" },
+  { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door",
+    // The one feed on this tab whose refresh route is not open today. Building
+    // Info sits in the Drive library rather than the drop tree, on purpose, and
+    // fetch_drive only scans that tree when GDRIVE_REFERENCE_FOLDER_ID is set --
+    // it is not, so the entry is skipped with a log line every run
+    // (fetch_drive.py:142, 232). The numbers below are real and Drive-derived;
+    // they just cannot move yet, which on a tab that promises only refreshable
+    // figures has to be said out loud rather than left to the arrival date.
+    blocked: "its Drive folder is in the reference library, which the pipeline is not "
+           + "scanning yet — GDRIVE_REFERENCE_FOLDER_ID is unset, so a fresh export "
+           + "dropped there is skipped with a log line and these figures stay on the "
+           + "file named above (open item C5)" },
 ];
+const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).blocked || "";
 
 // What the workbook-fed Landing tab shows that this one cannot, and what would
 // put it here. Written down rather than inferred: a card that is absent for a
@@ -3546,7 +3558,7 @@ async function loadLandingDrive() {
       data: { labels: keys.map(shortMo),
         datasets: [
           { label: "NOI margin", data: margin, yAxisID: "y", borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
-          { label: totalScope ? "Total expense ratio" : "Expense ratio", data: ratio, yAxisID: "y", borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
+          { label: "Expense ratio", data: ratio, yAxisID: "y", borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
           { label: "Controllable expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
         ] },
       options: { maintainAspectRatio: false, responsive: true,
@@ -3577,21 +3589,27 @@ async function loadLandingDrive() {
     const ttmRev = sum(pl.revenue), ttmNoi = sum(pl.noi), ttmOpex = sum(pl.opex);
     const ctrlAvg = ctrlPerDoorMo
       ? ctrlPerDoorMo.reduce((t, v) => t + v, 0) / ctrlPerDoorMo.length : null;
-    // The ratio drawn here is the statement's expense over its own revenue. On a
-    // total-anchored statement that is NOT the Align expense ratio the Portfolio
-    // card publishes, which stays on the operating/recoverable line by
-    // definition -- 33.3% against 32.7% for the same twelve months. Two cards
-    // showing an "expense ratio" half a point apart with no explanation is how a
-    // reader stops trusting both, so the number the other card carries is named
-    // here rather than left to be found.
+    // The ratio drawn here is the statement's expense over its own revenue, and
+    // the Portfolio tab publishes an Expense Ratio card of its own. Whether the
+    // two agree depends on which expense line each is anchored on, and that is
+    // now recorded per property rather than fixed -- so the card compares them
+    // and says which case it is, instead of asserting either. Two cards an
+    // "expense ratio" apart with no explanation is how a reader stops trusting
+    // both; two that agree are worth saying so about.
     let alt = "";
-    if (totalScope && er && er.ratio_t12 != null) {
-      alt = "This ratio is the statement's whole expense load over its revenue. The "
-          + "Expense Ratio card on the Portfolio tab is a different measure and stays "
-          + "so on purpose — Align defines it on the operating, recoverable line, which "
-          + "reads " + er.ratio_t12.toFixed(1) + "% over the same twelve months against "
-          + fmPct(ttmOpex / ttmRev) + " here. Neither is wrong; they are different "
-          + "expense lines of one statement. ";
+    if (er && er.ratio_t12 != null) {
+      const mine = (ttmOpex / ttmRev) * 100;
+      alt = Math.abs(mine - er.ratio_t12) < 0.1
+        ? "The Expense Ratio card on the Portfolio tab reports the same figure to a "
+          + "tenth (" + er.ratio_t12.toFixed(1) + "%) — both are "
+          + (er.basis ? er.basis.charAt(0).toLowerCase() + er.basis.slice(1)
+                      : "the same quotient") + ", so the two cards are one "
+          + "measure seen twice rather than two definitions. "
+        : "The Expense Ratio card on the Portfolio tab reads "
+          + er.ratio_t12.toFixed(1) + "% for the same twelve months, because it is a "
+          + "different quotient: " + (er.basis || "a different basis") + " against this "
+          + "card's " + (pl.basis || "statement expense") + " over the same revenue. "
+          + "Neither is wrong, and they are not interchangeable. ";
     }
     foot.textContent =
       "T12 NOI " + fm$(ttmNoi) + " (" + fmPct(ttmNoi / ttmRev) + " margin) on revenue "
@@ -3779,7 +3797,13 @@ async function loadLandingDrive() {
       + "that plan's units. This is a description of the building, not a lease report — "
       + "it carries no resident, no lease and no occupancy, which is why nothing here "
       + "needs scrubbing. Bedrooms belong to the plan rather than the unit; a plan whose "
-      + "rows disagree is flagged by the parser, never averaged.";
+      + "rows disagree is flagged by the parser, never averaged."
+      + (scdBlocker("unit_directory")
+          ? " Note this is the one card here that cannot refresh itself today: "
+            + scdBlocker("unit_directory") + ". The figures are Drive-derived and tied "
+            + "out against the export's own totals, but they are as of that export and "
+            + "will stay there."
+          : "");
   })();
 
   /* ---- What feeds this tab, and what it cannot show ---- */
@@ -3842,6 +3866,12 @@ async function loadLandingDrive() {
             ? ", and " + spell(tally[top]) + " of those " + spell(single.length)
               + " by the same one — " + top + "." : ".")
       : "None of them is one report away.";
+    // A feed whose refresh route is shut is worse than a missing one: it looks
+    // healthy, it has an arrival date, and it is simply frozen. Say which.
+    const blocked = SCD_FEED_ROWS.filter(r => r.blocked).map(r => {
+      const f = flows.find(x => x.id === r.flow);
+      return (f ? f.title : r.flow) + ": " + r.blocked;
+    });
     document.getElementById("dfNote").textContent =
       "Arrival, not coverage: “Arrived” is when the report landed in Drive, “Covers” is "
       + "the period it describes. A report can be about July and have arrived this "
@@ -3852,7 +3882,15 @@ async function loadLandingDrive() {
           : ".")
       + " The right-hand table is the price of this tab: " + spell(SCD_MISSING.length)
       + " things The Landing shows that no Drive export can refresh today. "
-      + oneReport.charAt(0).toUpperCase() + oneReport.slice(1);
+      + oneReport.charAt(0).toUpperCase() + oneReport.slice(1)
+      + (blocked.length
+          ? " One caveat on the left-hand table, and it is the sharpest thing on this "
+            + "page: " + spell(blocked.length) + " of these "
+            + spell(SCD_FEED_ROWS.length) + " feeds cannot actually be refreshed right "
+            + "now — " + blocked.join("; ") + ". Everything it fills is genuinely "
+            + "Drive-derived and ties out, so it belongs here, but it is frozen until "
+            + "that is fixed, and a stale arrival date is the only sign."
+          : "");
   })();
 
   document.getElementById("dMeta").textContent =
