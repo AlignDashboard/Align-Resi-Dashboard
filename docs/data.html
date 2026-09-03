@@ -1175,6 +1175,10 @@ async function loadAll() {
     // the Drive T12 and the unit directory actually produce.
     const pl = d.monthly_pl || {};
     (pl.properties || []).forEach((pr, i) => {
+      // The expense column is the statement's TOTAL EXPENSES line where the
+      // statement has one, and the operating total where it does not, so the
+      // heading is taken from the published scope rather than fixed.
+      const plTotal = (pr.expense_scope || "operating") === "total";
       renderTable(host, {
         id: "t-monthlypl-" + (pr.slug || i), group: "Portfolio",
         title: "Monthly P&L — " + (pr.name || pr.slug),
@@ -1182,11 +1186,15 @@ async function loadAll() {
         note: [pr.basis, "statement period ending " + (pr.period_end || "—"),
                "codes " + ((pr.source_codes || []).join("+") || "—"),
                "Successive T12 statements stitched into one continuous series; "
-               + "the newest statement wins where two report the same month."]
+               + "the newest statement wins where two report the same month. "
+               + "The series stops where the expense anchor changes, so no "
+               + "window straddles the two."]
                 .filter(Boolean).join(" · "),
         cols: [{ key: "month", label: "Month" },
                { key: "revenue", label: "Operating revenue", fmt: "money" },
-               { key: "opex", label: "Operating expense", fmt: "money" },
+               { key: "opex",
+                 label: plTotal ? "Total expenses" : "Operating expense",
+                 fmt: "money" },
                { key: "noi", label: "NOI", fmt: "money" },
                { key: "margin", label: "NOI margin", fmt: "pct1" }],
         rows: (pr.months || []).map((m, j) => {
