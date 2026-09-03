@@ -150,6 +150,10 @@ def main():
        eb["below_line_excluded"])
     ok("nothing fell to Other on this fixture", not eb["other_labels"], eb["other_labels"])
     ok("ratio output unaffected", p["expense_ratio_t12"] is not None)
+    ok("align tree publishes no total-expense anchor",
+       p["expenses_total_anchor"] is None and p["expenses_total_monthly"] is None
+       and p["expenses_total_t12"] is None,
+       (p["expenses_total_anchor"], p["expenses_total_t12"]))
 
     print("refusal")
     pb = t12.parse_t12(bad)
@@ -173,6 +177,23 @@ def main():
     ok("opex anchored on 519999-9999", jp["opex_recoverable_t12"] == 268000 * 12,
        jp["opex_recoverable_t12"])
     ok("opex basis recorded", "jpm" in jp["opex_basis"], jp["opex_basis"])
+    ok("total expenses anchored on 549999-9999",
+       jp["expenses_total_anchor"] == "549999-9999"
+       and jp["expenses_total_t12"] == 268300 * 12,
+       (jp["expenses_total_anchor"], jp["expenses_total_t12"]))
+    ok("total expenses basis names the row",
+       "549999-9999" in (jp["expenses_total_basis"] or ""),
+       jp["expenses_total_basis"])
+    # The whole point of the second anchor: it is not the operating total. The
+    # franchise tax line between them is what the Operating Summary card was
+    # missing while it read 519999-9999.
+    ok("total expenses exceeds operating expenses by the 52xxxx region",
+       jp["expenses_total_t12"] - jp["opex_recoverable_t12"] == 300 * 12,
+       (jp["expenses_total_t12"], jp["opex_recoverable_t12"]))
+    ok("revenue less total expenses reproduces the statement's NOI line",
+       all(jp["revenue_monthly"][i] - jp["expenses_total_monthly"][i] == 431700
+           for i in range(12)),
+       (jp["revenue_monthly"][0], jp["expenses_total_monthly"][0]))
     jb = jp["expense_buckets"]
     ok("jpm buckets present", jb is not None and jp["expense_buckets_error"] is None,
        jp["expense_buckets_error"])

@@ -354,6 +354,56 @@ Past `SC_STALE_DAYS` (3, in `index.html`) the timestamp turns red: the daily
 EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
 "Feed arrival times" table lists every feed's arrival beside its as-of date.
 
+## The T12 statement's two expense anchors
+
+The 12-month accrual statement carries more than one expense total, and two
+cards ask different questions of it, so `parse_t12_statement.py` publishes both
+rather than letting one card redefine the other's number:
+
+| Anchor | Row | Feeds |
+| --- | --- | --- |
+| `519999-9999` (jpm) / `5999-9998` (align) | TOTAL OPERATING EXPENSES / TOTAL OPERATING EXPENSE RECOVERABLE | the **Expense Ratio** card, per the Align definition of the ratio |
+| `549999-9999` (jpm) | TOTAL EXPENSES — operating plus the non-operating 52xxxx region | the **Operating Summary** card, the top box on The Landing tab |
+
+They are not interchangeable. For The Landing the gap is ~$4.4k a month for most
+of the year and **$55k in Jul 2026**, so the summary reads $365k for that month
+against the $310k the operating anchor gives. The gap is the 52xxxx lines —
+gross receipts/business licence tax, non-recoverable concierge, professional
+fees. Because `549999-9999` is the row immediately above `599999-9999 TOTAL NET
+OPERATING INCOME`, revenue less it reproduces the statement's own NOI line, which
+is why that card's third row is plain **NOI** rather than "Operating NOI".
+
+The Align tree has no counterpart: below its `5999-9998` sit the NOI line and
+then `6000-0000 OTHER EXPENSES` in sections with no grand total. So a statement
+on that tree publishes no total-expense row and `store_monthly_pl` falls back to
+the operating anchor. Which anchor a point used is recorded, not inferred:
+
+| Field | Meaning |
+| --- | --- |
+| `expense_scope` | `"total"` or `"operating"` — the page picks its row labels off this |
+| `expense_anchor` | the account code, or `null` on the fallback |
+| `basis` | the prose the card and the data page print |
+
+Two guards, because both failures would be invisible in the numbers:
+
+- **Codes are never summed across anchors.** A property reporting under several
+  building codes needs every code on the same row before they can be added;
+  one building's total expenses plus another's operating expenses is a figure
+  that is neither. Mixed anchors drop to the operating anchor, with a warning.
+- **The stitched series stops where the anchor changes.** `stitch_monthly_pl`
+  joins successive statements into one month run, and the card compares a
+  trailing window against the current month — so a window straddling the switch
+  would read the gap between the two anchors as a swing in spending. Points
+  stored before `expense_scope` existed count as `operating`. The series
+  re-lengthens as statements re-arrive on the current anchor.
+
+`scripts/test_monthly_pl.py` holds all of this down — 18 checks against
+statements built in a temp dir by `test_expense_buckets`' own builders, no
+network and no fixtures. Note the **expense buckets** behind the Expense Deep
+Dive already tie out against `549999-9999`, so that card and the top box have
+covered the same expense load all along; it was the summary that was reading the
+operating slice.
+
 ## How reports reach Drive
 
 Nothing in this repo puts files in Drive. A Google Apps Script running under
@@ -644,6 +694,10 @@ So the T12 points can report an arrival and not just a period,
 `store_monthly_revenue` now record `landed_at` and `source_files` on each point
 (`build_metrics.arrival`). Points accumulated before that change carry neither,
 and the page says "arrival not recorded" rather than inventing one.
+
+The Monthly P&L table's expense column is headed from `expense_scope`, so it
+reads "Total expenses" for The Landing and "Operating expense" for a property on
+the Align tree — see the T12 anchors section above.
 
 ## Deployment
 

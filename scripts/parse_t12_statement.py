@@ -10,6 +10,12 @@ Expense ratio (per Align definition) =
     -------------------------------------------------------
     TOTAL OPERATING REVENUE            (code 4999-9999)
 
+Two expense anchors are published, not one, because two cards ask different
+questions of the same statement. The ratio above is the recoverable/operating
+line; the Operating Summary card wants the statement's TOTAL EXPENSES row
+(jpm 549999-9999), which also carries the non-operating 52xxxx region. Both are
+returned so neither card has to redefine the other's number.
+
 Usage:
     from parse_t12_statement import parse_t12
     result = parse_t12("path/to/statement.xlsx")
@@ -44,6 +50,12 @@ CODE_OPEX    = "5999-9998"   # align: TOTAL OPERATING EXPENSE RECOVERABLE
 JPM_REVENUE  = "499999-9999" # jpm: TOTAL REVENUE
 JPM_OPEX     = "519999-9999" # jpm: TOTAL OPERATING EXPENSES
 JPM_EXP_ALL  = "549999-9999" # jpm: TOTAL EXPENSES (operating + non-operating)
+
+# The Align tree has no counterpart to 549999-9999: below its 5999-9998
+# recoverable total sit the NOI line and then 6xxx OTHER EXPENSES in sections
+# with no grand total of their own. So a statement on that tree publishes no
+# total-expense line, and store_monthly_pl falls back to the operating anchor
+# and says which one it used rather than summing sections into an invented row.
 
 MONTHS_COLS = range(2, 14)   # columns C..N hold the 12 monthly values
 TOTAL_COL   = 14             # column O holds the row total
@@ -400,6 +412,12 @@ def parse_t12(path):
     if opex is None:
         raise ValueError(f"Opex line {opex_code} not found in {path}")
 
+    # Total expenses: operating plus the non-operating 52xxxx region above it.
+    # A statement with no such row (every Align-tree one) publishes None here
+    # rather than a figure reassembled from parts; the ratio anchors are
+    # untouched either way, so this is additive.
+    exp_all = _line_by_code(rows, JPM_EXP_ALL) if jpm else None
+
     rev_t12 = sum(rev)
     opex_t12 = sum(opex)
     ratio_t12 = round(100 * opex_t12 / rev_t12, 1) if rev_t12 else None
@@ -427,13 +445,24 @@ def parse_t12(path):
         "tree": tree,
         "opex_basis": ("jpm 519999-9999 total operating expenses" if jpm
                        else "align 5999-9998 recoverable opex"),
+        # The anchor the Operating Summary card reads. Named as a code rather
+        # than a prose basis so store_monthly_pl can refuse to sum two codes
+        # measured on different rows.
+        "expenses_total_anchor": JPM_EXP_ALL if exp_all is not None else None,
+        "expenses_total_basis": (f"jpm {JPM_EXP_ALL} total expenses "
+                                 "(operating and non-operating)"
+                                 if exp_all is not None else None),
         "book": _book(rows),
         "period_end": period_end,
         "labels": labels,
         "revenue_monthly": [round(x, 2) for x in rev],
         "opex_recoverable_monthly": [round(x, 2) for x in opex],
+        "expenses_total_monthly": ([round(x, 2) for x in exp_all]
+                                   if exp_all is not None else None),
         "revenue_t12": round(rev_t12, 2),
         "opex_recoverable_t12": round(opex_t12, 2),
+        "expenses_total_t12": (round(sum(exp_all), 2)
+                               if exp_all is not None else None),
         "expense_ratio_t12": ratio_t12,
         "expense_ratio_monthly": monthly,
         "expense_buckets": bucketed,

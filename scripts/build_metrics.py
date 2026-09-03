@@ -269,15 +269,30 @@ def store_expense_buckets(prop, t12_parses):
 
 
 def store_monthly_pl(prop, t12_parses):
-    """data/<slug>/monthly_pl.json — operating revenue, operating expense and
-    the NOI between them, month by month, summed across the property's codes
-    like the ratio is. Aggregates only.
+    """data/<slug>/monthly_pl.json — operating revenue, the statement's expense
+    total and the NOI between them, month by month, summed across the
+    property's codes like the ratio is. Aggregates only.
 
-    NOI here is revenue minus operating expense, not the statement's own NOI
-    line: on the JPM tree that line also carries non-operating expense
-    (financing-adjacent items below 519999-9999), so using it would leave a
-    three-row card whose first two rows do not reconcile to its third. The
-    basis string says which anchors were used, and the card prints it.
+    The expense row anchors on the statement's TOTAL EXPENSES line
+    (jpm 549999-9999), which carries the non-operating 52xxxx region as well as
+    operating expense, and not on TOTAL OPERATING EXPENSES (519999-9999) as it
+    once did. For The Landing that is ~$4.4k a month for most of the year and
+    $55k in Jul 2026, so the two anchors are not interchangeable: the summary is
+    now the whole expense load rather than the operating slice of it. The
+    expense *ratio* still anchors on the operating line, per the Align
+    definition -- these are two questions of one statement, not one number
+    published twice.
+
+    `expense_scope` says which anchor a point used ("total" or "operating") and
+    `expense_anchor` names the code, because the Align tree has no total-expense
+    row to anchor on and those points still have to be readable. The page picks
+    its row labels off the scope rather than parsing the basis prose.
+
+    NOI stays revenue minus that expense row rather than the statement's own NOI
+    line, so the card's three rows reconcile by construction. On the JPM tree
+    the two now agree: 549999-9999 is the row immediately above
+    599999-9999 TOTAL NET OPERATING INCOME, so subtracting it reproduces that
+    line instead of falling short of it by the non-operating region.
     """
     by_period = {}
     for code, pr in sorted(latest_per_code(t12_parses).items()):
@@ -296,7 +311,27 @@ def store_monthly_pl(prop, t12_parses):
                   f"codes -- monthly P&L from '{group[0][0]}' alone for this period")
             group = group[:1]
         rev = [sum(pr["revenue_monthly"][i] for _, pr in group) for i in range(12)]
-        opex = [sum(pr["opex_recoverable_monthly"][i] for _, pr in group) for i in range(12)]
+
+        # Every code has to be measured on the same expense row before they can
+        # be summed: adding one building's total expenses to another's operating
+        # expenses would produce a figure that is neither, and nothing
+        # downstream could tell. All-or-nothing, and the fallback is named.
+        anchors = {pr.get("expenses_total_anchor") for _, pr in group}
+        if len(anchors) == 1 and None not in anchors:
+            expense = [sum(pr["expenses_total_monthly"][i] for _, pr in group)
+                       for i in range(12)]
+            scope, anchor = "total", anchors.pop()
+            basis = group[0][1].get("expenses_total_basis")
+        else:
+            if anchors != {None}:
+                print(f"[warn] {prop['name']} {period_end}: codes disagree on the "
+                      f"total-expense anchor {sorted(str(a) for a in anchors)} -- "
+                      f"falling back to operating expenses for this period")
+            expense = [sum(pr["opex_recoverable_monthly"][i] for _, pr in group)
+                       for i in range(12)]
+            scope, anchor = "operating", None
+            basis = group[0][1].get("opex_basis")
+
         landed_at, source_files = arrival(group)
         point = {
             "period_end": period_end,
@@ -305,9 +340,14 @@ def store_monthly_pl(prop, t12_parses):
             "labels": labels,
             "source_codes": codes,
             "revenue": [round(v, 2) for v in rev],
-            "opex": [round(v, 2) for v in opex],
-            "noi": [round(rev[i] - opex[i], 2) for i in range(12)],
-            "basis": group[0][1].get("opex_basis"),
+            # Kept under "opex" so the key that metrics.json, data.html and the
+            # card already read does not move; "expense_scope" is what says
+            # whether it is the operating slice or the whole expense load.
+            "opex": [round(v, 2) for v in expense],
+            "noi": [round(rev[i] - expense[i], 2) for i in range(12)],
+            "expense_scope": scope,
+            "expense_anchor": anchor,
+            "basis": basis,
         }
         hist["points"] = [pt for pt in hist["points"] if pt["period_end"] != period_end]
         hist["points"].append(point)
@@ -624,7 +664,7 @@ def process_manifest():
 
 # ---- metrics.json generation ---------------------------------------------
 
-def stitch_monthly_pl(points):
+def stitch_monthly_pl(points, label=""):
     """Every statement's twelve columns merged into one continuous month series.
 
     Consecutive T12 statements overlap -- a new one repeats eleven months of the
@@ -638,6 +678,13 @@ def stitch_monthly_pl(points):
     before it, so a T3 comparison needs six months and a T12 comparison
     twenty-four. One statement carries twelve; this is what lets those windows
     reach past it as more statements arrive.
+
+    The run also stops where the expense scope changes. Points stored before the
+    card moved to the statement's TOTAL EXPENSES anchor carry the operating
+    slice instead, and a window straddling the switch would read the ~$4.4k a
+    month between the two anchors as a real swing in spending. So the series is
+    the run of months measured the same way as the newest one, and it grows back
+    to full length as statements re-arrive on the new anchor.
     """
     cells = {}
     for pt in points:                       # oldest first, so newest overwrites
@@ -647,22 +694,37 @@ def stitch_monthly_pl(points):
         end = yr * 12 + (mon - 1)
         n = len(pt["revenue"])
         for i in range(n):
-            cells[end - (n - 1 - i)] = (pt["revenue"][i], pt["opex"][i],
-                                        pt["noi"][i], pt.get("basis"))
+            cells[end - (n - 1 - i)] = {
+                "revenue": pt["revenue"][i], "opex": pt["opex"][i],
+                "noi": pt["noi"][i], "basis": pt.get("basis"),
+                "anchor": pt.get("expense_anchor"),
+                # Absent on points stored before the anchor moved, and those are
+                # exactly the operating-slice ones.
+                "scope": pt.get("expense_scope") or "operating",
+            }
     if not cells:
         return None
     hi = max(cells)
+    scope = cells[hi]["scope"]
     start = hi
-    while start - 1 in cells:
+    while start - 1 in cells and cells[start - 1]["scope"] == scope:
         start -= 1
+    if start - 1 in cells:
+        print(f"[warn] {label or 'monthly P&L'}: series cut at "
+              f"{_MON[start % 12]} {start // 12} -- earlier months are on the "
+              f"'{cells[start - 1]['scope']}' expense anchor, the newest is on "
+              f"'{scope}' -- mixing them would show the anchor change as a "
+              f"spending change")
     idx = list(range(start, hi + 1))
     return {
         "labels": [_MON[i % 12] for i in idx],
         "months": [f"{i // 12}-{i % 12 + 1:02d}" for i in idx],
-        "revenue": [cells[i][0] for i in idx],
-        "opex": [cells[i][1] for i in idx],
-        "noi": [cells[i][2] for i in idx],
-        "basis": cells[hi][3],
+        "revenue": [cells[i]["revenue"] for i in idx],
+        "opex": [cells[i]["opex"] for i in idx],
+        "noi": [cells[i]["noi"] for i in idx],
+        "expense_scope": scope,
+        "expense_anchor": cells[hi]["anchor"],
+        "basis": cells[hi]["basis"],
     }
 
 
@@ -753,7 +815,7 @@ def build_metrics_json():
         if not pts:
             continue
         latest = pts[-1]
-        series = stitch_monthly_pl(pts)
+        series = stitch_monthly_pl(pts, f"{p['name']} monthly P&L")
         if series is None:
             continue
         if len(series["revenue"]) > len(latest["revenue"]):
@@ -766,6 +828,11 @@ def build_metrics_json():
                          "months": series["months"],
                          "revenue": series["revenue"], "opex": series["opex"],
                          "noi": series["noi"],
+                         # Which expense row the "opex" series is: the page reads
+                         # this to label the expense and NOI rows, since "total"
+                         # and "operating" are not the same number.
+                         "expense_scope": series["expense_scope"],
+                         "expense_anchor": series["expense_anchor"],
                          "source_codes": latest.get("source_codes"),
                          "basis": series["basis"] or latest.get("basis")})
     metrics["monthly_pl"] = {"available": bool(pl_props), "properties": pl_props}

@@ -2207,6 +2207,22 @@ async function loadLanding() {
     } catch (e) { pt = null; }
     if (!pt || pt.revenue.length < 2) { card.hidden = true; return; }
 
+    // Which expense row the series is. The pipeline anchors on the statement's
+    // TOTAL EXPENSES line (jpm 549999-9999), which carries the non-operating
+    // 52xxxx region as well as operating expense; a statement on the Align
+    // tree has no such row and falls back to the operating total. The two are
+    // materially different -- ~$4.4k a month for The Landing, $55k in Jul 2026
+    // -- so the rows are labelled from the scope rather than assuming either.
+    const totalScope = (pt.expense_scope || "operating") === "total";
+    const expLabel = totalScope ? "Total expenses" : "Operating expenses";
+    // Plain "NOI" on the total anchor because revenue less that row *is* the
+    // statement's own 599999-9999 TOTAL NET OPERATING INCOME line. On the
+    // operating fallback it is not -- it stops short of the non-operating
+    // region -- so that case keeps the qualifier. "Net operating income" spelled
+    // out wrapped the first column at 900px; "NOI" is what the rest of the page
+    // calls it anyway.
+    const noiLabel = totalScope ? "NOI" : "Operating NOI";
+
     const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const [em, ey] = pt.period_end.split(" ");
     const end = (+ey) * 12 + MO.indexOf(em);
@@ -2285,8 +2301,8 @@ async function loadLanding() {
          { t: B.curLabel() + " annualized", num: true },
          { t: "Variance", num: true }],
         [row("Operating revenue", pt.revenue, true),
-         row("Operating expenses", pt.opex, false),
-         row("Operating NOI", pt.noi, true)]);
+         row(expLabel, pt.opex, false),
+         row(noiLabel, pt.noi, true)]);
 
       // Deliberately does not name the horizon: the eyebrow sits above the
       // table, so a string that changed length with the toggle would rewrap at
@@ -2318,9 +2334,16 @@ async function loadLanding() {
               + "\u2014 so the two sides carry the same weight and the variance reads as how "
               + "far above or below last month the current month is running. ")
         + "Annualized scales both columns by \u00d7" + factor + " to a full year, which is the "
-        + "frame the variance is taken in, not a forecast. NOI is revenue less operating "
-        + "expense (" + (pt.basis || "") + "), so the three rows reconcile; non-operating "
-        + "items below that line are excluded. Variance is the percentage difference, "
+        + "frame the variance is taken in, not a forecast. "
+        + (totalScope
+            ? "The expense row is the statement's own total expenses line ("
+              + (pt.basis || "") + ") \u2014 the whole expense load, operating and "
+              + "non-operating, not the operating slice alone \u2014 and NOI is revenue "
+              + "less it, so the three rows reconcile. Financing sits below that line and "
+              + "is excluded. "
+            : "NOI is revenue less operating expense (" + (pt.basis || "") + "), so the "
+              + "three rows reconcile; non-operating items below that line are excluded. ")
+        + "Variance is the percentage difference, "
         + "coloured by favourability rather than by sign: green is more revenue, more NOI, "
         + "or less expense.";
     }
