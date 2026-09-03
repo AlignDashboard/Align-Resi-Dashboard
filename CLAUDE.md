@@ -468,6 +468,17 @@ the folder being dragged into Report Lander. `GDRIVE_REFERENCE_FOLDER_ID` is
 optional; unset, those entries are skipped with a line in the log rather than a
 crash.
 
+**Do not rename `Building Info` in Drive.** It is the one registered folder the
+rescue sweep cannot cover: the sweep never reads the `reference` tree, so that a
+superseded export in the library can't be republished as current. Renaming it
+therefore stops the unit directory with nothing but a log line, while the
+unit-gaps table keeps rendering the last committed data. Renaming any
+rule-named folder is a three-place change anyway — the Drive folder,
+`report_map.json` and the `.js` rule — because `getSubfolder_` skips the
+`normalize_` reuse scan for a `fromRule` name and simply recreates the original
+beside your rename. Auto-derived folders are the opposite: safe to rename, but
+the derived name comes back on the next arrival unless a rule claims it.
+
 The filing script needs the same distinction from the other side, since Apps
 Script can only find and create folders *inside* its target folder. A rule whose
 folder is in `EXTERNAL_FOLDERS` is resolved by absolute ID, read from a **script
