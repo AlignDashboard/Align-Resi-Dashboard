@@ -9,7 +9,10 @@
       ],
       "ratio_t12": 56.1,
       "revenue_t12": 2749240.21,
-      "opex_recoverable_t12": 1542304.29,
+      "expense_t12": 1542304.29,
+      "expense_scope": "operating",
+      "expense_anchor": null,
+      "basis": "align 5999-9998 recoverable opex",
       "source_codes": [
         "rspalman",
         "rspalmas"

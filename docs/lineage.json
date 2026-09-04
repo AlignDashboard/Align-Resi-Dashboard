@@ -393,7 +393,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-03T19:38:09.635746+00:00",
+  "generated_at": "2026-09-04T14:51:11.762024+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 8,
@@ -703,6 +703,14 @@
    "same_as": null,
    "evidence": [
     {
+     "property": "Landing",
+     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "as_of": null,
+     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "landed_at": "2026-08-31T18:28:44.598Z",
+     "detail": "7 KPI cell(s): Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
+    },
+    {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
      "as_of": "2026-08-10",
@@ -762,6 +770,14 @@
    "open_item": null,
    "same_as": "delinquency",
    "evidence": [
+    {
+     "property": "Landing",
+     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "as_of": null,
+     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "landed_at": "2026-08-31T18:28:44.598Z",
+     "detail": "7 KPI cell(s): Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
+    },
     {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
@@ -1835,14 +1851,6 @@
      "source_file": "102ebfe0-The_Landing_Dashboard_V37.xlsx",
      "landed_at": "2026-08-03T21:15:23.385441+00:00",
      "detail": "extract run; the workbook has no arrival time of its own, so this is when it was extracted"
-    },
-    {
-     "property": "Landing",
-     "file": "workbook Source Delinquency tab, via docs/landing.json",
-     "as_of": "2026-07-20",
-     "source_file": "workbook Source Delinquency tab, via docs/landing.json",
-     "landed_at": "2026-08-03T21:15:23.385441+00:00",
-     "detail": "7 KPI cell(s): Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     }
    ],
    "status": "live"
@@ -1932,7 +1940,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-03T19:03:50.991907+00:00",
+     "landed_at": "2026-09-04T14:51:11.444209+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

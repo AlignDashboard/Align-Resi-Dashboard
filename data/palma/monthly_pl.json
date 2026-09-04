@@ -67,6 +67,8 @@
         242433.4,
         355420.52
       ],
+      "expense_scope": "operating",
+      "expense_anchor": null,
       "basis": "align 5999-9998 recoverable opex"
     }
   ]
