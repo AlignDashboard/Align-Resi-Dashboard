@@ -113,6 +113,9 @@ const ROUTING_RULES = [
   { folder: 'Property Status',            patterns: [/propertystatus/, /propstatus/, /boxscore/] },
   // Lives in the Drive library, not the drop tree -- see EXTERNAL_FOLDERS.
   { folder: 'Building Info',              patterns: [/unitdirectory/, /unitdir/] },
+  // Before 'T12 Expenses': its /expense/ pattern would otherwise claim a
+  // budget export whose name happens to mention expenses.
+  { folder: 'Budgets',                    patterns: [/budget/] },
   // The weekly EliseAI funnel export. Its real name is
   // "leasing_funnel_report_<date>.xlsx", which contains neither "weeklyleasing"
   // nor "leasingreport" -- "funnel" sits in the middle -- so it fell through to

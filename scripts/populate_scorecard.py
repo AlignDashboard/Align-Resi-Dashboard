@@ -48,6 +48,16 @@ Which KPIs a delinquency report can actually answer:
                             the workbook's; its "how" line described an older
                             basket, so the fill restates it and keeps the sheet's
                             wording in "how_workbook".
+  Budget Variance %         calendar-YTD (January through the statement's
+                            newest month) actual controllable opex against the
+                            same months of the year's budget, printed as
+                            "$ nominal/% variance", signed, positive meaning
+                            an overspend. Both sides are the same basket --
+                            the Align-grouped buckets less NOT_CONTROLLABLE --
+                            actuals from data/<slug>/expense_buckets.json,
+                            plan from data/<slug>/budget.json (the Drive
+                            Budgets folder). The band grades the ABSOLUTE
+                            magnitude, per its own "how".
   Concession Load %         the current month's concessions over market rent
                             potential less loss to lease less vacancy loss --
                             the T12 statement's rent income before concessions
@@ -103,6 +113,7 @@ KPI_NOI = "NOI Margin %"
 KPI_CTRL = "Controllable OpEx/Unit"
 KPI_MTM = "Month to Month Leases"
 KPI_CONC = "Concession Load %"
+KPI_BV = "Budget Variance %"
 
 # The rent roll's own classification, as the workbook reads it: every unit is in
 # exactly one of these. There is no separate month-to-month state, so a unit the
@@ -166,6 +177,86 @@ def controllable_per_unit(slug, units):
                    if any(k in n.lower() for k in NOT_CONTROLLABLE))
     month = f"{pt['period_end']}"
     return (total - excluded) / units * 12, month, None
+
+
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def _controllable_sum(buckets, idx):
+    """Controllable dollars over the given month indices, or (None, why) if a
+    named exclusion group has gone missing -- the same all-must-be-found guard
+    as controllable_per_unit, because a renamed group that silently stopped
+    matching would count taxes as controllable."""
+    names = list(buckets)
+    found = [k for k in NOT_CONTROLLABLE if any(k in n.lower() for n in names)]
+    if len(found) != len(NOT_CONTROLLABLE):
+        return None, ("the account groups do not name "
+                      + ", ".join(k for k in NOT_CONTROLLABLE if k not in found))
+    total = sum(b[i] for b in buckets.values() for i in idx)
+    excl = sum(b[i] for n, b in buckets.items()
+               if any(k in n.lower() for k in NOT_CONTROLLABLE) for i in idx)
+    return total - excl, None
+
+
+def budget_variance_ytd(slug):
+    """The calendar-YTD controllable-opex variance against the year's budget.
+
+    Returns a dict: ``dollars``, ``pct``, ``window`` and the budget's own
+    ``source``/``received_at`` when it can be computed, or ``why`` when it
+    cannot. A dict rather than a tuple because the refusals carry provenance
+    too -- the page says which budget file it declined to use, not just that
+    something was missing.
+
+    Both sides are the same basket: the Align-grouped expense buckets that sum
+    to each file's own TOTAL EXPENSES, less the NOT_CONTROLLABLE groups. The
+    budget comes from data/<slug>/budget.json (the Drive Budgets folder); the
+    actuals from data/<slug>/expense_buckets.json (the T12 statement). Dollars
+    are actual minus budget, so positive is an overspend; the band grades the
+    absolute magnitude, per its own "how".
+    """
+    bpath = os.path.join("data", slug, "budget.json")
+    epath = os.path.join("data", slug, "expense_buckets.json")
+    if not os.path.exists(bpath):
+        return {"why": "no budget in data/ for this property"}
+    if not os.path.exists(epath):
+        return {"why": "no T12 statement grouped by account for this property"}
+    bud = json.load(open(bpath))
+    out = {"source": bud.get("source_file"), "received_at": bud.get("landed_at")}
+
+    def no(why):
+        return dict(out, why=why)
+
+    pts = (json.load(open(epath)) or {}).get("points") or []
+    if not pts or not bud.get("buckets"):
+        return no("budget or statement carries no bucket detail")
+    pt = pts[-1]
+    try:
+        end_mon, end_year = pt["period_end"].split()
+        n = MONTHS.index(end_mon) + 1              # Jul -> 7 months of YTD
+    except (ValueError, KeyError, AttributeError):
+        return no(f"cannot read the statement's period end "
+                  f"({pt.get('period_end')!r})")
+    if bud.get("year") != int(end_year):
+        return no(f"budget is for {bud.get('year')}, the statement ends in "
+                  f"{end_year}")
+    labels = pt.get("labels") or []
+    if len(labels) < n or labels[-n] != "Jan":
+        return no("the statement's last twelve months do not reach back to "
+                  "January")
+    act, why = _controllable_sum(pt["buckets"],
+                                 range(len(labels) - n, len(labels)))
+    if why:
+        return no(f"actuals: {why}")
+    if (bud.get("labels") or [None])[0] != "Jan":
+        return no("budget months do not start in January")
+    plan, why = _controllable_sum(bud["buckets"], range(n))
+    if why:
+        return no(f"budget: {why}")
+    if not plan:
+        return no("budget controllable YTD is zero")
+    return dict(out, dollars=act - plan, pct=(act - plan) / plan,
+                window=f"Jan-{end_mon} {end_year}")
 
 
 def pct0(v):
@@ -242,6 +333,7 @@ def facts_from_landing(path="docs/landing.json"):
             conc_load_t3 = sum(conc[n - k:n]) / d3
     units = (doc.get("meta") or {}).get("units")
     ctrl, ctrl_month, ctrl_why = controllable_per_unit("the-landing", units)
+    bv = budget_variance_ytd("the-landing")
 
     # Month to month, as a share of occupied units -- the KPI is published as a
     # ratio despite being named "#". Both sides come from the same unit list, and
@@ -274,6 +366,7 @@ def facts_from_landing(path="docs/landing.json"):
         "ctrl_month": ctrl_month,
         "ctrl_units": units,
         "ctrl_why": ctrl_why,
+        "bv": bv,
         "mtm_share": (mtm / occupied) if (occupied and not mtm_why) else None,
         "mtm_units": mtm,
         "mtm_occupied": occupied,
@@ -401,6 +494,20 @@ def measurements(f):
         out[KPI_CTRL] = (None, None,
                          f.get("ctrl_why")
                          or "no T12 statement grouped by account for this property")
+
+    bv = f.get("bv") or {}
+    if bv.get("pct") is not None:
+        d, p = bv["dollars"], bv["pct"]
+        # "$ nominal / % variance", signed -- positive is an overspend. The
+        # band grades the ABSOLUTE magnitude (its own "how" says so: a 12%
+        # underspend flags exactly like a 12% overrun), so the classified raw
+        # is abs(pct); the signed figures are kept in measured[slug].
+        sign = "+" if d >= 0 else "-"
+        out[KPI_BV] = (abs(p), f"{sign}${abs(d):,.0f}/{sign}{abs(p) * 100:.1f}%",
+                       None)
+    else:
+        out[KPI_BV] = (None, None,
+                       bv.get("why") or "no budget for this property")
 
     if f.get("mtm_share") is not None:
         # count and share together: the KPI is named for a count and banded on a
@@ -634,6 +741,28 @@ def main():
         if t and t.get("how") != CONTROLLABLE_HOW:
             t.setdefault("how_workbook", t.get("how"))
             t["how"] = CONTROLLABLE_HOW
+    bv = facts.get("bv") or {}
+    if bv.get("pct") is not None:
+        # Its own feed family, because this cell is not the workbook's: both
+        # sides come from Drive (the budget export and the T12 statement), so
+        # its provenance and arrival are recorded apart from the unprefixed
+        # family that --from-landing otherwise owns. "budget_" is in
+        # SC_FEED_PREFIXES in index.html and the matching list in data.html.
+        meas[slug].update({
+            "budget_source": bv.get("source"),
+            "budget_as_of": bv["window"],
+            "budget_received_at": bv.get("received_at"),
+            "budget_received_what": ("budget in the Drive Budgets folder, "
+                                     "against the T12 statement"),
+            "budget_kpis": [KPI_BV],
+            "budget_variance_basis": (
+                f"{bv['window']} actual controllable opex less the same "
+                f"months' budget (Drive Budgets folder), on the controllable "
+                f"basket; graded on absolute magnitude"),
+            # the signed figures behind the graded abs value
+            "budget_variance_dollars": round(bv["dollars"], 2),
+            "budget_variance_pct": round(bv["pct"], 6),
+        })
     if facts.get("concession_load") is not None:
         c, g, l, v = facts["concession_parts"]
         meas[slug]["concession_basis"] = (

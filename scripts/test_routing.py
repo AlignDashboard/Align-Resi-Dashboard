@@ -173,6 +173,8 @@ CASES = [
     ("2026-08-31 rs_sql_JPM_Demographics_Combined - The Landing (3).xlsx", "Demographics"),
     ("UnitDirectory08_25_2026.xlsx",                                "Building Info"),
     ("2026-08-26 UnitDirectory08_25_2026.xlsx",                     "Building Info"),
+    ("12_Month_Budget_Accrual.xlsx",                                "Budgets"),
+    ("2026-09-03 12_Month_Budget_Accrual.xlsx",                     "Budgets"),
     # already filed correctly today -- these must not move
     ("12_Month_Statement_Accrual.xlsx",                             "T12 Expenses"),
     ("2026-07-16 12_Month_Statement_rs335_accrual.xlsx",            "T12 Expenses"),

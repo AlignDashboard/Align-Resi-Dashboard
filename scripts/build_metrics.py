@@ -594,6 +594,23 @@ def store_concessions(prop, parsed):
                          "unit_count", "totals"])
 
 
+def store_budget(prop, parsed):
+    """data/<slug>/budget.json — the year's plan, in the T12 statement's shape.
+
+    Monthly revenue and operating-expense lines plus the Align-grouped expense
+    buckets, exactly as the actuals' expense_buckets are grouped, so the
+    scorecard's Budget Variance fill compares one basket against itself. A
+    budget carries no resident, but it goes through store_report like every
+    other feed so the central scrub covers it by default.
+    """
+    return store_report(prop, parsed, "budget.json",
+                        ["report_type", "property", "property_code",
+                         "property_codes", "tree", "year", "as_of", "labels",
+                         "revenue_monthly", "opex_operating_monthly",
+                         "buckets", "buckets_unmapped", "buckets_tieout_gap",
+                         "buckets_error"])
+
+
 # report_type -> what to do with a successful parse
 ACCUMULATORS = {
     "t12_statement": None,          # handled inline (needs the book/period checks)
@@ -602,6 +619,7 @@ ACCUMULATORS = {
     "leasing_funnel": store_leasing_funnel,
     "concession_burnoff": store_concessions,
     "unit_directory": store_unit_directory,
+    "budget": store_budget,
 }
 
 

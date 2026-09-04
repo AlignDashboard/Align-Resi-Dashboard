@@ -106,7 +106,7 @@
    "holds": null
   },
   "cScorecard": {
-   "card": "KPI Scorecard \u2014 Total Deliquency",
+   "card": "KPI Scorecard \u2014 Budget Variance %",
    "tab": "Scorecard",
    "tables": [
     "t-sc-measured",
@@ -117,6 +117,7 @@
     "t-sc-workbook"
    ],
    "flows": [
+    "budget",
     "delinquency",
     "bldg_metrics",
     "eliseai_daily",
@@ -393,10 +394,10 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-04T14:51:11.762024+00:00",
+  "generated_at": "2026-09-04T16:22:40.905289+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 8,
+   "live": 9,
    "partial": 3,
    "waiting": 1,
    "no-parser": 10,
@@ -591,6 +592,79 @@
      "source_file": "12_Month_Statement_Accrual.xlsx",
      "landed_at": "2026-08-26T23:15:02.942Z",
      "detail": "1 statement period(s) accumulated"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "budget",
+   "title": "12-month budget",
+   "origin_kind": "drive",
+   "source_label": "Budgets",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "12_Month_Budget_Accrual.xlsx",
+   "carries": "The year's plan in the T12 statement's own shape: twelve budgeted months of revenue and expense on the JPM tree.",
+   "filed_by": [
+    "budget"
+   ],
+   "report_type": "budget",
+   "parser": "parse_budget",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_budget.py",
+     "does": "Reuses the T12 parser's anchors, COA translation and Align-tree grouping; refuses a file with no 'Budget' marker row or a period that is not Jan-Dec of one year.",
+     "checks": "Buckets tie out against the file's own TOTAL EXPENSES to the cent, per month, like the actuals."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Stores the plan per property as data/<slug>/budget.json.",
+     "checks": "Central scrub in store_report, as everywhere."
+    },
+    {
+     "script": "scripts/populate_scorecard.py --from-landing",
+     "does": "Grades calendar-YTD actual controllable opex against the same months of the plan, printed as $ nominal/% variance; the band grades the absolute magnitude.",
+     "checks": "Same controllable basket on both sides, with the all-exclusions-found guard; refuses a budget whose year does not match the statement's."
+    }
+   ],
+   "stores": [
+    "data/<slug>/budget.json"
+   ],
+   "publishes": [
+    {
+     "file": "scorecard.json",
+     "key": "Budget Variance %"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "KPI Scorecard \u2014 Budget Variance %",
+     "tab": "Scorecard",
+     "anchor": "cScorecard",
+     "primary": "t-sc-matrix",
+     "tables": [
+      "t-sc-measured",
+      "t-sc-arrivals",
+      "t-sc-props"
+     ]
+    }
+   ],
+   "tables": [
+    "t-sc-measured",
+    "t-sc-arrivals"
+   ],
+   "note": "Actuals come from the same T12 statement the Expense Deep Dive draws; the budget is the comparison, not a new actuals source.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/budget.json",
+     "as_of": "Jan 2026-Dec 2026",
+     "source_file": "2026-09-03 12_Month_Budget_Accrual.xlsx",
+     "landed_at": "2026-09-03T19:20:47Z",
+     "detail": null
     }
    ],
    "status": "live"
@@ -1579,17 +1653,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-03",
+     "as_of": "2026-09-04",
      "source_file": null,
-     "landed_at": "2026-09-03T15:37:43Z",
-     "detail": "23 day(s) recorded"
+     "landed_at": "2026-09-04T15:37:34Z",
+     "detail": "24 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-03",
+     "as_of": "2026-09-04",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-03T15:37:43Z",
+     "landed_at": "2026-09-04T15:37:34Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],

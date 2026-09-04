@@ -153,6 +153,44 @@ DRIVE_FLOWS = {
                 "denominator under the delinquency KPI.",
         "open_item": "A10",
     },
+    ("Budgets", "budget"): {
+        "id": "budget",
+        "example": '12_Month_Budget_Accrual.xlsx',
+        "title": "12-month budget",
+        "carries": "The year's plan in the T12 statement's own shape: twelve "
+                   "budgeted months of revenue and expense on the JPM tree.",
+        "steps": [
+            {"script": "scripts/parse_budget.py",
+             "does": "Reuses the T12 parser's anchors, COA translation and "
+                     "Align-tree grouping; refuses a file with no 'Budget' "
+                     "marker row or a period that is not Jan-Dec of one year.",
+             "checks": "Buckets tie out against the file's own TOTAL EXPENSES "
+                       "to the cent, per month, like the actuals."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Stores the plan per property as data/<slug>/budget.json.",
+             "checks": "Central scrub in store_report, as everywhere."},
+            {"script": "scripts/populate_scorecard.py --from-landing",
+             "does": "Grades calendar-YTD actual controllable opex against the "
+                     "same months of the plan, printed as $ nominal/% variance; "
+                     "the band grades the absolute magnitude.",
+             "checks": "Same controllable basket on both sides, with the "
+                       "all-exclusions-found guard; refuses a budget whose "
+                       "year does not match the statement's."},
+        ],
+        "stores": ["data/<slug>/budget.json"],
+        "publishes": [
+            {"file": "scorecard.json", "key": "Budget Variance %"},
+        ],
+        "dashboard": [
+            {"card": "KPI Scorecard — Budget Variance %", "tab": "Scorecard",
+             "anchor": "cScorecard", "primary": "t-sc-matrix",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
+        ],
+        "tables": ["t-sc-measured", "t-sc-arrivals"],
+        "note": "Actuals come from the same T12 statement the Expense Deep "
+                "Dive draws; the budget is the comparison, not a new actuals "
+                "source.",
+    },
     ("Rent Roll", "rent_roll"): {
         "id": "rent_roll",
         "example": '<date> RentRoll<MM_DD_YYYY>.xlsx',

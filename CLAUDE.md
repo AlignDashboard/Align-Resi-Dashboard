@@ -217,6 +217,26 @@ reads 72.6% and grades green against a T12 of 66.8%). The month is what is
 graded, per the owner; `noi_margin_ttm` is recorded beside it in
 `measured[slug]` so the two are never confused.
 
+`--from-landing` also fills **`Budget Variance %`** — calendar-YTD (January
+through the T12 statement's newest month) actual controllable operating
+expense against the same months of the year's budget, printed as **`$
+nominal/% variance`**, signed, positive meaning an overspend. The budget is
+the Yardi `12_Month_Budget_Accrual.xlsx` in the Drive **`Budgets`** folder —
+the T12 statement's own layout on the JPM tree, so `parse_budget.py` reuses
+the T12 parser's anchors, COA translation and Align-tree grouping (and its
+to-the-cent tie-out), refusing a file with no `Budget` marker row or a period
+that is not Jan–Dec of one year. Both sides of the variance are the **same
+basket**: the Align-grouped buckets less `NOT_CONTROLLABLE`, actuals from
+`data/<slug>/expense_buckets.json`, plan from `data/<slug>/budget.json`, with
+the all-exclusions-found guard on each and a refusal when the budget's year
+does not match the statement's. The band grades the **absolute magnitude**,
+per its own "how" (a 12% underspend flags exactly like a 12% overrun). The
+Landing reads **+$116,402/+12.1%** for Jan–Jul 2026, below; the workbook's
+hand-set symbol said in-range and is kept in `status_workbook`. The signed
+figures and window live in `measured[slug]` as `budget_variance_dollars` /
+`budget_variance_pct` / `budget_variance_basis`. Note the band's cutoffs
+predate the 2026-08-28 controllable basket (A9 applies here too).
+
 `--from-landing` also fills **`Concession Load %`** — the current month's
 concessions over **market rent potential less loss to lease less vacancy
 loss**, per the owner's equation set 2026-09-03. All four series come from the
