@@ -88,7 +88,7 @@ every figure on it would move on the next pipeline run.
 | Card | Drive source |
 | --- | --- |
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` |
-| KPI Scorecard — Drive feeds only | the ten `scorecard.json` cells a Drive report fills |
+| KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
 | Delinquency | the two cells the Drive AR report fills — empty whenever the workbook owns them |
@@ -236,6 +236,14 @@ hand-set symbol said in-range and is kept in `status_workbook`. The signed
 figures and window live in `measured[slug]` as `budget_variance_dollars` /
 `budget_variance_pct` / `budget_variance_basis`. Note the band's cutoffs
 predate the 2026-08-28 controllable basket (A9 applies here too).
+
+This cell is filled by the `--from-landing` run but owes the workbook nothing —
+both sides are Drive reports — so its provenance is recorded under its own
+**`budget_`** family rather than the unprefixed one, and `budget_` is
+registered in `SC_FEED_PREFIXES` (and `data.html`'s matching list) so the
+budget's own Drive arrival shows on the page, and in `SCD_DRIVE_FEEDS` so the
+`Landing (Drive)` tab carries the cell. It needs no `fromDrive` predicate:
+unlike the delinquency pair, nothing else writes this KPI.
 
 `--from-landing` also fills **`Concession Load %`** — the current month's
 concessions over **market rent potential less loss to lease less vacancy

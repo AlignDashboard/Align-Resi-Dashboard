@@ -3213,6 +3213,13 @@ const SCD_DRIVE_FEEDS = [
     what: "delinquency summary · Drive “Residential AR Analytics”",
     fromDrive: m => !/workbook|landing\.json|analyst/i.test(
       String(m.source || "") + " " + String(m.received_what || "")) },
+  // Budget Variance % is filled by the --from-landing run but owes the
+  // workbook nothing: both sides are Drive reports (the budget export and the
+  // T12 statement), which is why populate_scorecard records it under its own
+  // budget_ family instead of the unprefixed one. No fromDrive predicate is
+  // needed -- nothing else writes this cell.
+  { prefix: "budget_", only: null,
+    what: "12-month budget · Drive “Budgets”, against the T12 statement" },
 ];
 
 // Is a feed family currently a Drive report? Used both by the scorecard filter
@@ -3254,6 +3261,7 @@ const SCD_FEED_ROWS = [
   // it is asked rather than asserted.
   { flow: "delinquency", fills: "Delinquency card · two scorecard cells",
     fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
+  { flow: "budget", fills: "One scorecard cell — Budget Variance %" },
   { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door",
     // The one feed on this tab whose refresh route is not open today. Building
     // Info sits in the Drive library rather than the drop tree, on purpose, and
