@@ -394,7 +394,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-04T16:22:40.905289+00:00",
+  "generated_at": "2026-09-05T13:42:24.296323+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 9,
@@ -662,8 +662,8 @@
      "property": "the-landing",
      "file": "data/the-landing/budget.json",
      "as_of": "Jan 2026-Dec 2026",
-     "source_file": "2026-09-03 12_Month_Budget_Accrual.xlsx",
-     "landed_at": "2026-09-03T19:20:47Z",
+     "source_file": "12_Month_Budget_Accrual.xlsx",
+     "landed_at": "2026-09-03T19:20:47.634Z",
      "detail": null
     }
    ],
@@ -782,7 +782,7 @@
      "as_of": null,
      "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
      "landed_at": "2026-08-31T18:28:44.598Z",
-     "detail": "7 KPI cell(s): Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
+     "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     },
     {
      "property": "Palma",
@@ -850,7 +850,7 @@
      "as_of": null,
      "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
      "landed_at": "2026-08-31T18:28:44.598Z",
-     "detail": "7 KPI cell(s): Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
+     "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     },
     {
      "property": "Palma",
@@ -2014,7 +2014,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-04T14:51:11.444209+00:00",
+     "landed_at": "2026-09-05T13:42:23.993347+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
