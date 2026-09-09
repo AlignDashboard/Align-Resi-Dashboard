@@ -394,7 +394,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-08T14:57:08.591815+00:00",
+  "generated_at": "2026-09-09T15:02:34.163485+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 9,
@@ -778,10 +778,10 @@
    "evidence": [
     {
      "property": "Landing",
-     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "as_of": null,
-     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "landed_at": "2026-08-31T18:28:44.598Z",
+     "file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
+     "as_of": "2026-09-08",
+     "source_file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
+     "landed_at": "2026-09-08T23:28:43.225Z",
      "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     },
     {
@@ -846,10 +846,10 @@
    "evidence": [
     {
      "property": "Landing",
-     "file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "as_of": null,
-     "source_file": "2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "landed_at": "2026-08-31T18:28:44.598Z",
+     "file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
+     "as_of": "2026-09-08",
+     "source_file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
+     "landed_at": "2026-09-08T23:28:43.225Z",
      "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     },
     {
@@ -1653,17 +1653,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-07",
+     "as_of": "2026-09-08",
      "source_file": null,
-     "landed_at": "2026-09-07T15:38:02Z",
-     "detail": "27 day(s) recorded"
+     "landed_at": "2026-09-08T15:37:37Z",
+     "detail": "28 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-07",
+     "as_of": "2026-09-08",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-07T15:38:02Z",
+     "landed_at": "2026-09-08T15:37:37Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2014,7 +2014,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-08T14:57:08.364171+00:00",
+     "landed_at": "2026-09-09T15:02:33.874350+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
