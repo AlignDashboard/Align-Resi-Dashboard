@@ -738,6 +738,65 @@ def rent_roll_summary(rr):
     }
 
 
+def store_daily_leasing(prop, parsed):
+    """data/<slug>/leasing_detail.json — the new-lease trade-outs, by week.
+
+    Accumulated rather than overwritten, because each file is a single week and
+    the Trade-outs card plots months: one file is one bar's worth of leases.
+    Keyed on the week-ending date so re-processing a week replaces it instead of
+    doubling it, which matters because the filer keeps several copies of the
+    same week (the 9.13.26 week arrived on the 8th, 9th and 10th).
+
+    The lease rows carry no resident — the NEW LEASES block has no name column.
+    The leasing associate's first name is dropped here rather than stored: it
+    identifies a person, it is nobody's business on a published page, and the
+    dashboard has no use for it.
+    """
+    if not parsed.get("as_of"):
+        print(f"[warn] {parsed.get('source_file')}: no week-ending date — "
+              f"skipped, since its leases cannot be placed in a month")
+        return None
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / "leasing_detail.json"
+    hist = json.load(open(fp)) if fp.exists() else {"weeks": []}
+
+    keep = ("unit", "unit_type", "floor_plan", "beds_baths", "sqft", "lease_rent",
+            "prior_rent", "tradeout_amount", "tradeout_pct", "concession",
+            "net_rent", "move_in", "term")
+    week = {
+        "week_ending": parsed["as_of"],
+        "source_file": parsed.get("source_file"),
+        "landed_at": parsed.get("landed_at"),
+        "totals": parsed.get("totals"),
+        "leases": [scrub({k: l.get(k) for k in keep}) for l in parsed.get("leases") or []],
+        "checks": parsed.get("checks"),
+        "problems": parsed.get("problems"),
+    }
+    hist["weeks"] = [w for w in hist["weeks"]
+                     if w.get("week_ending") != week["week_ending"]] + [week]
+    hist["weeks"].sort(key=lambda w: w["week_ending"])
+    json.dump(hist, open(fp, "w"), indent=2, default=str)
+    print(f"[ok] stored leasing detail for {prop['name']}: "
+          f"{len(week['leases'])} lease(s) for the week ending {week['week_ending']} "
+          f"({len(hist['weeks'])} week(s) on file)")
+    return fp
+
+
+def store_renewal_tracker(prop, parsed):
+    """data/<slug>/renewal_tracker.json — the whole tracker, overwritten.
+
+    The opposite of the weekly leasing store: one tracker file carries every
+    month from January 2024 forward, so the newest file supersedes the last
+    rather than adding to it. The MTM roster's per-unit rows go through the
+    central scrub, which is what drops the Yardi tenant code the sheet carries
+    beside each unit.
+    """
+    return store_report(prop, parsed, "renewal_tracker.json",
+                        ["report_type", "property", "as_of", "covers", "months",
+                         "mtm", "unread_sheets", "problems"])
+
+
 # report_type -> what to do with a successful parse
 ACCUMULATORS = {
     "t12_statement": None,          # handled inline (needs the book/period checks)
@@ -747,6 +806,8 @@ ACCUMULATORS = {
     "concession_burnoff": store_concessions,
     "unit_directory": store_unit_directory,
     "budget": store_budget,
+    "daily_leasing_report": store_daily_leasing,
+    "renewal_tracker": store_renewal_tracker,
 }
 
 

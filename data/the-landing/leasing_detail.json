@@ -1,0 +1,129 @@
+{
+  "weeks": [
+    {
+      "week_ending": "2026-08-30",
+      "source_file": "2026-08-31 Daily Report- Week Ending 8.30.26 (2).xlsx",
+      "landed_at": "2026-08-31T18:28:33.825Z",
+      "totals": {
+        "leases": 2,
+        "lease_rent": 15702,
+        "prior_rent": 8449,
+        "tradeout_amount": 7253,
+        "tradeout_pct_mean": 0.850095,
+        "sqft": 1746,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "447",
+          "unit_type": null,
+          "floor_plan": "lab21",
+          "beds_baths": "2b2b",
+          "sqft": 1059,
+          "lease_rent": 9245,
+          "prior_rent": 4849,
+          "tradeout_amount": 4396,
+          "tradeout_pct": 0.906579,
+          "concession": 0,
+          "net_rent": 9245,
+          "move_in": "2026-09-13",
+          "term": "12"
+        },
+        {
+          "unit": "110",
+          "unit_type": null,
+          "floor_plan": "laa5",
+          "beds_baths": "1b1b",
+          "sqft": 687,
+          "lease_rent": 6457,
+          "prior_rent": 3600,
+          "tradeout_amount": 2857,
+          "tradeout_pct": 0.793611,
+          "concession": 0,
+          "net_rent": 6457,
+          "move_in": "2026-09-05",
+          "term": "12"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 2,
+          "leases": 2
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-08-30"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 54 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "The Landing (from the Weekly_Leases header)"
+        }
+      ],
+      "problems": []
+    },
+    {
+      "week_ending": "2026-09-06",
+      "source_file": "2026-09-08 Daily Report- Week Ending 9.7.26.xlsx",
+      "landed_at": "2026-09-08T23:28:51.933Z",
+      "totals": {
+        "leases": 1,
+        "lease_rent": 5973,
+        "prior_rent": 3351,
+        "tradeout_amount": 2622,
+        "tradeout_pct_mean": 0.782453,
+        "sqft": 621,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "650",
+          "unit_type": null,
+          "floor_plan": "laa1",
+          "beds_baths": "1x1",
+          "sqft": 621,
+          "lease_rent": 5973,
+          "prior_rent": 3351,
+          "tradeout_amount": 2622,
+          "tradeout_pct": 0.782453,
+          "concession": 0,
+          "net_rent": 5973,
+          "move_in": "2026-09-06",
+          "term": "12"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 1,
+          "leases": 1
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-09-06"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 54 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "The Landing (from the Weekly_Leases header)"
+        }
+      ],
+      "problems": []
+    }
+  ]
+}

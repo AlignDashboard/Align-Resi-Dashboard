@@ -1,0 +1,91 @@
+{
+  "weeks": [
+    {
+      "week_ending": "2026-09-13",
+      "source_file": "2026-09-09 09.07.2026- 09.13.2026- Chorus - Daily Report (1).xlsx",
+      "landed_at": "2026-09-10T01:29:42.920Z",
+      "totals": {
+        "leases": 3,
+        "lease_rent": 18201,
+        "prior_rent": 12798,
+        "tradeout_amount": 5403,
+        "tradeout_pct_mean": 0.397965,
+        "sqft": 2412,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "243",
+          "unit_type": null,
+          "floor_plan": "\tchc2A",
+          "beds_baths": "3x3",
+          "sqft": 1146,
+          "lease_rent": 8832,
+          "prior_rent": 5411,
+          "tradeout_amount": 3421,
+          "tradeout_pct": 0.632231,
+          "concession": 0,
+          "net_rent": 8832,
+          "move_in": "2027-10-17",
+          "term": "13"
+        },
+        {
+          "unit": "515",
+          "unit_type": null,
+          "floor_plan": "\tcha1N",
+          "beds_baths": "1x1",
+          "sqft": 583,
+          "lease_rent": 4715,
+          "prior_rent": 3340,
+          "tradeout_amount": 1375,
+          "tradeout_pct": 0.411677,
+          "concession": 0,
+          "net_rent": 4715,
+          "move_in": "2026-11-16",
+          "term": "13"
+        },
+        {
+          "unit": "1901",
+          "unit_type": null,
+          "floor_plan": "\t cha1T",
+          "beds_baths": "1x1",
+          "sqft": 683,
+          "lease_rent": 4654,
+          "prior_rent": 4047,
+          "tradeout_amount": 607,
+          "tradeout_pct": 0.149988,
+          "concession": 0,
+          "net_rent": 4654,
+          "move_in": "2026-11-17",
+          "term": "14"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 3,
+          "leases": 3
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-09-13"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Chorus (from the filename)"
+        }
+      ],
+      "problems": [
+        "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
+      ]
+    }
+  ]
+}

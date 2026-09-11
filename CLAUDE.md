@@ -58,12 +58,24 @@ Which report feeds what (the workbook's own `Data Lineage` tab is authoritative)
 | `Source Rent Roll Jul` / `Jun` | SPV PM Deliverable Package, Rent Roll tab | Rent Roll |
 | `Source Delinquency` | `rs_rp_DelinquencySummaryReport` | Residential AR Analytics |
 | `Source Renewal Tracker` | Landing 2025 Renewal Tracker (monthly + MTM tabs) | Renewal Tracker |
-| `Lease Detail` | RealPage rate tracker — **typed in, not a grey tab** | Weekly Leasing Reports |
+| `Lease Detail` | the weekly leasing workbook — **typed in, not a grey tab** | Daily Leasing Reports |
 
-T12, Rent Roll and Residential AR Analytics have parsers in
-`config/report_map.json`; the rest are `pending`. The renewal tracker has no
-Drive folder at all, so its grey tab is refreshed by pasting. Trade-out data
-will not update from the grey tabs either — `Lease Detail` is hand-entered.
+Every one of those five now has a parser in `config/report_map.json`. The last
+two were written 2026-09-11, and the search for them corrected two things this
+file used to say:
+
+- **`Lease Detail` is not fed by a RealPage export.** It is Align's own
+  `Daily Report- Week Ending <date>.xlsx`, and it has been arriving in the Drive
+  `Daily Leasing Reports` folder all along — not `Weekly Leasing Reports`. Its
+  `Weekly_Leases` sheet carries the NEW LEASES block, which holds the one field
+  nothing else in the pipeline has: `PRIOR LEASE RATE`.
+- **The renewal tracker does have a Drive folder**, and files have been landing
+  in it since 2026-09-02. `Landing 2025 Renewal Tracker - Full (N).xlsx` carries
+  a sheet per month from January 2024 forward plus the `MTM` roster, so one file
+  is the whole history rather than a weekly increment.
+
+Both parse and store today; nothing publishes them yet, so the Trade-outs card
+is still workbook-fed. See **The two leasing parsers** below.
 
 The workbook was restructured in V37: the `Holdovers` tab became `MTM` (same
 content, per-unit vacate flags added), and `MTM Analysis` (tracker
@@ -462,6 +474,58 @@ data row from the total row and never emitted. The export says only "For
 Selected Properties", naming no property, so until the owner settles which
 building it covers the parse is logged and stored nowhere — attribution by
 guesswork would file one building's concessions under another.
+
+### The two leasing parsers
+
+`parse_daily_leasing.py` and `parse_renewal_tracker.py` were written against
+real exports on 2026-09-11. Both feed `data/` and neither publishes yet.
+
+**`parse_daily_leasing`** reads the NEW LEASES block on the `Weekly_Leases`
+sheet into per-lease trade-outs, and `store_daily_leasing` accumulates one entry
+per week in `data/<slug>/leasing_detail.json`, keyed on the week-ending date —
+the filer keeps several copies of the same week, so re-processing must replace
+rather than double. Three things it is careful about:
+
+- **The file names its property in three places and they disagree.** Chorus's
+  2026-09-09 copy says "Chorus / 416 units" in the `Weekly_Leases` header and
+  "The Landing / 263 units" on its `Information` sheet, which is a template
+  field nobody updated. Order of trust: the filename, then the sheet header,
+  then `Information` — and a disagreement is reported, never silently resolved.
+  The Landing's own file needs the second source, because its name carries no
+  property at all.
+- **The blocks below the leases overlap their columns.** A cancellation row puts
+  its scheduled move-in date where a lease's rent goes, and the WEEKLY AVERAGE
+  row carries a real number there. The `STOP` markers are the primary guard; a
+  numeric-type check on the rent is the backstop that stops a stray date from
+  crashing a pipeline run instead of reporting one bad row.
+- **Every lease is checked against the report's own arithmetic** — rent less
+  prior rate must equal the trade-out it prints, and the percentage must equal
+  that over the prior rate.
+
+**`parse_renewal_tracker`** reads all 36 month sheets plus `MTM`. The hard part
+is that the layout changed between vintages and **the same label means different
+things**: `BEST OFFER $` is the offer *difference* on the May 2025 sheet
+(4932 × 9.9% = 488) and the offered *rate* on June 2025's (4326 × 1.0499 =
+4542), one month apart. So the offered rent is resolved by **arithmetic, not by
+label** — a value near the current rent is a rate, one near zero is a difference
+— and a row that resolves to neither is left out rather than published as an
+increase that is off by a whole rent. Two more things:
+
+- **Money is text on the 2025 sheets** (`'$4,326'`), so a numeric-only read sees
+  a month of renewals as an empty month.
+- **A sheet whose header cannot be matched is recorded as unread**, never read
+  with the wrong columns, and the skipped sheets are surfaced as a problem.
+
+The monthly offer counts tie out against the 2026-09-08 weekly email's own
+renewal table — 18 / 7 / 13 / 6 for September through December — which is an
+independent check on the whole chain.
+
+`scripts/test_leasing_and_renewal.py` holds both down: 31 checks against
+workbooks built in a temp dir, no fixtures and no network, since the real files
+carry names and are gitignored. The three load-bearing guards — the STOP
+markers, the arithmetic offer resolution and the money coercion — were each
+verified by mutation, and two of them were found to be *untested* on the first
+attempt because the synthetic rows did not reproduce the real column overlap.
 
 ### "Data last updated" — arrival, not coverage
 
