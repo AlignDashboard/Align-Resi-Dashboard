@@ -1,0 +1,43 @@
+{
+  "weeks": [
+    {
+      "week_ending": "2026-08-30",
+      "source_file": "2026-08-31 8.30.26 - The Madelon - Daily Report.xlsx",
+      "landed_at": "2026-09-11T00:00:00Z",
+      "totals": {
+        "leases": 0,
+        "lease_rent": 0,
+        "prior_rent": 0,
+        "tradeout_amount": 0,
+        "tradeout_pct_mean": null,
+        "sqft": 0,
+        "concession": 0
+      },
+      "leases": [],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 0,
+          "leases": 0
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-08-30 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Madelon (from the filename)"
+        }
+      ],
+      "problems": []
+    }
+  ]
+}

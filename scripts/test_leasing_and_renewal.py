@@ -170,6 +170,41 @@ r = parse_leasing(p)
 check("week-ending falls back to the filename", r["as_of"] == "2026-09-13",
       r["as_of"])
 
+# The week LABEL, which the store keys on. The sheet's own cell drifts between
+# snapshots of one week -- the 2026-08-31 and 2026-09-08 copies of the real
+# "Week Ending 9.7.26" say 2026-09-07 and 2026-09-06 -- so keying on it files
+# one week under two keys and counts it twice.
+a = build_leasing(f"{TMP}/2026-08-31 Daily Report- Week Ending 9.7.26.xlsx",
+                  [lease_row(1, 5000, 4000)], week_value="2026-09-07")
+b = build_leasing(f"{TMP}/2026-09-08 Daily Report- Week Ending 9.7.26.xlsx",
+                  [lease_row(1, 5000, 4000), lease_row(2, 6000, 5000)],
+                  week_value="2026-09-06")
+ra, rb = parse_leasing(a), parse_leasing(b)
+check("two snapshots of one week get ONE week label",
+      ra["as_of"] == rb["as_of"] == "2026-09-07",
+      f"{ra['as_of']} vs {rb['as_of']}")
+check("the sheet's own answer is kept beside it",
+      ra["week_ending_sheet"] == "2026-09-07" and rb["week_ending_sheet"] == "2026-09-06",
+      f"{ra['week_ending_sheet']} / {rb['week_ending_sheet']}")
+check("a drifting week cell is reported, not silently resolved",
+      any("the sheet says" in x for x in rb["problems"]) and not ra["problems"],
+      rb["problems"])
+
+# Chorus names a RANGE; its week is the end of it, not the start.
+p = build_leasing(f"{TMP}/2026-09-09 09.07.2026- 09.13.2026- Chorus - Daily Report.xlsx",
+                  [lease_row(1, 5000, 4000)], sheet_property="Chorus",
+                  week_label="Week To Date", week_value="Ending 09.13.26")
+r = parse_leasing(p)
+check("a range-style filename takes the END of the range",
+      r["as_of"] == "2026-09-13", r["as_of"])
+
+# A name carrying only the filer's arrival prefix says nothing about the week.
+p = build_leasing(f"{TMP}/2026-09-08 Weekly Report.xlsx",
+                  [lease_row(1, 5000, 4000)], week_value="2026-09-06")
+r = parse_leasing(p)
+check("a filename with only the arrival prefix falls back to the sheet",
+      r["as_of"] == "2026-09-06", r["as_of"])
+
 p = build_leasing(f"{TMP}/e.xlsx", [lease_row(1, 5000, 4000)], sheet="Something_Else")
 try:
     parse_leasing(p)

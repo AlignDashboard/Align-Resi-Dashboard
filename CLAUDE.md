@@ -500,6 +500,16 @@ rather than double. Three things it is careful about:
   then `Information` — and a disagreement is reported, never silently resolved.
   The Landing's own file needs the second source, because its name carries no
   property at all.
+- **The week a file covers comes from its FILENAME, not its own cell.** The
+  sheet's "Week Ending" value drifts between snapshots of one week — the
+  2026-08-31 and 2026-09-08 copies of "Week Ending 9.7.26" say 2026-09-07 and
+  2026-09-06 — and `store_daily_leasing` keys on it, so reading the cell filed
+  one week under two keys and counted it twice. The label is the LAST date in
+  the name (the week, since the filer prefixes its arrival date at the front;
+  for Chorus's `09.07.2026- 09.13.2026-` range that is the end of it), except
+  where the only date IS that prefix, which says nothing about the week and
+  hands back to the sheet. The sheet's answer is kept in `week_ending_sheet`
+  and a disagreement is reported.
 - **The blocks below the leases overlap their columns.** A cancellation row puts
   its scheduled move-in date where a lease's rent goes, and the WEEKLY AVERAGE
   row carries a real number there. The `STOP` markers are the primary guard; a
@@ -546,12 +556,16 @@ renewal increase: a turned unit captures roughly ten times what a renewal does,
 which is the comparison the card exists to make. Capture at signing is absent
 and the card says so — the leasing workbook carries no market rent at signing.
 
-`scripts/test_leasing_and_renewal.py` holds both down: 31 checks against
+`scripts/test_leasing_and_renewal.py` holds both down: 36 checks against
 workbooks built in a temp dir, no fixtures and no network, since the real files
-carry names and are gitignored. The three load-bearing guards — the STOP
-markers, the arithmetic offer resolution and the money coercion — were each
-verified by mutation, and two of them were found to be *untested* on the first
-attempt because the synthetic rows did not reproduce the real column overlap.
+carry names and are gitignored. The five load-bearing guards — the STOP
+markers, the arithmetic offer resolution, the money coercion, the filename week
+label and the arrival-prefix exception — were each verified by mutation, and
+two were found to be *untested* on the first attempt because the synthetic rows
+did not reproduce the real column overlap. **Clear `__pycache__` between
+mutation runs**: restoring a file with `cp` can leave an older mtime, and
+Python then keeps the mutated bytecode and reports failures against code that
+is no longer on disk.
 
 ### "Data last updated" — arrival, not coverage
 

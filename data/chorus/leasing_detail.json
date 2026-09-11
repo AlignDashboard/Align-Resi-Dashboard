@@ -3,7 +3,7 @@
     {
       "week_ending": "2026-09-13",
       "source_file": "2026-09-09 09.07.2026- 09.13.2026- Chorus - Daily Report (1).xlsx",
-      "landed_at": "2026-09-10T01:29:42.920Z",
+      "landed_at": "2026-09-11T00:00:00Z",
       "totals": {
         "leases": 3,
         "lease_rent": 18201,
@@ -70,7 +70,7 @@
         {
           "check": "week-ending date found",
           "ok": true,
-          "note": "2026-09-13"
+          "note": "2026-09-13 (from the filename)"
         },
         {
           "check": "stopped at a section marker",

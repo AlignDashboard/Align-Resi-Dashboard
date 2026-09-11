@@ -3,7 +3,7 @@
     {
       "week_ending": "2026-08-30",
       "source_file": "2026-08-31 Daily Report- Week Ending 8.30.26 (2).xlsx",
-      "landed_at": "2026-08-31T18:28:33.825Z",
+      "landed_at": "2026-09-11T00:00:00Z",
       "totals": {
         "leases": 2,
         "lease_rent": 15702,
@@ -55,7 +55,7 @@
         {
           "check": "week-ending date found",
           "ok": true,
-          "note": "2026-08-30"
+          "note": "2026-08-30 (from the filename)"
         },
         {
           "check": "stopped at a section marker",
@@ -71,9 +71,9 @@
       "problems": []
     },
     {
-      "week_ending": "2026-09-06",
+      "week_ending": "2026-09-07",
       "source_file": "2026-09-08 Daily Report- Week Ending 9.7.26.xlsx",
-      "landed_at": "2026-09-08T23:28:51.933Z",
+      "landed_at": "2026-09-11T00:00:00Z",
       "totals": {
         "leases": 1,
         "lease_rent": 5973,
@@ -110,7 +110,7 @@
         {
           "check": "week-ending date found",
           "ok": true,
-          "note": "2026-09-06"
+          "note": "2026-09-07 (from the filename)"
         },
         {
           "check": "stopped at a section marker",
@@ -123,7 +123,9 @@
           "note": "The Landing (from the Weekly_Leases header)"
         }
       ],
-      "problems": []
+      "problems": [
+        "the filename says the week ends 2026-09-07 and the sheet says 2026-09-06; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
+      ]
     }
   ]
 }
