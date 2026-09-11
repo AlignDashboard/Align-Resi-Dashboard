@@ -501,15 +501,18 @@ DRIVE_FLOWS = {
                        "scrub runs over every row."},
         ],
         "stores": ["data/<slug>/leasing_detail.json"],
-        "publishes": [],
-        "dashboard": [],
-        "tables": [],
+        "publishes": [{"file": "metrics.json", "key": "leasing"}],
+        "dashboard": [
+            {"card": "Trade-outs", "tab": "Landing (Drive)", "anchor": "cdTradeOuts",
+             "primary": "t-tradeouts-*", "tables": ["t-tradeouts-*", "t-renewals-*"],
+             "holds": "New-lease trade-outs by month"},
+        ],
+        "tables": ["t-tradeouts-*"],
         "note": "This is the report behind the analyst workbook's hand-typed "
                 "Lease Detail tab — not a RealPage export, despite that tab's "
-                "name. Parsed, tied out and accumulating; nothing publishes it "
-                "yet, so the Trade-outs card is still workbook-fed.",
+                "name. The new-lease history is only as long as the weeks on "
+                "file, because each workbook carries one week and accumulates.",
         "open_item": "D1",
-        "force_status": PARTIAL,
     },
     ("Renewal Tracker", "renewal_tracker"): {
         "id": "renewal_tracker",
@@ -536,14 +539,19 @@ DRIVE_FLOWS = {
                        "resident_code so the central scrub drops it."},
         ],
         "stores": ["data/<slug>/renewal_tracker.json"],
-        "publishes": [],
-        "dashboard": [],
-        "tables": [],
-        "note": "Parsed and stored; nothing publishes it yet. It is what would "
-                "give the Trade-outs card its renewal series and the holdover "
-                "cohort a second opinion to reconcile against.",
+        "publishes": [{"file": "metrics.json", "key": "leasing"}],
+        "dashboard": [
+            {"card": "Trade-outs", "tab": "Landing (Drive)", "anchor": "cdTradeOuts",
+             "primary": "t-renewals-*", "tables": ["t-renewals-*", "t-tradeouts-*"],
+             "holds": "Renewal offers by month, and the month-to-month roster"},
+        ],
+        "tables": ["t-renewals-*"],
+        "note": "Its per-offer rows are what let the Trade-outs card average "
+                "renewals the same way it averages new leases. The analyst "
+                "workbook carries monthly aggregates only, which is why the "
+                "card on The Landing has to show one side rent-weighted and "
+                "the other as a plain mean.",
         "open_item": "D9",
-        "force_status": PARTIAL,
     },
 }
 

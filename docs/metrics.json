@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-11T21:06:40.947102+00:00",
+    "generated_at": "2026-09-11T22:34:58.225155+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -2027,6 +2027,565 @@
         ],
         "slug": "the-landing",
         "name": "The Landing"
+      }
+    ]
+  },
+  "leasing": {
+    "available": true,
+    "properties": [
+      {
+        "slug": "the-landing",
+        "name": "The Landing",
+        "new_leases": {
+          "weeks": 2,
+          "as_of": "2026-09-06",
+          "landed_at": "2026-09-08T23:28:51.933Z",
+          "source_file": "2026-09-08 Daily Report- Week Ending 9.7.26.xlsx",
+          "months": [
+            {
+              "month": "2026-08",
+              "leases": 2,
+              "lease_rent": 15702.0,
+              "prior_rent": 8449.0,
+              "mean_tradeout": 0.850095,
+              "wtd_tradeout": 0.858445
+            },
+            {
+              "month": "2026-09",
+              "leases": 1,
+              "lease_rent": 5973.0,
+              "prior_rent": 3351.0,
+              "mean_tradeout": 0.782453,
+              "wtd_tradeout": 0.782453
+            }
+          ],
+          "leases": 3,
+          "mean_tradeout": 0.827548
+        },
+        "renewals": {
+          "as_of": "2026-12",
+          "covers": {
+            "from": "2024-01",
+            "to": "2026-12"
+          },
+          "landed_at": "2026-09-08T23:28:49.326Z",
+          "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
+          "months": [
+            {
+              "month": "2024-01",
+              "leases": 19,
+              "mean_increase": 0.027193,
+              "wtd_increase": 0.025065,
+              "current_rent": 68059.0,
+              "offered_rent": 69764.87,
+              "statuses": {
+                "MTM": 4,
+                "Notice": 8,
+                "Renewed": 11
+              }
+            },
+            {
+              "month": "2024-02",
+              "leases": 15,
+              "mean_increase": 0.034333,
+              "wtd_increase": 0.03506,
+              "current_rent": 53274.0,
+              "offered_rent": 55141.8,
+              "statuses": {
+                "MTM": 3,
+                "Notice": 5,
+                "Renewed": 10
+              }
+            },
+            {
+              "month": "2024-03",
+              "leases": 15,
+              "mean_increase": 0.034333,
+              "wtd_increase": 0.037402,
+              "current_rent": 60660.0,
+              "offered_rent": 62928.8,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 4,
+                "Renewed": 11
+              }
+            },
+            {
+              "month": "2024-04",
+              "leases": 10,
+              "mean_increase": 0.0625,
+              "wtd_increase": 0.061735,
+              "current_rent": 34242.0,
+              "offered_rent": 36355.93,
+              "statuses": {
+                "MTM": 4,
+                "Notice": 6,
+                "Renewed": 4
+              }
+            },
+            {
+              "month": "2024-05",
+              "leases": 19,
+              "mean_increase": 0.054211,
+              "wtd_increase": 0.05232,
+              "current_rent": 70221.0,
+              "offered_rent": 73894.98,
+              "statuses": {
+                "MTM": 1,
+                "Notice": 5,
+                "Renewed": 12,
+                "Sent": 1
+              }
+            },
+            {
+              "month": "2024-06",
+              "leases": 13,
+              "mean_increase": 0.055385,
+              "wtd_increase": 0.054295,
+              "current_rent": 52234.0,
+              "offered_rent": 55070.07,
+              "statuses": {
+                "MTM": 1,
+                "Notice": 5,
+                "Renewed": 7
+              }
+            },
+            {
+              "month": "2024-07",
+              "leases": 17,
+              "mean_increase": 0.052941,
+              "wtd_increase": 0.053148,
+              "current_rent": 68739.0,
+              "offered_rent": 72392.35,
+              "statuses": {
+                "MTM": 1,
+                "Notice": 10,
+                "Renewed": 6
+              }
+            },
+            {
+              "month": "2024-08",
+              "leases": 17,
+              "mean_increase": 0.036765,
+              "wtd_increase": 0.033851,
+              "current_rent": 76046.0,
+              "offered_rent": 78620.26,
+              "statuses": {
+                "Notice": 6,
+                "Renewed": 10,
+                "Sent": 1
+              }
+            },
+            {
+              "month": "2024-09",
+              "leases": 15,
+              "mean_increase": 0.020523,
+              "wtd_increase": 0.018863,
+              "current_rent": 61920.0,
+              "offered_rent": 63088.0,
+              "statuses": {
+                "MTM": 1,
+                "Notice": 1,
+                "Renewed": 1,
+                "Sent": 12
+              }
+            },
+            {
+              "month": "2024-10",
+              "leases": 8,
+              "mean_increase": 0.00375,
+              "wtd_increase": 0.0026,
+              "current_rent": 34616.0,
+              "offered_rent": 34706.0,
+              "statuses": {
+                "MTM": 3,
+                "Notice": 4,
+                "Renewed": 3,
+                "Sent": 1
+              }
+            },
+            {
+              "month": "2024-11",
+              "leases": 15,
+              "mean_increase": 0.030887,
+              "wtd_increase": 0.029405,
+              "current_rent": 60951.0,
+              "offered_rent": 62743.24,
+              "statuses": {
+                "Notice": 4,
+                "Renewed": 7,
+                "Sent": 4
+              }
+            },
+            {
+              "month": "2024-12",
+              "leases": 4,
+              "mean_increase": 0.018647,
+              "wtd_increase": 0.018292,
+              "current_rent": 14715.0,
+              "offered_rent": 14984.16,
+              "statuses": {
+                "(blank)": 11
+              }
+            },
+            {
+              "month": "2025-01",
+              "leases": 19,
+              "mean_increase": 0.056796,
+              "wtd_increase": 0.047324,
+              "current_rent": 78164.0,
+              "offered_rent": 81863.0,
+              "statuses": {
+                "MTM": 5,
+                "Notice": 4,
+                "Renewed": 11
+              }
+            },
+            {
+              "month": "2025-02",
+              "leases": 24,
+              "mean_increase": 0.058624,
+              "wtd_increase": 0.054699,
+              "current_rent": 88776.0,
+              "offered_rent": 93632.0,
+              "statuses": {
+                "MTM": 4,
+                "Notice": 8,
+                "Renewed": 12
+              }
+            },
+            {
+              "month": "2025-03",
+              "leases": 20,
+              "mean_increase": 0.037526,
+              "wtd_increase": 0.034121,
+              "current_rent": 80716.0,
+              "offered_rent": 83470.12,
+              "statuses": {
+                "MTM": 3,
+                "Notice": 8,
+                "Renewed": 9
+              }
+            },
+            {
+              "month": "2025-04",
+              "leases": 25,
+              "mean_increase": 0.027952,
+              "wtd_increase": 0.026498,
+              "current_rent": 100015.0,
+              "offered_rent": 102665.19,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 9,
+                "Offer Accepted": 1,
+                "Renewed": 13
+              }
+            },
+            {
+              "month": "2025-05",
+              "leases": 18,
+              "mean_increase": 0.058263,
+              "wtd_increase": 0.05637,
+              "current_rent": 66914.0,
+              "offered_rent": 70685.97,
+              "statuses": {
+                "MTM": 3,
+                "Notice": 8,
+                "Offer Accepted": 1,
+                "Renewed": 6
+              }
+            },
+            {
+              "month": "2025-06",
+              "leases": 22,
+              "mean_increase": 0.039607,
+              "wtd_increase": 0.038522,
+              "current_rent": 92086.0,
+              "offered_rent": 95633.37,
+              "statuses": {
+                "MTM": 5,
+                "Notice": 7,
+                "Renewed": 10
+              }
+            },
+            {
+              "month": "2025-07",
+              "leases": 21,
+              "mean_increase": 0.050255,
+              "wtd_increase": 0.0497,
+              "current_rent": 86841.0,
+              "offered_rent": 91157.0,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 6,
+                "Renewed": 13
+              }
+            },
+            {
+              "month": "2025-08",
+              "leases": 25,
+              "mean_increase": 0.043685,
+              "wtd_increase": 0.043789,
+              "current_rent": 104661.0,
+              "offered_rent": 109244.0,
+              "statuses": {
+                "MTM": 4,
+                "Notice": 8,
+                "Renewed": 13
+              }
+            },
+            {
+              "month": "2025-09",
+              "leases": 18,
+              "mean_increase": 0.059594,
+              "wtd_increase": 0.058881,
+              "current_rent": 79176.0,
+              "offered_rent": 83838.0,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 9,
+                "Offer Accepted": 3,
+                "Renewed": 3,
+                "Waiting For Response": 1
+              }
+            },
+            {
+              "month": "2025-10",
+              "leases": 4,
+              "mean_increase": 0.086889,
+              "wtd_increase": 0.086691,
+              "current_rent": 16530.0,
+              "offered_rent": 17963.0,
+              "statuses": {
+                "MTM": 1,
+                "Notice": 2,
+                "Offer Accepted": 1
+              }
+            },
+            {
+              "month": "2025-11",
+              "leases": 10,
+              "mean_increase": 0.051684,
+              "wtd_increase": 0.048981,
+              "current_rent": 42343.0,
+              "offered_rent": 44417.0,
+              "statuses": {
+                "Notice": 3,
+                "Renewed": 7
+              }
+            },
+            {
+              "month": "2025-12",
+              "leases": 19,
+              "mean_increase": 0.063103,
+              "wtd_increase": 0.062787,
+              "current_rent": 83728.0,
+              "offered_rent": 88985.0,
+              "statuses": {
+                "MTM": 7,
+                "Notice": 4,
+                "Renewed": 8
+              }
+            },
+            {
+              "month": "2026-01",
+              "leases": 14,
+              "mean_increase": 0.060304,
+              "wtd_increase": 0.060155,
+              "current_rent": 56903.0,
+              "offered_rent": 60326.0,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 1,
+                "Renewed": 11
+              }
+            },
+            {
+              "month": "2026-02",
+              "leases": 24,
+              "mean_increase": 0.069861,
+              "wtd_increase": 0.070082,
+              "current_rent": 90623.0,
+              "offered_rent": 96974.0,
+              "statuses": {
+                "(blank)": 1,
+                "MTM": 4,
+                "Notice": 4,
+                "Renewed": 13,
+                "notice": 2
+              }
+            },
+            {
+              "month": "2026-03",
+              "leases": 18,
+              "mean_increase": 0.079913,
+              "wtd_increase": 0.080151,
+              "current_rent": 73025.0,
+              "offered_rent": 78878.0,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 5,
+                "Renewed": 11
+              }
+            },
+            {
+              "month": "2026-04",
+              "leases": 24,
+              "mean_increase": 0.080814,
+              "wtd_increase": 0.079298,
+              "current_rent": 106030.0,
+              "offered_rent": 114438.0,
+              "statuses": {
+                "MTM": 5,
+                "Notice": 8,
+                "Offer Accepted": 1,
+                "Renewed": 10
+              }
+            },
+            {
+              "month": "2026-05",
+              "leases": 16,
+              "mean_increase": 0.089871,
+              "wtd_increase": 0.089879,
+              "current_rent": 63074.0,
+              "offered_rent": 68743.0,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 6,
+                "Renewed": 7,
+                "Waiting For Response": 1
+              }
+            },
+            {
+              "month": "2026-06",
+              "leases": 34,
+              "mean_increase": 0.085262,
+              "wtd_increase": 0.08448,
+              "current_rent": 155433.0,
+              "offered_rent": 168564.0,
+              "statuses": {
+                "MTM": 8,
+                "Notice": 6,
+                "Renewed": 20
+              }
+            },
+            {
+              "month": "2026-07",
+              "leases": 18,
+              "mean_increase": 0.06156,
+              "wtd_increase": 0.063026,
+              "current_rent": 84251.0,
+              "offered_rent": 89561.0,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 3,
+                "Renewed": 13
+              }
+            },
+            {
+              "month": "2026-08",
+              "leases": 16,
+              "mean_increase": 0.084471,
+              "wtd_increase": 0.082798,
+              "current_rent": 65376.0,
+              "offered_rent": 70789.0,
+              "statuses": {
+                "MTM": 2,
+                "Notice": 3,
+                "Renewed": 11
+              }
+            },
+            {
+              "month": "2026-09",
+              "leases": 18,
+              "mean_increase": 0.087577,
+              "wtd_increase": 0.086859,
+              "current_rent": 80475.0,
+              "offered_rent": 87465.0,
+              "statuses": {
+                "MTM": 1,
+                "Notice": 3,
+                "Offer Accepted": 1,
+                "Renewed": 12,
+                "Waiting For Response": 1
+              }
+            },
+            {
+              "month": "2026-10",
+              "leases": 7,
+              "mean_increase": 0.109904,
+              "wtd_increase": 0.10434,
+              "current_rent": 36084.0,
+              "offered_rent": 39849.0,
+              "statuses": {
+                "MTM": 1,
+                "Notice": 2,
+                "Renewed": 3,
+                "Waiting For Response": 1
+              }
+            },
+            {
+              "month": "2026-11",
+              "leases": 13,
+              "mean_increase": 0.453172,
+              "wtd_increase": 0.44677,
+              "current_rent": 57627.0,
+              "offered_rent": 83373.0,
+              "statuses": {
+                "Notice": 1,
+                "Offer Accepted": 1,
+                "Renewed": 1,
+                "Waiting For Response": 10
+              }
+            },
+            {
+              "month": "2026-12",
+              "leases": 6,
+              "mean_increase": 0.158289,
+              "wtd_increase": 0.158838,
+              "current_rent": 28463.0,
+              "offered_rent": 32984.0,
+              "statuses": {
+                "Offer Accepted": 3,
+                "Waiting For Response": 3
+              }
+            }
+          ],
+          "mtm": {
+            "units": 31,
+            "current_rent": 150376.0,
+            "market_rent": 222370.0,
+            "statuses": {
+              "(blank)": 3,
+              "Notice": 2,
+              "Renewed": 3,
+              "Waiting For Response": 23
+            },
+            "rows_without_rent": 0
+          }
+        }
+      },
+      {
+        "slug": "chorus",
+        "name": "Chorus",
+        "new_leases": {
+          "weeks": 1,
+          "as_of": "2026-09-13",
+          "landed_at": "2026-09-10T01:29:42.920Z",
+          "source_file": "2026-09-09 09.07.2026- 09.13.2026- Chorus - Daily Report (1).xlsx",
+          "months": [
+            {
+              "month": "2026-09",
+              "leases": 3,
+              "lease_rent": 18201.0,
+              "prior_rent": 12798.0,
+              "mean_tradeout": 0.397965,
+              "wtd_tradeout": 0.422175
+            }
+          ],
+          "leases": 3,
+          "mean_tradeout": 0.397965
+        }
       }
     ]
   }
