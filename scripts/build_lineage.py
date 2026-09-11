@@ -120,6 +120,7 @@ DRIVE_FLOWS = {
             {"file": "metrics.json", "key": "expense_ratio"},
             {"file": "metrics.json", "key": "monthly_pl"},
             {"file": "metrics.json", "key": "expense_buckets"},
+            {"file": "metrics.json", "key": "rent_capture"},
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
         ],
         "dashboard": [
@@ -144,6 +145,15 @@ DRIVE_FLOWS = {
             {"card": "Expense Deep Dive", "tab": "Landing (Drive)",
              "anchor": "cdExpDeep", "primary": "t-buckets-*",
              "tables": ["t-buckets-*", "t-monthlypl-*"]},
+            # The statement's own rental-income section. The analyst workbook's
+            # Rent Capture block turned out to be this section retyped -- all
+            # six series tie to the cent across the twelve overlapping months --
+            # so the card needs no rent roll and belongs on this tab. The
+            # Landing tab's copy of the card still draws the workbook, and is
+            # declared under analyst_workbook rather than here.
+            {"card": "Loss to Lease", "tab": "Landing (Drive)",
+             "anchor": "cdRentCapture", "primary": "t-rentcap-*",
+             "tables": ["t-rentcap-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
              "anchor": "cdFeeds", "tables": []},
         ],

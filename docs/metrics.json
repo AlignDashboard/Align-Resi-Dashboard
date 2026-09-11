@@ -1,2605 +1,2757 @@
 {
-  "meta": {
-    "generated_at": "2026-09-11T23:03:46.346704+00:00",
-    "portfolio": "Align Asset Management",
-    "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
-  },
-  "trade_outs": {
-    "available": false,
-    "reason": "Awaiting source: AIRM / Yardi Revenue Management + Weekly Leasing Report.",
-    "labels": [],
-    "new": [],
-    "renewal": [],
-    "blended": []
-  },
-  "expense_trend": {
-    "available": true,
-    "property": "The Landing (p0005611)",
-    "basis": "Monthly operating expense, top movers by volatility",
-    "period": "Jul 2025 - Jun 2026",
-    "labels": [
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun"
-    ],
-    "series": [
-      {
-        "name": "Marketing",
-        "data": [
-          8294,
-          14067,
-          1503,
-          7053,
-          6486,
-          20362,
-          1996,
-          8576,
-          10484,
-          10984,
-          7990,
-          -1413
-        ]
-      },
-      {
-        "name": "Utilities",
-        "data": [
-          39591,
-          9945,
-          13101,
-          9100,
-          9630,
-          10324,
-          19244,
-          21218,
-          25350,
-          11026,
-          15502,
-          11973
-        ]
-      },
-      {
-        "name": "General & Admin",
-        "data": [
-          49883,
-          39075,
-          32454,
-          55218,
-          53491,
-          56912,
-          34976,
-          58538,
-          86617,
-          45521,
-          59164,
-          51952
-        ]
-      }
-    ],
-    "footnote": "Real Estate Taxes ($146K/mo) spiked to $419K in Apr 2026 (annual assessment) and Insurance to $37K in Mar; both excluded as one-time items so monthly operating movement stays visible."
-  },
-  "psf_vs_peers": {
-    "available": true,
-    "subject": "335 Third Street",
-    "metric": "Rent Per Sqft, 30-Day Avg",
-    "labels": [
-      "335 Third Street",
-      "Modera Jack London Sq",
-      "Channel House",
-      "5 Embarcadero W.",
-      "200 2nd St",
-      "1 Embarcadero W #252",
-      "Link Apts Four12",
-      "Modern Bldg JLS",
-      "Portobello Condos",
-      "311 2nd St"
-    ],
-    "psf": [
-      4.01,
-      5.13,
-      3.9,
-      3.98,
-      3.15,
-      3.59,
-      4.56,
-      3.73,
-      3.16,
-      3.43
-    ],
-    "comps_avg": 3.85,
-    "caveat": "HAND-ENTERED, DATE UNKNOWN \u2014 LIKELY STALE; AWAITING A MARKET SURVEY FEED"
-  },
-  "placeholders": [
-    {
-      "id": "effVsGross",
-      "title": "Effective vs. Gross Rent",
-      "source": "Concession Burn-Off",
-      "viz": "line"
-    },
-    {
-      "id": "lossToLease",
-      "title": "Loss to Lease",
-      "source": "Rent Roll",
-      "viz": "line"
-    },
-    {
-      "id": "tours",
-      "title": "# of Tours",
-      "source": "Property Status",
-      "viz": "bar"
-    },
-    {
-      "id": "leads",
-      "title": "# of Leads",
-      "source": "Property Status",
-      "viz": "bar"
-    },
-    {
-      "id": "applications",
-      "title": "# of Applications",
-      "source": "Property Status \u00b7 Closing Ratio",
-      "viz": "bar"
-    },
-    {
-      "id": "renewals",
-      "title": "Renewals",
-      "source": "Lease Expiration + Renewal Workbook",
-      "viz": "bar"
-    },
-    {
-      "id": "noiMargin",
-      "title": "NOI Margin",
-      "source": "P&L \u00b7 Budget Variance %",
-      "viz": "line"
-    },
-    {
-      "id": "cashOnHand",
-      "title": "Cash on Hand",
-      "source": "Balance Sheet / Treasury",
-      "viz": "line"
-    },
-    {
-      "id": "mktgPerLease",
-      "title": "Marketing Spend / Lease",
-      "source": "Marketing Spend + Leasing Report",
-      "viz": "bar"
-    },
-    {
-      "id": "occupancy",
-      "title": "Occupancy %",
-      "source": "Property Status",
-      "viz": "line"
-    },
-    {
-      "id": "leasedPct",
-      "title": "Leased %",
-      "source": "Property Status",
-      "viz": "line"
-    }
+ "meta": {
+  "generated_at": "2026-09-11T23:03:46.346704+00:00",
+  "portfolio": "Align Asset Management",
+  "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
+ },
+ "trade_outs": {
+  "available": false,
+  "reason": "Awaiting source: AIRM / Yardi Revenue Management + Weekly Leasing Report.",
+  "labels": [],
+  "new": [],
+  "renewal": [],
+  "blended": []
+ },
+ "expense_trend": {
+  "available": true,
+  "property": "The Landing (p0005611)",
+  "basis": "Monthly operating expense, top movers by volatility",
+  "period": "Jul 2025 - Jun 2026",
+  "labels": [
+   "Jul",
+   "Aug",
+   "Sep",
+   "Oct",
+   "Nov",
+   "Dec",
+   "Jan",
+   "Feb",
+   "Mar",
+   "Apr",
+   "May",
+   "Jun"
   ],
-  "expense_ratio": {
-    "available": true,
-    "basis": "Statement expenses \u00f7 Operating revenue (T12)",
-    "properties": [
-      {
-        "slug": "the-landing",
-        "name": "The Landing",
-        "ratio_t12": 33.3,
-        "trend_labels": [
-          "Jul 2026"
-        ],
-        "trend_values": [
-          33.3
-        ],
-        "latest_monthly_labels": [
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul"
-        ],
-        "latest_monthly_ratio": [
-          32.6,
-          31.4,
-          31.5,
-          29.3,
-          34.2,
-          30.3,
-          34.1,
-          36.0,
-          52.9,
-          32.5,
-          27.7,
-          27.5
-        ],
-        "expense_scope": "total",
-        "expense_anchor": "549999-9999",
-        "basis": "Total expenses (549999-9999) \u00f7 Total revenue (T12)"
-      },
-      {
-        "slug": "palma",
-        "name": "Palma",
-        "ratio_t12": 56.1,
-        "trend_labels": [
-          "Jun 2026"
-        ],
-        "trend_values": [
-          56.1
-        ],
-        "latest_monthly_labels": [
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun"
-        ],
-        "latest_monthly_ratio": [
-          159.1,
-          145.4,
-          102.3,
-          90.3,
-          47.0,
-          81.4,
-          59.2,
-          43.4,
-          55.3,
-          55.0,
-          38.8,
-          -36.0
-        ],
-        "expense_scope": "operating",
-        "expense_anchor": null,
-        "basis": "Recoverable opex \u00f7 Operating revenue (T12)"
-      }
-    ],
-    "footnote": "Rolling T12 expense ratio per property; one point per monthly statement. Monthly ratios within a statement are volatile on an accrual basis \u2014 the T12 figure is the reliable KPI. The numerator is the statement's total expenses row where it has one (the same figure the Operating Summary card shows), and its recoverable operating total where it does not \u2014 so the ratio is not comparable between properties whose statements are on different account trees \u2014 the basis above the chart is the selected property's own."
-  },
-  "expense_buckets": {
-    "available": true,
-    "properties": [
-      {
-        "slug": "the-landing",
-        "name": "The Landing",
-        "period_end": "Jul 2026",
-        "labels": [
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul"
-        ],
-        "buckets": {
-          "Admin & office": [
-            15003.63,
-            14736.01,
-            24236.64,
-            25056.17,
-            21281.01,
-            8166.39,
-            30492.6,
-            53604.0,
-            16053.09,
-            20324.96,
-            15734.21,
-            6005.78
-          ],
-          "Cleaning": [
-            18183.77,
-            10505.62,
-            1191.75,
-            12363.83,
-            9305.74,
-            10090.1,
-            12062.7,
-            11047.55,
-            11271.59,
-            10446.0,
-            10917.34,
-            11795.52
-          ],
-          "Insurance": [
-            19506.75,
-            18116.5,
-            18256.75,
-            18124.51,
-            20048.52,
-            19047.58,
-            17773.48,
-            36942.81,
-            23295.78,
-            23295.78,
-            23295.78,
-            23295.78
-          ],
-          "Management fee": [
-            23361.55,
-            24691.56,
-            24226.12,
-            23959.41,
-            23663.88,
-            25509.23,
-            22728.73,
-            27274.19,
-            25407.67,
-            22716.0,
-            26320.47,
-            29915.51
-          ],
-          "Marketing & advertising": [
-            14067.38,
-            1503.08,
-            7052.77,
-            6485.84,
-            20362.08,
-            1996.38,
-            8576.5,
-            10484.0,
-            10984.0,
-            7990.2,
-            -1413.4,
-            5197.48
-          ],
-          "Payroll & benefits": [
-            67990.44,
-            53281.27,
-            55607.0,
-            60485.82,
-            54100.01,
-            58581.05,
-            48046.28,
-            57212.39,
-            67818.4,
-            59325.68,
-            51919.98,
-            8366.76
-          ],
-          "Professional fees": [
-            751.67,
-            49170.83,
-            15115.66,
-            9110.87,
-            30389.17,
-            438.14,
-            33250.62,
-            4466.5,
-            1030.0,
-            0.0,
-            5521.88,
-            22122.0
-          ],
-          "Repairs & maintenance": [
-            40753.55,
-            11612.56,
-            36739.47,
-            -5898.36,
-            22762.49,
-            52511.47,
-            43219.23,
-            18716.29,
-            22832.89,
-            21188.46,
-            20159.72,
-            27322.88
-          ],
-          "Residential turnover": [
-            710.0,
-            -6973.45,
-            6755.0,
-            4475.0,
-            11967.02,
-            1450.51,
-            5166.76,
-            7352.9,
-            4245.0,
-            16627.34,
-            9896.88,
-            4102.46
-          ],
-          "Security & fire/life safety": [
-            5761.08,
-            5925.58,
-            7866.55,
-            12010.3,
-            9958.42,
-            9708.57,
-            4558.82,
-            19816.95,
-            7045.07,
-            19273.3,
-            11286.96,
-            9018.26
-          ],
-          "Taxes": [
-            151878.65,
-            151749.16,
-            152128.65,
-            151749.16,
-            151878.65,
-            151953.65,
-            151979.96,
-            147513.0,
-            420141.17,
-            146063.33,
-            146063.33,
-            147094.5
-          ],
-          "Tenant engagement": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            52838.86
-          ],
-          "Utilities (net of billbacks)": [
-            13096.56,
-            17822.89,
-            9351.2,
-            19523.65,
-            36943.59,
-            20684.51,
-            29903.78,
-            30159.83,
-            14080.85,
-            30306.43,
-            14385.65,
-            18165.41
-          ]
-        },
-        "basis": "Align-tree groupings via config/coa_map.json, tied out against the statement's own total expenses per month"
-      },
-      {
-        "slug": "palma",
-        "name": "Palma",
-        "period_end": "Jun 2026",
-        "labels": [
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun"
-        ],
-        "buckets": {
-          "Administrative": [
-            3023.08,
-            1525.98,
-            3687.63,
-            2543.53,
-            2194.2,
-            4049.33,
-            4887.62,
-            4167.79,
-            5944.99,
-            13368.24,
-            22360.63,
-            -12312.34
-          ],
-          "Contract services": [
-            16800.41,
-            19278.45,
-            21177.53,
-            18133.88,
-            23425.64,
-            26438.18,
-            21223.13,
-            26385.61,
-            17557.71,
-            23154.23,
-            30553.34,
-            -36114.85
-          ],
-          "Insurance": [
-            10000.0,
-            10000.0,
-            10000.0,
-            10000.0,
-            -7665.25,
-            14111.58,
-            14111.58,
-            14151.89,
-            14174.17,
-            14111.59,
-            14111.59,
-            0.0
-          ],
-          "Management fee": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            15454.44
-          ],
-          "Marketing & advertising": [
-            7476.65,
-            15429.94,
-            15981.88,
-            7275.31,
-            11777.91,
-            12718.25,
-            4886.18,
-            11571.57,
-            9189.18,
-            21439.13,
-            21103.35,
-            29040.0
-          ],
-          "Other / unclassified": [
-            1279.35,
-            -13226.0,
-            -50239.74,
-            -6059.0,
-            14253.36,
-            281076.49,
-            33106.0,
-            30510.72,
-            29459.24,
-            25428.5,
-            11522.0,
-            -28276.73
-          ],
-          "Payroll & benefits": [
-            76371.5,
-            47827.19,
-            50684.57,
-            50125.75,
-            40924.72,
-            55337.18,
-            48642.09,
-            33830.05,
-            38400.45,
-            48382.42,
-            8960.18,
-            42743.36
-          ],
-          "Professional fees": [
-            31600.98,
-            18459.17,
-            15147.49,
-            874.87,
-            1648.99,
-            2532.69,
-            706.13,
-            -723.08,
-            72146.63,
-            16496.67,
-            8001.67,
-            -9944.96
-          ],
-          "Real estate & other taxes": [
-            41333.0,
-            41333.0,
-            41333.0,
-            41333.0,
-            3732.38,
-            42079.47,
-            42079.47,
-            42079.47,
-            42079.47,
-            42079.49,
-            42079.49,
-            -84158.98
-          ],
-          "Repairs & maintenance": [
-            13100.9,
-            20321.17,
-            16473.93,
-            26513.32,
-            15776.28,
-            20197.83,
-            17855.63,
-            15683.68,
-            15649.43,
-            13435.76,
-            0.0,
-            3586.55
-          ],
-          "Turnover": [
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            6900.0,
-            4300.0,
-            4200.0,
-            2494.0,
-            -655.0
-          ],
-          "Utilities (net of reimbursements)": [
-            -2439.95,
-            4397.57,
-            1419.4,
-            3691.35,
-            6145.67,
-            -236.43,
-            13214.67,
-            689.84,
-            23474.32,
-            9599.23,
-            8512.21,
-            -13700.92
-          ]
-        },
-        "basis": "GL leaf lines classified by keyword into the workbook's buckets; recoverable side tied out against 5999-9998 per month; financing/non-cash/capital lines excluded"
-      }
+  "series": [
+   {
+    "name": "Marketing",
+    "data": [
+     8294,
+     14067,
+     1503,
+     7053,
+     6486,
+     20362,
+     1996,
+     8576,
+     10484,
+     10984,
+     7990,
+     -1413
     ]
-  },
-  "monthly_pl": {
-    "available": true,
-    "properties": [
-      {
-        "slug": "the-landing",
-        "name": "The Landing",
-        "period_end": "Jul 2026",
-        "labels": [
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul"
-        ],
-        "months": [
-          "2025-08",
-          "2025-09",
-          "2025-10",
-          "2025-11",
-          "2025-12",
-          "2026-01",
-          "2026-02",
-          "2026-03",
-          "2026-04",
-          "2026-05",
-          "2026-06",
-          "2026-07"
-        ],
-        "revenue": [
-          1136685.93,
-          1121348.35,
-          1139834.56,
-          1150402.58,
-          1205418.87,
-          1187947.78,
-          1195024.42,
-          1180301.75,
-          1178881.59,
-          1162784.04,
-          1207642.03,
-          1328218.38
-        ],
-        "opex": [
-          371065.03,
-          352141.61,
-          358527.56,
-          337446.2,
-          412660.58,
-          360137.58,
-          407759.46,
-          424590.41,
-          624205.51,
-          377557.48,
-          334088.8,
-          365241.2
-        ],
-        "noi": [
-          765620.9,
-          769206.74,
-          781307.0,
-          812956.38,
-          792758.29,
-          827810.2,
-          787264.96,
-          755711.34,
-          554676.08,
-          785226.56,
-          873553.23,
-          962977.18
-        ],
-        "expense_scope": "total",
-        "expense_anchor": "549999-9999",
-        "source_codes": [
-          "p0005611",
-          "p0005612",
-          "p0005640",
-          "p0005671"
-        ],
-        "basis": "jpm 549999-9999 total expenses (operating and non-operating)"
-      },
-      {
-        "slug": "palma",
-        "name": "Palma",
-        "period_end": "Jun 2026",
-        "labels": [
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun"
-        ],
-        "months": [
-          "2025-07",
-          "2025-08",
-          "2025-09",
-          "2025-10",
-          "2025-11",
-          "2025-12",
-          "2026-01",
-          "2026-02",
-          "2026-03",
-          "2026-04",
-          "2026-05",
-          "2026-06"
-        ],
-        "revenue": [
-          99437.96,
-          99473.0,
-          141453.05,
-          168763.38,
-          179750.0,
-          198867.52,
-          273565.5,
-          331558.17,
-          291992.05,
-          307104.0,
-          395957.76,
-          261317.82
-        ],
-        "opex": [
-          158188.94,
-          144683.36,
-          144776.06,
-          152340.83,
-          84533.64,
-          161977.14,
-          162068.06,
-          143888.33,
-          161598.64,
-          168827.63,
-          153524.36,
-          -94102.7
-        ],
-        "noi": [
-          -58750.98,
-          -45210.36,
-          -3323.01,
-          16422.55,
-          95216.36,
-          36890.38,
-          111497.44,
-          187669.84,
-          130393.41,
-          138276.37,
-          242433.4,
-          355420.52
-        ],
-        "expense_scope": "operating",
-        "expense_anchor": null,
-        "source_codes": [
-          "rspalman",
-          "rspalmas"
-        ],
-        "basis": "align 5999-9998 recoverable opex"
-      }
+   },
+   {
+    "name": "Utilities",
+    "data": [
+     39591,
+     9945,
+     13101,
+     9100,
+     9630,
+     10324,
+     19244,
+     21218,
+     25350,
+     11026,
+     15502,
+     11973
     ]
-  },
-  "unit_directory": {
-    "available": true,
-    "properties": [
-      {
-        "slug": "the-landing",
-        "name": "The Landing",
-        "as_of": "2026-08-25",
-        "landed_at": "2026-08-26T00:46:52Z",
-        "source_file": "UnitDirectory08_25_2026.xlsx",
-        "units": 265,
-        "residential_units": 263,
-        "codes": [
-          "p0005611"
-        ],
-        "plans": {
-          "laa1": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 90,
-            "sqft_min": 520.0,
-            "sqft_max": 821.0,
-            "sqft_avg": 587,
-            "rent_min": 5485.0,
-            "rent_max": 5800.0
-          },
-          "laa10": {
-            "bedrooms": 1,
-            "baths": 1.5,
-            "units": 1,
-            "sqft_min": 821.0,
-            "sqft_max": 821.0,
-            "sqft_avg": 821,
-            "rent_min": 6230.0,
-            "rent_max": 6230.0
-          },
-          "laa11": {
-            "bedrooms": 1,
-            "baths": 1.5,
-            "units": 1,
-            "sqft_min": 956.0,
-            "sqft_max": 956.0,
-            "sqft_avg": 956,
-            "rent_min": 6010.0,
-            "rent_max": 6010.0
-          },
-          "laa12": {
-            "bedrooms": 1,
-            "baths": 1.5,
-            "units": 1,
-            "sqft_min": 966.0,
-            "sqft_max": 966.0,
-            "sqft_avg": 966,
-            "rent_min": 6070.0,
-            "rent_max": 6070.0
-          },
-          "laa2": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 7,
-            "sqft_min": 637.0,
-            "sqft_max": 682.0,
-            "sqft_avg": 662,
-            "rent_min": 5745.0,
-            "rent_max": 5885.0
-          },
-          "laa3": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 1,
-            "sqft_min": 727.0,
-            "sqft_max": 727.0,
-            "sqft_avg": 727,
-            "rent_min": 6015.0,
-            "rent_max": 6015.0
-          },
-          "laa4": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 2,
-            "sqft_min": 777.0,
-            "sqft_max": 780.0,
-            "sqft_avg": 778,
-            "rent_min": 5740.0,
-            "rent_max": 5820.0
-          },
-          "laa5": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 13,
-            "sqft_min": 662.0,
-            "sqft_max": 700.0,
-            "sqft_avg": 687,
-            "rent_min": 5870.0,
-            "rent_max": 5920.0
-          },
-          "laa6": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 13,
-            "sqft_min": 715.0,
-            "sqft_max": 821.0,
-            "sqft_avg": 763,
-            "rent_min": 5860.0,
-            "rent_max": 5905.0
-          },
-          "laa7": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 6,
-            "sqft_min": 738.0,
-            "sqft_max": 773.0,
-            "sqft_avg": 752,
-            "rent_min": 5915.0,
-            "rent_max": 5965.0
-          },
-          "laa8": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 2,
-            "sqft_min": 752.0,
-            "sqft_max": 752.0,
-            "sqft_avg": 752,
-            "rent_min": 6080.0,
-            "rent_max": 6105.0
-          },
-          "laa9": {
-            "bedrooms": 1,
-            "baths": 1.0,
-            "units": 2,
-            "sqft_min": 780.0,
-            "sqft_max": 828.0,
-            "sqft_avg": 804,
-            "rent_min": 5935.0,
-            "rent_max": 6110.0
-          },
-          "lab1": {
-            "bedrooms": 2,
-            "baths": 1.0,
-            "units": 3,
-            "sqft_min": 741.0,
-            "sqft_max": 742.0,
-            "sqft_avg": 741,
-            "rent_min": 7676.0,
-            "rent_max": 7786.0
-          },
-          "lab10": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 3,
-            "sqft_min": 886.0,
-            "sqft_max": 891.0,
-            "sqft_avg": 889,
-            "rent_min": 7851.0,
-            "rent_max": 7961.0
-          },
-          "lab11": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 3,
-            "sqft_min": 905.0,
-            "sqft_max": 1104.0,
-            "sqft_avg": 1000,
-            "rent_min": 8016.0,
-            "rent_max": 8181.0
-          },
-          "lab12": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 1,
-            "sqft_min": 932.0,
-            "sqft_max": 932.0,
-            "sqft_avg": 932,
-            "rent_min": 7961.0,
-            "rent_max": 7961.0
-          },
-          "lab13": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 2,
-            "sqft_min": 933.0,
-            "sqft_max": 950.0,
-            "sqft_avg": 942,
-            "rent_min": 8191.0,
-            "rent_max": 8221.0
-          },
-          "lab14": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 1,
-            "sqft_min": 945.0,
-            "sqft_max": 945.0,
-            "sqft_avg": 945,
-            "rent_min": 8276.0,
-            "rent_max": 8276.0
-          },
-          "lab15": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 5,
-            "sqft_min": 951.0,
-            "sqft_max": 1106.0,
-            "sqft_avg": 983,
-            "rent_min": 8096.0,
-            "rent_max": 8171.0
-          },
-          "lab16": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 3,
-            "sqft_min": 980.0,
-            "sqft_max": 981.0,
-            "sqft_avg": 981,
-            "rent_min": 8001.0,
-            "rent_max": 8001.0
-          },
-          "lab17": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 6,
-            "sqft_min": 984.0,
-            "sqft_max": 984.0,
-            "sqft_avg": 984,
-            "rent_min": 8016.0,
-            "rent_max": 8171.0
-          },
-          "lab18": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 1,
-            "sqft_min": 1175.0,
-            "sqft_max": 1175.0,
-            "sqft_avg": 1175,
-            "rent_min": 8336.0,
-            "rent_max": 8336.0
-          },
-          "lab19": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 24,
-            "sqft_min": 1081.0,
-            "sqft_max": 1100.0,
-            "sqft_avg": 1092,
-            "rent_min": 8141.0,
-            "rent_max": 8396.0
-          },
-          "lab2": {
-            "bedrooms": 2,
-            "baths": 1.0,
-            "units": 3,
-            "sqft_min": 798.0,
-            "sqft_max": 799.0,
-            "sqft_avg": 798,
-            "rent_min": 7726.0,
-            "rent_max": 7836.0
-          },
-          "lab20": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 2,
-            "sqft_min": 1309.0,
-            "sqft_max": 1309.0,
-            "sqft_avg": 1309,
-            "rent_min": 8371.0,
-            "rent_max": 8371.0
-          },
-          "lab21": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 9,
-            "sqft_min": 830.0,
-            "sqft_max": 1069.0,
-            "sqft_avg": 1028,
-            "rent_min": 7916.0,
-            "rent_max": 8191.0
-          },
-          "lab22": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 2,
-            "sqft_min": 1066.0,
-            "sqft_max": 1066.0,
-            "sqft_avg": 1066,
-            "rent_min": 8091.0,
-            "rent_max": 8091.0
-          },
-          "lab23": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 4,
-            "sqft_min": 1163.0,
-            "sqft_max": 1344.0,
-            "sqft_avg": 1254,
-            "rent_min": 8416.0,
-            "rent_max": 8441.0
-          },
-          "lab3": {
-            "bedrooms": 2,
-            "baths": 1.0,
-            "units": 1,
-            "sqft_min": 861.0,
-            "sqft_max": 861.0,
-            "sqft_avg": 861,
-            "rent_min": 7766.0,
-            "rent_max": 7766.0
-          },
-          "lab4": {
-            "bedrooms": 2,
-            "baths": 1.0,
-            "units": 1,
-            "sqft_min": 891.0,
-            "sqft_max": 891.0,
-            "sqft_avg": 891,
-            "rent_min": 7921.0,
-            "rent_max": 7921.0
-          },
-          "lab5": {
-            "bedrooms": 2,
-            "baths": 1.0,
-            "units": 1,
-            "sqft_min": 956.0,
-            "sqft_max": 956.0,
-            "sqft_avg": 956,
-            "rent_min": 7931.0,
-            "rent_max": 7931.0
-          },
-          "lab6": {
-            "bedrooms": 2,
-            "baths": 1.0,
-            "units": 1,
-            "sqft_min": 956.0,
-            "sqft_max": 956.0,
-            "sqft_avg": 956,
-            "rent_min": 7906.0,
-            "rent_max": 7906.0
-          },
-          "lab7": {
-            "bedrooms": 2,
-            "baths": 1.0,
-            "units": 1,
-            "sqft_min": 998.0,
-            "sqft_max": 998.0,
-            "sqft_avg": 998,
-            "rent_min": 7991.0,
-            "rent_max": 7991.0
-          },
-          "lab8": {
-            "bedrooms": 2,
-            "baths": 1.5,
-            "units": 3,
-            "sqft_min": 1226.0,
-            "sqft_max": 1236.0,
-            "sqft_avg": 1230,
-            "rent_min": 7871.0,
-            "rent_max": 7921.0
-          },
-          "lab9": {
-            "bedrooms": 2,
-            "baths": 2.0,
-            "units": 30,
-            "sqft_min": 827.0,
-            "sqft_max": 863.0,
-            "sqft_avg": 846,
-            "rent_min": 7716.0,
-            "rent_max": 7971.0
-          },
-          "lac1": {
-            "bedrooms": 3,
-            "baths": 2.0,
-            "units": 9,
-            "sqft_min": 1092.0,
-            "sqft_max": 1099.0,
-            "sqft_avg": 1096,
-            "rent_min": 7924.0,
-            "rent_max": 8084.0
-          },
-          "lac2": {
-            "bedrooms": 3,
-            "baths": 2.0,
-            "units": 1,
-            "sqft_min": 1073.0,
-            "sqft_max": 1073.0,
-            "sqft_avg": 1073,
-            "rent_min": 7854.0,
-            "rent_max": 7854.0
-          },
-          "lac3": {
-            "bedrooms": 3,
-            "baths": 2.0,
-            "units": 1,
-            "sqft_min": 1481.0,
-            "sqft_max": 1481.0,
-            "sqft_avg": 1481,
-            "rent_min": 9069.0,
-            "rent_max": 9069.0
-          },
-          "lac4": {
-            "bedrooms": 3,
-            "baths": 3.0,
-            "units": 1,
-            "sqft_min": 1456.0,
-            "sqft_max": 1456.0,
-            "sqft_avg": 1456,
-            "rent_min": 9254.0,
-            "rent_max": 9254.0
-          },
-          "lac5": {
-            "bedrooms": 3,
-            "baths": 3.0,
-            "units": 3,
-            "sqft_min": 1501.0,
-            "sqft_max": 1501.0,
-            "sqft_avg": 1501,
-            "rent_min": 8929.0,
-            "rent_max": 9009.0
-          },
-          "lac6": {
-            "bedrooms": 3,
-            "baths": 3.0,
-            "units": 1,
-            "sqft_min": 1621.0,
-            "sqft_max": 1621.0,
-            "sqft_avg": 1621,
-            "rent_min": 9444.0,
-            "rent_max": 9444.0
-          }
-        }
-      }
+   },
+   {
+    "name": "General & Admin",
+    "data": [
+     49883,
+     39075,
+     32454,
+     55218,
+     53491,
+     56912,
+     34976,
+     58538,
+     86617,
+     45521,
+     59164,
+     51952
     ]
+   }
+  ],
+  "footnote": "Real Estate Taxes ($146K/mo) spiked to $419K in Apr 2026 (annual assessment) and Insurance to $37K in Mar; both excluded as one-time items so monthly operating movement stays visible."
+ },
+ "psf_vs_peers": {
+  "available": true,
+  "subject": "335 Third Street",
+  "metric": "Rent Per Sqft, 30-Day Avg",
+  "labels": [
+   "335 Third Street",
+   "Modera Jack London Sq",
+   "Channel House",
+   "5 Embarcadero W.",
+   "200 2nd St",
+   "1 Embarcadero W #252",
+   "Link Apts Four12",
+   "Modern Bldg JLS",
+   "Portobello Condos",
+   "311 2nd St"
+  ],
+  "psf": [
+   4.01,
+   5.13,
+   3.9,
+   3.98,
+   3.15,
+   3.59,
+   4.56,
+   3.73,
+   3.16,
+   3.43
+  ],
+  "comps_avg": 3.85,
+  "caveat": "HAND-ENTERED, DATE UNKNOWN \u2014 LIKELY STALE; AWAITING A MARKET SURVEY FEED"
+ },
+ "placeholders": [
+  {
+   "id": "effVsGross",
+   "title": "Effective vs. Gross Rent",
+   "source": "Concession Burn-Off",
+   "viz": "line"
   },
-  "rent_roll": {
-    "available": true,
-    "properties": [
-      {
-        "as_of": "2026-09-11",
-        "landed_at": "2026-09-11T18:33:04.600Z",
-        "source_file": "RentRoll09_11_2026.xlsx",
-        "units": 263,
-        "occupied": 257,
-        "vacant": 6,
-        "on_notice": 9,
-        "occupancy": 0.977186,
-        "sqft": 215452.0,
-        "market_rent_total": 2004929.0,
-        "actual_rent_total": 1240930.0,
-        "market_rent_occupied": 1954850.0,
-        "actual_rent_occupied": 1240930.0,
-        "loss_to_lease": 713920.0,
-        "loss_to_lease_pct": 0.365204,
-        "market_psf": 9.3251,
-        "inplace_psf": 5.9195,
-        "holdovers": {
-          "units": 32,
-          "share_of_occupied": 0.124514,
-          "inplace": 148217.0,
-          "market": 261837.0,
-          "gap_yr": 1363440.0
-        },
-        "rollover": [
-          {
-            "month": "Expired",
-            "units": 32,
-            "sqft": 28588.0,
-            "inplace": 148217.0,
-            "market": 261837.0,
-            "uncaptured": 113620.0,
-            "cum_units": 32,
-            "cum_pct": 0.124514
-          },
-          {
-            "month": "2026-09",
-            "units": 11,
-            "sqft": 9193.0,
-            "inplace": 49205.0,
-            "market": 85676.0,
-            "uncaptured": 36471.0,
-            "cum_units": 43,
-            "cum_pct": 0.167315
-          },
-          {
-            "month": "2026-10",
-            "units": 6,
-            "sqft": 4515.0,
-            "inplace": 29730.0,
-            "market": 42867.0,
-            "uncaptured": 13137.0,
-            "cum_units": 49,
-            "cum_pct": 0.190661
-          },
-          {
-            "month": "2026-11",
-            "units": 13,
-            "sqft": 9974.0,
-            "inplace": 57711.0,
-            "market": 97439.0,
-            "uncaptured": 39728.0,
-            "cum_units": 62,
-            "cum_pct": 0.241245
-          },
-          {
-            "month": "2026-12",
-            "units": 16,
-            "sqft": 13635.0,
-            "inplace": 78629.0,
-            "market": 123769.0,
-            "uncaptured": 45140.0,
-            "cum_units": 78,
-            "cum_pct": 0.303502
-          },
-          {
-            "month": "2027-01",
-            "units": 15,
-            "sqft": 12137.0,
-            "inplace": 73138.0,
-            "market": 113295.0,
-            "uncaptured": 40157.0,
-            "cum_units": 93,
-            "cum_pct": 0.361868
-          },
-          {
-            "month": "2027-02",
-            "units": 10,
-            "sqft": 8509.0,
-            "inplace": 49774.0,
-            "market": 77148.0,
-            "uncaptured": 27374.0,
-            "cum_units": 103,
-            "cum_pct": 0.400778
-          },
-          {
-            "month": "2027-03",
-            "units": 21,
-            "sqft": 17435.0,
-            "inplace": 100699.0,
-            "market": 157895.0,
-            "uncaptured": 57196.0,
-            "cum_units": 124,
-            "cum_pct": 0.48249
-          },
-          {
-            "month": "2027-04",
-            "units": 16,
-            "sqft": 13311.0,
-            "inplace": 78966.0,
-            "market": 123299.0,
-            "uncaptured": 44333.0,
-            "cum_units": 140,
-            "cum_pct": 0.544747
-          },
-          {
-            "month": "2027-05",
-            "units": 18,
-            "sqft": 13799.0,
-            "inplace": 82759.0,
-            "market": 129274.0,
-            "uncaptured": 46515.0,
-            "cum_units": 158,
-            "cum_pct": 0.614786
-          },
-          {
-            "month": "2027-06",
-            "units": 34,
-            "sqft": 29397.0,
-            "inplace": 175623.0,
-            "market": 265954.0,
-            "uncaptured": 90331.0,
-            "cum_units": 192,
-            "cum_pct": 0.747082
-          },
-          {
-            "month": "2027-07",
-            "units": 21,
-            "sqft": 15374.0,
-            "inplace": 108342.0,
-            "market": 152393.0,
-            "uncaptured": 44051.0,
-            "cum_units": 213,
-            "cum_pct": 0.828794
-          },
-          {
-            "month": "2027-08",
-            "units": 14,
-            "sqft": 10376.0,
-            "inplace": 64452.0,
-            "market": 100890.0,
-            "uncaptured": 36438.0,
-            "cum_units": 227,
-            "cum_pct": 0.883268
-          },
-          {
-            "month": "2027-09",
-            "units": 16,
-            "sqft": 13261.0,
-            "inplace": 83692.0,
-            "market": 123259.0,
-            "uncaptured": 39567.0,
-            "cum_units": 243,
-            "cum_pct": 0.945525
-          },
-          {
-            "month": "2027-10",
-            "units": 4,
-            "sqft": 2742.0,
-            "inplace": 16628.0,
-            "market": 30227.0,
-            "uncaptured": 13599.0,
-            "cum_units": 247,
-            "cum_pct": 0.961089
-          },
-          {
-            "month": "2027-11",
-            "units": 7,
-            "sqft": 5335.0,
-            "inplace": 28793.0,
-            "market": 48592.0,
-            "uncaptured": 19799.0,
-            "cum_units": 254,
-            "cum_pct": 0.988327
-          },
-          {
-            "month": "2027-12",
-            "units": 3,
-            "sqft": 2053.0,
-            "inplace": 14572.0,
-            "market": 21036.0,
-            "uncaptured": 6464.0,
-            "cum_units": 257,
-            "cum_pct": 1.0
-          }
-        ],
-        "gaps": [
-          {
-            "rank": 1,
-            "unit": "355",
-            "unit_type": "lab19",
-            "sqft": 1095.0,
-            "inplace": 4109.0,
-            "market": 9331.0,
-            "gap_mo": 5222.0,
-            "gap_yr": 62664.0,
-            "pct_below": 0.55964,
-            "expiry": "2025-02-25",
-            "status": "Holdover"
-          },
-          {
-            "rank": 2,
-            "unit": "664",
-            "unit_type": "lab19",
-            "sqft": 1090.0,
-            "inplace": 4217.0,
-            "market": 9306.0,
-            "gap_mo": 5089.0,
-            "gap_yr": 61068.0,
-            "pct_below": 0.546851,
-            "expiry": "2025-06-30",
-            "status": "Holdover"
-          },
-          {
-            "rank": 3,
-            "unit": "257",
-            "unit_type": "lab16",
-            "sqft": 981.0,
-            "inplace": 4015.0,
-            "market": 9091.0,
-            "gap_mo": 5076.0,
-            "gap_yr": 60912.0,
-            "pct_below": 0.558354,
-            "expiry": "2024-01-12",
-            "status": "Holdover"
-          },
-          {
-            "rank": 4,
-            "unit": "221",
-            "unit_type": "lab12",
-            "sqft": 932.0,
-            "inplace": 3979.0,
-            "market": 9051.0,
-            "gap_mo": 5072.0,
-            "gap_yr": 60864.0,
-            "pct_below": 0.56038,
-            "expiry": "2026-04-08",
-            "status": "Holdover"
-          },
-          {
-            "rank": 5,
-            "unit": "662",
-            "unit_type": "lab9",
-            "sqft": 850.0,
-            "inplace": 3785.0,
-            "market": 8836.0,
-            "gap_mo": 5051.0,
-            "gap_yr": 60612.0,
-            "pct_below": 0.571639,
-            "expiry": "2026-12-31",
-            "status": "Current"
-          },
-          {
-            "rank": 6,
-            "unit": "638",
-            "unit_type": "lab9",
-            "sqft": 863.0,
-            "inplace": 3809.0,
-            "market": 8836.0,
-            "gap_mo": 5027.0,
-            "gap_yr": 60324.0,
-            "pct_below": 0.568923,
-            "expiry": "2025-05-06",
-            "status": "Holdover"
-          },
-          {
-            "rank": 7,
-            "unit": "642",
-            "unit_type": "lab19",
-            "sqft": 1090.0,
-            "inplace": 4300.0,
-            "market": 9271.0,
-            "gap_mo": 4971.0,
-            "gap_yr": 59652.0,
-            "pct_below": 0.536188,
-            "expiry": "2027-06-20",
-            "status": "Current"
-          },
-          {
-            "rank": 8,
-            "unit": "561",
-            "unit_type": "lab21",
-            "sqft": 1062.0,
-            "inplace": 4267.0,
-            "market": 9136.0,
-            "gap_mo": 4869.0,
-            "gap_yr": 58428.0,
-            "pct_below": 0.532947,
-            "expiry": "2026-04-17",
-            "status": "Holdover"
-          },
-          {
-            "rank": 9,
-            "unit": "363",
-            "unit_type": "lab19",
-            "sqft": 1092.0,
-            "inplace": 4590.0,
-            "market": 9296.0,
-            "gap_mo": 4706.0,
-            "gap_yr": 56472.0,
-            "pct_below": 0.506239,
-            "expiry": "2026-02-15",
-            "status": "Holdover"
-          },
-          {
-            "rank": 10,
-            "unit": "643",
-            "unit_type": "lab9",
-            "sqft": 827.0,
-            "inplace": 4300.0,
-            "market": 8956.0,
-            "gap_mo": 4656.0,
-            "gap_yr": 55872.0,
-            "pct_below": 0.519875,
-            "expiry": "2026-09-20",
-            "status": "Current"
-          },
-          {
-            "rank": 11,
-            "unit": "633",
-            "unit_type": "lab15",
-            "sqft": 951.0,
-            "inplace": 4598.0,
-            "market": 9236.0,
-            "gap_mo": 4638.0,
-            "gap_yr": 55656.0,
-            "pct_below": 0.502165,
-            "expiry": "2026-01-02",
-            "status": "Holdover"
-          },
-          {
-            "rank": 12,
-            "unit": "325",
-            "unit_type": "lab11",
-            "sqft": 991.0,
-            "inplace": 4574.0,
-            "market": 9201.0,
-            "gap_mo": 4627.0,
-            "gap_yr": 55524.0,
-            "pct_below": 0.50288,
-            "expiry": "2027-06-30",
-            "status": "Current"
-          },
-          {
-            "rank": 13,
-            "unit": "461",
-            "unit_type": "lab21",
-            "sqft": 1062.0,
-            "inplace": 4532.0,
-            "market": 9136.0,
-            "gap_mo": 4604.0,
-            "gap_yr": 55248.0,
-            "pct_below": 0.50394,
-            "expiry": "2027-05-12",
-            "status": "Current"
-          },
-          {
-            "rank": 14,
-            "unit": "425",
-            "unit_type": "lab11",
-            "sqft": 1104.0,
-            "inplace": 4683.0,
-            "market": 9271.0,
-            "gap_mo": 4588.0,
-            "gap_yr": 55056.0,
-            "pct_below": 0.494876,
-            "expiry": "2027-04-08",
-            "status": "Current"
-          },
-          {
-            "rank": 15,
-            "unit": "413",
-            "unit_type": "lab2",
-            "sqft": 798.0,
-            "inplace": 4339.0,
-            "market": 8926.0,
-            "gap_mo": 4587.0,
-            "gap_yr": 55044.0,
-            "pct_below": 0.513892,
-            "expiry": "2026-12-16",
-            "status": "Current"
-          },
-          {
-            "rank": 16,
-            "unit": "323",
-            "unit_type": "lab13",
-            "sqft": 933.0,
-            "inplace": 4736.0,
-            "market": 9311.0,
-            "gap_mo": 4575.0,
-            "gap_yr": 54900.0,
-            "pct_below": 0.491354,
-            "expiry": "2027-06-30",
-            "status": "Current"
-          },
-          {
-            "rank": 17,
-            "unit": "762",
-            "unit_type": "lab9",
-            "sqft": 850.0,
-            "inplace": 4249.0,
-            "market": 8806.0,
-            "gap_mo": 4557.0,
-            "gap_yr": 54684.0,
-            "pct_below": 0.517488,
-            "expiry": "2027-04-24",
-            "status": "Current"
-          },
-          {
-            "rank": 18,
-            "unit": "343",
-            "unit_type": "lab9",
-            "sqft": 827.0,
-            "inplace": 4356.0,
-            "market": 8906.0,
-            "gap_mo": 4550.0,
-            "gap_yr": 54600.0,
-            "pct_below": 0.510892,
-            "expiry": "2027-07-09",
-            "status": "Current"
-          },
-          {
-            "rank": 19,
-            "unit": "359",
-            "unit_type": "lab9",
-            "sqft": 847.0,
-            "inplace": 4356.0,
-            "market": 8906.0,
-            "gap_mo": 4550.0,
-            "gap_yr": 54600.0,
-            "pct_below": 0.510892,
-            "expiry": "2027-06-29",
-            "status": "Current"
-          },
-          {
-            "rank": 20,
-            "unit": "736",
-            "unit_type": "lab19",
-            "sqft": 1093.0,
-            "inplace": 4687.0,
-            "market": 9231.0,
-            "gap_mo": 4544.0,
-            "gap_yr": 54528.0,
-            "pct_below": 0.492254,
-            "expiry": "2027-09-14",
-            "status": "Current"
-          },
-          {
-            "rank": 21,
-            "unit": "864",
-            "unit_type": "lab19",
-            "sqft": 1090.0,
-            "inplace": 4777.0,
-            "market": 9311.0,
-            "gap_mo": 4534.0,
-            "gap_yr": 54408.0,
-            "pct_below": 0.486951,
-            "expiry": "2026-11-09",
-            "status": "Current"
-          },
-          {
-            "rank": 22,
-            "unit": "113",
-            "unit_type": "lab5",
-            "sqft": 956.0,
-            "inplace": 4500.0,
-            "market": 9021.0,
-            "gap_mo": 4521.0,
-            "gap_yr": 54252.0,
-            "pct_below": 0.501164,
-            "expiry": "2026-03-31",
-            "status": "Holdover"
-          },
-          {
-            "rank": 23,
-            "unit": "840",
-            "unit_type": "lab9",
-            "sqft": 859.0,
-            "inplace": 4387.0,
-            "market": 8886.0,
-            "gap_mo": 4499.0,
-            "gap_yr": 53988.0,
-            "pct_below": 0.506302,
-            "expiry": "2027-10-31",
-            "status": "Current"
-          },
-          {
-            "rank": 24,
-            "unit": "423",
-            "unit_type": "lab13",
-            "sqft": 950.0,
-            "inplace": 4796.0,
-            "market": 9281.0,
-            "gap_mo": 4485.0,
-            "gap_yr": 53820.0,
-            "pct_below": 0.483245,
-            "expiry": "2027-06-30",
-            "status": "Current"
-          },
-          {
-            "rank": 25,
-            "unit": "533",
-            "unit_type": "lab15",
-            "sqft": 952.0,
-            "inplace": 4762.0,
-            "market": 9186.0,
-            "gap_mo": 4424.0,
-            "gap_yr": 53088.0,
-            "pct_below": 0.481602,
-            "expiry": "2027-03-25",
-            "status": "Current"
-          },
-          {
-            "rank": 26,
-            "unit": "659",
-            "unit_type": "lab9",
-            "sqft": 847.0,
-            "inplace": 4544.0,
-            "market": 8956.0,
-            "gap_mo": 4412.0,
-            "gap_yr": 52944.0,
-            "pct_below": 0.492631,
-            "expiry": "2026-03-29",
-            "status": "Holdover"
-          },
-          {
-            "rank": 27,
-            "unit": "862",
-            "unit_type": "lab9",
-            "sqft": 850.0,
-            "inplace": 4484.0,
-            "market": 8886.0,
-            "gap_mo": 4402.0,
-            "gap_yr": 52824.0,
-            "pct_below": 0.495386,
-            "expiry": "2027-01-29",
-            "status": "Current"
-          },
-          {
-            "rank": 28,
-            "unit": "357",
-            "unit_type": "lab19",
-            "sqft": 1100.0,
-            "inplace": 4945.0,
-            "market": 9331.0,
-            "gap_mo": 4386.0,
-            "gap_yr": 52632.0,
-            "pct_below": 0.470046,
-            "expiry": "2027-08-03",
-            "status": "Current"
-          },
-          {
-            "rank": 29,
-            "unit": "653",
-            "unit_type": "lab17",
-            "sqft": 984.0,
-            "inplace": 4800.0,
-            "market": 9156.0,
-            "gap_mo": 4356.0,
-            "gap_yr": 52272.0,
-            "pct_below": 0.475754,
-            "expiry": "2026-09-14",
-            "status": "Current"
-          },
-          {
-            "rank": 30,
-            "unit": "547",
-            "unit_type": "lab21",
-            "sqft": 1059.0,
-            "inplace": 4936.0,
-            "market": 9281.0,
-            "gap_mo": 4345.0,
-            "gap_yr": 52140.0,
-            "pct_below": 0.468161,
-            "expiry": "2027-03-07",
-            "status": "Current"
-          },
-          {
-            "rank": 31,
-            "unit": "663",
-            "unit_type": "lab19",
-            "sqft": 1092.0,
-            "inplace": 5004.0,
-            "market": 9346.0,
-            "gap_mo": 4342.0,
-            "gap_yr": 52104.0,
-            "pct_below": 0.464584,
-            "expiry": "2026-02-21",
-            "status": "Holdover"
-          },
-          {
-            "rank": 32,
-            "unit": "742",
-            "unit_type": "lab19",
-            "sqft": 1090.0,
-            "inplace": 4905.0,
-            "market": 9231.0,
-            "gap_mo": 4326.0,
-            "gap_yr": 51912.0,
-            "pct_below": 0.468638,
-            "expiry": "2027-08-28",
-            "status": "Current"
-          },
-          {
-            "rank": 33,
-            "unit": "320",
-            "unit_type": "lab7",
-            "sqft": 998.0,
-            "inplace": 4765.0,
-            "market": 9081.0,
-            "gap_mo": 4316.0,
-            "gap_yr": 51792.0,
-            "pct_below": 0.475278,
-            "expiry": "2027-06-14",
-            "status": "Current"
-          },
-          {
-            "rank": 34,
-            "unit": "467",
-            "unit_type": "lab3",
-            "sqft": 861.0,
-            "inplace": 4540.0,
-            "market": 8856.0,
-            "gap_mo": 4316.0,
-            "gap_yr": 51792.0,
-            "pct_below": 0.487353,
-            "expiry": "2027-07-03",
-            "status": "Current"
-          },
-          {
-            "rank": 35,
-            "unit": "361",
-            "unit_type": "lab9",
-            "sqft": 841.0,
-            "inplace": 4550.0,
-            "market": 8861.0,
-            "gap_mo": 4311.0,
-            "gap_yr": 51732.0,
-            "pct_below": 0.486514,
-            "expiry": "2027-12-04",
-            "status": "Current"
-          },
-          {
-            "rank": 36,
-            "unit": "553",
-            "unit_type": "lab17",
-            "sqft": 984.0,
-            "inplace": 4800.0,
-            "market": 9106.0,
-            "gap_mo": 4306.0,
-            "gap_yr": 51672.0,
-            "pct_below": 0.472875,
-            "expiry": "2025-08-28",
-            "status": "Holdover"
-          },
-          {
-            "rank": 37,
-            "unit": "740",
-            "unit_type": "lab9",
-            "sqft": 859.0,
-            "inplace": 4514.0,
-            "market": 8806.0,
-            "gap_mo": 4292.0,
-            "gap_yr": 51504.0,
-            "pct_below": 0.487395,
-            "expiry": "2027-03-19",
-            "status": "Current"
-          },
-          {
-            "rank": 38,
-            "unit": "404",
-            "unit_type": "lab10",
-            "sqft": 889.0,
-            "inplace": 4765.0,
-            "market": 9051.0,
-            "gap_mo": 4286.0,
-            "gap_yr": 51432.0,
-            "pct_below": 0.473539,
-            "expiry": "2027-05-31",
-            "status": "Current"
-          },
-          {
-            "rank": 39,
-            "unit": "853",
-            "unit_type": "lab17",
-            "sqft": 984.0,
-            "inplace": 5000.0,
-            "market": 9261.0,
-            "gap_mo": 4261.0,
-            "gap_yr": 51132.0,
-            "pct_below": 0.460102,
-            "expiry": "2027-01-19",
-            "status": "Current"
-          },
-          {
-            "rank": 40,
-            "unit": "412",
-            "unit_type": "lab1",
-            "sqft": 741.0,
-            "inplace": 4629.0,
-            "market": 8876.0,
-            "gap_mo": 4247.0,
-            "gap_yr": 50964.0,
-            "pct_below": 0.478481,
-            "expiry": "2026-11-04",
-            "status": "Current"
-          }
-        ],
-        "undated_leases": 0,
-        "basis": "Occupied units only for loss to lease and the gap table; a vacant unit has an asking rent and no in-place rent, so counting it books the whole asking rent as loss to lease.",
-        "checks": [
-          {
-            "check": "market_rent ties to the report Total row",
-            "ok": true,
-            "parsed": 2004929.0,
-            "report": 2004929.0,
-            "delta": 0.0
-          },
-          {
-            "check": "actual_rent ties to the report Total row",
-            "ok": true,
-            "parsed": 1240930.0,
-            "report": 1240930.0,
-            "delta": 0.0
-          },
-          {
-            "check": "as-of date found",
-            "ok": true,
-            "note": "2026-09-11"
-          },
-          {
-            "check": "stopped at a section marker",
-            "ok": true,
-            "note": "stopped at row 271 ('future residents/applicants')"
-          }
-        ],
-        "slug": "the-landing",
-        "name": "The Landing"
-      }
-    ]
+  {
+   "id": "lossToLease",
+   "title": "Loss to Lease",
+   "source": "Rent Roll",
+   "viz": "line"
   },
-  "leasing": {
-    "available": true,
-    "properties": [
-      {
-        "slug": "the-landing",
-        "name": "The Landing",
-        "new_leases": {
-          "weeks": 2,
-          "as_of": "2026-09-07",
-          "landed_at": "2026-09-11T00:00:00Z",
-          "source_file": "2026-09-08 Daily Report- Week Ending 9.7.26.xlsx",
-          "months": [
-            {
-              "month": "2026-08",
-              "leases": 2,
-              "lease_rent": 15702.0,
-              "prior_rent": 8449.0,
-              "mean_tradeout": 0.850095,
-              "wtd_tradeout": 0.858445
-            },
-            {
-              "month": "2026-09",
-              "leases": 1,
-              "lease_rent": 5973.0,
-              "prior_rent": 3351.0,
-              "mean_tradeout": 0.782453,
-              "wtd_tradeout": 0.782453
-            }
-          ],
-          "leases": 3,
-          "mean_tradeout": 0.827548
-        },
-        "renewals": {
-          "as_of": "2026-12",
-          "covers": {
-            "from": "2024-01",
-            "to": "2026-12"
-          },
-          "landed_at": "2026-09-11T00:00:00Z",
-          "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
-          "months": [
-            {
-              "month": "2024-01",
-              "leases": 19,
-              "mean_increase": 0.027193,
-              "wtd_increase": 0.025065,
-              "current_rent": 68059.0,
-              "offered_rent": 69764.87,
-              "statuses": {
-                "MTM": 4,
-                "Notice": 8,
-                "Renewed": 11
-              }
-            },
-            {
-              "month": "2024-02",
-              "leases": 15,
-              "mean_increase": 0.034333,
-              "wtd_increase": 0.03506,
-              "current_rent": 53274.0,
-              "offered_rent": 55141.8,
-              "statuses": {
-                "MTM": 3,
-                "Notice": 5,
-                "Renewed": 10
-              }
-            },
-            {
-              "month": "2024-03",
-              "leases": 15,
-              "mean_increase": 0.034333,
-              "wtd_increase": 0.037402,
-              "current_rent": 60660.0,
-              "offered_rent": 62928.8,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 4,
-                "Renewed": 11
-              }
-            },
-            {
-              "month": "2024-04",
-              "leases": 10,
-              "mean_increase": 0.0625,
-              "wtd_increase": 0.061735,
-              "current_rent": 34242.0,
-              "offered_rent": 36355.93,
-              "statuses": {
-                "MTM": 4,
-                "Notice": 6,
-                "Renewed": 4
-              }
-            },
-            {
-              "month": "2024-05",
-              "leases": 19,
-              "mean_increase": 0.054211,
-              "wtd_increase": 0.05232,
-              "current_rent": 70221.0,
-              "offered_rent": 73894.98,
-              "statuses": {
-                "MTM": 1,
-                "Notice": 5,
-                "Renewed": 12,
-                "Sent": 1
-              }
-            },
-            {
-              "month": "2024-06",
-              "leases": 13,
-              "mean_increase": 0.055385,
-              "wtd_increase": 0.054295,
-              "current_rent": 52234.0,
-              "offered_rent": 55070.07,
-              "statuses": {
-                "MTM": 1,
-                "Notice": 5,
-                "Renewed": 7
-              }
-            },
-            {
-              "month": "2024-07",
-              "leases": 17,
-              "mean_increase": 0.052941,
-              "wtd_increase": 0.053148,
-              "current_rent": 68739.0,
-              "offered_rent": 72392.35,
-              "statuses": {
-                "MTM": 1,
-                "Notice": 10,
-                "Renewed": 6
-              }
-            },
-            {
-              "month": "2024-08",
-              "leases": 17,
-              "mean_increase": 0.036765,
-              "wtd_increase": 0.033851,
-              "current_rent": 76046.0,
-              "offered_rent": 78620.26,
-              "statuses": {
-                "Notice": 6,
-                "Renewed": 10,
-                "Sent": 1
-              }
-            },
-            {
-              "month": "2024-09",
-              "leases": 15,
-              "mean_increase": 0.020523,
-              "wtd_increase": 0.018863,
-              "current_rent": 61920.0,
-              "offered_rent": 63088.0,
-              "statuses": {
-                "MTM": 1,
-                "Notice": 1,
-                "Renewed": 1,
-                "Sent": 12
-              }
-            },
-            {
-              "month": "2024-10",
-              "leases": 8,
-              "mean_increase": 0.00375,
-              "wtd_increase": 0.0026,
-              "current_rent": 34616.0,
-              "offered_rent": 34706.0,
-              "statuses": {
-                "MTM": 3,
-                "Notice": 4,
-                "Renewed": 3,
-                "Sent": 1
-              }
-            },
-            {
-              "month": "2024-11",
-              "leases": 15,
-              "mean_increase": 0.030887,
-              "wtd_increase": 0.029405,
-              "current_rent": 60951.0,
-              "offered_rent": 62743.24,
-              "statuses": {
-                "Notice": 4,
-                "Renewed": 7,
-                "Sent": 4
-              }
-            },
-            {
-              "month": "2024-12",
-              "leases": 4,
-              "mean_increase": 0.018647,
-              "wtd_increase": 0.018292,
-              "current_rent": 14715.0,
-              "offered_rent": 14984.16,
-              "statuses": {
-                "(blank)": 11
-              }
-            },
-            {
-              "month": "2025-01",
-              "leases": 19,
-              "mean_increase": 0.056796,
-              "wtd_increase": 0.047324,
-              "current_rent": 78164.0,
-              "offered_rent": 81863.0,
-              "statuses": {
-                "MTM": 5,
-                "Notice": 4,
-                "Renewed": 11
-              }
-            },
-            {
-              "month": "2025-02",
-              "leases": 24,
-              "mean_increase": 0.058624,
-              "wtd_increase": 0.054699,
-              "current_rent": 88776.0,
-              "offered_rent": 93632.0,
-              "statuses": {
-                "MTM": 4,
-                "Notice": 8,
-                "Renewed": 12
-              }
-            },
-            {
-              "month": "2025-03",
-              "leases": 20,
-              "mean_increase": 0.037526,
-              "wtd_increase": 0.034121,
-              "current_rent": 80716.0,
-              "offered_rent": 83470.12,
-              "statuses": {
-                "MTM": 3,
-                "Notice": 8,
-                "Renewed": 9
-              }
-            },
-            {
-              "month": "2025-04",
-              "leases": 25,
-              "mean_increase": 0.027952,
-              "wtd_increase": 0.026498,
-              "current_rent": 100015.0,
-              "offered_rent": 102665.19,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 9,
-                "Offer Accepted": 1,
-                "Renewed": 13
-              }
-            },
-            {
-              "month": "2025-05",
-              "leases": 18,
-              "mean_increase": 0.058263,
-              "wtd_increase": 0.05637,
-              "current_rent": 66914.0,
-              "offered_rent": 70685.97,
-              "statuses": {
-                "MTM": 3,
-                "Notice": 8,
-                "Offer Accepted": 1,
-                "Renewed": 6
-              }
-            },
-            {
-              "month": "2025-06",
-              "leases": 22,
-              "mean_increase": 0.039607,
-              "wtd_increase": 0.038522,
-              "current_rent": 92086.0,
-              "offered_rent": 95633.37,
-              "statuses": {
-                "MTM": 5,
-                "Notice": 7,
-                "Renewed": 10
-              }
-            },
-            {
-              "month": "2025-07",
-              "leases": 21,
-              "mean_increase": 0.050255,
-              "wtd_increase": 0.0497,
-              "current_rent": 86841.0,
-              "offered_rent": 91157.0,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 6,
-                "Renewed": 13
-              }
-            },
-            {
-              "month": "2025-08",
-              "leases": 25,
-              "mean_increase": 0.043685,
-              "wtd_increase": 0.043789,
-              "current_rent": 104661.0,
-              "offered_rent": 109244.0,
-              "statuses": {
-                "MTM": 4,
-                "Notice": 8,
-                "Renewed": 13
-              }
-            },
-            {
-              "month": "2025-09",
-              "leases": 18,
-              "mean_increase": 0.059594,
-              "wtd_increase": 0.058881,
-              "current_rent": 79176.0,
-              "offered_rent": 83838.0,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 9,
-                "Offer Accepted": 3,
-                "Renewed": 3,
-                "Waiting For Response": 1
-              }
-            },
-            {
-              "month": "2025-10",
-              "leases": 4,
-              "mean_increase": 0.086889,
-              "wtd_increase": 0.086691,
-              "current_rent": 16530.0,
-              "offered_rent": 17963.0,
-              "statuses": {
-                "MTM": 1,
-                "Notice": 2,
-                "Offer Accepted": 1
-              }
-            },
-            {
-              "month": "2025-11",
-              "leases": 10,
-              "mean_increase": 0.051684,
-              "wtd_increase": 0.048981,
-              "current_rent": 42343.0,
-              "offered_rent": 44417.0,
-              "statuses": {
-                "Notice": 3,
-                "Renewed": 7
-              }
-            },
-            {
-              "month": "2025-12",
-              "leases": 19,
-              "mean_increase": 0.063103,
-              "wtd_increase": 0.062787,
-              "current_rent": 83728.0,
-              "offered_rent": 88985.0,
-              "statuses": {
-                "MTM": 7,
-                "Notice": 4,
-                "Renewed": 8
-              }
-            },
-            {
-              "month": "2026-01",
-              "leases": 14,
-              "mean_increase": 0.060304,
-              "wtd_increase": 0.060155,
-              "current_rent": 56903.0,
-              "offered_rent": 60326.0,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 1,
-                "Renewed": 11
-              }
-            },
-            {
-              "month": "2026-02",
-              "leases": 24,
-              "mean_increase": 0.069861,
-              "wtd_increase": 0.070082,
-              "current_rent": 90623.0,
-              "offered_rent": 96974.0,
-              "statuses": {
-                "(blank)": 1,
-                "MTM": 4,
-                "Notice": 4,
-                "Renewed": 13,
-                "notice": 2
-              }
-            },
-            {
-              "month": "2026-03",
-              "leases": 18,
-              "mean_increase": 0.079913,
-              "wtd_increase": 0.080151,
-              "current_rent": 73025.0,
-              "offered_rent": 78878.0,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 5,
-                "Renewed": 11
-              }
-            },
-            {
-              "month": "2026-04",
-              "leases": 24,
-              "mean_increase": 0.080814,
-              "wtd_increase": 0.079298,
-              "current_rent": 106030.0,
-              "offered_rent": 114438.0,
-              "statuses": {
-                "MTM": 5,
-                "Notice": 8,
-                "Offer Accepted": 1,
-                "Renewed": 10
-              }
-            },
-            {
-              "month": "2026-05",
-              "leases": 16,
-              "mean_increase": 0.089871,
-              "wtd_increase": 0.089879,
-              "current_rent": 63074.0,
-              "offered_rent": 68743.0,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 6,
-                "Renewed": 7,
-                "Waiting For Response": 1
-              }
-            },
-            {
-              "month": "2026-06",
-              "leases": 34,
-              "mean_increase": 0.085262,
-              "wtd_increase": 0.08448,
-              "current_rent": 155433.0,
-              "offered_rent": 168564.0,
-              "statuses": {
-                "MTM": 8,
-                "Notice": 6,
-                "Renewed": 20
-              }
-            },
-            {
-              "month": "2026-07",
-              "leases": 18,
-              "mean_increase": 0.06156,
-              "wtd_increase": 0.063026,
-              "current_rent": 84251.0,
-              "offered_rent": 89561.0,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 3,
-                "Renewed": 13
-              }
-            },
-            {
-              "month": "2026-08",
-              "leases": 16,
-              "mean_increase": 0.084471,
-              "wtd_increase": 0.082798,
-              "current_rent": 65376.0,
-              "offered_rent": 70789.0,
-              "statuses": {
-                "MTM": 2,
-                "Notice": 3,
-                "Renewed": 11
-              }
-            },
-            {
-              "month": "2026-09",
-              "leases": 18,
-              "mean_increase": 0.087577,
-              "wtd_increase": 0.086859,
-              "current_rent": 80475.0,
-              "offered_rent": 87465.0,
-              "statuses": {
-                "MTM": 1,
-                "Notice": 3,
-                "Offer Accepted": 1,
-                "Renewed": 12,
-                "Waiting For Response": 1
-              }
-            },
-            {
-              "month": "2026-10",
-              "leases": 7,
-              "mean_increase": 0.109904,
-              "wtd_increase": 0.10434,
-              "current_rent": 36084.0,
-              "offered_rent": 39849.0,
-              "statuses": {
-                "MTM": 1,
-                "Notice": 2,
-                "Renewed": 3,
-                "Waiting For Response": 1
-              }
-            },
-            {
-              "month": "2026-11",
-              "leases": 13,
-              "mean_increase": 0.453172,
-              "wtd_increase": 0.44677,
-              "current_rent": 57627.0,
-              "offered_rent": 83373.0,
-              "statuses": {
-                "Notice": 1,
-                "Offer Accepted": 1,
-                "Renewed": 1,
-                "Waiting For Response": 10
-              }
-            },
-            {
-              "month": "2026-12",
-              "leases": 6,
-              "mean_increase": 0.158289,
-              "wtd_increase": 0.158838,
-              "current_rent": 28463.0,
-              "offered_rent": 32984.0,
-              "statuses": {
-                "Offer Accepted": 3,
-                "Waiting For Response": 3
-              }
-            }
-          ],
-          "mtm": {
-            "units": 31,
-            "current_rent": 150376.0,
-            "market_rent": 222370.0,
-            "statuses": {
-              "(blank)": 3,
-              "Notice": 2,
-              "Renewed": 3,
-              "Waiting For Response": 23
-            },
-            "rows_without_rent": 0
-          }
-        }
-      },
-      {
-        "slug": "chorus",
-        "name": "Chorus",
-        "new_leases": {
-          "weeks": 1,
-          "as_of": "2026-09-13",
-          "landed_at": "2026-09-11T00:00:00Z",
-          "source_file": "2026-09-09 09.07.2026- 09.13.2026- Chorus - Daily Report (1).xlsx",
-          "months": [
-            {
-              "month": "2026-09",
-              "leases": 3,
-              "lease_rent": 18201.0,
-              "prior_rent": 12798.0,
-              "mean_tradeout": 0.397965,
-              "wtd_tradeout": 0.422175
-            }
-          ],
-          "leases": 3,
-          "mean_tradeout": 0.397965
-        }
-      },
-      {
-        "slug": "madelon",
-        "name": "Madelon",
-        "new_leases": {
-          "weeks": 1,
-          "as_of": "2026-08-30",
-          "landed_at": "2026-09-11T00:00:00Z",
-          "source_file": "2026-08-31 8.30.26 - The Madelon - Daily Report.xlsx",
-          "months": [],
-          "leases": 0,
-          "mean_tradeout": null
-        }
-      }
-    ]
+  {
+   "id": "tours",
+   "title": "# of Tours",
+   "source": "Property Status",
+   "viz": "bar"
+  },
+  {
+   "id": "leads",
+   "title": "# of Leads",
+   "source": "Property Status",
+   "viz": "bar"
+  },
+  {
+   "id": "applications",
+   "title": "# of Applications",
+   "source": "Property Status \u00b7 Closing Ratio",
+   "viz": "bar"
+  },
+  {
+   "id": "renewals",
+   "title": "Renewals",
+   "source": "Lease Expiration + Renewal Workbook",
+   "viz": "bar"
+  },
+  {
+   "id": "noiMargin",
+   "title": "NOI Margin",
+   "source": "P&L \u00b7 Budget Variance %",
+   "viz": "line"
+  },
+  {
+   "id": "cashOnHand",
+   "title": "Cash on Hand",
+   "source": "Balance Sheet / Treasury",
+   "viz": "line"
+  },
+  {
+   "id": "mktgPerLease",
+   "title": "Marketing Spend / Lease",
+   "source": "Marketing Spend + Leasing Report",
+   "viz": "bar"
+  },
+  {
+   "id": "occupancy",
+   "title": "Occupancy %",
+   "source": "Property Status",
+   "viz": "line"
+  },
+  {
+   "id": "leasedPct",
+   "title": "Leased %",
+   "source": "Property Status",
+   "viz": "line"
   }
+ ],
+ "expense_ratio": {
+  "available": true,
+  "basis": "Statement expenses \u00f7 Operating revenue (T12)",
+  "properties": [
+   {
+    "slug": "the-landing",
+    "name": "The Landing",
+    "ratio_t12": 33.3,
+    "trend_labels": [
+     "Jul 2026"
+    ],
+    "trend_values": [
+     33.3
+    ],
+    "latest_monthly_labels": [
+     "Aug",
+     "Sep",
+     "Oct",
+     "Nov",
+     "Dec",
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun",
+     "Jul"
+    ],
+    "latest_monthly_ratio": [
+     32.6,
+     31.4,
+     31.5,
+     29.3,
+     34.2,
+     30.3,
+     34.1,
+     36.0,
+     52.9,
+     32.5,
+     27.7,
+     27.5
+    ],
+    "expense_scope": "total",
+    "expense_anchor": "549999-9999",
+    "basis": "Total expenses (549999-9999) \u00f7 Total revenue (T12)"
+   },
+   {
+    "slug": "palma",
+    "name": "Palma",
+    "ratio_t12": 56.1,
+    "trend_labels": [
+     "Jun 2026"
+    ],
+    "trend_values": [
+     56.1
+    ],
+    "latest_monthly_labels": [
+     "Jul",
+     "Aug",
+     "Sep",
+     "Oct",
+     "Nov",
+     "Dec",
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun"
+    ],
+    "latest_monthly_ratio": [
+     159.1,
+     145.4,
+     102.3,
+     90.3,
+     47.0,
+     81.4,
+     59.2,
+     43.4,
+     55.3,
+     55.0,
+     38.8,
+     -36.0
+    ],
+    "expense_scope": "operating",
+    "expense_anchor": null,
+    "basis": "Recoverable opex \u00f7 Operating revenue (T12)"
+   }
+  ],
+  "footnote": "Rolling T12 expense ratio per property; one point per monthly statement. Monthly ratios within a statement are volatile on an accrual basis \u2014 the T12 figure is the reliable KPI. The numerator is the statement's total expenses row where it has one (the same figure the Operating Summary card shows), and its recoverable operating total where it does not \u2014 so the ratio is not comparable between properties whose statements are on different account trees \u2014 the basis above the chart is the selected property's own."
+ },
+ "expense_buckets": {
+  "available": true,
+  "properties": [
+   {
+    "slug": "the-landing",
+    "name": "The Landing",
+    "period_end": "Jul 2026",
+    "labels": [
+     "Aug",
+     "Sep",
+     "Oct",
+     "Nov",
+     "Dec",
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun",
+     "Jul"
+    ],
+    "buckets": {
+     "Admin & office": [
+      15003.63,
+      14736.01,
+      24236.64,
+      25056.17,
+      21281.01,
+      8166.39,
+      30492.6,
+      53604.0,
+      16053.09,
+      20324.96,
+      15734.21,
+      6005.78
+     ],
+     "Cleaning": [
+      18183.77,
+      10505.62,
+      1191.75,
+      12363.83,
+      9305.74,
+      10090.1,
+      12062.7,
+      11047.55,
+      11271.59,
+      10446.0,
+      10917.34,
+      11795.52
+     ],
+     "Insurance": [
+      19506.75,
+      18116.5,
+      18256.75,
+      18124.51,
+      20048.52,
+      19047.58,
+      17773.48,
+      36942.81,
+      23295.78,
+      23295.78,
+      23295.78,
+      23295.78
+     ],
+     "Management fee": [
+      23361.55,
+      24691.56,
+      24226.12,
+      23959.41,
+      23663.88,
+      25509.23,
+      22728.73,
+      27274.19,
+      25407.67,
+      22716.0,
+      26320.47,
+      29915.51
+     ],
+     "Marketing & advertising": [
+      14067.38,
+      1503.08,
+      7052.77,
+      6485.84,
+      20362.08,
+      1996.38,
+      8576.5,
+      10484.0,
+      10984.0,
+      7990.2,
+      -1413.4,
+      5197.48
+     ],
+     "Payroll & benefits": [
+      67990.44,
+      53281.27,
+      55607.0,
+      60485.82,
+      54100.01,
+      58581.05,
+      48046.28,
+      57212.39,
+      67818.4,
+      59325.68,
+      51919.98,
+      8366.76
+     ],
+     "Professional fees": [
+      751.67,
+      49170.83,
+      15115.66,
+      9110.87,
+      30389.17,
+      438.14,
+      33250.62,
+      4466.5,
+      1030.0,
+      0.0,
+      5521.88,
+      22122.0
+     ],
+     "Repairs & maintenance": [
+      40753.55,
+      11612.56,
+      36739.47,
+      -5898.36,
+      22762.49,
+      52511.47,
+      43219.23,
+      18716.29,
+      22832.89,
+      21188.46,
+      20159.72,
+      27322.88
+     ],
+     "Residential turnover": [
+      710.0,
+      -6973.45,
+      6755.0,
+      4475.0,
+      11967.02,
+      1450.51,
+      5166.76,
+      7352.9,
+      4245.0,
+      16627.34,
+      9896.88,
+      4102.46
+     ],
+     "Security & fire/life safety": [
+      5761.08,
+      5925.58,
+      7866.55,
+      12010.3,
+      9958.42,
+      9708.57,
+      4558.82,
+      19816.95,
+      7045.07,
+      19273.3,
+      11286.96,
+      9018.26
+     ],
+     "Taxes": [
+      151878.65,
+      151749.16,
+      152128.65,
+      151749.16,
+      151878.65,
+      151953.65,
+      151979.96,
+      147513.0,
+      420141.17,
+      146063.33,
+      146063.33,
+      147094.5
+     ],
+     "Tenant engagement": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      52838.86
+     ],
+     "Utilities (net of billbacks)": [
+      13096.56,
+      17822.89,
+      9351.2,
+      19523.65,
+      36943.59,
+      20684.51,
+      29903.78,
+      30159.83,
+      14080.85,
+      30306.43,
+      14385.65,
+      18165.41
+     ]
+    },
+    "basis": "Align-tree groupings via config/coa_map.json, tied out against the statement's own total expenses per month"
+   },
+   {
+    "slug": "palma",
+    "name": "Palma",
+    "period_end": "Jun 2026",
+    "labels": [
+     "Jul",
+     "Aug",
+     "Sep",
+     "Oct",
+     "Nov",
+     "Dec",
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun"
+    ],
+    "buckets": {
+     "Administrative": [
+      3023.08,
+      1525.98,
+      3687.63,
+      2543.53,
+      2194.2,
+      4049.33,
+      4887.62,
+      4167.79,
+      5944.99,
+      13368.24,
+      22360.63,
+      -12312.34
+     ],
+     "Contract services": [
+      16800.41,
+      19278.45,
+      21177.53,
+      18133.88,
+      23425.64,
+      26438.18,
+      21223.13,
+      26385.61,
+      17557.71,
+      23154.23,
+      30553.34,
+      -36114.85
+     ],
+     "Insurance": [
+      10000.0,
+      10000.0,
+      10000.0,
+      10000.0,
+      -7665.25,
+      14111.58,
+      14111.58,
+      14151.89,
+      14174.17,
+      14111.59,
+      14111.59,
+      0.0
+     ],
+     "Management fee": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      15454.44
+     ],
+     "Marketing & advertising": [
+      7476.65,
+      15429.94,
+      15981.88,
+      7275.31,
+      11777.91,
+      12718.25,
+      4886.18,
+      11571.57,
+      9189.18,
+      21439.13,
+      21103.35,
+      29040.0
+     ],
+     "Other / unclassified": [
+      1279.35,
+      -13226.0,
+      -50239.74,
+      -6059.0,
+      14253.36,
+      281076.49,
+      33106.0,
+      30510.72,
+      29459.24,
+      25428.5,
+      11522.0,
+      -28276.73
+     ],
+     "Payroll & benefits": [
+      76371.5,
+      47827.19,
+      50684.57,
+      50125.75,
+      40924.72,
+      55337.18,
+      48642.09,
+      33830.05,
+      38400.45,
+      48382.42,
+      8960.18,
+      42743.36
+     ],
+     "Professional fees": [
+      31600.98,
+      18459.17,
+      15147.49,
+      874.87,
+      1648.99,
+      2532.69,
+      706.13,
+      -723.08,
+      72146.63,
+      16496.67,
+      8001.67,
+      -9944.96
+     ],
+     "Real estate & other taxes": [
+      41333.0,
+      41333.0,
+      41333.0,
+      41333.0,
+      3732.38,
+      42079.47,
+      42079.47,
+      42079.47,
+      42079.47,
+      42079.49,
+      42079.49,
+      -84158.98
+     ],
+     "Repairs & maintenance": [
+      13100.9,
+      20321.17,
+      16473.93,
+      26513.32,
+      15776.28,
+      20197.83,
+      17855.63,
+      15683.68,
+      15649.43,
+      13435.76,
+      0.0,
+      3586.55
+     ],
+     "Turnover": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      6900.0,
+      4300.0,
+      4200.0,
+      2494.0,
+      -655.0
+     ],
+     "Utilities (net of reimbursements)": [
+      -2439.95,
+      4397.57,
+      1419.4,
+      3691.35,
+      6145.67,
+      -236.43,
+      13214.67,
+      689.84,
+      23474.32,
+      9599.23,
+      8512.21,
+      -13700.92
+     ]
+    },
+    "basis": "GL leaf lines classified by keyword into the workbook's buckets; recoverable side tied out against 5999-9998 per month; financing/non-cash/capital lines excluded"
+   }
+  ]
+ },
+ "monthly_pl": {
+  "available": true,
+  "properties": [
+   {
+    "slug": "the-landing",
+    "name": "The Landing",
+    "period_end": "Jul 2026",
+    "labels": [
+     "Aug",
+     "Sep",
+     "Oct",
+     "Nov",
+     "Dec",
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun",
+     "Jul"
+    ],
+    "months": [
+     "2025-08",
+     "2025-09",
+     "2025-10",
+     "2025-11",
+     "2025-12",
+     "2026-01",
+     "2026-02",
+     "2026-03",
+     "2026-04",
+     "2026-05",
+     "2026-06",
+     "2026-07"
+    ],
+    "revenue": [
+     1136685.93,
+     1121348.35,
+     1139834.56,
+     1150402.58,
+     1205418.87,
+     1187947.78,
+     1195024.42,
+     1180301.75,
+     1178881.59,
+     1162784.04,
+     1207642.03,
+     1328218.38
+    ],
+    "opex": [
+     371065.03,
+     352141.61,
+     358527.56,
+     337446.2,
+     412660.58,
+     360137.58,
+     407759.46,
+     424590.41,
+     624205.51,
+     377557.48,
+     334088.8,
+     365241.2
+    ],
+    "noi": [
+     765620.9,
+     769206.74,
+     781307.0,
+     812956.38,
+     792758.29,
+     827810.2,
+     787264.96,
+     755711.34,
+     554676.08,
+     785226.56,
+     873553.23,
+     962977.18
+    ],
+    "expense_scope": "total",
+    "expense_anchor": "549999-9999",
+    "source_codes": [
+     "p0005611",
+     "p0005612",
+     "p0005640",
+     "p0005671"
+    ],
+    "basis": "jpm 549999-9999 total expenses (operating and non-operating)"
+   },
+   {
+    "slug": "palma",
+    "name": "Palma",
+    "period_end": "Jun 2026",
+    "labels": [
+     "Jul",
+     "Aug",
+     "Sep",
+     "Oct",
+     "Nov",
+     "Dec",
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun"
+    ],
+    "months": [
+     "2025-07",
+     "2025-08",
+     "2025-09",
+     "2025-10",
+     "2025-11",
+     "2025-12",
+     "2026-01",
+     "2026-02",
+     "2026-03",
+     "2026-04",
+     "2026-05",
+     "2026-06"
+    ],
+    "revenue": [
+     99437.96,
+     99473.0,
+     141453.05,
+     168763.38,
+     179750.0,
+     198867.52,
+     273565.5,
+     331558.17,
+     291992.05,
+     307104.0,
+     395957.76,
+     261317.82
+    ],
+    "opex": [
+     158188.94,
+     144683.36,
+     144776.06,
+     152340.83,
+     84533.64,
+     161977.14,
+     162068.06,
+     143888.33,
+     161598.64,
+     168827.63,
+     153524.36,
+     -94102.7
+    ],
+    "noi": [
+     -58750.98,
+     -45210.36,
+     -3323.01,
+     16422.55,
+     95216.36,
+     36890.38,
+     111497.44,
+     187669.84,
+     130393.41,
+     138276.37,
+     242433.4,
+     355420.52
+    ],
+    "expense_scope": "operating",
+    "expense_anchor": null,
+    "source_codes": [
+     "rspalman",
+     "rspalmas"
+    ],
+    "basis": "align 5999-9998 recoverable opex"
+   }
+  ]
+ },
+ "unit_directory": {
+  "available": true,
+  "properties": [
+   {
+    "slug": "the-landing",
+    "name": "The Landing",
+    "as_of": "2026-08-25",
+    "landed_at": "2026-08-26T00:46:52Z",
+    "source_file": "UnitDirectory08_25_2026.xlsx",
+    "units": 265,
+    "residential_units": 263,
+    "codes": [
+     "p0005611"
+    ],
+    "plans": {
+     "laa1": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 90,
+      "sqft_min": 520.0,
+      "sqft_max": 821.0,
+      "sqft_avg": 587,
+      "rent_min": 5485.0,
+      "rent_max": 5800.0
+     },
+     "laa10": {
+      "bedrooms": 1,
+      "baths": 1.5,
+      "units": 1,
+      "sqft_min": 821.0,
+      "sqft_max": 821.0,
+      "sqft_avg": 821,
+      "rent_min": 6230.0,
+      "rent_max": 6230.0
+     },
+     "laa11": {
+      "bedrooms": 1,
+      "baths": 1.5,
+      "units": 1,
+      "sqft_min": 956.0,
+      "sqft_max": 956.0,
+      "sqft_avg": 956,
+      "rent_min": 6010.0,
+      "rent_max": 6010.0
+     },
+     "laa12": {
+      "bedrooms": 1,
+      "baths": 1.5,
+      "units": 1,
+      "sqft_min": 966.0,
+      "sqft_max": 966.0,
+      "sqft_avg": 966,
+      "rent_min": 6070.0,
+      "rent_max": 6070.0
+     },
+     "laa2": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 7,
+      "sqft_min": 637.0,
+      "sqft_max": 682.0,
+      "sqft_avg": 662,
+      "rent_min": 5745.0,
+      "rent_max": 5885.0
+     },
+     "laa3": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 727.0,
+      "sqft_max": 727.0,
+      "sqft_avg": 727,
+      "rent_min": 6015.0,
+      "rent_max": 6015.0
+     },
+     "laa4": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 2,
+      "sqft_min": 777.0,
+      "sqft_max": 780.0,
+      "sqft_avg": 778,
+      "rent_min": 5740.0,
+      "rent_max": 5820.0
+     },
+     "laa5": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 13,
+      "sqft_min": 662.0,
+      "sqft_max": 700.0,
+      "sqft_avg": 687,
+      "rent_min": 5870.0,
+      "rent_max": 5920.0
+     },
+     "laa6": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 13,
+      "sqft_min": 715.0,
+      "sqft_max": 821.0,
+      "sqft_avg": 763,
+      "rent_min": 5860.0,
+      "rent_max": 5905.0
+     },
+     "laa7": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 6,
+      "sqft_min": 738.0,
+      "sqft_max": 773.0,
+      "sqft_avg": 752,
+      "rent_min": 5915.0,
+      "rent_max": 5965.0
+     },
+     "laa8": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 2,
+      "sqft_min": 752.0,
+      "sqft_max": 752.0,
+      "sqft_avg": 752,
+      "rent_min": 6080.0,
+      "rent_max": 6105.0
+     },
+     "laa9": {
+      "bedrooms": 1,
+      "baths": 1.0,
+      "units": 2,
+      "sqft_min": 780.0,
+      "sqft_max": 828.0,
+      "sqft_avg": 804,
+      "rent_min": 5935.0,
+      "rent_max": 6110.0
+     },
+     "lab1": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 3,
+      "sqft_min": 741.0,
+      "sqft_max": 742.0,
+      "sqft_avg": 741,
+      "rent_min": 7676.0,
+      "rent_max": 7786.0
+     },
+     "lab10": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 3,
+      "sqft_min": 886.0,
+      "sqft_max": 891.0,
+      "sqft_avg": 889,
+      "rent_min": 7851.0,
+      "rent_max": 7961.0
+     },
+     "lab11": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 3,
+      "sqft_min": 905.0,
+      "sqft_max": 1104.0,
+      "sqft_avg": 1000,
+      "rent_min": 8016.0,
+      "rent_max": 8181.0
+     },
+     "lab12": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 932.0,
+      "sqft_max": 932.0,
+      "sqft_avg": 932,
+      "rent_min": 7961.0,
+      "rent_max": 7961.0
+     },
+     "lab13": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 2,
+      "sqft_min": 933.0,
+      "sqft_max": 950.0,
+      "sqft_avg": 942,
+      "rent_min": 8191.0,
+      "rent_max": 8221.0
+     },
+     "lab14": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 945.0,
+      "sqft_max": 945.0,
+      "sqft_avg": 945,
+      "rent_min": 8276.0,
+      "rent_max": 8276.0
+     },
+     "lab15": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 5,
+      "sqft_min": 951.0,
+      "sqft_max": 1106.0,
+      "sqft_avg": 983,
+      "rent_min": 8096.0,
+      "rent_max": 8171.0
+     },
+     "lab16": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 3,
+      "sqft_min": 980.0,
+      "sqft_max": 981.0,
+      "sqft_avg": 981,
+      "rent_min": 8001.0,
+      "rent_max": 8001.0
+     },
+     "lab17": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 6,
+      "sqft_min": 984.0,
+      "sqft_max": 984.0,
+      "sqft_avg": 984,
+      "rent_min": 8016.0,
+      "rent_max": 8171.0
+     },
+     "lab18": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 1175.0,
+      "sqft_max": 1175.0,
+      "sqft_avg": 1175,
+      "rent_min": 8336.0,
+      "rent_max": 8336.0
+     },
+     "lab19": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 24,
+      "sqft_min": 1081.0,
+      "sqft_max": 1100.0,
+      "sqft_avg": 1092,
+      "rent_min": 8141.0,
+      "rent_max": 8396.0
+     },
+     "lab2": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 3,
+      "sqft_min": 798.0,
+      "sqft_max": 799.0,
+      "sqft_avg": 798,
+      "rent_min": 7726.0,
+      "rent_max": 7836.0
+     },
+     "lab20": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 2,
+      "sqft_min": 1309.0,
+      "sqft_max": 1309.0,
+      "sqft_avg": 1309,
+      "rent_min": 8371.0,
+      "rent_max": 8371.0
+     },
+     "lab21": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 9,
+      "sqft_min": 830.0,
+      "sqft_max": 1069.0,
+      "sqft_avg": 1028,
+      "rent_min": 7916.0,
+      "rent_max": 8191.0
+     },
+     "lab22": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 2,
+      "sqft_min": 1066.0,
+      "sqft_max": 1066.0,
+      "sqft_avg": 1066,
+      "rent_min": 8091.0,
+      "rent_max": 8091.0
+     },
+     "lab23": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 4,
+      "sqft_min": 1163.0,
+      "sqft_max": 1344.0,
+      "sqft_avg": 1254,
+      "rent_min": 8416.0,
+      "rent_max": 8441.0
+     },
+     "lab3": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 861.0,
+      "sqft_max": 861.0,
+      "sqft_avg": 861,
+      "rent_min": 7766.0,
+      "rent_max": 7766.0
+     },
+     "lab4": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 891.0,
+      "sqft_max": 891.0,
+      "sqft_avg": 891,
+      "rent_min": 7921.0,
+      "rent_max": 7921.0
+     },
+     "lab5": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 956.0,
+      "sqft_max": 956.0,
+      "sqft_avg": 956,
+      "rent_min": 7931.0,
+      "rent_max": 7931.0
+     },
+     "lab6": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 956.0,
+      "sqft_max": 956.0,
+      "sqft_avg": 956,
+      "rent_min": 7906.0,
+      "rent_max": 7906.0
+     },
+     "lab7": {
+      "bedrooms": 2,
+      "baths": 1.0,
+      "units": 1,
+      "sqft_min": 998.0,
+      "sqft_max": 998.0,
+      "sqft_avg": 998,
+      "rent_min": 7991.0,
+      "rent_max": 7991.0
+     },
+     "lab8": {
+      "bedrooms": 2,
+      "baths": 1.5,
+      "units": 3,
+      "sqft_min": 1226.0,
+      "sqft_max": 1236.0,
+      "sqft_avg": 1230,
+      "rent_min": 7871.0,
+      "rent_max": 7921.0
+     },
+     "lab9": {
+      "bedrooms": 2,
+      "baths": 2.0,
+      "units": 30,
+      "sqft_min": 827.0,
+      "sqft_max": 863.0,
+      "sqft_avg": 846,
+      "rent_min": 7716.0,
+      "rent_max": 7971.0
+     },
+     "lac1": {
+      "bedrooms": 3,
+      "baths": 2.0,
+      "units": 9,
+      "sqft_min": 1092.0,
+      "sqft_max": 1099.0,
+      "sqft_avg": 1096,
+      "rent_min": 7924.0,
+      "rent_max": 8084.0
+     },
+     "lac2": {
+      "bedrooms": 3,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 1073.0,
+      "sqft_max": 1073.0,
+      "sqft_avg": 1073,
+      "rent_min": 7854.0,
+      "rent_max": 7854.0
+     },
+     "lac3": {
+      "bedrooms": 3,
+      "baths": 2.0,
+      "units": 1,
+      "sqft_min": 1481.0,
+      "sqft_max": 1481.0,
+      "sqft_avg": 1481,
+      "rent_min": 9069.0,
+      "rent_max": 9069.0
+     },
+     "lac4": {
+      "bedrooms": 3,
+      "baths": 3.0,
+      "units": 1,
+      "sqft_min": 1456.0,
+      "sqft_max": 1456.0,
+      "sqft_avg": 1456,
+      "rent_min": 9254.0,
+      "rent_max": 9254.0
+     },
+     "lac5": {
+      "bedrooms": 3,
+      "baths": 3.0,
+      "units": 3,
+      "sqft_min": 1501.0,
+      "sqft_max": 1501.0,
+      "sqft_avg": 1501,
+      "rent_min": 8929.0,
+      "rent_max": 9009.0
+     },
+     "lac6": {
+      "bedrooms": 3,
+      "baths": 3.0,
+      "units": 1,
+      "sqft_min": 1621.0,
+      "sqft_max": 1621.0,
+      "sqft_avg": 1621,
+      "rent_min": 9444.0,
+      "rent_max": 9444.0
+     }
+    }
+   }
+  ]
+ },
+ "rent_roll": {
+  "available": true,
+  "properties": [
+   {
+    "as_of": "2026-09-11",
+    "landed_at": "2026-09-11T18:33:04.600Z",
+    "source_file": "RentRoll09_11_2026.xlsx",
+    "units": 263,
+    "occupied": 257,
+    "vacant": 6,
+    "on_notice": 9,
+    "occupancy": 0.977186,
+    "sqft": 215452.0,
+    "market_rent_total": 2004929.0,
+    "actual_rent_total": 1240930.0,
+    "market_rent_occupied": 1954850.0,
+    "actual_rent_occupied": 1240930.0,
+    "loss_to_lease": 713920.0,
+    "loss_to_lease_pct": 0.365204,
+    "market_psf": 9.3251,
+    "inplace_psf": 5.9195,
+    "holdovers": {
+     "units": 32,
+     "share_of_occupied": 0.124514,
+     "inplace": 148217.0,
+     "market": 261837.0,
+     "gap_yr": 1363440.0
+    },
+    "rollover": [
+     {
+      "month": "Expired",
+      "units": 32,
+      "sqft": 28588.0,
+      "inplace": 148217.0,
+      "market": 261837.0,
+      "uncaptured": 113620.0,
+      "cum_units": 32,
+      "cum_pct": 0.124514
+     },
+     {
+      "month": "2026-09",
+      "units": 11,
+      "sqft": 9193.0,
+      "inplace": 49205.0,
+      "market": 85676.0,
+      "uncaptured": 36471.0,
+      "cum_units": 43,
+      "cum_pct": 0.167315
+     },
+     {
+      "month": "2026-10",
+      "units": 6,
+      "sqft": 4515.0,
+      "inplace": 29730.0,
+      "market": 42867.0,
+      "uncaptured": 13137.0,
+      "cum_units": 49,
+      "cum_pct": 0.190661
+     },
+     {
+      "month": "2026-11",
+      "units": 13,
+      "sqft": 9974.0,
+      "inplace": 57711.0,
+      "market": 97439.0,
+      "uncaptured": 39728.0,
+      "cum_units": 62,
+      "cum_pct": 0.241245
+     },
+     {
+      "month": "2026-12",
+      "units": 16,
+      "sqft": 13635.0,
+      "inplace": 78629.0,
+      "market": 123769.0,
+      "uncaptured": 45140.0,
+      "cum_units": 78,
+      "cum_pct": 0.303502
+     },
+     {
+      "month": "2027-01",
+      "units": 15,
+      "sqft": 12137.0,
+      "inplace": 73138.0,
+      "market": 113295.0,
+      "uncaptured": 40157.0,
+      "cum_units": 93,
+      "cum_pct": 0.361868
+     },
+     {
+      "month": "2027-02",
+      "units": 10,
+      "sqft": 8509.0,
+      "inplace": 49774.0,
+      "market": 77148.0,
+      "uncaptured": 27374.0,
+      "cum_units": 103,
+      "cum_pct": 0.400778
+     },
+     {
+      "month": "2027-03",
+      "units": 21,
+      "sqft": 17435.0,
+      "inplace": 100699.0,
+      "market": 157895.0,
+      "uncaptured": 57196.0,
+      "cum_units": 124,
+      "cum_pct": 0.48249
+     },
+     {
+      "month": "2027-04",
+      "units": 16,
+      "sqft": 13311.0,
+      "inplace": 78966.0,
+      "market": 123299.0,
+      "uncaptured": 44333.0,
+      "cum_units": 140,
+      "cum_pct": 0.544747
+     },
+     {
+      "month": "2027-05",
+      "units": 18,
+      "sqft": 13799.0,
+      "inplace": 82759.0,
+      "market": 129274.0,
+      "uncaptured": 46515.0,
+      "cum_units": 158,
+      "cum_pct": 0.614786
+     },
+     {
+      "month": "2027-06",
+      "units": 34,
+      "sqft": 29397.0,
+      "inplace": 175623.0,
+      "market": 265954.0,
+      "uncaptured": 90331.0,
+      "cum_units": 192,
+      "cum_pct": 0.747082
+     },
+     {
+      "month": "2027-07",
+      "units": 21,
+      "sqft": 15374.0,
+      "inplace": 108342.0,
+      "market": 152393.0,
+      "uncaptured": 44051.0,
+      "cum_units": 213,
+      "cum_pct": 0.828794
+     },
+     {
+      "month": "2027-08",
+      "units": 14,
+      "sqft": 10376.0,
+      "inplace": 64452.0,
+      "market": 100890.0,
+      "uncaptured": 36438.0,
+      "cum_units": 227,
+      "cum_pct": 0.883268
+     },
+     {
+      "month": "2027-09",
+      "units": 16,
+      "sqft": 13261.0,
+      "inplace": 83692.0,
+      "market": 123259.0,
+      "uncaptured": 39567.0,
+      "cum_units": 243,
+      "cum_pct": 0.945525
+     },
+     {
+      "month": "2027-10",
+      "units": 4,
+      "sqft": 2742.0,
+      "inplace": 16628.0,
+      "market": 30227.0,
+      "uncaptured": 13599.0,
+      "cum_units": 247,
+      "cum_pct": 0.961089
+     },
+     {
+      "month": "2027-11",
+      "units": 7,
+      "sqft": 5335.0,
+      "inplace": 28793.0,
+      "market": 48592.0,
+      "uncaptured": 19799.0,
+      "cum_units": 254,
+      "cum_pct": 0.988327
+     },
+     {
+      "month": "2027-12",
+      "units": 3,
+      "sqft": 2053.0,
+      "inplace": 14572.0,
+      "market": 21036.0,
+      "uncaptured": 6464.0,
+      "cum_units": 257,
+      "cum_pct": 1.0
+     }
+    ],
+    "gaps": [
+     {
+      "rank": 1,
+      "unit": "355",
+      "unit_type": "lab19",
+      "sqft": 1095.0,
+      "inplace": 4109.0,
+      "market": 9331.0,
+      "gap_mo": 5222.0,
+      "gap_yr": 62664.0,
+      "pct_below": 0.55964,
+      "expiry": "2025-02-25",
+      "status": "Holdover"
+     },
+     {
+      "rank": 2,
+      "unit": "664",
+      "unit_type": "lab19",
+      "sqft": 1090.0,
+      "inplace": 4217.0,
+      "market": 9306.0,
+      "gap_mo": 5089.0,
+      "gap_yr": 61068.0,
+      "pct_below": 0.546851,
+      "expiry": "2025-06-30",
+      "status": "Holdover"
+     },
+     {
+      "rank": 3,
+      "unit": "257",
+      "unit_type": "lab16",
+      "sqft": 981.0,
+      "inplace": 4015.0,
+      "market": 9091.0,
+      "gap_mo": 5076.0,
+      "gap_yr": 60912.0,
+      "pct_below": 0.558354,
+      "expiry": "2024-01-12",
+      "status": "Holdover"
+     },
+     {
+      "rank": 4,
+      "unit": "221",
+      "unit_type": "lab12",
+      "sqft": 932.0,
+      "inplace": 3979.0,
+      "market": 9051.0,
+      "gap_mo": 5072.0,
+      "gap_yr": 60864.0,
+      "pct_below": 0.56038,
+      "expiry": "2026-04-08",
+      "status": "Holdover"
+     },
+     {
+      "rank": 5,
+      "unit": "662",
+      "unit_type": "lab9",
+      "sqft": 850.0,
+      "inplace": 3785.0,
+      "market": 8836.0,
+      "gap_mo": 5051.0,
+      "gap_yr": 60612.0,
+      "pct_below": 0.571639,
+      "expiry": "2026-12-31",
+      "status": "Current"
+     },
+     {
+      "rank": 6,
+      "unit": "638",
+      "unit_type": "lab9",
+      "sqft": 863.0,
+      "inplace": 3809.0,
+      "market": 8836.0,
+      "gap_mo": 5027.0,
+      "gap_yr": 60324.0,
+      "pct_below": 0.568923,
+      "expiry": "2025-05-06",
+      "status": "Holdover"
+     },
+     {
+      "rank": 7,
+      "unit": "642",
+      "unit_type": "lab19",
+      "sqft": 1090.0,
+      "inplace": 4300.0,
+      "market": 9271.0,
+      "gap_mo": 4971.0,
+      "gap_yr": 59652.0,
+      "pct_below": 0.536188,
+      "expiry": "2027-06-20",
+      "status": "Current"
+     },
+     {
+      "rank": 8,
+      "unit": "561",
+      "unit_type": "lab21",
+      "sqft": 1062.0,
+      "inplace": 4267.0,
+      "market": 9136.0,
+      "gap_mo": 4869.0,
+      "gap_yr": 58428.0,
+      "pct_below": 0.532947,
+      "expiry": "2026-04-17",
+      "status": "Holdover"
+     },
+     {
+      "rank": 9,
+      "unit": "363",
+      "unit_type": "lab19",
+      "sqft": 1092.0,
+      "inplace": 4590.0,
+      "market": 9296.0,
+      "gap_mo": 4706.0,
+      "gap_yr": 56472.0,
+      "pct_below": 0.506239,
+      "expiry": "2026-02-15",
+      "status": "Holdover"
+     },
+     {
+      "rank": 10,
+      "unit": "643",
+      "unit_type": "lab9",
+      "sqft": 827.0,
+      "inplace": 4300.0,
+      "market": 8956.0,
+      "gap_mo": 4656.0,
+      "gap_yr": 55872.0,
+      "pct_below": 0.519875,
+      "expiry": "2026-09-20",
+      "status": "Current"
+     },
+     {
+      "rank": 11,
+      "unit": "633",
+      "unit_type": "lab15",
+      "sqft": 951.0,
+      "inplace": 4598.0,
+      "market": 9236.0,
+      "gap_mo": 4638.0,
+      "gap_yr": 55656.0,
+      "pct_below": 0.502165,
+      "expiry": "2026-01-02",
+      "status": "Holdover"
+     },
+     {
+      "rank": 12,
+      "unit": "325",
+      "unit_type": "lab11",
+      "sqft": 991.0,
+      "inplace": 4574.0,
+      "market": 9201.0,
+      "gap_mo": 4627.0,
+      "gap_yr": 55524.0,
+      "pct_below": 0.50288,
+      "expiry": "2027-06-30",
+      "status": "Current"
+     },
+     {
+      "rank": 13,
+      "unit": "461",
+      "unit_type": "lab21",
+      "sqft": 1062.0,
+      "inplace": 4532.0,
+      "market": 9136.0,
+      "gap_mo": 4604.0,
+      "gap_yr": 55248.0,
+      "pct_below": 0.50394,
+      "expiry": "2027-05-12",
+      "status": "Current"
+     },
+     {
+      "rank": 14,
+      "unit": "425",
+      "unit_type": "lab11",
+      "sqft": 1104.0,
+      "inplace": 4683.0,
+      "market": 9271.0,
+      "gap_mo": 4588.0,
+      "gap_yr": 55056.0,
+      "pct_below": 0.494876,
+      "expiry": "2027-04-08",
+      "status": "Current"
+     },
+     {
+      "rank": 15,
+      "unit": "413",
+      "unit_type": "lab2",
+      "sqft": 798.0,
+      "inplace": 4339.0,
+      "market": 8926.0,
+      "gap_mo": 4587.0,
+      "gap_yr": 55044.0,
+      "pct_below": 0.513892,
+      "expiry": "2026-12-16",
+      "status": "Current"
+     },
+     {
+      "rank": 16,
+      "unit": "323",
+      "unit_type": "lab13",
+      "sqft": 933.0,
+      "inplace": 4736.0,
+      "market": 9311.0,
+      "gap_mo": 4575.0,
+      "gap_yr": 54900.0,
+      "pct_below": 0.491354,
+      "expiry": "2027-06-30",
+      "status": "Current"
+     },
+     {
+      "rank": 17,
+      "unit": "762",
+      "unit_type": "lab9",
+      "sqft": 850.0,
+      "inplace": 4249.0,
+      "market": 8806.0,
+      "gap_mo": 4557.0,
+      "gap_yr": 54684.0,
+      "pct_below": 0.517488,
+      "expiry": "2027-04-24",
+      "status": "Current"
+     },
+     {
+      "rank": 18,
+      "unit": "343",
+      "unit_type": "lab9",
+      "sqft": 827.0,
+      "inplace": 4356.0,
+      "market": 8906.0,
+      "gap_mo": 4550.0,
+      "gap_yr": 54600.0,
+      "pct_below": 0.510892,
+      "expiry": "2027-07-09",
+      "status": "Current"
+     },
+     {
+      "rank": 19,
+      "unit": "359",
+      "unit_type": "lab9",
+      "sqft": 847.0,
+      "inplace": 4356.0,
+      "market": 8906.0,
+      "gap_mo": 4550.0,
+      "gap_yr": 54600.0,
+      "pct_below": 0.510892,
+      "expiry": "2027-06-29",
+      "status": "Current"
+     },
+     {
+      "rank": 20,
+      "unit": "736",
+      "unit_type": "lab19",
+      "sqft": 1093.0,
+      "inplace": 4687.0,
+      "market": 9231.0,
+      "gap_mo": 4544.0,
+      "gap_yr": 54528.0,
+      "pct_below": 0.492254,
+      "expiry": "2027-09-14",
+      "status": "Current"
+     },
+     {
+      "rank": 21,
+      "unit": "864",
+      "unit_type": "lab19",
+      "sqft": 1090.0,
+      "inplace": 4777.0,
+      "market": 9311.0,
+      "gap_mo": 4534.0,
+      "gap_yr": 54408.0,
+      "pct_below": 0.486951,
+      "expiry": "2026-11-09",
+      "status": "Current"
+     },
+     {
+      "rank": 22,
+      "unit": "113",
+      "unit_type": "lab5",
+      "sqft": 956.0,
+      "inplace": 4500.0,
+      "market": 9021.0,
+      "gap_mo": 4521.0,
+      "gap_yr": 54252.0,
+      "pct_below": 0.501164,
+      "expiry": "2026-03-31",
+      "status": "Holdover"
+     },
+     {
+      "rank": 23,
+      "unit": "840",
+      "unit_type": "lab9",
+      "sqft": 859.0,
+      "inplace": 4387.0,
+      "market": 8886.0,
+      "gap_mo": 4499.0,
+      "gap_yr": 53988.0,
+      "pct_below": 0.506302,
+      "expiry": "2027-10-31",
+      "status": "Current"
+     },
+     {
+      "rank": 24,
+      "unit": "423",
+      "unit_type": "lab13",
+      "sqft": 950.0,
+      "inplace": 4796.0,
+      "market": 9281.0,
+      "gap_mo": 4485.0,
+      "gap_yr": 53820.0,
+      "pct_below": 0.483245,
+      "expiry": "2027-06-30",
+      "status": "Current"
+     },
+     {
+      "rank": 25,
+      "unit": "533",
+      "unit_type": "lab15",
+      "sqft": 952.0,
+      "inplace": 4762.0,
+      "market": 9186.0,
+      "gap_mo": 4424.0,
+      "gap_yr": 53088.0,
+      "pct_below": 0.481602,
+      "expiry": "2027-03-25",
+      "status": "Current"
+     },
+     {
+      "rank": 26,
+      "unit": "659",
+      "unit_type": "lab9",
+      "sqft": 847.0,
+      "inplace": 4544.0,
+      "market": 8956.0,
+      "gap_mo": 4412.0,
+      "gap_yr": 52944.0,
+      "pct_below": 0.492631,
+      "expiry": "2026-03-29",
+      "status": "Holdover"
+     },
+     {
+      "rank": 27,
+      "unit": "862",
+      "unit_type": "lab9",
+      "sqft": 850.0,
+      "inplace": 4484.0,
+      "market": 8886.0,
+      "gap_mo": 4402.0,
+      "gap_yr": 52824.0,
+      "pct_below": 0.495386,
+      "expiry": "2027-01-29",
+      "status": "Current"
+     },
+     {
+      "rank": 28,
+      "unit": "357",
+      "unit_type": "lab19",
+      "sqft": 1100.0,
+      "inplace": 4945.0,
+      "market": 9331.0,
+      "gap_mo": 4386.0,
+      "gap_yr": 52632.0,
+      "pct_below": 0.470046,
+      "expiry": "2027-08-03",
+      "status": "Current"
+     },
+     {
+      "rank": 29,
+      "unit": "653",
+      "unit_type": "lab17",
+      "sqft": 984.0,
+      "inplace": 4800.0,
+      "market": 9156.0,
+      "gap_mo": 4356.0,
+      "gap_yr": 52272.0,
+      "pct_below": 0.475754,
+      "expiry": "2026-09-14",
+      "status": "Current"
+     },
+     {
+      "rank": 30,
+      "unit": "547",
+      "unit_type": "lab21",
+      "sqft": 1059.0,
+      "inplace": 4936.0,
+      "market": 9281.0,
+      "gap_mo": 4345.0,
+      "gap_yr": 52140.0,
+      "pct_below": 0.468161,
+      "expiry": "2027-03-07",
+      "status": "Current"
+     },
+     {
+      "rank": 31,
+      "unit": "663",
+      "unit_type": "lab19",
+      "sqft": 1092.0,
+      "inplace": 5004.0,
+      "market": 9346.0,
+      "gap_mo": 4342.0,
+      "gap_yr": 52104.0,
+      "pct_below": 0.464584,
+      "expiry": "2026-02-21",
+      "status": "Holdover"
+     },
+     {
+      "rank": 32,
+      "unit": "742",
+      "unit_type": "lab19",
+      "sqft": 1090.0,
+      "inplace": 4905.0,
+      "market": 9231.0,
+      "gap_mo": 4326.0,
+      "gap_yr": 51912.0,
+      "pct_below": 0.468638,
+      "expiry": "2027-08-28",
+      "status": "Current"
+     },
+     {
+      "rank": 33,
+      "unit": "320",
+      "unit_type": "lab7",
+      "sqft": 998.0,
+      "inplace": 4765.0,
+      "market": 9081.0,
+      "gap_mo": 4316.0,
+      "gap_yr": 51792.0,
+      "pct_below": 0.475278,
+      "expiry": "2027-06-14",
+      "status": "Current"
+     },
+     {
+      "rank": 34,
+      "unit": "467",
+      "unit_type": "lab3",
+      "sqft": 861.0,
+      "inplace": 4540.0,
+      "market": 8856.0,
+      "gap_mo": 4316.0,
+      "gap_yr": 51792.0,
+      "pct_below": 0.487353,
+      "expiry": "2027-07-03",
+      "status": "Current"
+     },
+     {
+      "rank": 35,
+      "unit": "361",
+      "unit_type": "lab9",
+      "sqft": 841.0,
+      "inplace": 4550.0,
+      "market": 8861.0,
+      "gap_mo": 4311.0,
+      "gap_yr": 51732.0,
+      "pct_below": 0.486514,
+      "expiry": "2027-12-04",
+      "status": "Current"
+     },
+     {
+      "rank": 36,
+      "unit": "553",
+      "unit_type": "lab17",
+      "sqft": 984.0,
+      "inplace": 4800.0,
+      "market": 9106.0,
+      "gap_mo": 4306.0,
+      "gap_yr": 51672.0,
+      "pct_below": 0.472875,
+      "expiry": "2025-08-28",
+      "status": "Holdover"
+     },
+     {
+      "rank": 37,
+      "unit": "740",
+      "unit_type": "lab9",
+      "sqft": 859.0,
+      "inplace": 4514.0,
+      "market": 8806.0,
+      "gap_mo": 4292.0,
+      "gap_yr": 51504.0,
+      "pct_below": 0.487395,
+      "expiry": "2027-03-19",
+      "status": "Current"
+     },
+     {
+      "rank": 38,
+      "unit": "404",
+      "unit_type": "lab10",
+      "sqft": 889.0,
+      "inplace": 4765.0,
+      "market": 9051.0,
+      "gap_mo": 4286.0,
+      "gap_yr": 51432.0,
+      "pct_below": 0.473539,
+      "expiry": "2027-05-31",
+      "status": "Current"
+     },
+     {
+      "rank": 39,
+      "unit": "853",
+      "unit_type": "lab17",
+      "sqft": 984.0,
+      "inplace": 5000.0,
+      "market": 9261.0,
+      "gap_mo": 4261.0,
+      "gap_yr": 51132.0,
+      "pct_below": 0.460102,
+      "expiry": "2027-01-19",
+      "status": "Current"
+     },
+     {
+      "rank": 40,
+      "unit": "412",
+      "unit_type": "lab1",
+      "sqft": 741.0,
+      "inplace": 4629.0,
+      "market": 8876.0,
+      "gap_mo": 4247.0,
+      "gap_yr": 50964.0,
+      "pct_below": 0.478481,
+      "expiry": "2026-11-04",
+      "status": "Current"
+     }
+    ],
+    "undated_leases": 0,
+    "basis": "Occupied units only for loss to lease and the gap table; a vacant unit has an asking rent and no in-place rent, so counting it books the whole asking rent as loss to lease.",
+    "checks": [
+     {
+      "check": "market_rent ties to the report Total row",
+      "ok": true,
+      "parsed": 2004929.0,
+      "report": 2004929.0,
+      "delta": 0.0
+     },
+     {
+      "check": "actual_rent ties to the report Total row",
+      "ok": true,
+      "parsed": 1240930.0,
+      "report": 1240930.0,
+      "delta": 0.0
+     },
+     {
+      "check": "as-of date found",
+      "ok": true,
+      "note": "2026-09-11"
+     },
+     {
+      "check": "stopped at a section marker",
+      "ok": true,
+      "note": "stopped at row 271 ('future residents/applicants')"
+     }
+    ],
+    "slug": "the-landing",
+    "name": "The Landing"
+   }
+  ]
+ },
+ "leasing": {
+  "available": true,
+  "properties": [
+   {
+    "slug": "the-landing",
+    "name": "The Landing",
+    "new_leases": {
+     "weeks": 2,
+     "as_of": "2026-09-07",
+     "landed_at": "2026-09-11T00:00:00Z",
+     "source_file": "2026-09-08 Daily Report- Week Ending 9.7.26.xlsx",
+     "months": [
+      {
+       "month": "2026-08",
+       "leases": 2,
+       "lease_rent": 15702.0,
+       "prior_rent": 8449.0,
+       "mean_tradeout": 0.850095,
+       "wtd_tradeout": 0.858445
+      },
+      {
+       "month": "2026-09",
+       "leases": 1,
+       "lease_rent": 5973.0,
+       "prior_rent": 3351.0,
+       "mean_tradeout": 0.782453,
+       "wtd_tradeout": 0.782453
+      }
+     ],
+     "leases": 3,
+     "mean_tradeout": 0.827548
+    },
+    "renewals": {
+     "as_of": "2026-12",
+     "covers": {
+      "from": "2024-01",
+      "to": "2026-12"
+     },
+     "landed_at": "2026-09-11T00:00:00Z",
+     "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
+     "months": [
+      {
+       "month": "2024-01",
+       "leases": 19,
+       "mean_increase": 0.027193,
+       "wtd_increase": 0.025065,
+       "current_rent": 68059.0,
+       "offered_rent": 69764.87,
+       "statuses": {
+        "MTM": 4,
+        "Notice": 8,
+        "Renewed": 11
+       }
+      },
+      {
+       "month": "2024-02",
+       "leases": 15,
+       "mean_increase": 0.034333,
+       "wtd_increase": 0.03506,
+       "current_rent": 53274.0,
+       "offered_rent": 55141.8,
+       "statuses": {
+        "MTM": 3,
+        "Notice": 5,
+        "Renewed": 10
+       }
+      },
+      {
+       "month": "2024-03",
+       "leases": 15,
+       "mean_increase": 0.034333,
+       "wtd_increase": 0.037402,
+       "current_rent": 60660.0,
+       "offered_rent": 62928.8,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 4,
+        "Renewed": 11
+       }
+      },
+      {
+       "month": "2024-04",
+       "leases": 10,
+       "mean_increase": 0.0625,
+       "wtd_increase": 0.061735,
+       "current_rent": 34242.0,
+       "offered_rent": 36355.93,
+       "statuses": {
+        "MTM": 4,
+        "Notice": 6,
+        "Renewed": 4
+       }
+      },
+      {
+       "month": "2024-05",
+       "leases": 19,
+       "mean_increase": 0.054211,
+       "wtd_increase": 0.05232,
+       "current_rent": 70221.0,
+       "offered_rent": 73894.98,
+       "statuses": {
+        "MTM": 1,
+        "Notice": 5,
+        "Renewed": 12,
+        "Sent": 1
+       }
+      },
+      {
+       "month": "2024-06",
+       "leases": 13,
+       "mean_increase": 0.055385,
+       "wtd_increase": 0.054295,
+       "current_rent": 52234.0,
+       "offered_rent": 55070.07,
+       "statuses": {
+        "MTM": 1,
+        "Notice": 5,
+        "Renewed": 7
+       }
+      },
+      {
+       "month": "2024-07",
+       "leases": 17,
+       "mean_increase": 0.052941,
+       "wtd_increase": 0.053148,
+       "current_rent": 68739.0,
+       "offered_rent": 72392.35,
+       "statuses": {
+        "MTM": 1,
+        "Notice": 10,
+        "Renewed": 6
+       }
+      },
+      {
+       "month": "2024-08",
+       "leases": 17,
+       "mean_increase": 0.036765,
+       "wtd_increase": 0.033851,
+       "current_rent": 76046.0,
+       "offered_rent": 78620.26,
+       "statuses": {
+        "Notice": 6,
+        "Renewed": 10,
+        "Sent": 1
+       }
+      },
+      {
+       "month": "2024-09",
+       "leases": 15,
+       "mean_increase": 0.020523,
+       "wtd_increase": 0.018863,
+       "current_rent": 61920.0,
+       "offered_rent": 63088.0,
+       "statuses": {
+        "MTM": 1,
+        "Notice": 1,
+        "Renewed": 1,
+        "Sent": 12
+       }
+      },
+      {
+       "month": "2024-10",
+       "leases": 8,
+       "mean_increase": 0.00375,
+       "wtd_increase": 0.0026,
+       "current_rent": 34616.0,
+       "offered_rent": 34706.0,
+       "statuses": {
+        "MTM": 3,
+        "Notice": 4,
+        "Renewed": 3,
+        "Sent": 1
+       }
+      },
+      {
+       "month": "2024-11",
+       "leases": 15,
+       "mean_increase": 0.030887,
+       "wtd_increase": 0.029405,
+       "current_rent": 60951.0,
+       "offered_rent": 62743.24,
+       "statuses": {
+        "Notice": 4,
+        "Renewed": 7,
+        "Sent": 4
+       }
+      },
+      {
+       "month": "2024-12",
+       "leases": 4,
+       "mean_increase": 0.018647,
+       "wtd_increase": 0.018292,
+       "current_rent": 14715.0,
+       "offered_rent": 14984.16,
+       "statuses": {
+        "(blank)": 11
+       }
+      },
+      {
+       "month": "2025-01",
+       "leases": 19,
+       "mean_increase": 0.056796,
+       "wtd_increase": 0.047324,
+       "current_rent": 78164.0,
+       "offered_rent": 81863.0,
+       "statuses": {
+        "MTM": 5,
+        "Notice": 4,
+        "Renewed": 11
+       }
+      },
+      {
+       "month": "2025-02",
+       "leases": 24,
+       "mean_increase": 0.058624,
+       "wtd_increase": 0.054699,
+       "current_rent": 88776.0,
+       "offered_rent": 93632.0,
+       "statuses": {
+        "MTM": 4,
+        "Notice": 8,
+        "Renewed": 12
+       }
+      },
+      {
+       "month": "2025-03",
+       "leases": 20,
+       "mean_increase": 0.037526,
+       "wtd_increase": 0.034121,
+       "current_rent": 80716.0,
+       "offered_rent": 83470.12,
+       "statuses": {
+        "MTM": 3,
+        "Notice": 8,
+        "Renewed": 9
+       }
+      },
+      {
+       "month": "2025-04",
+       "leases": 25,
+       "mean_increase": 0.027952,
+       "wtd_increase": 0.026498,
+       "current_rent": 100015.0,
+       "offered_rent": 102665.19,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 9,
+        "Offer Accepted": 1,
+        "Renewed": 13
+       }
+      },
+      {
+       "month": "2025-05",
+       "leases": 18,
+       "mean_increase": 0.058263,
+       "wtd_increase": 0.05637,
+       "current_rent": 66914.0,
+       "offered_rent": 70685.97,
+       "statuses": {
+        "MTM": 3,
+        "Notice": 8,
+        "Offer Accepted": 1,
+        "Renewed": 6
+       }
+      },
+      {
+       "month": "2025-06",
+       "leases": 22,
+       "mean_increase": 0.039607,
+       "wtd_increase": 0.038522,
+       "current_rent": 92086.0,
+       "offered_rent": 95633.37,
+       "statuses": {
+        "MTM": 5,
+        "Notice": 7,
+        "Renewed": 10
+       }
+      },
+      {
+       "month": "2025-07",
+       "leases": 21,
+       "mean_increase": 0.050255,
+       "wtd_increase": 0.0497,
+       "current_rent": 86841.0,
+       "offered_rent": 91157.0,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 6,
+        "Renewed": 13
+       }
+      },
+      {
+       "month": "2025-08",
+       "leases": 25,
+       "mean_increase": 0.043685,
+       "wtd_increase": 0.043789,
+       "current_rent": 104661.0,
+       "offered_rent": 109244.0,
+       "statuses": {
+        "MTM": 4,
+        "Notice": 8,
+        "Renewed": 13
+       }
+      },
+      {
+       "month": "2025-09",
+       "leases": 18,
+       "mean_increase": 0.059594,
+       "wtd_increase": 0.058881,
+       "current_rent": 79176.0,
+       "offered_rent": 83838.0,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 9,
+        "Offer Accepted": 3,
+        "Renewed": 3,
+        "Waiting For Response": 1
+       }
+      },
+      {
+       "month": "2025-10",
+       "leases": 4,
+       "mean_increase": 0.086889,
+       "wtd_increase": 0.086691,
+       "current_rent": 16530.0,
+       "offered_rent": 17963.0,
+       "statuses": {
+        "MTM": 1,
+        "Notice": 2,
+        "Offer Accepted": 1
+       }
+      },
+      {
+       "month": "2025-11",
+       "leases": 10,
+       "mean_increase": 0.051684,
+       "wtd_increase": 0.048981,
+       "current_rent": 42343.0,
+       "offered_rent": 44417.0,
+       "statuses": {
+        "Notice": 3,
+        "Renewed": 7
+       }
+      },
+      {
+       "month": "2025-12",
+       "leases": 19,
+       "mean_increase": 0.063103,
+       "wtd_increase": 0.062787,
+       "current_rent": 83728.0,
+       "offered_rent": 88985.0,
+       "statuses": {
+        "MTM": 7,
+        "Notice": 4,
+        "Renewed": 8
+       }
+      },
+      {
+       "month": "2026-01",
+       "leases": 14,
+       "mean_increase": 0.060304,
+       "wtd_increase": 0.060155,
+       "current_rent": 56903.0,
+       "offered_rent": 60326.0,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 1,
+        "Renewed": 11
+       }
+      },
+      {
+       "month": "2026-02",
+       "leases": 24,
+       "mean_increase": 0.069861,
+       "wtd_increase": 0.070082,
+       "current_rent": 90623.0,
+       "offered_rent": 96974.0,
+       "statuses": {
+        "(blank)": 1,
+        "MTM": 4,
+        "Notice": 4,
+        "Renewed": 13,
+        "notice": 2
+       }
+      },
+      {
+       "month": "2026-03",
+       "leases": 18,
+       "mean_increase": 0.079913,
+       "wtd_increase": 0.080151,
+       "current_rent": 73025.0,
+       "offered_rent": 78878.0,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 5,
+        "Renewed": 11
+       }
+      },
+      {
+       "month": "2026-04",
+       "leases": 24,
+       "mean_increase": 0.080814,
+       "wtd_increase": 0.079298,
+       "current_rent": 106030.0,
+       "offered_rent": 114438.0,
+       "statuses": {
+        "MTM": 5,
+        "Notice": 8,
+        "Offer Accepted": 1,
+        "Renewed": 10
+       }
+      },
+      {
+       "month": "2026-05",
+       "leases": 16,
+       "mean_increase": 0.089871,
+       "wtd_increase": 0.089879,
+       "current_rent": 63074.0,
+       "offered_rent": 68743.0,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 6,
+        "Renewed": 7,
+        "Waiting For Response": 1
+       }
+      },
+      {
+       "month": "2026-06",
+       "leases": 34,
+       "mean_increase": 0.085262,
+       "wtd_increase": 0.08448,
+       "current_rent": 155433.0,
+       "offered_rent": 168564.0,
+       "statuses": {
+        "MTM": 8,
+        "Notice": 6,
+        "Renewed": 20
+       }
+      },
+      {
+       "month": "2026-07",
+       "leases": 18,
+       "mean_increase": 0.06156,
+       "wtd_increase": 0.063026,
+       "current_rent": 84251.0,
+       "offered_rent": 89561.0,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 3,
+        "Renewed": 13
+       }
+      },
+      {
+       "month": "2026-08",
+       "leases": 16,
+       "mean_increase": 0.084471,
+       "wtd_increase": 0.082798,
+       "current_rent": 65376.0,
+       "offered_rent": 70789.0,
+       "statuses": {
+        "MTM": 2,
+        "Notice": 3,
+        "Renewed": 11
+       }
+      },
+      {
+       "month": "2026-09",
+       "leases": 18,
+       "mean_increase": 0.087577,
+       "wtd_increase": 0.086859,
+       "current_rent": 80475.0,
+       "offered_rent": 87465.0,
+       "statuses": {
+        "MTM": 1,
+        "Notice": 3,
+        "Offer Accepted": 1,
+        "Renewed": 12,
+        "Waiting For Response": 1
+       }
+      },
+      {
+       "month": "2026-10",
+       "leases": 7,
+       "mean_increase": 0.109904,
+       "wtd_increase": 0.10434,
+       "current_rent": 36084.0,
+       "offered_rent": 39849.0,
+       "statuses": {
+        "MTM": 1,
+        "Notice": 2,
+        "Renewed": 3,
+        "Waiting For Response": 1
+       }
+      },
+      {
+       "month": "2026-11",
+       "leases": 13,
+       "mean_increase": 0.453172,
+       "wtd_increase": 0.44677,
+       "current_rent": 57627.0,
+       "offered_rent": 83373.0,
+       "statuses": {
+        "Notice": 1,
+        "Offer Accepted": 1,
+        "Renewed": 1,
+        "Waiting For Response": 10
+       }
+      },
+      {
+       "month": "2026-12",
+       "leases": 6,
+       "mean_increase": 0.158289,
+       "wtd_increase": 0.158838,
+       "current_rent": 28463.0,
+       "offered_rent": 32984.0,
+       "statuses": {
+        "Offer Accepted": 3,
+        "Waiting For Response": 3
+       }
+      }
+     ],
+     "mtm": {
+      "units": 31,
+      "current_rent": 150376.0,
+      "market_rent": 222370.0,
+      "statuses": {
+       "(blank)": 3,
+       "Notice": 2,
+       "Renewed": 3,
+       "Waiting For Response": 23
+      },
+      "rows_without_rent": 0
+     }
+    }
+   },
+   {
+    "slug": "chorus",
+    "name": "Chorus",
+    "new_leases": {
+     "weeks": 1,
+     "as_of": "2026-09-13",
+     "landed_at": "2026-09-11T00:00:00Z",
+     "source_file": "2026-09-09 09.07.2026- 09.13.2026- Chorus - Daily Report (1).xlsx",
+     "months": [
+      {
+       "month": "2026-09",
+       "leases": 3,
+       "lease_rent": 18201.0,
+       "prior_rent": 12798.0,
+       "mean_tradeout": 0.397965,
+       "wtd_tradeout": 0.422175
+      }
+     ],
+     "leases": 3,
+     "mean_tradeout": 0.397965
+    }
+   },
+   {
+    "slug": "madelon",
+    "name": "Madelon",
+    "new_leases": {
+     "weeks": 1,
+     "as_of": "2026-08-30",
+     "landed_at": "2026-09-11T00:00:00Z",
+     "source_file": "2026-08-31 8.30.26 - The Madelon - Daily Report.xlsx",
+     "months": [],
+     "leases": 0,
+     "mean_tradeout": null
+    }
+   }
+  ]
+ },
+ "rent_capture": {
+  "available": true,
+  "properties": [
+   {
+    "slug": "the-landing",
+    "name": "The Landing",
+    "period_end": "Jul 2026",
+    "labels": [
+     "Aug",
+     "Sep",
+     "Oct",
+     "Nov",
+     "Dec",
+     "Jan",
+     "Feb",
+     "Mar",
+     "Apr",
+     "May",
+     "Jun",
+     "Jul"
+    ],
+    "months": [
+     "2025-08",
+     "2025-09",
+     "2025-10",
+     "2025-11",
+     "2025-12",
+     "2026-01",
+     "2026-02",
+     "2026-03",
+     "2026-04",
+     "2026-05",
+     "2026-06",
+     "2026-07"
+    ],
+    "market_potential": [
+     1358168.0,
+     1288730.0,
+     1337773.0,
+     1299834.0,
+     1303359.0,
+     1383098.0,
+     1442462.0,
+     1406139.0,
+     1392709.0,
+     1473087.0,
+     1516990.0,
+     1701103.0
+    ],
+    "loss_to_lease": [
+     248899.0,
+     161257.0,
+     206686.0,
+     162609.0,
+     161772.0,
+     227597.0,
+     277724.0,
+     228616.0,
+     202230.0,
+     269683.0,
+     296049.0,
+     461655.0
+    ],
+    "vacancy_loss": [
+     19277.14,
+     8791.77,
+     38726.67,
+     52059.68,
+     31504.26,
+     10386.29,
+     27098.79,
+     52652.56,
+     25562.26,
+     66581.11,
+     44328.92,
+     -26971.8
+    ],
+    "employee_allowance": [
+     5000.0,
+     5000.0,
+     5000.0,
+     7838.71,
+     7000.0,
+     7000.0,
+     4550.78,
+     4228.39,
+     7220.39,
+     8358.0,
+     7278.0,
+     7278.0
+    ],
+    "concessions": [
+     0.0,
+     0.0,
+     2500.0,
+     -689.15,
+     2000.0,
+     1500.0,
+     500.0,
+     0.0,
+     2660.96,
+     500.0,
+     0.0,
+     4679.93
+    ],
+    "other": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "rental_income": [
+     1084991.86,
+     1113681.23,
+     1084860.33,
+     1078015.76,
+     1101082.74,
+     1136614.71,
+     1132588.43,
+     1120642.05,
+     1155035.39,
+     1127964.89,
+     1169334.08,
+     1254461.87
+    ],
+    "basis": "jpm 410499-9999",
+    "ttm": {
+     "months": 12,
+     "market_potential": 16903452.0,
+     "rental_income": 13559273.34,
+     "capture_rate": 0.80216,
+     "ltl_pct": 0.171845
+    },
+    "source_codes": [
+     "p0005611",
+     "p0005612",
+     "p0005640",
+     "p0005671"
+    ],
+    "tieout_max_gap": 0.0,
+    "problems": []
+   }
+  ]
+ }
 }

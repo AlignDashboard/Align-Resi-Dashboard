@@ -78,6 +78,13 @@ def period_key(label):
         return (0, 0)
 
 
+# The residential rental-income series the Loss to Lease card draws, named in
+# one place so the store, the stitch and the publish cannot drift apart. Sign
+# convention is the analyst workbook's: a deduction is a positive number.
+RENT_CAPTURE_KEYS = ("market_potential", "loss_to_lease", "vacancy_loss",
+                     "employee_allowance", "concessions", "other",
+                     "rental_income")
+
 # ---- accumulation ---------------------------------------------------------
 
 def latest_per_code(t12_parses):
@@ -428,6 +435,82 @@ def store_monthly_pl(prop, t12_parses):
         hist["points"] = [pt for pt in hist["points"] if pt["period_end"] != period_end]
         hist["points"].append(point)
         print(f"[ok] stored monthly_pl for {prop['name']} ({period_end}) "
+              f"from {'+'.join(codes)}")
+
+    hist["points"].sort(key=lambda pt: period_key(pt["period_end"]))
+    json.dump(hist, open(fp, "w"), indent=2)
+    return hist
+
+
+def store_rent_capture(prop, t12_parses):
+    """data/<slug>/rent_capture.json -- the statement's residential rental
+    income, month by month, summed across the property's codes like the rest.
+
+    This is what the Loss to Lease card draws. It was read off the analyst
+    workbook until 2026-09-11, when the same six series turned out to be
+    sitting in the T12 statement the pipeline already fetches daily -- gross
+    market rent potential, the four deductions, and the accrued total -- tying
+    to the cent against the workbook over all twelve overlapping months. So the
+    card needs no rent roll: its figures are a property-level P&L section, not
+    a per-unit comparison, which is why it can live on the Drive-only tab while
+    the unit-level cards beside it cannot.
+
+    A parse whose section was refused (tie-out failure) is skipped loudly, the
+    way refused buckets are: the stores must not share a fate.
+    """
+    by_period = {}
+    for code, pr in sorted(latest_per_code(t12_parses).items()):
+        if not pr.get("rent_capture"):
+            if pr.get("rent_capture_error"):
+                print(f"[warn] {prop['name']} {pr.get('period_end')} code '{code}': "
+                      f"rent capture refused -- {pr['rent_capture_error']}")
+            continue
+        by_period.setdefault(pr["period_end"], []).append((code, pr))
+    if not by_period:
+        return None
+
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / "rent_capture.json"
+    hist = json.load(open(fp)) if fp.exists() else {"points": []}
+
+    for period_end, group in by_period.items():
+        codes = sorted({c2 for c, pr in group for c2 in (pr.get("property_codes") or [c])})
+        labels = group[0][1]["labels"]
+        if any(pr["labels"] != labels for _, pr in group[1:]):
+            print(f"[warn] {prop['name']} {period_end}: month labels differ across "
+                  f"codes -- rent capture from '{group[0][0]}' alone for this period")
+            group = group[:1]
+        bases = {pr["rent_capture"]["basis"] for _, pr in group}
+        if len(bases) > 1:
+            print(f"[warn] {prop['name']} {period_end}: codes report rental income "
+                  f"on different bases ({sorted(bases)}) -- rent capture skipped "
+                  f"for this period rather than summing unlike sections")
+            continue
+        merged = {k: [sum(pr["rent_capture"][k][i] for _, pr in group)
+                      for i in range(len(labels))]
+                  for k in RENT_CAPTURE_KEYS}
+        gaps = [pr["rent_capture"].get("tieout_max_gap") for _, pr in group]
+        problems = sorted({x for _, pr in group
+                           for x in (pr["rent_capture"].get("problems") or [])})
+        for x in problems:
+            print(f"[note] {prop['name']} {period_end} rent capture: {x}")
+        landed_at, source_files = arrival(group)
+        point = {
+            "period_end": period_end,
+            "landed_at": landed_at,
+            "source_files": source_files,
+            "labels": labels,
+            "source_codes": codes,
+            **{k: [round(v, 2) for v in vs] for k, vs in merged.items()},
+            "basis": bases.pop(),
+            "tieout_max_gap": (max(g for g in gaps if g is not None)
+                               if any(g is not None for g in gaps) else None),
+            "problems": problems,
+        }
+        hist["points"] = [pt for pt in hist["points"] if pt["period_end"] != period_end]
+        hist["points"].append(point)
+        print(f"[ok] stored rent_capture for {prop['name']} ({period_end}) "
               f"from {'+'.join(codes)}")
 
     hist["points"].sort(key=lambda pt: period_key(pt["period_end"]))
@@ -942,6 +1025,7 @@ def process_manifest():
         store_monthly_revenue(prop, parses)
         store_expense_buckets(prop, parses)
         store_monthly_pl(prop, parses)
+        store_rent_capture(prop, parses)
 
 
 # ---- metrics.json generation ---------------------------------------------
@@ -1008,6 +1092,67 @@ def stitch_monthly_pl(points, label=""):
         "expense_anchor": cells[hi]["anchor"],
         "basis": cells[hi]["basis"],
     }
+
+
+def stitch_rent_capture(points, label=""):
+    """Successive statements' rental-income sections merged into one month run.
+
+    Same rule as stitch_monthly_pl -- absolute month index, newest statement
+    wins an overlapping month, only the contiguous run ending at the newest
+    month is returned -- so the card lengthens past twelve months as statements
+    accumulate instead of resetting to each new file's window.
+
+    The run also stops where the basis changes. A section read off the
+    statement's own total row and one derived from its lines (the Align tree
+    has no such row) are not the same measurement, and a chart spanning both
+    would draw the change as a movement in rent.
+    """
+    cells = {}
+    for pt in points:                       # oldest first, so newest overwrites
+        yr, mon = period_key(pt["period_end"])
+        if not yr:
+            continue
+        end = yr * 12 + (mon - 1)
+        n = len(pt["market_potential"])
+        for i in range(n):
+            cells[end - (n - 1 - i)] = {
+                **{k: pt[k][i] for k in RENT_CAPTURE_KEYS},
+                "basis": pt.get("basis"),
+            }
+    if not cells:
+        return None
+    hi = max(cells)
+    basis = cells[hi]["basis"]
+    start = hi
+    while start - 1 in cells and cells[start - 1]["basis"] == basis:
+        start -= 1
+    if start - 1 in cells:
+        print(f"[warn] {label or 'rent capture'}: series cut at "
+              f"{_MON[start % 12]} {start // 12} -- earlier months are on the "
+              f"'{cells[start - 1]['basis']}' basis, the newest is on "
+              f"'{basis}'")
+    idx = list(range(start, hi + 1))
+    out = {
+        "labels": [_MON[i % 12] for i in idx],
+        "months": [f"{i // 12}-{i % 12 + 1:02d}" for i in idx],
+        **{k: [cells[i][k] for i in idx] for k in RENT_CAPTURE_KEYS},
+        "basis": basis,
+    }
+    # The card's footnote quotes a trailing-twelve figure, so it is computed
+    # from the series rather than from the newest statement's Total column --
+    # those agree today and would not once the run runs past one statement.
+    t = idx[-12:]
+    pot = sum(cells[i]["market_potential"] for i in t)
+    inc = sum(cells[i]["rental_income"] for i in t)
+    ltl = sum(cells[i]["loss_to_lease"] for i in t)
+    out["ttm"] = {
+        "months": len(t),
+        "market_potential": round(pot, 2),
+        "rental_income": round(inc, 2),
+        "capture_rate": round(inc / pot, 6) if pot else None,
+        "ltl_pct": round(ltl / pot, 6) if pot else None,
+    }
+    return out
 
 
 def build_metrics_json():
@@ -1244,6 +1389,31 @@ def build_metrics_json():
                          "source_codes": latest.get("source_codes"),
                          "basis": series["basis"] or latest.get("basis")})
     metrics["monthly_pl"] = {"available": bool(pl_props), "properties": pl_props}
+
+    # Residential rental income, for the Loss to Lease card. Same shape as the
+    # analyst workbook's rent_capture block on purpose: the page renders either
+    # source through one renderer rather than two that can drift.
+    rc_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "rent_capture.json"
+        if not fp.exists():
+            continue
+        pts = json.load(open(fp))["points"]
+        if not pts:
+            continue
+        latest = pts[-1]
+        series = stitch_rent_capture(pts, f"{p['name']} rent capture")
+        if series is None:
+            continue
+        rc_props.append({"slug": p["slug"], "name": p["name"],
+                         "period_end": latest["period_end"],
+                         **series,
+                         "source_codes": latest.get("source_codes"),
+                         "tieout_max_gap": latest.get("tieout_max_gap"),
+                         "problems": latest.get("problems") or []})
+    metrics["rent_capture"] = {"available": bool(rc_props), "properties": rc_props}
 
     if expense_ratio_props:
         metrics["expense_ratio"] = {

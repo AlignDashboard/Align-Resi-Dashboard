@@ -1208,6 +1208,47 @@ async function loadAll() {
       });
     });
 
+    // The statement's residential rental-income section — what the Loss to
+    // Lease card draws on both Landing tabs. Published in the analyst
+    // workbook's shape (deductions positive) so one renderer serves both.
+    const rcb = d.rent_capture || {};
+    (rcb.properties || []).forEach((pr, i) => {
+      renderTable(host, {
+        id: "t-rentcap-" + (pr.slug || i), group: "Portfolio",
+        title: "Rent capture — " + (pr.name || pr.slug),
+        feeds: "Loss to Lease card (The Landing and Landing (Drive) tabs)",
+        note: [pr.basis, "statement period ending " + (pr.period_end || "—"),
+               "codes " + ((pr.source_codes || []).join("+") || "—"),
+               pr.tieout_max_gap != null
+                 ? "section reproduces its own total to within $"
+                   + pr.tieout_max_gap : null,
+               "Gross potential less the four deductions equals accrued rent, "
+               + "by construction. Deductions are shown positive — the size of "
+               + "each loss — which is the analyst workbook's convention and "
+               + "the opposite of the statement's."]
+                .concat(pr.problems || []).filter(Boolean).join(" · "),
+        cols: [{ key: "month", label: "Month" },
+               { key: "market_potential", label: "Market rent potential", fmt: "money" },
+               { key: "loss_to_lease", label: "Loss to lease", fmt: "money" },
+               { key: "vacancy_loss", label: "Vacancy loss", fmt: "money" },
+               { key: "employee_allowance", label: "Employee allowance", fmt: "money" },
+               { key: "concessions", label: "Concessions", fmt: "money" },
+               { key: "other", label: "Other", fmt: "money" },
+               { key: "rental_income", label: "Accrued rental income", fmt: "money" },
+               { key: "ltl_pct", label: "Loss to lease %", fmt: "pct1" }],
+        rows: (pr.months || []).map((m, j) => {
+          const pot = (pr.market_potential || [])[j];
+          const row = { month: m };
+          ["market_potential", "loss_to_lease", "vacancy_loss",
+           "employee_allowance", "concessions", "other", "rental_income"]
+            .forEach(k => { row[k] = (pr[k] || [])[j]; });
+          row.ltl_pct = isNum(pot) && pot ? row.loss_to_lease / pot : null;
+          return row;
+        }),
+        filterable: true,
+      });
+    });
+
     const eb = d.expense_buckets || {};
     (eb.properties || []).forEach((pr, i) => {
       const names = Object.keys(pr.buckets || {}).sort();
