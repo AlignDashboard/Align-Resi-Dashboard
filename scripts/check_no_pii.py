@@ -132,8 +132,18 @@ def harvest_names(source):
                                 and not v.lower().startswith(("total", "future resident",
                                                               "summary", "grand total",
                                                               "current/notice"))
+                                # The real rent roll (first one 2026-09-11) added
+                                # four more: its name column carries "Security"
+                                # and "Square" from split two-row headers further
+                                # down the sheet, and "Vacant"/"Occupied" as the
+                                # status of a unit with no resident. Left in, they
+                                # fail every file containing the word "security"
+                                # (the Security & Fire/Life Safety expense bucket)
+                                # or "square" -- and a check that cries wolf is one
+                                # people learn to skip past.
                                 and not re.search(r"\b(rent|rate|lease|unit|market|offer|"
-                                                  r"status|term|sq ?ft|balance|owed|notes?)\b",
+                                                  r"status|term|sq ?ft|balance|owed|notes?|"
+                                                  r"security|square|deposit|vacant|occupied)\b",
                                                   v, re.I)):
                             names.add(v)
     return names

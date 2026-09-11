@@ -227,6 +227,44 @@
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
   },
+  "cdRentCapture": {
+   "card": "Loss to Lease",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-rentroll",
+    "t-rollover"
+   ],
+   "flows": [
+    "rent_roll"
+   ],
+   "primary": "t-rentroll",
+   "holds": "Rent roll \u2014 summary"
+  },
+  "cdRollover": {
+   "card": "Rollover Schedule",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-rollover"
+   ],
+   "flows": [
+    "rent_roll"
+   ],
+   "primary": "t-rollover",
+   "holds": "Rollover schedule"
+  },
+  "cdGaps": {
+   "card": "Largest Unit Gaps",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-gaps",
+    "t-unitdir"
+   ],
+   "flows": [
+    "rent_roll"
+   ],
+   "primary": "t-gaps",
+   "holds": "Largest unit gaps"
+  },
   "cGaps": {
    "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
    "tab": "The Landing",
@@ -394,12 +432,11 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-09T15:02:34.163485+00:00",
+  "generated_at": "2026-09-11T18:58:21.488342+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 9,
+   "live": 10,
    "partial": 3,
-   "waiting": 1,
    "no-parser": 10,
    "manual": 1
   },
@@ -1050,6 +1087,97 @@
    "status": "live"
   },
   {
+   "id": "rent_roll",
+   "title": "Rent roll (SPV PM Deliverable Package)",
+   "origin_kind": "drive",
+   "source_label": "Rent Roll",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "<date> RentRoll<MM_DD_YYYY>.xlsx",
+   "carries": "Every unit: status, resident code, in-place and market rent, square footage, lease dates.",
+   "filed_by": [
+    "rentroll",
+    "rollreport"
+   ],
+   "report_type": "rent_roll",
+   "parser": "parse_rent_roll",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_rent_roll.py",
+     "does": "Reads unit rows until the section marker; keeps the resident code only to tell an occupied unit from a vacant one.",
+     "checks": "Every published total ties to the report's own Total row; refuses the file if that row is missing."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Scrubs the parse through PII_FIELDS and writes it.",
+     "checks": "scripts/check_no_pii.py re-reads the output and fails the build if a person-shaped field survived."
+    }
+   ],
+   "stores": [
+    "data/<slug>/rent_roll.json  (gitignored \u2014 unit level)"
+   ],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "rent_roll"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Loss to Lease",
+     "tab": "Landing (Drive)",
+     "anchor": "cdRentCapture",
+     "primary": "t-rentroll-*",
+     "tables": [
+      "t-rentroll-*",
+      "t-rollover-*"
+     ],
+     "holds": "Loss to lease, occupancy and the rollover cohorts"
+    },
+    {
+     "card": "Rollover Schedule",
+     "tab": "Landing (Drive)",
+     "anchor": "cdRollover",
+     "primary": "t-rollover-*",
+     "tables": [
+      "t-rollover-*"
+     ],
+     "holds": "Lease expirations by month"
+    },
+    {
+     "card": "Largest Unit Gaps",
+     "tab": "Landing (Drive)",
+     "anchor": "cdGaps",
+     "primary": "t-gaps-*",
+     "tables": [
+      "t-gaps-*",
+      "t-unitdir-*"
+     ],
+     "holds": "Top units by annual gap to market"
+    }
+   ],
+   "tables": [
+    "t-rentroll-*",
+    "t-rollover-*",
+    "t-gaps-*"
+   ],
+   "note": "Live since 2026-09-11, the first roll ever to reach the pipeline. Both published totals tied to the report's own Total row to the cent on that first run. Occupancy is the parser's occupied flag \u2014 a resident code AND a non-zero rent \u2014 because Yardi carries a code on vacant units too, and a code-only test reads 100% on a property at 97.7%.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/rent_roll.json",
+     "as_of": "2026-09-11",
+     "source_file": "RentRoll09_11_2026.xlsx",
+     "landed_at": "2026-09-11T18:33:04.600Z",
+     "detail": null
+    }
+   ],
+   "status": "live"
+  },
+  {
    "id": "unit_directory",
    "title": "Yardi unit directory",
    "origin_kind": "drive",
@@ -1261,46 +1389,6 @@
     }
    ],
    "status": "partial"
-  },
-  {
-   "id": "rent_roll",
-   "title": "Rent roll (SPV PM Deliverable Package)",
-   "origin_kind": "drive",
-   "source_label": "Rent Roll",
-   "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": "<date> RentRoll<MM_DD_YYYY>.xlsx",
-   "carries": "Every unit: status, resident code, in-place and market rent, square footage, lease dates.",
-   "filed_by": [
-    "rentroll",
-    "rollreport"
-   ],
-   "report_type": "rent_roll",
-   "parser": "parse_rent_roll",
-   "registered": "active",
-   "documented": true,
-   "steps": [
-    {
-     "script": "scripts/parse_rent_roll.py",
-     "does": "Reads unit rows until the section marker; keeps the resident code only to tell an occupied unit from a vacant one.",
-     "checks": "Every published total ties to the report's own Total row; refuses the file if that row is missing."
-    },
-    {
-     "script": "scripts/build_metrics.py",
-     "does": "Scrubs the parse through PII_FIELDS and writes it.",
-     "checks": "scripts/check_no_pii.py re-reads the output and fails the build if a person-shaped field survived."
-    }
-   ],
-   "stores": [
-    "data/<slug>/rent_roll.json  (gitignored \u2014 unit level)"
-   ],
-   "publishes": [],
-   "dashboard": [],
-   "tables": [],
-   "note": "Written, registered and never run: the registered Drive folder is empty and the actual file sits in the parent folder, which the fetcher does not scan. Every per-unit figure on the page therefore arrives through the analyst workbook instead. Moving the file is the whole fix.",
-   "open_item": "C4",
-   "same_as": null,
-   "evidence": [],
-   "status": "waiting"
   },
   {
    "id": "airm-yardi-rev-management-revenue-mgmt",
@@ -1653,17 +1741,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-08",
+     "as_of": "2026-09-09",
      "source_file": null,
-     "landed_at": "2026-09-08T15:37:37Z",
-     "detail": "28 day(s) recorded"
+     "landed_at": "2026-09-09T15:38:04Z",
+     "detail": "29 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-08",
+     "as_of": "2026-09-09",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-08T15:37:37Z",
+     "landed_at": "2026-09-09T15:38:04Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2014,7 +2102,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-09T15:02:33.874350+00:00",
+     "landed_at": "2026-09-11T18:54:26.029323+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

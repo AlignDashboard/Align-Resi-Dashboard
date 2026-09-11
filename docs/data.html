@@ -1256,6 +1256,79 @@ async function loadAll() {
       });
     });
 
+    // The rent roll, in three tables because the block carries three different
+    // shapes: one summary row, a month-by-month rollover, and the gap table.
+    // Unit level, and deliberately so — nothing here names a resident, because
+    // build_metrics.scrub drops the name and the resident code before the parse
+    // is ever written to disk.
+    const rrb = d.rent_roll || {};
+    (rrb.properties || []).forEach((pr, i) => {
+      const src = "From " + (pr.source_file || "the rent roll") + ", as of "
+                + (pr.as_of || "—") + ". ";
+      renderTable(host, {
+        id: "t-rentroll-" + (pr.slug || i), group: "Portfolio",
+        title: "Rent roll — summary — " + (pr.name || pr.slug),
+        feeds: "Loss to Lease card (Landing (Drive) tab)",
+        note: src + pr.basis,
+        cols: [{ key: "k", label: "Measure" }, { key: "v", label: "Value" }],
+        rows: [
+          { k: "Units on the roll", v: pr.units },
+          { k: "Occupied", v: pr.occupied },
+          { k: "Vacant", v: pr.vacant },
+          { k: "On notice", v: pr.on_notice },
+          { k: "Occupancy", v: pr.occupancy == null ? null : (pr.occupancy * 100).toFixed(2) + "%" },
+          { k: "Square feet", v: pr.sqft },
+          { k: "Market rent, all units ($/mo)", v: pr.market_rent_total },
+          { k: "Actual rent, all units ($/mo)", v: pr.actual_rent_total },
+          { k: "Market rent, occupied ($/mo)", v: pr.market_rent_occupied },
+          { k: "Actual rent, occupied ($/mo)", v: pr.actual_rent_occupied },
+          { k: "Loss to lease ($/mo)", v: pr.loss_to_lease },
+          { k: "Loss to lease (%)", v: pr.loss_to_lease_pct == null ? null
+                                       : (pr.loss_to_lease_pct * 100).toFixed(2) + "%" },
+          { k: "Market $/sqft", v: pr.market_psf },
+          { k: "In-place $/sqft", v: pr.inplace_psf },
+          { k: "Holdover units", v: (pr.holdovers || {}).units },
+          { k: "Holdover gap ($/yr)", v: (pr.holdovers || {}).gap_yr },
+          { k: "Occupied leases with no expiry date", v: pr.undated_leases },
+        ],
+      });
+      renderTable(host, {
+        id: "t-rollover-" + (pr.slug || i), group: "Portfolio",
+        title: "Rollover schedule — " + (pr.name || pr.slug),
+        feeds: "Rollover Schedule card (Landing (Drive) tab)",
+        note: src + "“Expired” is a lease already run out and continuing month to "
+            + "month; the rent roll has no month-to-month column of its own.",
+        cols: [{ key: "month", label: "Expiry month" },
+               { key: "units", label: "Units", fmt: "int" },
+               { key: "sqft", label: "Sq ft", fmt: "int" },
+               { key: "inplace", label: "In-place ($/mo)", fmt: "money0" },
+               { key: "market", label: "Market ($/mo)", fmt: "money0" },
+               { key: "uncaptured", label: "Uncaptured ($/mo)", fmt: "money0" },
+               { key: "cum_units", label: "Cumulative units", fmt: "int" },
+               { key: "cum_pct", label: "Cumulative %", fmt: "pct" }],
+        rows: pr.rollover || [], filterable: true,
+      });
+      renderTable(host, {
+        id: "t-gaps-" + (pr.slug || i), group: "Portfolio",
+        title: "Largest unit gaps — " + (pr.name || pr.slug),
+        feeds: "Largest Unit Gaps card (Landing (Drive) tab)",
+        note: src + "Occupied units only, the 40 largest by annual gap. A vacant unit's "
+            + "gap is its whole asking rent and would head the table on every roll.",
+        cols: [{ key: "rank", label: "#", fmt: "int" },
+               { key: "unit", label: "Unit" },
+               { key: "unit_type", label: "Plan" },
+               { key: "sqft", label: "Sq ft", fmt: "int" },
+               { key: "inplace", label: "In-place ($/mo)", fmt: "money0" },
+               { key: "market", label: "Market ($/mo)", fmt: "money0" },
+               { key: "gap_mo", label: "Gap ($/mo)", fmt: "money0" },
+               { key: "gap_yr", label: "Gap ($/yr)", fmt: "money0" },
+               { key: "pct_below", label: "% below market", fmt: "pct" },
+               { key: "expiry", label: "Lease expiry" },
+               { key: "status", label: "Status" }],
+        rows: pr.gaps || [], filterable: true,
+      });
+    });
+
     renderTable(host, {
       id: "t-placeholders", group: "Portfolio", title: "Planned Metrics (placeholders)",
       feeds: "Planned Metrics placeholder cards",
