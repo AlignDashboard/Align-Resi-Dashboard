@@ -210,16 +210,25 @@ DRIVE_FLOWS = {
                        "the build if a person-shaped field survived."},
         ],
         "stores": ["data/<slug>/rent_roll.json  (gitignored — unit level)"],
-        "publishes": [],
-        "dashboard": [],
-        "tables": [],
-        "note": "Written, registered and never run: the registered Drive "
-                "folder is empty and the actual file sits in the parent "
-                "folder, which the fetcher does not scan. Every per-unit "
-                "figure on the page therefore arrives through the analyst "
-                "workbook instead. Moving the file is the whole fix.",
-        "open_item": "C4",
-        "force_status": WAITING,
+        "publishes": [{"file": "metrics.json", "key": "rent_roll"}],
+        "dashboard": [
+            {"card": "Loss to Lease", "tab": "Landing (Drive)", "anchor": "cdRentCapture",
+             "primary": "t-rentroll-*", "tables": ["t-rentroll-*", "t-rollover-*"],
+             "holds": "Loss to lease, occupancy and the rollover cohorts"},
+            {"card": "Rollover Schedule", "tab": "Landing (Drive)", "anchor": "cdRollover",
+             "primary": "t-rollover-*", "tables": ["t-rollover-*"],
+             "holds": "Lease expirations by month"},
+            {"card": "Largest Unit Gaps", "tab": "Landing (Drive)", "anchor": "cdGaps",
+             "primary": "t-gaps-*", "tables": ["t-gaps-*", "t-unitdir-*"],
+             "holds": "Top units by annual gap to market"},
+        ],
+        "tables": ["t-rentroll-*", "t-rollover-*", "t-gaps-*"],
+        "note": "Live since 2026-09-11, the first roll ever to reach the "
+                "pipeline. Both published totals tied to the report's own "
+                "Total row to the cent on that first run. Occupancy is the "
+                "parser's occupied flag — a resident code AND a non-zero rent "
+                "— because Yardi carries a code on vacant units too, and a "
+                "code-only test reads 100% on a property at 97.7%.",
     },
     ("Residential AR Analytics", "ar_analytics"): {
         "id": "delinquency",

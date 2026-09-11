@@ -89,11 +89,32 @@ every figure on it would move on the next pipeline run.
 | --- | --- |
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` |
 | KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
+| Loss to Lease | `rent_roll` — the gap by rollover cohort, current roll only |
+| Rollover Schedule | `rent_roll` — lease expirations by month |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
+| Largest Unit Gaps | `rent_roll` + `unit_directory` for the bedroom join |
 | Delinquency | the two cells the Drive AR report fills — empty whenever the workbook owns them |
 | Unit Inventory | `unit_directory` — **frozen until C5**, see below |
 | What Feeds This Tab | `lineage.json` — arrivals, and what is missing |
+
+The first rent roll ever to reach the pipeline landed 2026-09-11 and closed C4,
+taking the tab from seven cards to ten. `parse_rent_roll` needed no changes:
+both published totals tied to the report's own Total row to the cent on the
+first run. Three things that matter about how it is read:
+
+- **Occupancy is the parser's `occupied` flag — a resident code AND a non-zero
+  rent, never the code alone.** Yardi carries a resident code on vacant units
+  too; this export has one on all 263 rows, so a code-only test reads 100%
+  occupancy on a property at 97.7%.
+- **Loss to lease is measured on occupied units only.** A vacant unit has an
+  asking rent and no in-place rent, so counting it books the whole asking rent
+  as loss — 38.1% against the 36.5% published.
+- **The card is a snapshot, not The Landing's 19-month series.** A rent roll is
+  one point in time, so it reports where the gap sits today, split by when each
+  lease comes up. The monthly series needs the statement's revenue detail lines
+  (gross potential, loss to lease, vacancy, concessions) — the T12 carries all
+  four and `parse_t12_statement` reads only the `499999-9999` total.
 
 `renderOpSummary` and `renderExpenseDeep` are **shared** with The Landing rather
 than copied. Neither ever read the workbook; the workbook half of the deep dive
@@ -150,11 +171,12 @@ it is not, so the entry is skipped with a log line every run (open item C5). The
 `blocked` field on that row in `SCD_FEED_ROWS` is what both notes read, so
 closing C5 means deleting one field rather than hunting for prose.
 
-`SCD_MISSING` is the honesty block: eight things The Landing shows that no Drive
+`SCD_MISSING` is the honesty block: six things The Landing shows that no Drive
 export can refresh today, each with why and what would fix it. The counts in the
 note under it are computed from the list rather than typed, so they cannot go
-stale when a row moves. Five of the eight are one report away and three of those
-five are the same one — the rent roll (open item C4).
+stale when a row moves. Three of the six are one report away — the renewal
+tracker (D9), a RealPage rate tracker (D1) and a concession burn-off that names
+its property (A6). The rent roll's arrival removed three rows outright.
 
 ## Refreshing The KPI Scorecard
 

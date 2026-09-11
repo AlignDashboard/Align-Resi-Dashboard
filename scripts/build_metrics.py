@@ -611,6 +611,133 @@ def store_budget(prop, parsed):
                          "buckets_error"])
 
 
+def rent_roll_summary(rr):
+    """The published aggregates behind the Drive tab's rent-roll cards.
+
+    A rent roll is a point-in-time snapshot, so everything here is "as of" its
+    own date rather than a series. Three things are computed once, here, rather
+    than in the page, because each one is a judgement the page should not be
+    making twice:
+
+      * Occupancy is the parser's own `occupied` flag (a resident code AND a
+        non-zero rent), never the presence of a resident code alone. Yardi
+        carries a code on vacant units too -- this export has one on all 263 --
+        so a code-only test reads 100% occupancy on a property that is at 97.7%.
+      * Loss to lease is measured on OCCUPIED units only. A vacant unit has a
+        market rent and no in-place rent, so counting it books the whole asking
+        rent as loss to lease and overstates the gap -- 38.1% against 36.5% on
+        this roll.
+      * Holdovers are occupied units whose lease expired before the as-of date.
+        The rent roll has no month-to-month state of its own, which is why this
+        is derived from the expiry rather than read off a column.
+    """
+    from datetime import date
+
+    def to_date(v):
+        try:
+            return date.fromisoformat(str(v)[:10])
+        except (TypeError, ValueError):
+            return None
+
+    units = rr.get("units") or []
+    as_of = to_date(rr.get("as_of"))
+    occ = [u for u in units if u.get("occupied")]
+    vac = [u for u in units if not u.get("occupied")]
+    mk = sum(u.get("market_rent") or 0 for u in occ)
+    ac = sum(u.get("actual_rent") or 0 for u in occ)
+
+    def gap_yr(us):
+        return round(sum((u.get("market_rent") or 0) - (u.get("actual_rent") or 0)
+                         for u in us) * 12, 2)
+
+    # Rollover. Expired leases collapse into one bucket the page labels
+    # "Holdover", matching the workbook-fed card on The Landing; everything else
+    # is keyed by expiry month so the two cards read the same way.
+    buckets = {}
+    for u in occ:
+        d = to_date(u.get("lease_expiration"))
+        key = ("Expired" if as_of and d and d < as_of
+               else d.strftime("%Y-%m") if d else None)
+        if key is None:
+            continue
+        b = buckets.setdefault(key, {"month": key, "units": 0, "sqft": 0.0,
+                                     "inplace": 0.0, "market": 0.0})
+        b["units"] += 1
+        b["sqft"] += u.get("sqft") or 0
+        b["inplace"] += u.get("actual_rent") or 0
+        b["market"] += u.get("market_rent") or 0
+    rollover = ([buckets["Expired"]] if "Expired" in buckets else []) + [
+        buckets[k] for k in sorted(k for k in buckets if k != "Expired")]
+    run = 0
+    for b in rollover:
+        b["uncaptured"] = round(b["market"] - b["inplace"], 2)
+        run += b["units"]
+        b["cum_units"] = run
+        b["cum_pct"] = round(run / len(occ), 6) if occ else None
+        for k in ("sqft", "inplace", "market"):
+            b[k] = round(b[k], 2)
+
+    # Largest gaps, the per-unit table. Occupied only -- a vacant unit's "gap"
+    # is its whole asking rent and would head the table on every roll. No
+    # resident field reaches this: the parse is scrubbed before it is stored.
+    ranked = sorted(occ, key=lambda u: (u.get("market_rent") or 0) - (u.get("actual_rent") or 0),
+                    reverse=True)
+    gaps = []
+    for i, u in enumerate(ranked[:40], 1):
+        m, a = u.get("market_rent") or 0, u.get("actual_rent") or 0
+        d = to_date(u.get("lease_expiration"))
+        gaps.append({
+            "rank": i, "unit": u.get("unit"), "unit_type": u.get("unit_type"),
+            "sqft": u.get("sqft"), "inplace": a, "market": m,
+            "gap_mo": round(m - a, 2), "gap_yr": round((m - a) * 12, 2),
+            "pct_below": round((m - a) / m, 6) if m else None,
+            "expiry": u.get("lease_expiration"),
+            "status": ("Holdover" if as_of and d and d < as_of
+                       else "On notice" if u.get("on_notice") else "Current"),
+        })
+
+    hold = [u for u in occ if (d := to_date(u.get("lease_expiration"))) and as_of and d < as_of]
+    return {
+        "as_of": rr.get("as_of"),
+        "landed_at": rr.get("landed_at"),
+        "source_file": rr.get("source_file"),
+        "units": len(units),
+        "occupied": len(occ),
+        "vacant": len(vac),
+        "on_notice": sum(1 for u in occ if u.get("on_notice")),
+        "occupancy": round(len(occ) / len(units), 6) if units else None,
+        "sqft": round(sum(u.get("sqft") or 0 for u in units), 2),
+        # *_total rather than market_rent/actual_rent: those two are per-unit
+        # field names on a rent roll, and a `name` key sitting beside them is
+        # what check_no_pii's structural pass reads as a resident row. Naming
+        # the sums for what they are keeps the check strict and the block clear
+        # beside the _occupied pair below.
+        "market_rent_total": round(sum(u.get("market_rent") or 0 for u in units), 2),
+        "actual_rent_total": round(sum(u.get("actual_rent") or 0 for u in units), 2),
+        # the pair the loss-to-lease figure is actually computed on
+        "market_rent_occupied": round(mk, 2),
+        "actual_rent_occupied": round(ac, 2),
+        "loss_to_lease": round(mk - ac, 2),
+        "loss_to_lease_pct": round((mk - ac) / mk, 6) if mk else None,
+        "market_psf": round(mk / sum(u.get("sqft") or 0 for u in occ), 4) if occ else None,
+        "inplace_psf": round(ac / sum(u.get("sqft") or 0 for u in occ), 4) if occ else None,
+        "holdovers": {
+            "units": len(hold),
+            "share_of_occupied": round(len(hold) / len(occ), 6) if occ else None,
+            "inplace": round(sum(u.get("actual_rent") or 0 for u in hold), 2),
+            "market": round(sum(u.get("market_rent") or 0 for u in hold), 2),
+            "gap_yr": gap_yr(hold),
+        },
+        "rollover": rollover,
+        "gaps": gaps,
+        "undated_leases": sum(1 for u in occ if not to_date(u.get("lease_expiration"))),
+        "basis": ("Occupied units only for loss to lease and the gap table; a vacant "
+                  "unit has an asking rent and no in-place rent, so counting it books "
+                  "the whole asking rent as loss to lease."),
+        "checks": rr.get("checks"),
+    }
+
+
 # report_type -> what to do with a successful parse
 ACCUMULATORS = {
     "t12_statement": None,          # handled inline (needs the book/period checks)
@@ -909,6 +1036,31 @@ def build_metrics_json():
                          "codes": [s.get("property_code") for s in ud.get("sections") or []],
                          "plans": ud.get("plans") or {}})
     metrics["unit_directory"] = {"available": bool(ud_props), "properties": ud_props}
+
+    # The rent roll, as aggregates and a top-gap table. data/<slug>/rent_roll.json
+    # is gitignored because it is per-unit and arrives with resident names; what
+    # is published here is the scrubbed roll-up the cards draw, in the same shape
+    # the workbook-fed Landing tab publishes its own (per-unit rows, no names).
+    rr_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "rent_roll.json"
+        if not fp.exists():
+            continue
+        summary = rent_roll_summary(json.load(open(fp)))
+        summary.update({"slug": p["slug"], "name": p["name"]})
+        rr_props.append(summary)
+        print(f"[ok] rent roll for {p['name']}: {summary['occupied']}/{summary['units']} "
+              f"occupied, loss to lease {summary['loss_to_lease_pct']:.1%} "
+              f"as of {summary['as_of']}")
+    if rr_props:
+        metrics["rent_roll"] = {"available": True, "properties": rr_props}
+    elif "rent_roll" in metrics:
+        # No roll on disk this run (it is gitignored, so a fresh clone has none
+        # until fetch_drive runs). Keep the last published block rather than
+        # blanking three cards on a checkout that simply has not fetched yet.
+        print("[info] no rent_roll.json on disk; leaving existing metrics.json block as-is")
 
     # Latest monthly P&L point per property, for the operating-summary card.
     pl_props = []

@@ -465,17 +465,34 @@
      The widths are content-derived and sum to 100. nowrap is set only on the two
      columns that must not break, so anything longer than expected wraps inside
      its own column instead of colliding with the next. */
-  #lgTbl table.dt { table-layout: fixed; }
-  #lgTbl table.dt th:nth-child(n+3), #lgTbl table.dt td:nth-child(n+3) { text-align: right; }
-  #lgTbl table.dt th:nth-child(1), #lgTbl table.dt td:nth-child(1) { width: 12%; }
-  #lgTbl table.dt th:nth-child(2), #lgTbl table.dt td:nth-child(2) { width: 7.5%; }
-  #lgTbl table.dt th:nth-child(3), #lgTbl table.dt td:nth-child(3) { width: 8%; }
-  #lgTbl table.dt th:nth-child(4), #lgTbl table.dt td:nth-child(4) { width: 14.3%; }
-  #lgTbl table.dt th:nth-child(5), #lgTbl table.dt td:nth-child(5) { width: 13.2%; }
-  #lgTbl table.dt th:nth-child(6), #lgTbl table.dt td:nth-child(6) { width: 13.2%; }
-  #lgTbl table.dt th:nth-child(7), #lgTbl table.dt td:nth-child(7) {
+  /* Shared with the Landing (Drive) tab's Largest Unit Gaps table (#dgTbl),
+     which has the identical eight columns — one rule rather than a second copy
+     that drifts. Without table-layout:fixed the table's 620px natural width
+     scrolls the whole page at 390px.
+
+     The widths are content-derived and sum to 100. nowrap is set only on the two
+     columns that must not break, so anything longer than expected wraps inside
+     its own column instead of colliding with the next. */
+  :is(#lgTbl, #dgTbl) table.dt { table-layout: fixed; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(n+3),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(n+3) { text-align: right; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(1),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(1) { width: 12%; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(2),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(2) { width: 7.5%; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(3),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(3) { width: 8%; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(4),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(4) { width: 14.3%; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(5),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(5) { width: 13.2%; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(6),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(6) { width: 13.2%; }
+  :is(#lgTbl, #dgTbl) table.dt th:nth-child(7),
+  :is(#lgTbl, #dgTbl) table.dt td:nth-child(7) {
     width: 16.4%; padding-left: 0; white-space: nowrap; }
-  #lgTbl table.dt th:last-child, #lgTbl table.dt td:last-child {
+  :is(#lgTbl, #dgTbl) table.dt th:last-child,
+  :is(#lgTbl, #dgTbl) table.dt td:last-child {
     width: 15.4%; padding-right: 0; white-space: nowrap; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
@@ -813,6 +830,23 @@
 
       <div class="kpis" id="dkpis"></div>
 
+      <div class="card wide" id="cdRentCapture">
+        <h2>Loss to Lease</h2>
+        <span class="eyebrow" id="drcEyebrow">IN-PLACE vs MARKET RENT · FROM THE CURRENT RENT ROLL</span>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;">
+          <div style="flex:0 0 auto;min-width:170px;" id="drcStats"></div>
+          <div class="chartwrap" style="flex:1 1 300px;height:230px;"><canvas id="dcCapture"></canvas></div>
+        </div>
+        <div class="blu-note" id="drcFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cdRollover">
+        <h2>Rollover Schedule</h2>
+        <span class="eyebrow" id="drlEyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
+        <div class="chartwrap" style="height:250px;"><canvas id="dcRoll"></canvas></div>
+        <div class="blu-note" id="drlFoot" style="color:var(--muted);"></div>
+      </div>
+
       <div class="card" id="cdNoi">
         <h2>Expense Load &amp; NOI</h2>
         <span class="eyebrow" id="dnoiEyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR</span>
@@ -837,6 +871,13 @@
         <div class="chartwrap" id="dexpWrap" style="height:250px;"><canvas id="dcExp"></canvas></div>
         <div class="blu-note" id="dexpNote" style="color:var(--muted);"></div>
         <div id="dexpTbl" style="max-height:180px;overflow-y:auto;"></div>
+      </div>
+
+      <div class="card wide" id="cdGaps">
+        <h2>Largest Unit Gaps</h2>
+        <span class="eyebrow" id="dgEyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
+        <div id="dgTbl"></div>
+        <div class="blu-note" id="dgNote" style="color:var(--muted);"></div>
       </div>
 
       <div class="card wide" id="cdDelq">
@@ -3262,6 +3303,7 @@ const SCD_FEED_ROWS = [
   { flow: "delinquency", fills: "Delinquency card · two scorecard cells",
     fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
   { flow: "budget", fills: "One scorecard cell — Budget Variance %" },
+  { flow: "rent_roll", fills: "Loss to Lease · Rollover Schedule · Largest Unit Gaps" },
   { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door",
     // The one feed on this tab whose refresh route is not open today. Building
     // Info sits in the Drive library rather than the drop tree, on purpose, and
@@ -3281,22 +3323,23 @@ const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).bloc
 // put it here. Written down rather than inferred: a card that is absent for a
 // good reason and a card that is absent by accident look identical.
 const SCD_MISSING = [
-  { what: "Loss to Lease · rent capture",
-    why: "Needs market rent against in-place rent, unit by unit — only the rent roll carries it",
-    fix: "A rent roll in the Drive “Rent Roll” folder. The parser is written and registered; no file has ever arrived (open item C4)",
-    needs: "the rent roll" },
-  { what: "Rollover schedule",
-    why: "Needs every lease's expiry date, which is the rent roll again",
-    fix: "The same rent roll",
-    needs: "the rent roll" },
-  { what: "Largest unit gaps",
-    why: "Per-unit in-place and market rent, joined to the floorplan",
-    fix: "The same rent roll. The floorplan half is already here, under Unit Inventory",
-    needs: "the rent roll" },
-  { what: "Holdovers · month-to-month",
-    why: "Needs lease status per unit, and the renewal tracker to reconcile against",
-    fix: "The rent roll and a parser for the Drive “Renewal Tracker” folder (open item D9) — two things, not one",
+  // The rent roll landed 2026-09-11 and closed three rows outright — rollover,
+  // the unit-gap table and loss to lease. What is left of loss to lease is only
+  // its SHAPE: The Landing plots 19 months, and a rent roll is one snapshot.
+  { what: "Loss to lease, as a monthly series",
+    why: "The card above reports the gap as it stands today. The Landing's plots 19 months, "
+       + "which needs gross potential rent, loss to lease, vacancy and concessions per month — "
+       + "the T12 statement carries all four as revenue lines and the parser reads only the "
+       + "499999-9999 total",
+    fix: "No new report: extend parse_t12_statement to walk the revenue region the way it "
+       + "already walks the expense region",
     needs: null },
+  { what: "Holdovers reconciled against the renewal tracker",
+    why: "The rent roll now names the 32 holdovers and they drive the rollover card's first "
+       + "bar. What is missing is the second opinion — the tracker's own month-to-month "
+       + "roster, which disagreed with the rent roll on 27 of 31 units last time it was checked",
+    fix: "A parser for the Drive “Renewal Tracker” folder (open item D9)",
+    needs: "the renewal tracker" },
   { what: "Trade-outs by month",
     why: "The workbook's Lease Detail tab is typed in from the RealPage rate tracker by hand",
     fix: "A rate tracker in “Weekly Leasing Reports” (open item D1). The EliseAI export already covers the trade-out and % increase cells above",
@@ -3324,6 +3367,7 @@ async function loadLandingDrive() {
   const eb = pick("expense_buckets", SCD_SLUG);
   const er = pick("expense_ratio", SCD_SLUG);
   const dir = pick("unit_directory", SCD_SLUG);
+  const rr = pick("rent_roll", SCD_SLUG);
   const prop = SC && (SC.properties || []).find(x => x.slug === SCD_SLUG);
   const meas = ((SC && SC.measured) || {})[SCD_SLUG] || {};
 
@@ -3641,6 +3685,146 @@ async function loadLandingDrive() {
   renderExpenseDeep(SCD_SLUG,
     { card: "cdExpDeep", eyebrow: "dexpEyebrow", cks: "dexpCks", wrap: "dexpWrap",
       canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null);
+
+  /* ---- Loss to lease, rollover and unit gaps — all three from the rent roll.
+     The Landing draws its loss-to-lease as a 19-month series off the workbook's
+     Rent Capture tab; a rent roll is one snapshot, so this card reports the
+     current gap by rollover cohort instead of inventing a history it does not
+     have. The monthly series needs the T12 statement's revenue detail lines
+     (gross potential, loss to lease, vacancy, concessions), which the parser
+     does not read yet — the footnote says so rather than leaving the shape
+     difference unexplained. ---- */
+  (function rentRoll() {
+    const cards = ["cdRentCapture", "cdRollover", "cdGaps"];
+    if (!rr) {                        // no roll has ever been fetched
+      cards.forEach(id => { const c = document.getElementById(id); if (c) c.hidden = true; });
+      return;
+    }
+    const asOf = rr.as_of;
+
+    /* ---- Loss to lease ---- */
+    statBlock(document.getElementById("drcStats"), [
+      [fmPct(rr.loss_to_lease_pct, 1), "loss to lease, " + rr.occupied + " occupied units"],
+      [fm$(rr.loss_to_lease), "uncaptured per month"],
+      [fm$(rr.loss_to_lease * 12), "per year"],
+      ["$" + rr.inplace_psf.toFixed(2) + " / $" + rr.market_psf.toFixed(2),
+       "in-place vs market $/sqft"],
+    ]);
+    // By rollover cohort: how much of the gap sits in leases already expired
+    // versus each future expiry window. That is the actionable cut of a
+    // snapshot -- the gap you can reprice soonest is the gap that matters.
+    const coh = [
+      { label: "Holdover", pick: b => b.month === "Expired" },
+      { label: "0–3 mo", pick: (b, i) => i >= 1 && i <= 3 },
+      { label: "4–6 mo", pick: (b, i) => i >= 4 && i <= 6 },
+      { label: "7–12 mo", pick: (b, i) => i >= 7 && i <= 12 },
+      { label: "12 mo+", pick: (b, i) => i > 12 },
+    ];
+    const idx = b => rr.rollover.indexOf(b);
+    const cohorts = coh.map(c => {
+      const rows = rr.rollover.filter((b, i) => c.pick(b, i));
+      return { label: c.label, units: rows.reduce((t, b) => t + b.units, 0),
+               gap: rows.reduce((t, b) => t + b.uncaptured, 0) };
+    }).filter(c => c.units > 0);
+    new Chart(document.getElementById("dcCapture"), {
+      type: "bar",
+      data: { labels: cohorts.map(c => c.label),
+        datasets: [{ label: "Uncaptured rent $/mo", data: cohorts.map(c => c.gap),
+                     backgroundColor: cohorts.map(c =>
+                       c.label === "Holdover" ? C.red : C.teal) }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => fm$(c.parsed.x) + "/mo across "
+                    + cohorts[c.dataIndex].units + " units" } } },
+        scales: { x: { grid: gridCfg, ticks: { callback: v => fm$(v) } },
+                  y: { grid: { display: false } } } }
+    });
+    document.getElementById("drcEyebrow").textContent =
+      "IN-PLACE vs MARKET RENT · RENT ROLL OF " + asOf;
+    document.getElementById("drcFoot").textContent =
+      "Market rent less in-place rent across the " + rr.occupied + " occupied units on the "
+      + "rent roll of " + asOf + ", split by when each lease comes up. Vacant units are "
+      + "excluded: a vacant unit has an asking rent and no in-place rent, so counting it "
+      + "would book the whole asking rent as loss to lease (" + fmPct(rr.loss_to_lease_pct, 1)
+      + " becomes " + fmPct((rr.market_rent_total - rr.actual_rent_total) / rr.market_rent_total, 1)
+      + " on all " + rr.units + "). The Landing's version of this card is a 19-month series "
+      + "from the workbook; a rent roll is a single snapshot, so this one reports where the "
+      + "gap sits today. The monthly series needs the T12 statement's revenue detail lines, "
+      + "which the statement carries and the parser does not read yet.";
+
+    /* ---- Rollover schedule ---- */
+    const roll = rr.rollover;
+    const labels = roll.map(b => b.month === "Expired" ? "Holdover" : shortMo(b.month));
+    new Chart(document.getElementById("dcRoll"), {
+      data: { labels,
+        datasets: [
+          { type: "bar", label: "Units expiring", data: roll.map(b => b.units), yAxisID: "y",
+            backgroundColor: roll.map(b => b.month === "Expired" ? C.red : C.amber), order: 2 },
+          { type: "line", label: "Cumulative % of occupied units",
+            data: roll.map(b => b.cum_pct * 100), yAxisID: "y1", borderColor: C.teal,
+            backgroundColor: C.teal, borderDash: [4, 3], pointRadius: 2, order: 1 },
+        ] },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: {
+          afterLabel: c => c.datasetIndex === 0
+            ? fm$(roll[c.dataIndex].uncaptured) + "/mo uncaptured" : "" } } },
+        scales: {
+          y: { position: "left", grid: gridCfg, title: { display: true, text: "Units" } },
+          y1: { position: "right", grid: { display: false }, min: 0, max: 100,
+                ticks: { callback: v => v + "%" } },
+          x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 90,
+                                                  minRotation: 90, autoSkip: false } } } }
+    });
+    document.getElementById("drlEyebrow").textContent =
+      "LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE · RENT ROLL OF " + asOf;
+    document.getElementById("drlFoot").textContent =
+      "Every occupied unit's lease expiry from the rent roll of " + asOf + ". The first bar "
+      + "is leases that have already run out and are continuing month to month — "
+      + rr.holdovers.units + " units, " + fmPct(rr.holdovers.share_of_occupied, 1)
+      + " of the occupied stock, carrying " + fm$(rr.holdovers.gap_yr)
+      + "/yr of gap to market. The rent roll has no month-to-month column of its own, so a "
+      + "holdover here is derived from the expiry date against the roll's own as-of date."
+      + (rr.undated_leases ? " " + rr.undated_leases + " occupied unit(s) carry no expiry "
+         + "date and are not on the chart." : "");
+
+    /* ---- Largest unit gaps ---- */
+    const plans = (dir && dir.plans) || {};
+    const bedsCell = u => {
+      const p = plans[u.unit_type], b = p ? p.bedrooms : null;
+      const e = elc("span", null, b == null ? "—" : b === 0 ? "Studio" : b + " BR");
+      e.title = p
+        ? "Plan " + u.unit_type + " · " + b + " bed / " + p.baths + " bath · "
+          + p.units + " units of this plan · " + p.sqft_min + "–" + p.sqft_max + " sqft"
+        : "Plan " + u.unit_type + " is not in the unit directory";
+      return e;
+    };
+    const expiryCell = u => {
+      const e = elc("span", null, u.expiry ? shortMo(u.expiry.slice(0, 7)) : "—");
+      e.title = u.status === "Holdover"
+        ? "Lease expired " + u.expiry + " and has run month to month since"
+        : u.expiry ? "Lease runs to " + u.expiry : "No expiry date on the rent roll";
+      return e;
+    };
+    const top = rr.gaps.slice(0, 13);
+    buildTable(document.getElementById("dgTbl"),
+      [{ t: "Unit" }, { t: "Beds" }, { t: "SF", num: true },
+       { t: "In-place", num: true }, { t: "Market", num: true },
+       { t: "Gap/yr", num: true }, { t: "Expiry" }, { t: "Status" }],
+      top.map(u => ["#" + u.unit, bedsCell(u), (u.sqft || 0).toLocaleString(),
+        fm$(u.inplace), fm$(u.market), fm$(u.gap_yr), expiryCell(u),
+        statusPill(u.status === "Holdover" ? "FLAG" : "CURRENT")]));
+    document.getElementById("dgTbl").querySelectorAll(".pill")
+      .forEach((p, i) => { p.textContent = top[i].status; });
+    document.getElementById("dgEyebrow").textContent =
+      "TOP UNITS BY ANNUAL GAP TO MARKET · RENT ROLL OF " + asOf;
+    document.getElementById("dgNote").textContent =
+      "Rents, square footage and lease dates are the rent roll's own, as of " + asOf
+      + ". Bedrooms come from the Yardi unit directory"
+      + (dir ? " of " + dir.as_of + ", joined on the plan code" : ", which has not been fetched yet")
+      + ". Occupied units only — a vacant unit's gap is its whole asking rent and would head "
+      + "this table on every roll. No resident field reaches this page: the parse is scrubbed "
+      + "before it is written to disk.";
+  })();
 
   /* ---- Delinquency, from what the Drive AR report actually publishes ---- */
   (function delq() {
