@@ -1260,7 +1260,7 @@
     "2025-07 appears on two sheets ('July 2025 (2)' with 21 offers and 'July 2025' with 21); the fuller one is used"
   ],
   "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
-  "landed_at": "2026-09-08T23:28:49.326Z",
+  "landed_at": "2026-09-11T00:00:00Z",
   "checks": [
     {
       "check": "month sheets read",

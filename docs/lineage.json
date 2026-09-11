@@ -446,7 +446,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-11T22:38:41.180225+00:00",
+  "generated_at": "2026-09-11T23:03:46.403173+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 12,
@@ -1164,7 +1164,7 @@
      "file": "data/the-landing/renewal_tracker.json",
      "as_of": "2026-12",
      "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
-     "landed_at": "2026-09-08T23:28:49.326Z",
+     "landed_at": "2026-09-11T00:00:00Z",
      "detail": null
     }
    ],
@@ -1320,6 +1320,14 @@
     {
      "property": "chorus",
      "file": "data/chorus/leasing_detail.json",
+     "as_of": null,
+     "source_file": null,
+     "landed_at": null,
+     "detail": null
+    },
+    {
+     "property": "madelon",
+     "file": "data/madelon/leasing_detail.json",
      "as_of": null,
      "source_file": null,
      "landed_at": null,
@@ -2206,7 +2214,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-11T22:34:58.225155+00:00",
+     "landed_at": "2026-09-11T23:03:46.346704+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

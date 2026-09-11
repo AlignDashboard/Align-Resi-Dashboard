@@ -80,33 +80,65 @@ STOP = [r"^cancel", r"^weekly average", r"^total", r"^apt ?#", r"^move ?outs?",
 TOLERANCE = 1.01
 
 
-def _date_like(v):
-    """'2026-09-06' | 'Ending 09.13.26' | '9.9.26' -> YYYY-MM-DD, else None."""
-    if v is None:
-        return None
-    s = str(v)
-    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", s)
-    if m:
-        return m.group(0)
-    # the sheet writes its own dates as M.D.YY or MM.DD.YYYY
-    m = re.search(r"(?<!\d)(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?!\d)", s)
-    if m:
-        mo, day, yr = (int(g) for g in m.groups())
+def _all_dates(text):
+    """Every date-shaped token in `text`, in order, as YYYY-MM-DD.
+
+    Two spellings: ISO, which is how the filer writes the arrival date it
+    prefixes, and the M.D.YY the on-site team writes ("Week Ending 9.7.26",
+    "09.07.2026- 09.13.2026-").
+    """
+    out = []
+    for m in re.finditer(r"(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)"
+                         r"|(?<!\d)(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?!\d)", str(text)):
+        if m.group(1):
+            out.append((m.start(), m.group(0)))
+            continue
+        mo, day, yr = int(m.group(4)), int(m.group(5)), int(m.group(6))
         yr += 2000 if yr < 100 else 0
         if 1 <= mo <= 12 and 1 <= day <= 31:
-            return f"{yr:04d}-{mo:02d}-{day:02d}"
-    return None
+            out.append((m.start(), f"{yr:04d}-{mo:02d}-{day:02d}"))
+    return out
+
+
+def _date_like(v):
+    """The first date-shaped token in `v`, or None."""
+    got = _all_dates(v) if v is not None else []
+    return got[0][1] if got else None
+
+
+def _week_from_filename(path):
+    """The week a file covers, from its NAME, or None.
+
+    The LAST date in the name: the filer prefixes its own arrival date at the
+    front, and what follows is the week -- "Week Ending 9.7.26" for The
+    Landing, a "09.07.2026- 09.13.2026-" range for Chorus, whose last date is
+    the week end either way.
+
+    The one date that is never the week is that arrival prefix standing alone,
+    so a single date at the very start of the name is ignored and the sheet
+    decides. A single date anywhere else IS the week -- that is a file placed
+    by hand rather than by the filer, which carries no prefix.
+    """
+    got = _all_dates(os.path.basename(path))
+    if not got:
+        return None
+    if len(got) == 1 and got[0][0] == 0:
+        return None                     # only the filer's own arrival prefix
+    return got[-1][1]
 
 
 def _week_ending(ws, path):
-    """The week the file covers, as YYYY-MM-DD.
+    """What the SHEET says its week ends on, as YYYY-MM-DD, or None.
 
     Two spellings in the wild: The Landing writes 'Week Ending' beside a real
     date cell; Chorus writes 'Week To Date' beside the text 'Ending 09.13.26'.
     So the row is found on the word "ending" anywhere in it and the first
-    date-shaped value to its right wins, with the filename as the last resort
-    ('… Week Ending 9.13.26.xlsx'). A week mis-read as a date would file a
-    lease into the wrong month on the trade-out chart.
+    date-shaped value to its right wins.
+
+    This is not the week LABEL -- see parse(). The cell drifts between
+    snapshots of one week: the 2026-08-31 and 2026-09-08 copies of "Week Ending
+    9.7.26" say 2026-09-07 and 2026-09-06, which keyed the store twice for one
+    week and counted it twice.
     """
     for r in range(1, min(ws.max_row, 24) + 1):
         cells = [(c, ws.cell(row=r, column=c).value)
@@ -120,7 +152,7 @@ def _week_ending(ws, path):
             got = _date_like(cell(ws, r, c) if not isinstance(v, str) else v)
             if got:
                 return got
-    return _date_like(os.path.basename(path))
+    return None
 
 
 def _sheet_property(ws):
@@ -223,9 +255,24 @@ def parse(path):
                    "ok": clean == len(leases), "clean": clean,
                    "leases": len(leases)})
 
-    week_ending = _week_ending(ws, path)
+    # The week LABEL comes from the filename when it carries one, because the
+    # sheet's own cell drifts between snapshots of the same week -- see
+    # _week_ending. The store keys on this, so a drifting cell would file one
+    # week twice; the sheet's answer is kept beside it and a disagreement is
+    # reported rather than silently resolved.
+    sheet_week = _week_ending(ws, path)
+    file_week = _week_from_filename(path)
+    week_ending = file_week or sheet_week
+    if file_week and sheet_week and file_week != sheet_week:
+        problems.append(
+            f"the filename says the week ends {file_week} and the sheet says "
+            f"{sheet_week}; the filename is used, because the sheet's cell moves "
+            f"between snapshots of one week and would file that week twice")
     checks.append({"check": "week-ending date found", "ok": week_ending is not None,
-                   "note": week_ending or "no 'Week Ending' date in the header block"})
+                   "note": (f"{week_ending} (from the "
+                            f"{'filename' if file_week else 'sheet'})")
+                           if week_ending else
+                           "no week-ending date in the header block or the filename"})
     checks.append({"check": "stopped at a section marker", "ok": stopped is not None,
                    "note": f"stopped at row {stopped[0]} ({stopped[1]!r})" if stopped
                            else "ran to the end of the sheet without a "
@@ -251,6 +298,7 @@ def parse(path):
         "sheet_units": sheet_units if sheet_units is not None else info_units,
         "property_from_sheet_header": sheet_name,
         "as_of": week_ending,
+        "week_ending_sheet": sheet_week,
         "source_file": os.path.basename(path),
         "sheet": ws.title,
         "header_row": header_row,
