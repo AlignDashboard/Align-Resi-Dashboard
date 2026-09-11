@@ -840,6 +840,14 @@
         <div class="blu-note" id="drcFoot" style="color:var(--muted);"></div>
       </div>
 
+      <div class="card wide" id="cdTradeOuts">
+        <h2>Trade-outs</h2>
+        <span class="eyebrow" id="dtoEyebrow">NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT</span>
+        <div class="statrow" id="dtoStats"></div>
+        <div class="chartwrap"><canvas id="dcTrade"></canvas></div>
+        <div class="blu-note" id="dtoFoot" style="color:var(--muted);"></div>
+      </div>
+
       <div class="card wide" id="cdRollover">
         <h2>Rollover Schedule</h2>
         <span class="eyebrow" id="drlEyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
@@ -3304,6 +3312,8 @@ const SCD_FEED_ROWS = [
     fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
   { flow: "budget", fills: "One scorecard cell — Budget Variance %" },
   { flow: "rent_roll", fills: "Loss to Lease · Rollover Schedule · Largest Unit Gaps" },
+  { flow: "daily_leasing", fills: "Trade-outs — the new-lease series" },
+  { flow: "renewal_tracker", fills: "Trade-outs — the renewal series and the MTM count" },
   { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door",
     // The one feed on this tab whose refresh route is not open today. Building
     // Info sits in the Drive library rather than the drop tree, on purpose, and
@@ -3334,16 +3344,15 @@ const SCD_MISSING = [
     fix: "No new report: extend parse_t12_statement to walk the revenue region the way it "
        + "already walks the expense region",
     needs: null },
-  { what: "Holdovers reconciled against the renewal tracker",
-    why: "The rent roll now names the 32 holdovers and they drive the rollover card's first "
-       + "bar. What is missing is the second opinion — the tracker's own month-to-month "
-       + "roster, which disagreed with the rent roll on 27 of 31 units last time it was checked",
-    fix: "A parser for the Drive “Renewal Tracker” folder (open item D9)",
-    needs: "the renewal tracker" },
-  { what: "Trade-outs by month",
-    why: "The workbook's Lease Detail tab is typed in from the RealPage rate tracker by hand",
-    fix: "A rate tracker in “Weekly Leasing Reports” (open item D1). The EliseAI export already covers the trade-out and % increase cells above",
-    needs: "a RealPage rate tracker" },
+  // Both sides of this arrived on 2026-09-11. What is left is not a report.
+  { what: "Holdovers reconciled unit by unit",
+    why: "Both feeds are now here — the rent roll names 32 holdovers and the tracker's "
+       + "MTM roster names 31 — but nothing compares them unit by unit. Last time anyone "
+       + "checked, the tracker missed 27 of the rent roll's holdovers, so the two counts "
+       + "landing one apart is not evidence they are the same 31 units",
+    fix: "No new report: join the rent roll's expired-and-occupied units to the tracker's "
+       + "MTM roster and show which appear on both",
+    needs: null },
   { what: "Delinquency aging · balances by unit",
     why: "The report parses from Drive and ties out, but the aging stops in data/ — it is unit level and arrives with resident names — and the two aggregates it does publish are owned by the workbook today, so the card is empty either way",
     fix: "No new report at all: publish an aggregate aging block out of the parse that already runs, and run populate_scorecard --from-pipeline so Drive owns the two cells again (open item G3)",
@@ -3368,6 +3377,7 @@ async function loadLandingDrive() {
   const er = pick("expense_ratio", SCD_SLUG);
   const dir = pick("unit_directory", SCD_SLUG);
   const rr = pick("rent_roll", SCD_SLUG);
+  const lease = pick("leasing", SCD_SLUG);
   const prop = SC && (SC.properties || []).find(x => x.slug === SCD_SLUG);
   const meas = ((SC && SC.measured) || {})[SCD_SLUG] || {};
 
@@ -3685,6 +3695,134 @@ async function loadLandingDrive() {
   renderExpenseDeep(SCD_SLUG,
     { card: "cdExpDeep", eyebrow: "dexpEyebrow", cks: "dexpCks", wrap: "dexpWrap",
       canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null);
+
+  /* ---- Trade-outs, from the two leasing feeds.
+
+     The workbook-fed card on The Landing draws its new-lease side as a plain
+     mean and its renewal side rent-weighted, because the analyst workbook only
+     ever carried monthly renewal AGGREGATES — its own footnote says the offer
+     data "carry no per-renewal rows to average". parse_renewal_tracker reads
+     those rows, so both series here are the same average over the same kind of
+     thing, and the weighted figure is kept on the tooltip rather than mixed
+     into the axis. ---- */
+  (function tradeOuts() {
+    const card = document.getElementById("cdTradeOuts");
+    const nl = (lease && lease.new_leases) || null;
+    const rn = (lease && lease.renewals) || null;
+    if (!nl && !rn) { if (card) card.hidden = true; return; }
+
+    const WINDOW = 24;
+    const addMonths = (k, n) => {
+      const [y, m] = k.split("-").map(Number), t = y * 12 + (m - 1) + n;
+      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
+    };
+    const newRows = (nl && nl.months) || [];
+    const renRows = (rn && rn.months || []).filter(m => m.mean_increase != null);
+
+    // The axis ends at the newest month either feed reports having HAPPENED.
+    // Renewal offers run ahead of that — December's are already out — so a
+    // forward offer must not drag the window past the data behind it.
+    const signed = newRows.map(m => m.month);
+    const trackerNow = (nl && nl.as_of || "").slice(0, 7);
+    const endMo = [...signed, ...(trackerNow ? [trackerNow] : [])].sort().slice(-1)[0]
+                  || renRows.map(m => m.month).sort().slice(-1)[0];
+    const axis = Array.from({ length: WINDOW },
+                            (_, i) => addMonths(addMonths(endMo, -(WINDOW - 1)), i));
+    // Months with no lease are gaps, never zeros: a zero bar asserts a 0%
+    // trade-out in a month that simply reported nothing.
+    const pick = (rows, k) => {
+      const by = new Map(rows.map(r => [r.month, r]));
+      return axis.map(m => { const r = by.get(m); return r && r[k] != null ? r[k] * 100 : null; });
+    };
+    const count = rows => {
+      const by = new Map(rows.map(r => [r.month, r]));
+      return axis.map(m => (by.get(m) || {}).leases || null);
+    };
+    const newPct = pick(newRows, "mean_tradeout");
+    const renPct = pick(renRows, "mean_increase");
+    const wtd = { new: pick(newRows, "wtd_tradeout"), renew: pick(renRows, "wtd_increase") };
+    const counts = { new: count(newRows), renew: count(renRows) };
+    const ahead = renRows.filter(m => m.month > endMo).map(m => m.month);
+    const filled = axis.filter((_, i) => newPct[i] !== null || renPct[i] !== null).length;
+
+    new Chart(document.getElementById("dcTrade"), {
+      data: { labels: axis.map(shortMo),
+        datasets: [
+          { type: "bar", label: "New lease · avg trade-out %", data: newPct, yAxisID: "y",
+            backgroundColor: newPct.map(v => v < 0 ? C.red : C.teal), order: 1 },
+          { type: "bar", label: "Renewal · avg increase %", data: renPct, yAxisID: "y",
+            backgroundColor: renPct.map(v => v < 0 ? C.red : C.green), order: 2 },
+        ] },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: {
+          title: c => shortMo(axis[c[0].dataIndex]),
+          label: c => {
+            const i = c.dataIndex, isNew = c.datasetIndex === 0;
+            const n = isNew ? counts.new[i] : counts.renew[i];
+            const w = isNew ? wtd.new[i] : wtd.renew[i];
+            return `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`
+                 + (n ? ` (${n} lease${n === 1 ? "" : "s"}` : "")
+                 + (w != null ? `, ${w.toFixed(1)}% rent-weighted)` : n ? ")" : "");
+          } } } },
+        scales: {
+          y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
+          x: { grid: { display: false },
+               ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90,
+                        autoSkip: false } } } }
+    });
+
+    // Both stats are scoped to the CHART'S OWN WINDOW, and their labels say
+    // over how many months. The feeds carry wildly different histories -- two
+    // weeks of new leases against three years of renewal offers -- so an
+    // unscoped "renewal offers" reads 574 beside "3 new leases" and invites a
+    // comparison the numbers cannot bear.
+    const inAxis = m => axis.indexOf(m.month) >= 0;
+    const newWin = newRows.filter(inAxis);
+    const renWin = renRows.filter(m => inAxis(m) && m.month <= endMo);
+    const newN = newWin.reduce((t, m) => t + (m.leases || 0), 0);
+    const renN = renWin.reduce((t, m) => t + (m.leases || 0), 0);
+    const wmean = (rows, key, n) => n
+      ? rows.reduce((t, m) => t + m[key] * (m.leases || 0), 0) / n : null;
+    const newMean = wmean(newWin, "mean_tradeout", newN);
+    const renMean = wmean(renWin, "mean_increase", renN);
+    const mos = n => n + " month" + (n === 1 ? "" : "s");
+    statBlock(document.getElementById("dtoStats"), [
+      [newMean != null ? fmPct(newMean, 1) : "—", "avg new-lease trade-out"],
+      [renMean != null ? "+" + fmPct(renMean, 1) : "—", "avg renewal increase"],
+      [String(newN), "new leases, " + mos(newWin.length)],
+      [String(renN), "renewal offers, " + mos(renWin.length)],
+      [(rn && rn.mtm) ? String(rn.mtm.units) : "—", "on month-to-month now"],
+    ]);
+
+    document.getElementById("dtoEyebrow").textContent =
+      "NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT · "
+      + (nl ? "WEEK ENDING " + nl.as_of : "RENEWAL TRACKER ONLY");
+    document.getElementById("dtoFoot").textContent =
+      "Teal is the mean trade-out of the new leases signed that month, from the weekly "
+      + "leasing workbook — " + ((nl && nl.weeks) || 0) + " week(s) on file, the newest ending "
+      + ((nl && nl.as_of) || "—") + ". Green is the mean increase on that month's renewal "
+      + "offers, from the renewal tracker" + (rn && rn.covers
+          ? " (" + rn.covers.from + " to " + rn.covers.to + " on the file of "
+            + (rn.as_of || "—") + ")" : "")
+      + ". Each stat above is scoped to this chart's window and says over how many "
+      + "months, because the feeds do not cover the same ground: the tracker runs back "
+      + "to " + ((rn && rn.covers && rn.covers.from) || "—") + " and the leasing "
+      + "workbooks only as far as the weeks on file. "
+      + "Both series are plain means over the same kind of thing — one lease, one "
+      + "percentage — "
+      + "which The Landing's version of this card cannot do: the analyst workbook carries "
+      + "monthly renewal aggregates and no per-renewal rows, so its renewal side is "
+      + "rent-weighted and its new-lease side is not. The rent-weighted figure is on the "
+      + "tooltip here instead. Axis is the trailing " + WINDOW + " months to " + shortMo(endMo)
+      + "; " + newWin.length + " month(s) report a new lease and " + renWin.length
+      + " report renewal offers — a month with neither is left empty rather than "
+      + "drawn as zero. The new-lease history is only as long as the weeks on file, "
+      + "because each workbook carries one week."
+      + (ahead.length ? " Offers already out for " + ahead.map(shortMo).join(", ")
+          + " sit past the window: a forward offer is not a trailing month." : "")
+      + " Capture at signing is not shown: the leasing workbook carries no market rent at "
+      + "signing to divide by.";
+  })();
 
   /* ---- Loss to lease, rollover and unit gaps — all three from the rent roll.
      The Landing draws its loss-to-lease as a 19-month series off the workbook's

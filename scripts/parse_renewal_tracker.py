@@ -215,9 +215,16 @@ def _month_summary(month, rows):
     for r in rows:
         s = str(r.get("status") or "").strip() or "(blank)"
         statuses[s] = statuses.get(s, 0) + 1
+    # Per-offer increases, so the card can average renewals the SAME way it
+    # averages new leases. The analyst workbook only ever had monthly offer
+    # aggregates, which is why The Landing's Trade-outs card can show the
+    # renewal side rent-weighted and the new-lease side as a plain mean -- two
+    # different averages on one axis. Reading the rows gives both.
+    each = [round(o / c - 1, 6) for c, o in paired if c]
     return {
         "month": month,
         "rows": len(rows),
+        "mean_increase": round(sum(each) / len(each), 6) if each else None,
         # only offers with both sides can carry an increase; the count the
         # dashboard plots is this one, not len(rows)
         "leases": len(paired),

@@ -1329,6 +1329,62 @@ async function loadAll() {
       });
     });
 
+    // The two leasing feeds behind the Trade-outs card on the Landing (Drive)
+    // tab. Two tables because they are two reports on two different clocks: the
+    // weekly workbook accumulates a week at a time, the renewal tracker arrives
+    // whole and runs back to January 2024.
+    const lz = d.leasing || {};
+    (lz.properties || []).forEach((pr, i) => {
+      const nl = pr.new_leases, rn = pr.renewals;
+      if (nl) {
+        renderTable(host, {
+          id: "t-tradeouts-" + (pr.slug || i), group: "Portfolio",
+          title: "New-lease trade-outs, by month — " + (pr.name || pr.slug),
+          feeds: "Trade-outs card (Landing (Drive) tab)",
+          note: "From " + (nl.source_file || "the weekly leasing workbook") + " and "
+              + (nl.weeks || 0) + " week(s) on file, newest ending " + (nl.as_of || "—")
+              + ". A lease sits in the month of the WEEK it was signed, not its "
+              + "move-in month. The mean is what the card plots; the rent-weighted "
+              + "column is the same month on a dollar basis, and the two are not the "
+              + "same number.",
+          cols: [{ key: "month", label: "Month" },
+                 { key: "leases", label: "Leases", fmt: "int" },
+                 { key: "prior_rent", label: "Prior rent ($/mo)", fmt: "money0" },
+                 { key: "lease_rent", label: "New rent ($/mo)", fmt: "money0" },
+                 { key: "mean_tradeout", label: "Mean trade-out", fmt: "pct" },
+                 { key: "wtd_tradeout", label: "Rent-weighted", fmt: "pct" }],
+          rows: nl.months || [], filterable: true,
+        });
+      }
+      if (rn) {
+        const mtm = rn.mtm || {};
+        renderTable(host, {
+          id: "t-renewals-" + (pr.slug || i), group: "Portfolio",
+          title: "Renewal offers, by month — " + (pr.name || pr.slug),
+          feeds: "Trade-outs card (Landing (Drive) tab) — the renewal series",
+          note: "From " + (rn.source_file || "the renewal tracker") + ", covering "
+              + ((rn.covers || {}).from || "—") + " to " + ((rn.covers || {}).to || "—")
+              + ". Months past today are offers already issued for leases that have "
+              + "not expired yet. Offers counted are those carrying both a current "
+              + "and an offered rent. Month-to-month roster on the same file: "
+              + (mtm.units || 0) + " units, "
+              + (mtm.current_rent || 0).toLocaleString(undefined,
+                  { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+              + "/mo in place against "
+              + (mtm.market_rent || 0).toLocaleString(undefined,
+                  { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+              + "/mo market.",
+          cols: [{ key: "month", label: "Month" },
+                 { key: "leases", label: "Offers", fmt: "int" },
+                 { key: "current_rent", label: "Current rent ($/mo)", fmt: "money0" },
+                 { key: "offered_rent", label: "Offered rent ($/mo)", fmt: "money0" },
+                 { key: "mean_increase", label: "Mean increase", fmt: "pct" },
+                 { key: "wtd_increase", label: "Rent-weighted", fmt: "pct" }],
+          rows: rn.months || [], filterable: true,
+        });
+      }
+    });
+
     renderTable(host, {
       id: "t-placeholders", group: "Portfolio", title: "Planned Metrics (placeholders)",
       feeds: "Planned Metrics placeholder cards",

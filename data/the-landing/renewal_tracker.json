@@ -10,6 +10,7 @@
     {
       "month": "2024-01",
       "rows": 23,
+      "mean_increase": 0.027193,
       "leases": 19,
       "current_rent": 68059.0,
       "offered_rent": 69764.87,
@@ -29,6 +30,7 @@
     {
       "month": "2024-02",
       "rows": 18,
+      "mean_increase": 0.034333,
       "leases": 15,
       "current_rent": 53274.0,
       "offered_rent": 55141.8,
@@ -48,6 +50,7 @@
     {
       "month": "2024-03",
       "rows": 17,
+      "mean_increase": 0.034333,
       "leases": 15,
       "current_rent": 60660.0,
       "offered_rent": 62928.8,
@@ -67,6 +70,7 @@
     {
       "month": "2024-04",
       "rows": 14,
+      "mean_increase": 0.0625,
       "leases": 10,
       "current_rent": 34242.0,
       "offered_rent": 36355.93,
@@ -86,6 +90,7 @@
     {
       "month": "2024-05",
       "rows": 19,
+      "mean_increase": 0.054211,
       "leases": 19,
       "current_rent": 70221.0,
       "offered_rent": 73894.98,
@@ -106,6 +111,7 @@
     {
       "month": "2024-06",
       "rows": 13,
+      "mean_increase": 0.055385,
       "leases": 13,
       "current_rent": 52234.0,
       "offered_rent": 55070.07,
@@ -125,6 +131,7 @@
     {
       "month": "2024-07",
       "rows": 17,
+      "mean_increase": 0.052941,
       "leases": 17,
       "current_rent": 68739.0,
       "offered_rent": 72392.35,
@@ -144,6 +151,7 @@
     {
       "month": "2024-08",
       "rows": 17,
+      "mean_increase": 0.036765,
       "leases": 17,
       "current_rent": 76046.0,
       "offered_rent": 78620.26,
@@ -163,6 +171,7 @@
     {
       "month": "2024-09",
       "rows": 15,
+      "mean_increase": 0.020523,
       "leases": 15,
       "current_rent": 61920.0,
       "offered_rent": 63088.0,
@@ -183,6 +192,7 @@
     {
       "month": "2024-10",
       "rows": 11,
+      "mean_increase": 0.00375,
       "leases": 8,
       "current_rent": 34616.0,
       "offered_rent": 34706.0,
@@ -203,6 +213,7 @@
     {
       "month": "2024-11",
       "rows": 15,
+      "mean_increase": 0.030887,
       "leases": 15,
       "current_rent": 60951.0,
       "offered_rent": 62743.24,
@@ -222,6 +233,7 @@
     {
       "month": "2024-12",
       "rows": 11,
+      "mean_increase": 0.018647,
       "leases": 4,
       "current_rent": 14715.0,
       "offered_rent": 14984.16,
@@ -239,6 +251,7 @@
     {
       "month": "2025-01",
       "rows": 20,
+      "mean_increase": 0.056796,
       "leases": 19,
       "current_rent": 78164.0,
       "offered_rent": 81863.0,
@@ -258,6 +271,7 @@
     {
       "month": "2025-02",
       "rows": 24,
+      "mean_increase": 0.058624,
       "leases": 24,
       "current_rent": 88776.0,
       "offered_rent": 93632.0,
@@ -277,6 +291,7 @@
     {
       "month": "2025-03",
       "rows": 20,
+      "mean_increase": 0.037526,
       "leases": 20,
       "current_rent": 80716.0,
       "offered_rent": 83470.12,
@@ -296,6 +311,7 @@
     {
       "month": "2025-04",
       "rows": 25,
+      "mean_increase": 0.027952,
       "leases": 25,
       "current_rent": 100015.0,
       "offered_rent": 102665.19,
@@ -316,6 +332,7 @@
     {
       "month": "2025-05",
       "rows": 18,
+      "mean_increase": 0.058263,
       "leases": 18,
       "current_rent": 66914.0,
       "offered_rent": 70685.97,
@@ -337,6 +354,7 @@
     {
       "month": "2025-06",
       "rows": 22,
+      "mean_increase": 0.039607,
       "leases": 22,
       "current_rent": 92086.0,
       "offered_rent": 95633.37,
@@ -356,6 +374,7 @@
     {
       "month": "2025-07",
       "rows": 21,
+      "mean_increase": 0.050255,
       "leases": 21,
       "current_rent": 86841.0,
       "offered_rent": 91157.0,
@@ -375,6 +394,7 @@
     {
       "month": "2025-08",
       "rows": 25,
+      "mean_increase": 0.043685,
       "leases": 25,
       "current_rent": 104661.0,
       "offered_rent": 109244.0,
@@ -394,6 +414,7 @@
     {
       "month": "2025-09",
       "rows": 18,
+      "mean_increase": 0.059594,
       "leases": 18,
       "current_rent": 79176.0,
       "offered_rent": 83838.0,
@@ -415,6 +436,7 @@
     {
       "month": "2025-10",
       "rows": 4,
+      "mean_increase": 0.086889,
       "leases": 4,
       "current_rent": 16530.0,
       "offered_rent": 17963.0,
@@ -434,6 +456,7 @@
     {
       "month": "2025-11",
       "rows": 10,
+      "mean_increase": 0.051684,
       "leases": 10,
       "current_rent": 42343.0,
       "offered_rent": 44417.0,
@@ -452,6 +475,7 @@
     {
       "month": "2025-12",
       "rows": 19,
+      "mean_increase": 0.063103,
       "leases": 19,
       "current_rent": 83728.0,
       "offered_rent": 88985.0,
@@ -471,6 +495,7 @@
     {
       "month": "2026-01",
       "rows": 14,
+      "mean_increase": 0.060304,
       "leases": 14,
       "current_rent": 56903.0,
       "offered_rent": 60326.0,
@@ -490,6 +515,7 @@
     {
       "month": "2026-02",
       "rows": 24,
+      "mean_increase": 0.069861,
       "leases": 24,
       "current_rent": 90623.0,
       "offered_rent": 96974.0,
@@ -511,6 +537,7 @@
     {
       "month": "2026-03",
       "rows": 18,
+      "mean_increase": 0.079913,
       "leases": 18,
       "current_rent": 73025.0,
       "offered_rent": 78878.0,
@@ -530,6 +557,7 @@
     {
       "month": "2026-04",
       "rows": 24,
+      "mean_increase": 0.080814,
       "leases": 24,
       "current_rent": 106030.0,
       "offered_rent": 114438.0,
@@ -550,6 +578,7 @@
     {
       "month": "2026-05",
       "rows": 16,
+      "mean_increase": 0.089871,
       "leases": 16,
       "current_rent": 63074.0,
       "offered_rent": 68743.0,
@@ -570,6 +599,7 @@
     {
       "month": "2026-06",
       "rows": 34,
+      "mean_increase": 0.085262,
       "leases": 34,
       "current_rent": 155433.0,
       "offered_rent": 168564.0,
@@ -589,6 +619,7 @@
     {
       "month": "2026-07",
       "rows": 18,
+      "mean_increase": 0.06156,
       "leases": 18,
       "current_rent": 84251.0,
       "offered_rent": 89561.0,
@@ -608,6 +639,7 @@
     {
       "month": "2026-08",
       "rows": 16,
+      "mean_increase": 0.084471,
       "leases": 16,
       "current_rent": 65376.0,
       "offered_rent": 70789.0,
@@ -627,6 +659,7 @@
     {
       "month": "2026-09",
       "rows": 18,
+      "mean_increase": 0.087577,
       "leases": 18,
       "current_rent": 80475.0,
       "offered_rent": 87465.0,
@@ -648,6 +681,7 @@
     {
       "month": "2026-10",
       "rows": 7,
+      "mean_increase": 0.109904,
       "leases": 7,
       "current_rent": 36084.0,
       "offered_rent": 39849.0,
@@ -668,6 +702,7 @@
     {
       "month": "2026-11",
       "rows": 13,
+      "mean_increase": 0.453172,
       "leases": 13,
       "current_rent": 57627.0,
       "offered_rent": 83373.0,
@@ -688,6 +723,7 @@
     {
       "month": "2026-12",
       "rows": 6,
+      "mean_increase": 0.158289,
       "leases": 6,
       "current_rent": 28463.0,
       "offered_rent": 32984.0,

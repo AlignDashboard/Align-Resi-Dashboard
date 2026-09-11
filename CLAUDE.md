@@ -74,8 +74,9 @@ file used to say:
   a sheet per month from January 2024 forward plus the `MTM` roster, so one file
   is the whole history rather than a weekly increment.
 
-Both parse and store today; nothing publishes them yet, so the Trade-outs card
-is still workbook-fed. See **The two leasing parsers** below.
+Both now feed the **Trade-outs card on the `Landing (Drive)` tab**, which is the
+first card on that tab drawing two Drive reports at once. See **The two leasing
+parsers** below.
 
 The workbook was restructured in V37: the `Holdovers` tab became `MTM` (same
 content, per-unit vacate flags added), and `MTM Analysis` (tracker
@@ -102,6 +103,7 @@ every figure on it would move on the next pipeline run.
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` |
 | KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
 | Loss to Lease | `rent_roll` — the gap by rollover cohort, current roll only |
+| Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
 | Rollover Schedule | `rent_roll` — lease expirations by month |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
@@ -183,12 +185,16 @@ it is not, so the entry is skipped with a log line every run (open item C5). The
 `blocked` field on that row in `SCD_FEED_ROWS` is what both notes read, so
 closing C5 means deleting one field rather than hunting for prose.
 
-`SCD_MISSING` is the honesty block: six things The Landing shows that no Drive
+`SCD_MISSING` is the honesty block: five things The Landing shows that no Drive
 export can refresh today, each with why and what would fix it. The counts in the
 note under it are computed from the list rather than typed, so they cannot go
-stale when a row moves. Three of the six are one report away — the renewal
-tracker (D9), a RealPage rate tracker (D1) and a concession burn-off that names
-its property (A6). The rent roll's arrival removed three rows outright.
+stale when a row moves. **Only one of the five is still waiting on a report** —
+a concession burn-off that names its property (A6). The other four are pipeline
+or page work on feeds that have already arrived: the monthly loss-to-lease
+series needs the statement's revenue detail lines, the holdover reconciliation
+needs the rent roll and the tracker joined unit by unit, the delinquency aging
+needs publishing out of a parse that already runs, and the Insights scorecard is
+a judgement no report produces.
 
 ## Refreshing The KPI Scorecard
 
@@ -478,7 +484,8 @@ guesswork would file one building's concessions under another.
 ### The two leasing parsers
 
 `parse_daily_leasing.py` and `parse_renewal_tracker.py` were written against
-real exports on 2026-09-11. Both feed `data/` and neither publishes yet.
+real exports on 2026-09-11, and both publish to the **Trade-outs card** on the
+`Landing (Drive)` tab through the `leasing` block in `metrics.json`.
 
 **`parse_daily_leasing`** reads the NEW LEASES block on the `Weekly_Leases`
 sheet into per-lease trade-outs, and `store_daily_leasing` accumulates one entry
@@ -519,6 +526,25 @@ increase that is off by a whole rent. Two more things:
 The monthly offer counts tie out against the 2026-09-08 weekly email's own
 renewal table — 18 / 7 / 13 / 6 for September through December — which is an
 independent check on the whole chain.
+
+**The card averages both sides the same way, which the workbook-fed one cannot.**
+The Landing's Trade-outs card draws its new-lease side as a plain mean and its
+renewal side rent-weighted — its own footnote says the workbook's offer data
+"carry no per-renewal rows to average". `parse_renewal_tracker` reads those rows,
+so `mean_increase` sits beside `wtd_increase` on every month and the Drive card
+plots one mean against another, with the weighted figure on the tooltip. Two
+things the card is careful about: the axis ends at the newest month either feed
+reports having *happened*, because renewal offers run ahead of it (December's
+are already out) and a forward offer must not drag the window past the data
+behind it; and each stat is scoped to the chart's own window with the number of
+months in its label, because the feeds cover wildly different ground — two weeks
+of new leases against three years of offers — and an unscoped count reads "434
+renewal offers" beside "3 new leases".
+
+The Landing reads **82.8%** mean new-lease trade-out against **+6.0%** mean
+renewal increase: a turned unit captures roughly ten times what a renewal does,
+which is the comparison the card exists to make. Capture at signing is absent
+and the card says so — the leasing workbook carries no market rent at signing.
 
 `scripts/test_leasing_and_renewal.py` holds both down: 31 checks against
 workbooks built in a temp dir, no fixtures and no network, since the real files

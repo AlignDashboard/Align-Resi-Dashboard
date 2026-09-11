@@ -1123,6 +1123,94 @@ def build_metrics_json():
         # blanking three cards on a checkout that simply has not fetched yet.
         print("[info] no rent_roll.json on disk; leaving existing metrics.json block as-is")
 
+    # New-lease trade-outs and renewal offers, by month, for the Trade-outs
+    # card on the Drive tab. Two feeds, one block: the weekly leasing workbook
+    # accumulates a week at a time and the renewal tracker arrives whole.
+    leasing_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        slug = p["slug"]
+        entry = {"slug": slug, "name": p["name"]}
+
+        fp = DATA / slug / "leasing_detail.json"
+        if fp.exists():
+            weeks = json.load(open(fp)).get("weeks") or []
+            # Bucketed by the month of the WEEK the lease was signed, not by
+            # its scheduled move-in: the card plots when the rent was struck,
+            # and a lease signed in August for a September move-in belongs to
+            # August's trade-out. The workbook-fed card uses its lease date the
+            # same way.
+            months = {}
+            for w in weeks:
+                key = (w.get("week_ending") or "")[:7]
+                if not key:
+                    continue
+                b = months.setdefault(key, {"month": key, "leases": 0,
+                                            "lease_rent": 0.0, "prior_rent": 0.0,
+                                            "tradeouts": []})
+                for lease in w.get("leases") or []:
+                    if lease.get("tradeout_pct") is None:
+                        continue
+                    b["leases"] += 1
+                    b["lease_rent"] += lease.get("lease_rent") or 0
+                    b["prior_rent"] += lease.get("prior_rent") or 0
+                    b["tradeouts"].append(lease["tradeout_pct"])
+            rows = []
+            for key in sorted(months):
+                b = months[key]
+                if not b["leases"]:
+                    continue
+                rows.append({
+                    "month": key, "leases": b["leases"],
+                    "lease_rent": round(b["lease_rent"], 2),
+                    "prior_rent": round(b["prior_rent"], 2),
+                    # both averages, named: the plain mean is what the chart
+                    # draws, the rent-weighted one is what a dollar-weighted
+                    # read would give, and they are not the same number
+                    "mean_tradeout": round(sum(b["tradeouts"]) / b["leases"], 6),
+                    "wtd_tradeout": (round(b["lease_rent"] / b["prior_rent"] - 1, 6)
+                                     if b["prior_rent"] else None),
+                })
+            allto = [t for b in months.values() for t in b["tradeouts"]]
+            newest = max((w.get("week_ending") or "") for w in weeks) if weeks else None
+            entry["new_leases"] = {
+                "weeks": len(weeks), "as_of": newest,
+                "landed_at": max((w.get("landed_at") or "") for w in weeks) or None
+                             if weeks else None,
+                "source_file": next((w.get("source_file") for w in reversed(weeks)
+                                     if w.get("week_ending") == newest), None),
+                "months": rows,
+                "leases": len(allto),
+                "mean_tradeout": round(sum(allto) / len(allto), 6) if allto else None,
+            }
+
+        fp = DATA / slug / "renewal_tracker.json"
+        if fp.exists():
+            rt = json.load(open(fp))
+            mtm = rt.get("mtm") or {}
+            entry["renewals"] = {
+                "as_of": rt.get("as_of"), "covers": rt.get("covers"),
+                "landed_at": rt.get("landed_at"), "source_file": rt.get("source_file"),
+                "months": [{k: m.get(k) for k in
+                            ("month", "leases", "mean_increase", "wtd_increase",
+                             "current_rent", "offered_rent", "statuses")}
+                           for m in rt.get("months") or []],
+                # roster aggregates only; the per-unit rows stay in data/
+                "mtm": {k: mtm.get(k) for k in
+                        ("units", "current_rent", "market_rent", "statuses",
+                         "rows_without_rent")} if mtm else None,
+            }
+
+        if "new_leases" in entry or "renewals" in entry:
+            leasing_props.append(entry)
+            nl = entry.get("new_leases") or {}
+            rn = entry.get("renewals") or {}
+            print(f"[ok] leasing for {p['name']}: {nl.get('leases', 0)} new lease(s) "
+                  f"over {len(nl.get('months') or [])} month(s), "
+                  f"{len(rn.get('months') or [])} month(s) of renewal offers")
+    metrics["leasing"] = {"available": bool(leasing_props), "properties": leasing_props}
+
     # Latest monthly P&L point per property, for the operating-summary card.
     pl_props = []
     for p in props:
