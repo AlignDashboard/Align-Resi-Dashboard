@@ -58,12 +58,12 @@ after. D3 joins them: the two box-score exports are its first samples.
 
 | # | Drive folder |
 | --- | --- |
-| D1 | Weekly Leasing Reports — the folder's intended content, the RealPage rate tracker behind the workbook's `Lease Detail` tab, has never appeared (the funnel exports that pass through are D2's, and parse). The folder itself appears the first time a rate tracker arrives — see the closed C2 |
+| D1 | ~~Weekly Leasing Reports — the RealPage rate tracker has never appeared~~ **Closed 2026-09-11 — and the premise was wrong twice over.** The report behind `Lease Detail` is not a RealPage export: it is Align's own `Daily Report- Week Ending <date>.xlsx`, and it lands in `Daily Leasing Reports`, not `Weekly Leasing Reports`. Nine copies were already in Drive. `parse_daily_leasing.py` reads its NEW LEASES block — unit, plan, sqft, new rent, concession and `PRIOR LEASE RATE`, the one field nothing else in the pipeline carries — and checks every row against the report's own trade-out arithmetic. Accumulating into `data/<slug>/leasing_detail.json`, one entry per week. Nothing publishes it yet, so the Trade-outs card is still workbook-fed |
 | D3 | Property Status — the two `BoxScoreSummary` exports are its first samples, and land here when C3 is deployed |
 | D5 | AIRM - Yardi Rev Management |
 | D6 | AP Analytics |
 | D7 | `Workorders - Mainentance ` (note the typo and trailing space in the folder name) |
-| D9 | Renewal Tracker — `Landing 2025 Renewal Tracker` and `Renewals since 9.15.25`. The workbook's `Source Renewal Tracker` grey tab is pasted by hand today, so a parser here would replace a manual step |
+| D9 | ~~Renewal Tracker~~ **Closed 2026-09-11.** `Landing 2025 Renewal Tracker - Full (N).xlsx` has been filing into the Drive `Renewal Tracker` folder since 2026-09-02. `parse_renewal_tracker.py` reads all 36 month sheets (January 2024 forward — one file is the whole history) plus the `MTM` roster of 31 units. Its monthly offer counts tie out against the 2026-09-08 weekly email's own renewal table, 18/7/13/6 for Sep–Dec. Stored at `data/<slug>/renewal_tracker.json`; nothing publishes it yet |
 | D10 | Prospect Reports — `8.24-8.30 Prospect and applicant Report` |
 | D11 | Daily Leasing Reports — `Daily Report- Week Ending …`, and the Madelon and Chorus daily reports |
 | D12 | Daily Tracker — `Daily Tracker (14) (1) (43)` |

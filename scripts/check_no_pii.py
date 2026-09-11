@@ -109,7 +109,13 @@ def harvest_names(source):
     wb = openpyxl.load_workbook(source, data_only=True)
     # bare "Resident"/"Name" headers appear on the workbook's computed tabs
     # (Unit Gap Analysis, Delinquency, MTM Analysis), not just the raw reports
-    pat = re.compile(r"resident (last )?name|^name$|tenant name|^tenant$|^resident$", re.I)
+    # The weekly leasing workbook spells them differently on every block --
+    # "HOH LAST NAME" on cancellations, " LAST NAME" on move-outs, "PROSPECT
+    # NAME(S)" on traffic -- and matched none of the patterns below until they
+    # were added, so this check harvested nothing from it and passed for the
+    # wrong reason. A report the value pass cannot see is the one that leaks.
+    pat = re.compile(r"resident (last )?name|^name$|tenant name|^tenant$|^resident$"
+                     r"|^(hoh )?last name$|^prospect names?", re.I)
     names = set()
     for ws in wb.worksheets:
         for r in range(1, min(ws.max_row, 60) + 1):

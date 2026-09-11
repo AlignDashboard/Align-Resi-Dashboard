@@ -476,6 +476,75 @@ DRIVE_FLOWS = {
         "open_item": "A6",
         "force_status": PARTIAL,
     },
+    ("Daily Leasing Reports", "daily_leasing_report"): {
+        "id": "daily_leasing",
+        "example": '<date> Daily Report- Week Ending 9.7.26.xlsx',
+        "title": "Weekly leasing workbook",
+        "carries": "Every new lease signed that week: unit, plan, square "
+                   "footage, the new rent and — the part nothing else in the "
+                   "pipeline has — the PRIOR LEASE RATE it is replacing.",
+        "steps": [
+            {"script": "scripts/parse_daily_leasing.py",
+             "does": "Reads the NEW LEASES block on the Weekly_Leases sheet and "
+                     "resolves which building the file is about.",
+             "checks": "Every lease is checked against the report's own "
+                       "arithmetic — rent less prior rate must equal the "
+                       "trade-out it prints. The property is taken from the "
+                       "filename first, then the sheet header, then the "
+                       "Information sheet, and any disagreement between the "
+                       "three is reported: Chorus's copy says 'The Landing' on "
+                       "the last of them."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Accumulates one entry per week, keyed on the week-ending "
+                     "date so re-processing replaces rather than doubles.",
+             "checks": "The leasing associate's name is dropped and the central "
+                       "scrub runs over every row."},
+        ],
+        "stores": ["data/<slug>/leasing_detail.json"],
+        "publishes": [],
+        "dashboard": [],
+        "tables": [],
+        "note": "This is the report behind the analyst workbook's hand-typed "
+                "Lease Detail tab — not a RealPage export, despite that tab's "
+                "name. Parsed, tied out and accumulating; nothing publishes it "
+                "yet, so the Trade-outs card is still workbook-fed.",
+        "open_item": "D1",
+        "force_status": PARTIAL,
+    },
+    ("Renewal Tracker", "renewal_tracker"): {
+        "id": "renewal_tracker",
+        "example": '<date> Landing 2025 Renewal Tracker - Full (42).xlsx',
+        "title": "Renewal tracker",
+        "carries": "A sheet per month from January 2024 forward — every "
+                   "renewal offer with its current rent, offered rent and "
+                   "status — plus the month-to-month roster.",
+        "steps": [
+            {"script": "scripts/parse_renewal_tracker.py",
+             "does": "Reads each month sheet and the MTM roster, and works out "
+                     "which column holds the offered rent.",
+             "checks": "The offered rent is resolved by ARITHMETIC, not by "
+                       "label: 'BEST OFFER $' is the offer difference on the "
+                       "May 2025 sheet and the offered rate on June 2025's, so "
+                       "a value near the current rent is read as a rate and one "
+                       "near zero as a difference. A sheet whose header cannot "
+                       "be matched is recorded as unread rather than read with "
+                       "the wrong columns."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Stores the whole tracker, overwriting the last copy — one "
+                     "file carries every month.",
+             "checks": "The Yardi tenant code beside each MTM unit is emitted as "
+                       "resident_code so the central scrub drops it."},
+        ],
+        "stores": ["data/<slug>/renewal_tracker.json"],
+        "publishes": [],
+        "dashboard": [],
+        "tables": [],
+        "note": "Parsed and stored; nothing publishes it yet. It is what would "
+                "give the Trade-outs card its renewal series and the holdover "
+                "cohort a second opinion to reconcile against.",
+        "open_item": "D9",
+        "force_status": PARTIAL,
+    },
 }
 
 # Everything that does not arrive through the Drive fetcher.

@@ -229,3 +229,37 @@ def is_stale(ws_list, probes):
         except LayoutError:
             missing += 1
     return missing, len(probes)
+
+
+def property_from_filename(path, config=None):
+    """Which property a report filename names, or None.
+
+    Lives here rather than in one parser because two report types need it and
+    two copies of property-name matching are exactly what test_routing.py
+    exists to catch drifting.
+
+    Matched against every name, alias and code in config/properties.json, plus
+    each name with a leading "the " removed -- the renewal tracker arrives as
+    "Landing 2025 Renewal Tracker", never "The Landing". Longest first, so
+    "The Madelon" wins over "Madelon"; word-boundary, so "Chorus" does not
+    match inside another token; and at least four characters, so a short code
+    cannot match a date fragment.
+    """
+    import json
+    import os
+    if config is None:
+        config = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "..", "config", "properties.json")
+    words = []
+    for p in json.load(open(config))["properties"]:
+        for w in [p["name"]] + list(p.get("aliases") or []) + list(p["codes"]):
+            words.append((norm(w), p["name"]))
+            bare = re.sub(r"^the ", "", norm(w))
+            if bare != norm(w):
+                words.append((bare, p["name"]))
+    base = norm(os.path.basename(path))
+    for word, name in sorted(set(words), key=lambda kv: -len(kv[0])):
+        if len(word) >= 4 and re.search(
+                r"(?<![a-z0-9])" + re.escape(word) + r"(?![a-z0-9])", base):
+            return name
+    return None

@@ -432,12 +432,12 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-11T21:06:41.040784+00:00",
+  "generated_at": "2026-09-11T22:23:41.977818+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 10,
-   "partial": 3,
-   "no-parser": 10,
+   "partial": 5,
+   "no-parser": 8,
    "manual": 1
   },
   "warnings": []
@@ -1391,6 +1391,113 @@
    "status": "partial"
   },
   {
+   "id": "renewal_tracker",
+   "title": "Renewal tracker",
+   "origin_kind": "drive",
+   "source_label": "Renewal Tracker",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "<date> Landing 2025 Renewal Tracker - Full (42).xlsx",
+   "carries": "A sheet per month from January 2024 forward \u2014 every renewal offer with its current rent, offered rent and status \u2014 plus the month-to-month roster.",
+   "filed_by": [
+    "renewal",
+    "renewalssince",
+    "renewaltracker",
+    "renewalworkbook"
+   ],
+   "report_type": "renewal_tracker",
+   "parser": "parse_renewal_tracker",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_renewal_tracker.py",
+     "does": "Reads each month sheet and the MTM roster, and works out which column holds the offered rent.",
+     "checks": "The offered rent is resolved by ARITHMETIC, not by label: 'BEST OFFER $' is the offer difference on the May 2025 sheet and the offered rate on June 2025's, so a value near the current rent is read as a rate and one near zero as a difference. A sheet whose header cannot be matched is recorded as unread rather than read with the wrong columns."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Stores the whole tracker, overwriting the last copy \u2014 one file carries every month.",
+     "checks": "The Yardi tenant code beside each MTM unit is emitted as resident_code so the central scrub drops it."
+    }
+   ],
+   "stores": [
+    "data/<slug>/renewal_tracker.json"
+   ],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Parsed and stored; nothing publishes it yet. It is what would give the Trade-outs card its renewal series and the holdover cohort a second opinion to reconcile against.",
+   "open_item": "D9",
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/renewal_tracker.json",
+     "as_of": "2026-12",
+     "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
+     "landed_at": "2026-09-08T23:28:49.326Z",
+     "detail": null
+    }
+   ],
+   "status": "partial"
+  },
+  {
+   "id": "daily_leasing",
+   "title": "Weekly leasing workbook",
+   "origin_kind": "drive",
+   "source_label": "Daily Leasing Reports",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "<date> Daily Report- Week Ending 9.7.26.xlsx",
+   "carries": "Every new lease signed that week: unit, plan, square footage, the new rent and \u2014 the part nothing else in the pipeline has \u2014 the PRIOR LEASE RATE it is replacing.",
+   "filed_by": [
+    "dailyreport"
+   ],
+   "report_type": "daily_leasing_report",
+   "parser": "parse_daily_leasing",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_daily_leasing.py",
+     "does": "Reads the NEW LEASES block on the Weekly_Leases sheet and resolves which building the file is about.",
+     "checks": "Every lease is checked against the report's own arithmetic \u2014 rent less prior rate must equal the trade-out it prints. The property is taken from the filename first, then the sheet header, then the Information sheet, and any disagreement between the three is reported: Chorus's copy says 'The Landing' on the last of them."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Accumulates one entry per week, keyed on the week-ending date so re-processing replaces rather than doubles.",
+     "checks": "The leasing associate's name is dropped and the central scrub runs over every row."
+    }
+   ],
+   "stores": [
+    "data/<slug>/leasing_detail.json"
+   ],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "This is the report behind the analyst workbook's hand-typed Lease Detail tab \u2014 not a RealPage export, despite that tab's name. Parsed, tied out and accumulating; nothing publishes it yet, so the Trade-outs card is still workbook-fed.",
+   "open_item": "D1",
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "chorus",
+     "file": "data/chorus/leasing_detail.json",
+     "as_of": null,
+     "source_file": null,
+     "landed_at": null,
+     "detail": null
+    },
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/leasing_detail.json",
+     "as_of": null,
+     "source_file": null,
+     "landed_at": null,
+     "detail": null
+    }
+   ],
+   "status": "partial"
+  },
+  {
    "id": "airm-yardi-rev-management-revenue-mgmt",
    "title": "AIRM - Yardi Rev Management",
    "origin_kind": "drive",
@@ -1437,32 +1544,6 @@
     "purchaseorder"
    ],
    "report_type": "ap_analytics",
-   "parser": null,
-   "registered": "pending",
-   "documented": false,
-   "steps": [],
-   "stores": [],
-   "publishes": [],
-   "dashboard": [],
-   "tables": [],
-   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
-   "open_item": null,
-   "same_as": null,
-   "evidence": [],
-   "status": "no-parser"
-  },
-  {
-   "id": "daily-leasing-reports-daily-leasing-report",
-   "title": "Daily Leasing Reports",
-   "origin_kind": "drive",
-   "source_label": "Daily Leasing Reports",
-   "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": null,
-   "carries": "Per-property daily/weekly leasing reports",
-   "filed_by": [
-    "dailyreport"
-   ],
-   "report_type": "daily_leasing_report",
    "parser": null,
    "registered": "pending",
    "documented": false,
@@ -1570,35 +1651,6 @@
     "prospect"
    ],
    "report_type": "prospect_report",
-   "parser": null,
-   "registered": "pending",
-   "documented": false,
-   "steps": [],
-   "stores": [],
-   "publishes": [],
-   "dashboard": [],
-   "tables": [],
-   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
-   "open_item": null,
-   "same_as": null,
-   "evidence": [],
-   "status": "no-parser"
-  },
-  {
-   "id": "renewal-tracker-renewal-tracker",
-   "title": "Renewal Tracker",
-   "origin_kind": "drive",
-   "source_label": "Renewal Tracker",
-   "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": null,
-   "carries": "The Landing 2025 Renewal Tracker and the 'Renewals since ...' extracts. Feeds the analyst workbook's Source Renewal Tracker grey tab, which is refreshed by pasting",
-   "filed_by": [
-    "renewal",
-    "renewalssince",
-    "renewaltracker",
-    "renewalworkbook"
-   ],
-   "report_type": "renewal_tracker",
    "parser": null,
    "registered": "pending",
    "documented": false,

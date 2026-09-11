@@ -127,10 +127,15 @@ def main():
                      "2026-07-16 12_Month_Statement_rspalmas_accrual.xlsx",
                      "2026-07-14 ConcessionBurnOff07_14_2026.xlsx"):
         check(f"archived {archived[:34]!r} stays archived", archived not in names)
+    # Renewal Tracker and Daily Leasing Reports left this list on 2026-09-11,
+    # when both got parsers: they are fetched now, and the check below asserts
+    # that rather than just dropping them.
     check("reports with no parser are left where they are",
           not any(k in n for n in names for k in
-                  ("Renewal Tracker", "Prospect", "Daily Report", "Daily Tracker",
-                   "BoxScore", "Demographics")))
+                  ("Prospect", "Daily Tracker", "BoxScore", "Demographics")))
+    check("a report type that has just been given a parser is fetched",
+          any("Renewal Tracker" in n for n in names)
+          and any("Daily Report" in n for n in names))
     check("nothing downloaded twice", len(man) == len(names))
     check("folder-pass files are not flagged as rescued",
           all(not e.get("rescued_by_name")
