@@ -832,12 +832,19 @@
 
       <div class="card wide" id="cdRentCapture">
         <h2>Loss to Lease</h2>
-        <span class="eyebrow" id="drcEyebrow">IN-PLACE vs MARKET RENT · FROM THE CURRENT RENT ROLL</span>
-        <div style="display:flex;gap:22px;flex-wrap:wrap;">
-          <div style="flex:0 0 auto;min-width:170px;" id="drcStats"></div>
-          <div class="chartwrap" style="flex:1 1 300px;height:230px;"><canvas id="dcCapture"></canvas></div>
+        <div class="chartwrap"><canvas id="dcCapture"></canvas></div>
+        <div class="blu-note" id="dcCaptureFoot" style="color:var(--muted);"></div>
+        <!-- The rent roll's half of the same question: where the gap sits
+             today, by when each lease can be repriced. The statement says how
+             the gap moved, the roll says who is carrying it. -->
+        <div id="drcSnapshot" style="margin-top:18px;">
+          <span class="eyebrow" id="drcEyebrow">IN-PLACE vs MARKET RENT · FROM THE CURRENT RENT ROLL</span>
+          <div style="display:flex;gap:22px;flex-wrap:wrap;">
+            <div style="flex:0 0 auto;min-width:170px;" id="drcStats"></div>
+            <div class="chartwrap" style="flex:1 1 300px;height:230px;"><canvas id="dcCaptureCohort"></canvas></div>
+          </div>
+          <div class="blu-note" id="drcFoot" style="color:var(--muted);"></div>
         </div>
-        <div class="blu-note" id="drcFoot" style="color:var(--muted);"></div>
       </div>
 
       <div class="card wide" id="cdTradeOuts">
@@ -2284,6 +2291,52 @@ function renderPropertyScorecard(slug, ids) {
    through metrics.json, so this card refreshes when they do and lengthens as
    more statements arrive. Two copies of it would drift the moment one was
    edited. */
+/* Loss to lease — shared by The Landing (the analyst workbook's Rent Capture
+   block) and Landing (Drive) (the T12 statement's RESIDENTIAL RENTAL INCOME
+   section, metrics.json `rent_capture`). The workbook's block turned out to be
+   that section retyped — all six series tie to the cent across the twelve
+   overlapping months — so both sources publish the same shape and one renderer
+   draws either. A second copy would have drifted the first time one was edited,
+   which is why renderOpSummary and renderExpenseDeep are shared too.
+
+   `rc` needs: months[], rental_income[], market_potential[], and
+   ttm{market_potential, rental_income, capture_rate, ltl_pct}. `ttm.months`,
+   when the source carries it, says how many months that window really spans —
+   a pipeline series is twelve months at one statement and grows from there, so
+   the label is read off the data rather than assumed to be twelve. */
+function renderRentCapture(rc, ids, source) {
+  if (!rc || !rc.months || !rc.months.length) return false;
+  // Zoom the money axis to the data instead of anchoring at $0 — income and
+  // potential both live well above $0.9M, and a zero baseline flattens the
+  // loss-to-lease gap the chart exists to show. Floored to a clean $50k tick
+  // just under the lowest plotted value; the footnote discloses the zoom.
+  const yMin = Math.floor(Math.min(...rc.rental_income, ...rc.market_potential) * 0.97 / 5e4) * 5e4;
+  new Chart(document.getElementById(ids.canvas), {
+    data: {
+      labels: rc.months.map(shortMo),
+      datasets: [
+        { type: "bar", label: "Accrued rental income", data: rc.rental_income, backgroundColor: C.teal, order: 2 },
+        { type: "line", label: "Market rent potential", data: rc.market_potential, borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25, order: 1 },
+      ]
+    },
+    options: { maintainAspectRatio: false, responsive: true,
+      plugins: { legend: legendCfg, tooltip: { callbacks: { label: c =>
+        `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
+      scales: { y: { grid: gridCfg, min: yMin,
+          ticks: { callback: v => "$" + (v / 1e6).toFixed(2) + "M" } },
+        x: { grid: { display: false } } } }
+  });
+  const t = rc.ttm || {};
+  const win = (t.months && t.months !== 12) ? ("T" + t.months) : "TTM";
+  document.getElementById(ids.foot).textContent =
+    win + ": potential " + fm$(t.market_potential) + " · income " + fm$(t.rental_income) +
+    " · capture " + fmPct(t.capture_rate) + " · loss to lease " + fmPct(t.ltl_pct) +
+    ". Yardi market rent table was revised up sharply from Apr 2026, which widens measured loss to lease. " +
+    "Dollar axis starts at " + fm$(yMin) + ", not $0, to make the income-vs-potential gap visible." +
+    (source ? " " + source : "");
+  return true;
+}
+
 async function renderOpSummary(slug, ids) {
   const card = document.getElementById(ids.card);
   const m = await metricsJson();
@@ -2800,34 +2853,7 @@ async function loadLanding() {
   })();
 
   /* ---- Loss to lease ---- */
-  (function rentCapture() {
-    const rc = L.rent_capture;
-    // Zoom the money axis to the data instead of anchoring at $0 — income and
-    // potential both live well above $0.9M, and a zero baseline flattens the
-    // loss-to-lease gap the chart exists to show. Floored to a clean $50k tick
-    // just under the lowest plotted value; the footnote discloses the zoom.
-    const yMin = Math.floor(Math.min(...rc.rental_income, ...rc.market_potential) * 0.97 / 5e4) * 5e4;
-    new Chart(document.getElementById("lcCapture"), {
-      data: {
-        labels: rc.months.map(shortMo),
-        datasets: [
-          { type: "bar", label: "Accrued rental income", data: rc.rental_income, backgroundColor: C.teal, order: 2 },
-          { type: "line", label: "Market rent potential", data: rc.market_potential, borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25, order: 1 },
-        ]
-      },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: { label: c =>
-          `${c.dataset.label}: ${fm$(c.parsed.y)}` } } },
-        scales: { y: { grid: gridCfg, min: yMin,
-            ticks: { callback: v => "$" + (v / 1e6).toFixed(2) + "M" } },
-          x: { grid: { display: false } } } }
-    });
-    document.getElementById("lcCaptureFoot").textContent =
-      "TTM: potential " + fm$(rc.ttm.market_potential) + " · income " + fm$(rc.ttm.rental_income) +
-      " · capture " + fmPct(rc.ttm.capture_rate) + " · loss to lease " + fmPct(rc.ttm.ltl_pct) +
-      ". Yardi market rent table was revised up sharply from Apr 2026, which widens measured loss to lease. " +
-      "Dollar axis starts at " + fm$(yMin) + ", not $0, to make the income-vs-potential gap visible.";
-  })();
+  renderRentCapture(L.rent_capture, { canvas: "lcCapture", foot: "lcCaptureFoot" });
 
   /* ---- Operating summary ---- */
   // Shared with the Drive-only tab; see renderOpSummary. It never read the
@@ -3304,7 +3330,7 @@ const SCD_RATE_ONLY = {
 // are read from lineage.json's evidence rather than restated here, so the card
 // reports what the last pipeline run actually found.
 const SCD_FEED_ROWS = [
-  { flow: "t12", fills: "Operating Summary · Expense Load & NOI · Expense Deep Dive" },
+  { flow: "t12", fills: "Operating Summary · Loss to Lease · Expense Load & NOI · Expense Deep Dive" },
   { flow: "bldg_metrics", fills: "Eight scorecard cells · the Leased tile" },
   // What this one fills depends on which populate_scorecard run wrote last, so
   // it is asked rather than asserted.
@@ -3333,17 +3359,6 @@ const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).bloc
 // put it here. Written down rather than inferred: a card that is absent for a
 // good reason and a card that is absent by accident look identical.
 const SCD_MISSING = [
-  // The rent roll landed 2026-09-11 and closed three rows outright — rollover,
-  // the unit-gap table and loss to lease. What is left of loss to lease is only
-  // its SHAPE: The Landing plots 19 months, and a rent roll is one snapshot.
-  { what: "Loss to lease, as a monthly series",
-    why: "The card above reports the gap as it stands today. The Landing's plots 19 months, "
-       + "which needs gross potential rent, loss to lease, vacancy and concessions per month — "
-       + "the T12 statement carries all four as revenue lines and the parser reads only the "
-       + "499999-9999 total",
-    fix: "No new report: extend parse_t12_statement to walk the revenue region the way it "
-       + "already walks the expense region",
-    needs: null },
   // Both sides of this arrived on 2026-09-11. What is left is not a report.
   { what: "Holdovers reconciled unit by unit",
     why: "Both feeds are now here — the rent roll names 32 holdovers and the tracker's "
@@ -3392,6 +3407,26 @@ async function loadLandingDrive() {
 
   /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
   renderOpSummary(SCD_SLUG, { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote" });
+
+  /* ---- Loss to lease — the statement's own rental-income section ---- */
+  (function rentCaptureDrive() {
+    const rc = pick("rent_capture", SCD_SLUG);
+    const card = document.getElementById("cdRentCapture");
+    const ok = renderRentCapture(rc, { canvas: "dcCapture", foot: "dcCaptureFoot" },
+      rc ? ("Read from the statement's own RESIDENTIAL RENTAL INCOME section ("
+            + (rc.basis || "") + "), which reproduces its total to the cent"
+            + (rc.months && rc.months.length < 18
+               ? "; the run is " + rc.months.length + " months and lengthens as "
+                 + "statements arrive" : "") + ".") : "");
+    if (!ok) {
+      // Never leave a blank chart: an absent section is a fact about the feed.
+      card.querySelector(".chartwrap").hidden = true;
+      document.getElementById("dcCaptureFoot").textContent =
+        "No rental-income section in this property's statement yet. The card "
+        + "draws metrics.json rent_capture, written by build_metrics from the "
+        + "T12 statement; nothing has been stored for " + SCD_SLUG + ".";
+    }
+  })();
 
   /* ---- The doors, and the controllable series both the NOI card and the
           tiles need. Unit count comes from the Yardi unit directory rather
@@ -3833,9 +3868,13 @@ async function loadLandingDrive() {
      does not read yet — the footnote says so rather than leaving the shape
      difference unexplained. ---- */
   (function rentRoll() {
-    const cards = ["cdRentCapture", "cdRollover", "cdGaps"];
+    // cdRentCapture is not in this list: its monthly chart is the T12
+    // statement's and renders without a roll. Only the roll's half of that
+    // card goes away.
+    const cards = ["cdRollover", "cdGaps"];
     if (!rr) {                        // no roll has ever been fetched
-      cards.forEach(id => { const c = document.getElementById(id); if (c) c.hidden = true; });
+      cards.concat(["drcSnapshot"]).forEach(id => {
+        const c = document.getElementById(id); if (c) c.hidden = true; });
       return;
     }
     const asOf = rr.as_of;
@@ -3864,7 +3903,7 @@ async function loadLandingDrive() {
       return { label: c.label, units: rows.reduce((t, b) => t + b.units, 0),
                gap: rows.reduce((t, b) => t + b.uncaptured, 0) };
     }).filter(c => c.units > 0);
-    new Chart(document.getElementById("dcCapture"), {
+    new Chart(document.getElementById("dcCaptureCohort"), {
       type: "bar",
       data: { labels: cohorts.map(c => c.label),
         datasets: [{ label: "Uncaptured rent $/mo", data: cohorts.map(c => c.gap),
@@ -3885,10 +3924,9 @@ async function loadLandingDrive() {
       + "excluded: a vacant unit has an asking rent and no in-place rent, so counting it "
       + "would book the whole asking rent as loss to lease (" + fmPct(rr.loss_to_lease_pct, 1)
       + " becomes " + fmPct((rr.market_rent_total - rr.actual_rent_total) / rr.market_rent_total, 1)
-      + " on all " + rr.units + "). The Landing's version of this card is a 19-month series "
-      + "from the workbook; a rent roll is a single snapshot, so this one reports where the "
-      + "gap sits today. The monthly series needs the T12 statement's revenue detail lines, "
-      + "which the statement carries and the parser does not read yet.";
+      + " on all " + rr.units + "). A rent roll is a single snapshot, so this half reports "
+      + "where the gap sits today; the chart above it is the same gap month by month, from "
+      + "the statement's own revenue lines.";
 
     /* ---- Rollover schedule ---- */
     const roll = rr.rollover;

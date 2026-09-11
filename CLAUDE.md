@@ -101,6 +101,7 @@ every figure on it would move on the next pipeline run.
 | Card | Drive source |
 | --- | --- |
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` |
+| Loss to Lease | T12 statement → `metrics.json` `rent_capture` |
 | KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
 | Loss to Lease | `rent_roll` — the gap by rollover cohort, current roll only |
 | Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
@@ -185,16 +186,20 @@ it is not, so the entry is skipped with a log line every run (open item C5). The
 `blocked` field on that row in `SCD_FEED_ROWS` is what both notes read, so
 closing C5 means deleting one field rather than hunting for prose.
 
-`SCD_MISSING` is the honesty block: five things The Landing shows that no Drive
+`SCD_MISSING` is the honesty block: four things The Landing shows that no Drive
 export can refresh today, each with why and what would fix it. The counts in the
 note under it are computed from the list rather than typed, so they cannot go
-stale when a row moves. **Only one of the five is still waiting on a report** —
-a concession burn-off that names its property (A6). The other four are pipeline
-or page work on feeds that have already arrived: the monthly loss-to-lease
-series needs the statement's revenue detail lines, the holdover reconciliation
+stale when a row moves. **Only one of the four is still waiting on a report** —
+a concession burn-off that names its property (A6). The other three are pipeline
+or page work on feeds that have already arrived: the holdover reconciliation
 needs the rent roll and the tracker joined unit by unit, the delinquency aging
 needs publishing out of a parse that already runs, and the Insights scorecard is
 a judgement no report produces.
+
+It was five until 2026-09-11, when the **monthly loss-to-lease series** came off
+the list: it wanted the statement's revenue detail lines, and the parser now
+reads them — see the rent-capture section below. The rent roll's arrival the
+same day had already closed three rows before that.
 
 ## Refreshing The KPI Scorecard
 
@@ -691,6 +696,69 @@ re-lengthen as statements re-arrive on the current anchor.
 statements built in a temp dir by `test_expense_buckets`' own builders, no
 network and no fixtures. Each guard has a check that fails when the guard is
 removed (verified by mutation).
+
+## The statement's rental-income section (Loss to Lease)
+
+The same T12 statement carries, above the expense region, the section the Loss
+to Lease card draws: `410400-0000 RESIDENTIAL RENTAL INCOME`, gross market rent
+potential and the four deductions that bridge it to accrued rent, closed by
+`410499-9999 TOTAL RESIDENTIAL RENTAL INCOME`.
+
+**The analyst workbook's Rent Capture block is that section retyped.** Checked
+2026-09-11 against The Landing's `12_Month_Statement_Accrual.xlsx` (Aug 25–Jul
+26): all six series — market rent potential, loss to lease, vacancy loss,
+employee rent allowance, concessions and accrued income — agree **to the cent
+in all twelve overlapping months**, and both TTM totals match exactly
+($16,903,452 potential, $13,559,273.34 income). `capture_rate` and `ltl_pct`
+are ratios of two of them.
+
+So **the card never needed the rent roll.** The Drive tab's honesty block said
+it did until 2026-09-11; that reason belonged to Largest Unit Gaps and Rollover,
+which sit beside it and do need per-unit data. Loss to Lease is portfolio-level
+monthly off the P&L and never touches a unit.
+
+`parse_t12_statement.rent_capture()` reads the section, `store_rent_capture`
+keeps it per property, `stitch_rent_capture` joins successive statements the
+way `stitch_monthly_pl` does, and `metrics.json` publishes `rent_capture`.
+`renderRentCapture` in `index.html` draws it on **both** Landing tabs — the base
+tab still passes `landing.json`'s block, the Drive tab passes the pipeline's,
+and the two sources publish the same shape precisely so one renderer serves
+both. Table: `t-rentcap-<slug>` on the data page.
+
+Four things worth knowing:
+
+- **Signs are flipped to the workbook's convention.** The statement records a
+  deduction as negative; the workbook records it as the size of the loss, i.e.
+  positive. The published block follows the workbook so either source renders
+  unchanged. `DEDUCTIONS` in the parser is the list that gets negated.
+- **The tie-out is the whole section, not the five named lines.** Every other
+  leaf under `410400-` is summed into `other` — the COA map shows real codes
+  the section can carry (administrative units, bad-debt recovery, a second
+  vacancy-loss code) — and the section must then reproduce its own
+  `410499-9999` month by month or it is refused. Dropping a leaf would
+  understate a loss and read as rent the building never billed.
+- **The Align tree has the five accounts but no section total.**
+  `config/coa_map.json` maps them to `4050-5100/5105/5110/5115/5120`, so a
+  statement on that tree is read, but accrued income is *derived* from the
+  lines rather than read from a total row, and the point says so. The stitch
+  cuts the run where the basis changes, so no chart spans a read section and a
+  derived one. **Unverified against a real Align statement** — Palma's has not
+  been parsed for this yet; it is written from the COA mapping.
+- **Twelve months, then longer.** One statement is twelve columns, so the Drive
+  card starts at twelve where the workbook's shows nineteen, and lengthens as
+  statements accumulate. The footnote reads `T<n>` rather than `TTM` when the
+  window is not twelve, and the TTM figures are computed from the stitched run
+  rather than the newest file's Total column — those agree today and would not
+  once the run runs past one statement.
+
+`scripts/test_rent_capture.py` holds it down — 21 fixture-free checks covering
+the sign flip, the `other` bucket, the refusals, the Align path and the stitch.
+The basis-cut guard is verified by mutation: removing it fails a check.
+
+Two scorecard cells derive from these same series and are still **workbook**-fed
+through `--from-landing`: `Loss to Lease %` and `Concession Load %`. Moving them
+to the pipeline means rewiring `facts_from_landing` to read `metrics.json`, and
+interacts with the source-precedence problem in G3 — not done, deliberately.
 
 ## How reports reach Drive
 

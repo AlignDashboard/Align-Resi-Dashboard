@@ -445,6 +445,14 @@ def parse_t12(path):
     except (ValueError, OSError) as e:
         bucketed, buckets_error = None, str(e)
 
+    # Same treatment for the rental-income section: a refused tie-out must not
+    # take the ratio and the buckets down with it.
+    try:
+        capture = rent_capture(rows, tree)
+        capture_error = None
+    except (ValueError, OSError) as e:
+        capture, capture_error = None, str(e)
+
     return {
         "property": prop,
         "property_code": code,
@@ -474,6 +482,8 @@ def parse_t12(path):
         "expense_ratio_monthly": monthly,
         "expense_buckets": bucketed,
         "expense_buckets_error": buckets_error,
+        "rent_capture": capture,
+        "rent_capture_error": capture_error,
     }
 
 
@@ -484,3 +494,148 @@ parse = parse_t12
 if __name__ == "__main__":
     out = parse_t12(sys.argv[1])
     print(json.dumps(out, indent=2))
+
+
+# ---- residential rental income (the Loss to Lease card) --------------------
+# The statement's RESIDENTIAL RENTAL INCOME section: gross market rent
+# potential and the deductions that bridge it to accrued rent. The analyst
+# workbook's Rent Capture block turns out to be this section retyped -- all six
+# series tie to the cent against The Landing's Aug25-Jul26 statement -- so the
+# Loss to Lease card needs no rent roll and no workbook, only this.
+#
+# Two trees, and they are not symmetrical:
+#
+# - jpm has the whole section under one prefix and closes it with its own
+#   TOTAL RESIDENTIAL RENTAL INCOME row, so every leaf is read and the named
+#   ones are split out; whatever else the section carries (administrative
+#   units, bad-debt recovery -- both real codes in the COA map) lands in
+#   `other` rather than being dropped, and the section must then reproduce its
+#   own total, month by month.
+# - align has the five named accounts (per config/coa_map.json) but no section
+#   total row this parser can anchor on, so there is nothing independent to
+#   tie against. Accrued income is derived from the lines instead and the
+#   result says so, rather than presenting a derived figure as a read one.
+RENT_CAPTURE_TREES = {
+    "jpm": {
+        "section": "410400-",
+        "total": "410499-9999",
+        "series": {
+            "market_potential":   ("410400-0001",),
+            "loss_to_lease":      ("410400-0002",),
+            # 0017 is a second vacancy-loss code in the COA map; absent from
+            # The Landing's statement, summed here so a property that uses it
+            # is not silently short.
+            "vacancy_loss":       ("410400-0003", "410400-0017"),
+            "employee_allowance": ("410400-0004",),
+            "concessions":        ("410400-0006",),
+        },
+    },
+    "align": {
+        "section": None,
+        "total": None,
+        "series": {
+            "market_potential":   ("4050-5100",),
+            "loss_to_lease":      ("4050-5105",),
+            "vacancy_loss":       ("4050-5110",),
+            "employee_allowance": ("4050-5120",),
+            "concessions":        ("4050-5115",),
+        },
+    },
+}
+
+# The four deduction lines are negative on the statement (they reduce income)
+# and positive in the analyst workbook, which reads them as the size of each
+# loss. The published block follows the workbook, so the page renders either
+# source unchanged; `market_potential` and `rental_income` are already positive
+# and are passed through.
+DEDUCTIONS = ("loss_to_lease", "vacancy_loss", "employee_allowance", "concessions")
+# Tie-outs are to the cent, like every other one in this pipeline.
+CENT = 0.01
+
+
+def rent_capture(rows, tree=None):
+    """The residential rental-income section, month by month, or None.
+
+    Returns the five named series plus `rental_income`, with the deductions
+    flipped positive. Refuses rather than publishes when the section does not
+    reproduce its own total: a missing leaf would understate a loss and read as
+    rent the building never billed.
+    """
+    jpm = bool(tree and str(tree).lower().startswith("jpm"))
+    spec = RENT_CAPTURE_TREES["jpm" if jpm else "align"]
+    months = len(MONTHS_COLS)
+
+    def line(code):
+        return _line_by_code(rows, code)
+
+    gross = line(spec["series"]["market_potential"][0])
+    if gross is None:
+        return None                      # this statement carries no such section
+
+    out, claimed = {}, set()
+    for name, codes in spec["series"].items():
+        vals = [0.0] * months
+        found = False
+        for c in codes:
+            got = line(c)
+            if got is None:
+                continue
+            found = True
+            claimed.add(c)
+            for i in range(months):
+                vals[i] += got[i]
+        out[name] = vals if found else [0.0] * months
+
+    problems = []
+    if jpm:
+        # Every other leaf in the section, so the tie-out below covers the
+        # whole of it rather than the part this parser happens to name.
+        other = [0.0] * months
+        other_codes = []
+        for r in rows:
+            code = str(r[0]).strip() if r and r[0] else ""
+            if not code.startswith(spec["section"]) or code in claimed:
+                continue
+            if code == spec["total"] or code.endswith("-0000"):
+                continue
+            vals = [float(r[c]) if len(r) > c and isinstance(r[c], (int, float))
+                    else 0.0 for c in MONTHS_COLS]
+            if not any(vals):
+                continue
+            other_codes.append(f"{code} {str(r[1]).strip() if len(r) > 1 and r[1] else ''}".strip())
+            for i in range(months):
+                other[i] += vals[i]
+        total = line(spec["total"])
+        if total is None:
+            return None
+        summed = [gross[i] + sum(out[k][i] for k in DEDUCTIONS) + other[i]
+                  for i in range(months)]
+        gap = max(abs(summed[i] - total[i]) for i in range(months))
+        if gap > CENT:
+            raise ValueError(
+                f"residential rental income does not tie out against "
+                f"{spec['total']} (max monthly gap {gap:,.2f}); rent capture refused")
+        income, basis, tieout = total, f"jpm {spec['total']}", round(gap, 4)
+        if other_codes:
+            problems.append("section carries lines this parser does not name, "
+                            "counted in 'other': " + ", ".join(sorted(other_codes)))
+    else:
+        other = [0.0] * months
+        missing = [n for n in spec["series"] if not any(out[n])]
+        income = [gross[i] + sum(out[k][i] for k in DEDUCTIONS) for i in range(months)]
+        basis, tieout = "align 4050-51xx, derived (no section total row)", None
+        problems.append("no section total row on this tree -- accrued income is "
+                        "derived from the lines, not read from the statement")
+        if missing:
+            problems.append("no account found for: " + ", ".join(sorted(missing)))
+
+    return {
+        "market_potential": [round(v, 2) for v in gross],
+        # workbook sign convention: a loss is a positive number
+        **{k: [round(-v, 2) for v in out[k]] for k in DEDUCTIONS},
+        "other": [round(v, 2) for v in other],
+        "rental_income": [round(v, 2) for v in income],
+        "basis": basis,
+        "tieout_max_gap": tieout,
+        "problems": problems,
+    }
