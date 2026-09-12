@@ -101,9 +101,8 @@ every figure on it would move on the next pipeline run.
 | Card | Drive source |
 | --- | --- |
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` |
-| Loss to Lease | T12 statement → `metrics.json` `rent_capture` |
+| Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over the current gap by rollover cohort from `rent_roll` |
 | KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
-| Loss to Lease | `rent_roll` — the gap by rollover cohort, current roll only |
 | Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
 | Rollover Schedule | `rent_roll` — lease expirations by month |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
@@ -125,11 +124,13 @@ first run. Three things that matter about how it is read:
 - **Loss to lease is measured on occupied units only.** A vacant unit has an
   asking rent and no in-place rent, so counting it books the whole asking rent
   as loss — 38.1% against the 36.5% published.
-- **The card is a snapshot, not The Landing's 19-month series.** A rent roll is
-  one point in time, so it reports where the gap sits today, split by when each
-  lease comes up. The monthly series needs the statement's revenue detail lines
-  (gross potential, loss to lease, vacancy, concessions) — the T12 carries all
-  four and `parse_t12_statement` reads only the `499999-9999` total.
+- **The roll's half is a snapshot; the monthly series sits above it.** A rent
+  roll is one point in time, so it reports where the gap sits today, split by
+  when each lease comes up. The 19-month view it cannot give came from the
+  statement's revenue detail lines later the same day — see the rent-capture
+  section below — and the two now share one card: the series as the chart, the
+  roll's cohorts and stats beneath. The roll's half hides itself when no roll
+  has arrived, since the chart above does not depend on one.
 
 `renderOpSummary` and `renderExpenseDeep` are **shared** with The Landing rather
 than copied. Neither ever read the workbook; the workbook half of the deep dive
@@ -1052,7 +1053,7 @@ Five statuses, and they are the page's whole argument:
 | --- | --- |
 | `live` | A file arrives, the pipeline reads it, something on the dashboard shows it |
 | `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
-| `waiting` | Parser written and registered; no file has ever arrived (the rent roll, C4) |
+| `waiting` | Parser written and registered; no file has ever arrived. **No flow is in this state today** — the rent roll was the last one and it landed 2026-09-11, closing C4 |
 | `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
 | `manual` | No feed at all — `expense_trend`, `psf_vs_peers`, `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run |
 
