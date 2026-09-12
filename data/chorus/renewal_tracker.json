@@ -1,0 +1,757 @@
+{
+  "report_type": "renewal_tracker",
+  "property": "Chorus",
+  "as_of": "2026-11",
+  "covers": {
+    "from": "2024-01",
+    "to": "2026-11"
+  },
+  "months": [
+    {
+      "month": "2024-01",
+      "rows": 23,
+      "mean_increase": 0.027193,
+      "leases": 19,
+      "current_rent": 68059.0,
+      "offered_rent": 69764.87,
+      "wtd_increase": 0.025065,
+      "statuses": {
+        "MTM": 4,
+        "Notice": 8,
+        "Renewed": 11
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 4,
+      "sheet": "January 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-02",
+      "rows": 18,
+      "mean_increase": 0.034333,
+      "leases": 15,
+      "current_rent": 53274.0,
+      "offered_rent": 55141.8,
+      "wtd_increase": 0.03506,
+      "statuses": {
+        "MTM": 3,
+        "Notice": 5,
+        "Renewed": 10
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 3,
+      "sheet": "February 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-03",
+      "rows": 17,
+      "mean_increase": 0.034333,
+      "leases": 15,
+      "current_rent": 60660.0,
+      "offered_rent": 62928.8,
+      "wtd_increase": 0.037402,
+      "statuses": {
+        "MTM": 2,
+        "Notice": 4,
+        "Renewed": 11
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 2,
+      "sheet": "March 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-04",
+      "rows": 14,
+      "mean_increase": 0.0625,
+      "leases": 10,
+      "current_rent": 34242.0,
+      "offered_rent": 36355.93,
+      "wtd_increase": 0.061735,
+      "statuses": {
+        "MTM": 4,
+        "Notice": 6,
+        "Renewed": 4
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 4,
+      "sheet": "April 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-05",
+      "rows": 19,
+      "mean_increase": 0.054211,
+      "leases": 19,
+      "current_rent": 70221.0,
+      "offered_rent": 73894.98,
+      "wtd_increase": 0.05232,
+      "statuses": {
+        "MTM": 1,
+        "Notice": 5,
+        "Renewed": 12,
+        "Sent": 1
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "May 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-06",
+      "rows": 13,
+      "mean_increase": 0.055385,
+      "leases": 13,
+      "current_rent": 52234.0,
+      "offered_rent": 55070.07,
+      "wtd_increase": 0.054295,
+      "statuses": {
+        "MTM": 1,
+        "Notice": 5,
+        "Renewed": 7
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "June 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-07",
+      "rows": 17,
+      "mean_increase": 0.052941,
+      "leases": 17,
+      "current_rent": 68739.0,
+      "offered_rent": 72392.35,
+      "wtd_increase": 0.053148,
+      "statuses": {
+        "MTM": 1,
+        "Notice": 10,
+        "Renewed": 6
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "July 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-08",
+      "rows": 17,
+      "mean_increase": 0.036765,
+      "leases": 17,
+      "current_rent": 76046.0,
+      "offered_rent": 78620.26,
+      "wtd_increase": 0.033851,
+      "statuses": {
+        "Notice": 6,
+        "Renewed": 10,
+        "Sent": 1
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "August 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-09",
+      "rows": 15,
+      "mean_increase": 0.020523,
+      "leases": 15,
+      "current_rent": 61920.0,
+      "offered_rent": 63088.0,
+      "wtd_increase": 0.018863,
+      "statuses": {
+        "MTM": 1,
+        "Notice": 1,
+        "Renewed": 1,
+        "Sent": 12
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "September 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-10",
+      "rows": 11,
+      "mean_increase": 0.00375,
+      "leases": 8,
+      "current_rent": 34616.0,
+      "offered_rent": 34706.0,
+      "wtd_increase": 0.0026,
+      "statuses": {
+        "MTM": 3,
+        "Notice": 4,
+        "Renewed": 3,
+        "Sent": 1
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 3,
+      "sheet": "October 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-11",
+      "rows": 15,
+      "mean_increase": 0.030887,
+      "leases": 15,
+      "current_rent": 60951.0,
+      "offered_rent": 62743.24,
+      "wtd_increase": 0.029405,
+      "statuses": {
+        "Notice": 4,
+        "Renewed": 7,
+        "Sent": 4
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "November 2024",
+      "header_row": 14
+    },
+    {
+      "month": "2024-12",
+      "rows": 11,
+      "mean_increase": 0.018647,
+      "leases": 4,
+      "current_rent": 14715.0,
+      "offered_rent": 14984.16,
+      "wtd_increase": 0.018292,
+      "statuses": {
+        "(blank)": 11
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 7,
+      "sheet": "December 2024",
+      "header_row": 1
+    },
+    {
+      "month": "2025-01",
+      "rows": 20,
+      "mean_increase": 0.056796,
+      "leases": 19,
+      "current_rent": 78164.0,
+      "offered_rent": 81863.0,
+      "wtd_increase": 0.047324,
+      "statuses": {
+        "MTM": 5,
+        "Notice": 4,
+        "Renewed": 11
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 1,
+      "sheet": "January 2025",
+      "header_row": 1
+    },
+    {
+      "month": "2025-02",
+      "rows": 24,
+      "mean_increase": 0.058624,
+      "leases": 24,
+      "current_rent": 88776.0,
+      "offered_rent": 93632.0,
+      "wtd_increase": 0.054699,
+      "statuses": {
+        "MTM": 4,
+        "Notice": 8,
+        "Renewed": 12
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "February 2025 ",
+      "header_row": 8
+    },
+    {
+      "month": "2025-03",
+      "rows": 20,
+      "mean_increase": 0.037526,
+      "leases": 20,
+      "current_rent": 80716.0,
+      "offered_rent": 83470.12,
+      "wtd_increase": 0.034121,
+      "statuses": {
+        "MTM": 3,
+        "Notice": 8,
+        "Renewed": 9
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "March 2025 ",
+      "header_row": 8
+    },
+    {
+      "month": "2025-04",
+      "rows": 25,
+      "mean_increase": 0.027952,
+      "leases": 25,
+      "current_rent": 100015.0,
+      "offered_rent": 102665.19,
+      "wtd_increase": 0.026498,
+      "statuses": {
+        "MTM": 2,
+        "Notice": 9,
+        "Offer Accepted": 1,
+        "Renewed": 13
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "April 2025",
+      "header_row": 8
+    },
+    {
+      "month": "2025-05",
+      "rows": 18,
+      "mean_increase": 0.058263,
+      "leases": 18,
+      "current_rent": 66914.0,
+      "offered_rent": 70685.97,
+      "wtd_increase": 0.05637,
+      "statuses": {
+        "MTM": 3,
+        "Notice": 8,
+        "Offer Accepted": 1,
+        "Renewed": 6
+      },
+      "offer_basis": [
+        "offer_difference (a difference)",
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "May 2025",
+      "header_row": 10
+    },
+    {
+      "month": "2025-06",
+      "rows": 22,
+      "mean_increase": 0.039607,
+      "leases": 22,
+      "current_rent": 92086.0,
+      "offered_rent": 95633.37,
+      "wtd_increase": 0.038522,
+      "statuses": {
+        "MTM": 5,
+        "Notice": 7,
+        "Renewed": 10
+      },
+      "offer_basis": [
+        "offer_difference (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "June 2025 ",
+      "header_row": 10
+    },
+    {
+      "month": "2025-07",
+      "rows": 21,
+      "mean_increase": 0.050255,
+      "leases": 21,
+      "current_rent": 86841.0,
+      "offered_rent": 91157.0,
+      "wtd_increase": 0.0497,
+      "statuses": {
+        "MTM": 2,
+        "Notice": 5,
+        "Offer Accepted": 6,
+        "Renewed": 6,
+        "Waiting For Response": 2
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "July 2025",
+      "header_row": 10
+    },
+    {
+      "month": "2025-08",
+      "rows": 24,
+      "mean_increase": 0.02896,
+      "leases": 24,
+      "current_rent": 96716.0,
+      "offered_rent": 99203.0,
+      "wtd_increase": 0.025714,
+      "statuses": {
+        "MTM": 5,
+        "Notice": 10,
+        "Renewed": 9
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "August 2025",
+      "header_row": 9
+    },
+    {
+      "month": "2025-09",
+      "rows": 16,
+      "mean_increase": 0.02404,
+      "leases": 16,
+      "current_rent": 70436.0,
+      "offered_rent": 72689.0,
+      "wtd_increase": 0.031986,
+      "statuses": {
+        "MTM": 6,
+        "Notice": 4,
+        "Renewed": 6
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "September 2025",
+      "header_row": 9
+    },
+    {
+      "month": "2025-10",
+      "rows": 36,
+      "mean_increase": 0.017523,
+      "leases": 36,
+      "current_rent": 153404.0,
+      "offered_rent": 156271.0,
+      "wtd_increase": 0.018689,
+      "statuses": {
+        "MTM": 10,
+        "Notice": 10,
+        "Renewed": 16
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "October 2025",
+      "header_row": 9
+    },
+    {
+      "month": "2025-11",
+      "rows": 9,
+      "mean_increase": 0.038557,
+      "leases": 9,
+      "current_rent": 36144.0,
+      "offered_rent": 37508.0,
+      "wtd_increase": 0.037738,
+      "statuses": {
+        "MTM": 5,
+        "Notice": 3,
+        "Renewed": 1
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "November 2025",
+      "header_row": 9
+    },
+    {
+      "month": "2025-12",
+      "rows": 19,
+      "mean_increase": 0.024615,
+      "leases": 19,
+      "current_rent": 78147.0,
+      "offered_rent": 80365.0,
+      "wtd_increase": 0.028382,
+      "statuses": {
+        "MTM": 4,
+        "Notice": 7,
+        "Renewed": 8
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "December 2025",
+      "header_row": 9
+    },
+    {
+      "month": "2026-01",
+      "rows": 31,
+      "mean_increase": 0.049788,
+      "leases": 31,
+      "current_rent": 123847.0,
+      "offered_rent": 129998.0,
+      "wtd_increase": 0.049666,
+      "statuses": {
+        "MTM": 3,
+        "Notice": 12,
+        "Renewed": 16
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "January 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-02",
+      "rows": 22,
+      "mean_increase": 0.061912,
+      "leases": 22,
+      "current_rent": 95370.0,
+      "offered_rent": 101069.0,
+      "wtd_increase": 0.059757,
+      "statuses": {
+        "MTM": 2,
+        "Notice": 6,
+        "Renewed": 14
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "February 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-03",
+      "rows": 30,
+      "mean_increase": 0.058075,
+      "leases": 30,
+      "current_rent": 112158.0,
+      "offered_rent": 118293.0,
+      "wtd_increase": 0.0547,
+      "statuses": {
+        "MTM": 5,
+        "Notice": 16,
+        "Renewed": 9
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "March 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-04",
+      "rows": 33,
+      "mean_increase": 0.052652,
+      "leases": 33,
+      "current_rent": 141618.0,
+      "offered_rent": 148969.0,
+      "wtd_increase": 0.051907,
+      "statuses": {
+        "MTM": 10,
+        "Notice": 10,
+        "Renewed": 13
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "April 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-05",
+      "rows": 33,
+      "mean_increase": 0.061841,
+      "leases": 33,
+      "current_rent": 138094.0,
+      "offered_rent": 146385.0,
+      "wtd_increase": 0.060039,
+      "statuses": {
+        "MTM": 14,
+        "Notice": 8,
+        "Renewed": 11
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "May 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-06",
+      "rows": 29,
+      "mean_increase": 0.052303,
+      "leases": 29,
+      "current_rent": 124940.0,
+      "offered_rent": 131304.0,
+      "wtd_increase": 0.050936,
+      "statuses": {
+        "MTM": 9,
+        "Notice": 9,
+        "Renewed": 11
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "June 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-07",
+      "rows": 27,
+      "mean_increase": 0.058352,
+      "leases": 27,
+      "current_rent": 119756.0,
+      "offered_rent": 126692.0,
+      "wtd_increase": 0.057918,
+      "statuses": {
+        "MTM": 7,
+        "Notice": 5,
+        "Offer Accepted": 1,
+        "Renewed": 14
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "July 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-08",
+      "rows": 45,
+      "mean_increase": 0.054594,
+      "leases": 45,
+      "current_rent": 184023.0,
+      "offered_rent": 194173.0,
+      "wtd_increase": 0.055156,
+      "statuses": {
+        "MTM": 7,
+        "Notice": 7,
+        "Renewed": 31
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "August 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-09",
+      "rows": 20,
+      "mean_increase": 0.138275,
+      "leases": 20,
+      "current_rent": 79433.0,
+      "offered_rent": 90061.0,
+      "wtd_increase": 0.133798,
+      "statuses": {
+        "Notice": 10,
+        "Renewed": 7,
+        "Waiting For Response": 3
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "September 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-10",
+      "rows": 19,
+      "mean_increase": 0.215314,
+      "leases": 19,
+      "current_rent": 87892.0,
+      "offered_rent": 104608.5,
+      "wtd_increase": 0.190194,
+      "statuses": {
+        "Notice": 8,
+        "Offer Accepted": 3,
+        "Renewed": 5,
+        "Waiting For Response": 3
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "October 2026",
+      "header_row": 9
+    },
+    {
+      "month": "2026-11",
+      "rows": 20,
+      "mean_increase": 0.15878,
+      "leases": 20,
+      "current_rent": 81390.0,
+      "offered_rent": 94507.7,
+      "wtd_increase": 0.161171,
+      "statuses": {
+        "MTM": 1,
+        "Notice": 2,
+        "Offer Accepted": 2,
+        "Renewed": 1,
+        "Waiting For Response": 14
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "November 2026",
+      "header_row": 9
+    }
+  ],
+  "mtm": null,
+  "unread_sheets": [
+    {
+      "sheet": "MTM",
+      "why": "'MTM': header found on row 9 but without current_rent"
+    }
+  ],
+  "problems": [
+    "2025-04 appears on two sheets ('April 2025 - Pending Approval' with 24 offers and 'April 2025' with 25); the fuller one is used",
+    "2025-07 appears on two sheets ('July 2025 (2)' with 21 offers and 'July 2025' with 21); the fuller one is used",
+    "1 sheet(s) were skipped because their header could not be matched \u2014 they are older layouts, and their months are absent from the series rather than wrong: MTM"
+  ],
+  "source_file": "2026-09-08 Chorus 2026 Renewal Tracker.xlsx",
+  "landed_at": "2026-09-08T23:29:03.240Z",
+  "checks": [
+    {
+      "check": "month sheets read",
+      "ok": true,
+      "note": "35 month sheet(s) read, 1 not read"
+    },
+    {
+      "check": "MTM roster read",
+      "ok": false,
+      "note": "no MTM sheet could be read"
+    },
+    {
+      "check": "every month sheet had a readable header",
+      "ok": false,
+      "note": "1 sheet(s) skipped: MTM"
+    },
+    {
+      "check": "property named in the filename",
+      "ok": true,
+      "note": "Chorus"
+    }
+  ]
+}
