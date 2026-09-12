@@ -3,7 +3,7 @@
     {
       "week_ending": "2026-08-30",
       "source_file": "2026-08-31 Daily Report- Week Ending 8.30.26 (2).xlsx",
-      "landed_at": "2026-09-11T00:00:00Z",
+      "landed_at": "2026-08-31T18:28:33.825Z",
       "totals": {
         "leases": 2,
         "lease_rent": 15702,
@@ -73,7 +73,7 @@
     {
       "week_ending": "2026-09-07",
       "source_file": "2026-09-08 Daily Report- Week Ending 9.7.26.xlsx",
-      "landed_at": "2026-09-11T00:00:00Z",
+      "landed_at": "2026-09-08T23:28:51.933Z",
       "totals": {
         "leases": 1,
         "lease_rent": 5973,
@@ -126,6 +126,61 @@
       "problems": [
         "the filename says the week ends 2026-09-07 and the sheet says 2026-09-06; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
       ]
+    },
+    {
+      "week_ending": "2026-09-13",
+      "source_file": "2026-09-10 Daily Report- Week Ending 9.13.26.xlsx",
+      "landed_at": "2026-09-11T00:28:31.716Z",
+      "totals": {
+        "leases": 1,
+        "lease_rent": 10000,
+        "prior_rent": 7349,
+        "tradeout_amount": 2651,
+        "tradeout_pct_mean": 0.360729,
+        "sqft": 830,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "347",
+          "unit_type": null,
+          "floor_plan": "lab9",
+          "beds_baths": "2b2b",
+          "sqft": 830,
+          "lease_rent": 10000,
+          "prior_rent": 7349,
+          "tradeout_amount": 2651,
+          "tradeout_pct": 0.360729,
+          "concession": 0,
+          "net_rent": 10000,
+          "move_in": "2026-09-14",
+          "term": "3"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 1,
+          "leases": 1
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-09-13 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 54 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "The Landing (from the Weekly_Leases header)"
+        }
+      ],
+      "problems": []
     }
   ]
 }

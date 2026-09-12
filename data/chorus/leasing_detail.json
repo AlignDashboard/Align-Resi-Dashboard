@@ -1,9 +1,122 @@
 {
   "weeks": [
     {
+      "week_ending": "2026-08-30",
+      "source_file": "2026-08-28 08.24.2026- 08.30.2026- Chorus - Daily Report (3).xlsx",
+      "landed_at": "2026-08-29T01:28:30.348Z",
+      "totals": {
+        "leases": 0,
+        "lease_rent": 0,
+        "prior_rent": 0,
+        "tradeout_amount": 0,
+        "tradeout_pct_mean": null,
+        "sqft": 0,
+        "concession": 0
+      },
+      "leases": [],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 0,
+          "leases": 0
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-08-30 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Chorus (from the filename)"
+        }
+      ],
+      "problems": [
+        "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
+      ]
+    },
+    {
+      "week_ending": "2026-09-06",
+      "source_file": "2026-09-02 08.31.2026- 09.6.2026- Chorus - Daily Report (2).xlsx",
+      "landed_at": "2026-09-03T02:28:35.030Z",
+      "totals": {
+        "leases": 2,
+        "lease_rent": 15439,
+        "prior_rent": 12834,
+        "tradeout_amount": 2605,
+        "tradeout_pct_mean": 0.206154,
+        "sqft": 2083,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "521",
+          "unit_type": null,
+          "floor_plan": "chb2J",
+          "beds_baths": "2x2",
+          "sqft": 937,
+          "lease_rent": 6742,
+          "prior_rent": 6534,
+          "tradeout_amount": 208,
+          "tradeout_pct": 0.031833,
+          "concession": 0,
+          "net_rent": 6742,
+          "move_in": "2026-09-04",
+          "term": "14"
+        },
+        {
+          "unit": "846",
+          "unit_type": null,
+          "floor_plan": "chc2A",
+          "beds_baths": "3x2",
+          "sqft": 1146,
+          "lease_rent": 8697,
+          "prior_rent": 6300,
+          "tradeout_amount": 2397,
+          "tradeout_pct": 0.380476,
+          "concession": 0,
+          "net_rent": 8697,
+          "move_in": "2026-09-14",
+          "term": "13"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 2,
+          "leases": 2
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-09-06 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Chorus (from the filename)"
+        }
+      ],
+      "problems": [
+        "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
+      ]
+    },
+    {
       "week_ending": "2026-09-13",
       "source_file": "2026-09-09 09.07.2026- 09.13.2026- Chorus - Daily Report (1).xlsx",
-      "landed_at": "2026-09-11T00:00:00Z",
+      "landed_at": "2026-09-10T01:29:42.920Z",
       "totals": {
         "leases": 3,
         "lease_rent": 18201,

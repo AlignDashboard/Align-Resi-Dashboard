@@ -92,6 +92,21 @@
    "primary": "t-buckets",
    "holds": "Expense buckets, by month"
   },
+  "cdRentCapture": {
+   "card": "Loss to Lease",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-rentcap",
+    "t-rentroll",
+    "t-rollover"
+   ],
+   "flows": [
+    "t12",
+    "rent_roll"
+   ],
+   "primary": "t-rentroll",
+   "holds": "Rent roll \u2014 summary"
+  },
   "cdFeeds": {
    "card": "What Feeds This Tab",
    "tab": "Landing (Drive)",
@@ -241,44 +256,6 @@
    "primary": "t-tradeouts",
    "holds": "Trade Outs"
   },
-  "cdRentCapture": {
-   "card": "Loss to Lease",
-   "tab": "Landing (Drive)",
-   "tables": [
-    "t-rentroll",
-    "t-rollover"
-   ],
-   "flows": [
-    "rent_roll"
-   ],
-   "primary": "t-rentroll",
-   "holds": "Rent roll \u2014 summary"
-  },
-  "cdRollover": {
-   "card": "Rollover Schedule",
-   "tab": "Landing (Drive)",
-   "tables": [
-    "t-rollover"
-   ],
-   "flows": [
-    "rent_roll"
-   ],
-   "primary": "t-rollover",
-   "holds": "Rollover schedule"
-  },
-  "cdGaps": {
-   "card": "Largest Unit Gaps",
-   "tab": "Landing (Drive)",
-   "tables": [
-    "t-gaps",
-    "t-unitdir"
-   ],
-   "flows": [
-    "rent_roll"
-   ],
-   "primary": "t-gaps",
-   "holds": "Largest unit gaps"
-  },
   "cGaps": {
    "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
    "tab": "The Landing",
@@ -308,6 +285,31 @@
    ],
    "primary": "t-unitdir",
    "holds": "Unit directory \u2014 floorplans"
+  },
+  "cdRollover": {
+   "card": "Rollover Schedule",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-rollover"
+   ],
+   "flows": [
+    "rent_roll"
+   ],
+   "primary": "t-rollover",
+   "holds": "Rollover schedule"
+  },
+  "cdGaps": {
+   "card": "Largest Unit Gaps",
+   "tab": "Landing (Drive)",
+   "tables": [
+    "t-gaps",
+    "t-unitdir"
+   ],
+   "flows": [
+    "rent_roll"
+   ],
+   "primary": "t-gaps",
+   "holds": "Largest unit gaps"
   },
   "cPortfolioScorecard": {
    "card": "KPI Scorecard",
@@ -446,11 +448,12 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-11T23:03:46.403173+00:00",
+  "generated_at": "2026-09-12T15:13:38.205332+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 12,
+   "live": 11,
    "partial": 3,
+   "waiting": 1,
    "no-parser": 8,
    "manual": 1
   },
@@ -544,6 +547,10 @@
      "key": "expense_buckets"
     },
     {
+     "file": "metrics.json",
+     "key": "rent_capture"
+    },
+    {
      "file": "scorecard.json",
      "key": "Controllable OpEx/Unit"
     }
@@ -612,6 +619,15 @@
      "tables": [
       "t-buckets-*",
       "t-monthlypl-*"
+     ]
+    },
+    {
+     "card": "Loss to Lease",
+     "tab": "Landing (Drive)",
+     "anchor": "cdRentCapture",
+     "primary": "t-rentcap-*",
+     "tables": [
+      "t-rentcap-*"
      ]
     },
     {
@@ -1160,102 +1176,19 @@
    "same_as": null,
    "evidence": [
     {
+     "property": "chorus",
+     "file": "data/chorus/renewal_tracker.json",
+     "as_of": "2026-11",
+     "source_file": "2026-09-08 Chorus 2026 Renewal Tracker.xlsx",
+     "landed_at": "2026-09-08T23:29:03.240Z",
+     "detail": null
+    },
+    {
      "property": "the-landing",
      "file": "data/the-landing/renewal_tracker.json",
      "as_of": "2026-12",
      "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
-     "landed_at": "2026-09-11T00:00:00Z",
-     "detail": null
-    }
-   ],
-   "status": "live"
-  },
-  {
-   "id": "rent_roll",
-   "title": "Rent roll (SPV PM Deliverable Package)",
-   "origin_kind": "drive",
-   "source_label": "Rent Roll",
-   "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": "<date> RentRoll<MM_DD_YYYY>.xlsx",
-   "carries": "Every unit: status, resident code, in-place and market rent, square footage, lease dates.",
-   "filed_by": [
-    "rentroll",
-    "rollreport"
-   ],
-   "report_type": "rent_roll",
-   "parser": "parse_rent_roll",
-   "registered": "active",
-   "documented": true,
-   "steps": [
-    {
-     "script": "scripts/parse_rent_roll.py",
-     "does": "Reads unit rows until the section marker; keeps the resident code only to tell an occupied unit from a vacant one.",
-     "checks": "Every published total ties to the report's own Total row; refuses the file if that row is missing."
-    },
-    {
-     "script": "scripts/build_metrics.py",
-     "does": "Scrubs the parse through PII_FIELDS and writes it.",
-     "checks": "scripts/check_no_pii.py re-reads the output and fails the build if a person-shaped field survived."
-    }
-   ],
-   "stores": [
-    "data/<slug>/rent_roll.json  (gitignored \u2014 unit level)"
-   ],
-   "publishes": [
-    {
-     "file": "metrics.json",
-     "key": "rent_roll"
-    }
-   ],
-   "dashboard": [
-    {
-     "card": "Loss to Lease",
-     "tab": "Landing (Drive)",
-     "anchor": "cdRentCapture",
-     "primary": "t-rentroll-*",
-     "tables": [
-      "t-rentroll-*",
-      "t-rollover-*"
-     ],
-     "holds": "Loss to lease, occupancy and the rollover cohorts"
-    },
-    {
-     "card": "Rollover Schedule",
-     "tab": "Landing (Drive)",
-     "anchor": "cdRollover",
-     "primary": "t-rollover-*",
-     "tables": [
-      "t-rollover-*"
-     ],
-     "holds": "Lease expirations by month"
-    },
-    {
-     "card": "Largest Unit Gaps",
-     "tab": "Landing (Drive)",
-     "anchor": "cdGaps",
-     "primary": "t-gaps-*",
-     "tables": [
-      "t-gaps-*",
-      "t-unitdir-*"
-     ],
-     "holds": "Top units by annual gap to market"
-    }
-   ],
-   "tables": [
-    "t-rentroll-*",
-    "t-rollover-*",
-    "t-gaps-*"
-   ],
-   "note": "Live since 2026-09-11, the first roll ever to reach the pipeline. Both published totals tied to the report's own Total row to the cent on that first run. Occupancy is the parser's occupied flag \u2014 a resident code AND a non-zero rent \u2014 because Yardi carries a code on vacant units too, and a code-only test reads 100% on a property at 97.7%.",
-   "open_item": null,
-   "same_as": null,
-   "evidence": [
-    {
-     "property": "the-landing",
-     "file": "data/the-landing/rent_roll.json",
-     "as_of": "2026-09-11",
-     "source_file": "RentRoll09_11_2026.xlsx",
-     "landed_at": "2026-09-11T18:33:04.600Z",
+     "landed_at": "2026-09-08T23:28:49.326Z",
      "detail": null
     }
    ],
@@ -1556,6 +1489,88 @@
     }
    ],
    "status": "partial"
+  },
+  {
+   "id": "rent_roll",
+   "title": "Rent roll (SPV PM Deliverable Package)",
+   "origin_kind": "drive",
+   "source_label": "Rent Roll",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "<date> RentRoll<MM_DD_YYYY>.xlsx",
+   "carries": "Every unit: status, resident code, in-place and market rent, square footage, lease dates.",
+   "filed_by": [
+    "rentroll",
+    "rollreport"
+   ],
+   "report_type": "rent_roll",
+   "parser": "parse_rent_roll",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_rent_roll.py",
+     "does": "Reads unit rows until the section marker; keeps the resident code only to tell an occupied unit from a vacant one.",
+     "checks": "Every published total ties to the report's own Total row; refuses the file if that row is missing."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Scrubs the parse through PII_FIELDS and writes it.",
+     "checks": "scripts/check_no_pii.py re-reads the output and fails the build if a person-shaped field survived."
+    }
+   ],
+   "stores": [
+    "data/<slug>/rent_roll.json  (gitignored \u2014 unit level)"
+   ],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "rent_roll"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Loss to Lease",
+     "tab": "Landing (Drive)",
+     "anchor": "cdRentCapture",
+     "primary": "t-rentroll-*",
+     "tables": [
+      "t-rentroll-*",
+      "t-rollover-*"
+     ],
+     "holds": "Loss to lease, occupancy and the rollover cohorts"
+    },
+    {
+     "card": "Rollover Schedule",
+     "tab": "Landing (Drive)",
+     "anchor": "cdRollover",
+     "primary": "t-rollover-*",
+     "tables": [
+      "t-rollover-*"
+     ],
+     "holds": "Lease expirations by month"
+    },
+    {
+     "card": "Largest Unit Gaps",
+     "tab": "Landing (Drive)",
+     "anchor": "cdGaps",
+     "primary": "t-gaps-*",
+     "tables": [
+      "t-gaps-*",
+      "t-unitdir-*"
+     ],
+     "holds": "Top units by annual gap to market"
+    }
+   ],
+   "tables": [
+    "t-rentroll-*",
+    "t-rollover-*",
+    "t-gaps-*"
+   ],
+   "note": "Live since 2026-09-11, the first roll ever to reach the pipeline. Both published totals tied to the report's own Total row to the cent on that first run. Occupancy is the parser's occupied flag \u2014 a resident code AND a non-zero rent \u2014 because Yardi carries a code on vacant units too, and a code-only test reads 100% on a property at 97.7%.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "waiting"
   },
   {
    "id": "airm-yardi-rev-management-revenue-mgmt",
@@ -2214,7 +2229,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-11T23:03:46.346704+00:00",
+     "landed_at": "2026-09-12T15:13:35.977905+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

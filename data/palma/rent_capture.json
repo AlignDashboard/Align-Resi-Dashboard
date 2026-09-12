@@ -1,0 +1,135 @@
+{
+  "points": [
+    {
+      "period_end": "Jun 2026",
+      "landed_at": "2026-07-16T19:26:04.709Z",
+      "source_files": [
+        "2026-07-16 12_Month_Statement_rspalman_Accrual (3).xlsx",
+        "2026-07-16 12_Month_Statement_rspalmas_accrual.xlsx"
+      ],
+      "labels": [
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "source_codes": [
+        "rspalman",
+        "rspalmas"
+      ],
+      "market_potential": [
+        732367.0,
+        739518.0,
+        718859.0,
+        718859.0,
+        718859.0,
+        718859.0,
+        718859.0,
+        718859.0,
+        718859.0,
+        718859.0,
+        708398.5,
+        0.0
+      ],
+      "loss_to_lease": [
+        0.0,
+        2250.0,
+        4393.0,
+        2750.0,
+        2750.0,
+        7250.0,
+        7250.0,
+        9975.0,
+        16975.0,
+        9975.0,
+        16975.0,
+        0.0
+      ],
+      "vacancy_loss": [
+        640592.81,
+        630590.58,
+        563334.33,
+        466682.52,
+        483368.0,
+        469868.0,
+        448746.6,
+        447493.0,
+        418221.22,
+        405120.0,
+        329667.74,
+        0.0
+      ],
+      "employee_allowance": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        12757.5
+      ],
+      "concessions": [
+        0.0,
+        15200.16,
+        18000.0,
+        93091.29,
+        120915.0,
+        56368.0,
+        1833.0,
+        3833.0,
+        1833.0,
+        8168.0,
+        42783.0,
+        12848.71
+      ],
+      "other": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rental_income": [
+        91774.19,
+        91477.26,
+        133131.67,
+        156335.19,
+        111826.0,
+        185373.0,
+        261029.4,
+        257558.0,
+        281829.78,
+        295596.0,
+        318972.76,
+        -25606.21
+      ],
+      "basis": "align 4050-51xx, derived (no section total row)",
+      "tieout_max_gap": null,
+      "problems": [
+        "no account found for: concessions, loss_to_lease",
+        "no account found for: employee_allowance",
+        "no section total row on this tree -- accrued income is derived from the lines, not read from the statement"
+      ]
+    }
+  ]
+}
