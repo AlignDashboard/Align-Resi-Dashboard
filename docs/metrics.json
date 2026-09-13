@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-12T15:13:35.977905+00:00",
+    "generated_at": "2026-09-13T18:19:10.183120+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -2039,8 +2039,8 @@
         "new_leases": {
           "weeks": 3,
           "as_of": "2026-09-13",
-          "landed_at": "2026-09-11T00:28:31.716Z",
-          "source_file": "2026-09-10 Daily Report- Week Ending 9.13.26.xlsx",
+          "landed_at": "2026-09-13T01:28:31.087Z",
+          "source_file": "2026-09-12 Daily Report- Week Ending 9.13.26.xlsx",
           "months": [
             {
               "month": "2026-08",
@@ -3067,10 +3067,10 @@
         "slug": "madelon",
         "name": "Madelon",
         "new_leases": {
-          "weeks": 11,
-          "as_of": "2026-09-10",
-          "landed_at": "2026-09-11T01:28:31.633Z",
-          "source_file": "2026-09-10 9.10.26 - The Madelon - Daily Report.xlsx",
+          "weeks": 13,
+          "as_of": "2026-09-12",
+          "landed_at": "2026-09-13T02:28:30.498Z",
+          "source_file": "2026-09-12 9.12.26 - The Madelon - Daily Report .xlsx",
           "months": [
             {
               "month": "2026-09",
