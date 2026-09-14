@@ -109,7 +109,7 @@ every figure on it would move on the next pipeline run.
 | Expense Deep Dive | `expense_buckets` |
 | Largest Unit Gaps | `rent_roll` + `unit_directory` for the bedroom join |
 | Delinquency | the two cells the Drive AR report fills — empty whenever the workbook owns them |
-| Unit Inventory | `unit_directory` — **frozen until C5**, see below |
+| Unit Inventory | `unit_directory` (**frozen until C5**, see below) + `rent_roll.by_plan` for the leased/vacant split |
 | What Feeds This Tab | `lineage.json` — arrivals, and what is missing |
 
 The first rent roll ever to reach the pipeline landed 2026-09-11 and closed C4,
@@ -486,6 +486,64 @@ data row from the total row and never emitted. The export says only "For
 Selected Properties", naming no property, so until the owner settles which
 building it covers the parse is logged and stored nowhere — attribution by
 guesswork would file one building's concessions under another.
+
+### Occupancy on the Unit Inventory bars
+
+The card's bars are units by bedroom type, each one stacked leased (amber)
+against vacant (teal) so the two segments partition the bar rather than adding
+to it. Hovering a segment gives its count, its share of that bedroom type, and
+the group's whole leased/vacant/occupied line. The Landing reads 97.7% leased —
+1 bed 135/2, 2 bed 106/4, 3 bed 16/0.
+
+It takes two reports, because neither can draw it alone. The rent roll knows
+which units are let but not how many bedrooms a floorplan has; the unit
+directory knows what a floorplan is and nothing about who is in it. So
+`rent_roll_summary` publishes `by_plan` — `{units, leased, vacant}` per plan
+code — and the page rolls those onto the directory's bedrooms.
+
+`by_plan` is **counts only**, which is what lets it leave `data/`. The roll
+itself is unit level and arrives with resident names, so `rent_roll.json` stays
+gitignored; a plan with one unit says that plan has one unit, which the
+directory already says in public.
+
+**The roll is its own census, not an overlay on the directory's.** The two count
+different things and always will:
+
+| Source | Counts |
+| --- | --- |
+| Unit directory | Every row the export lists — 265 for The Landing, including two Yardi waitlist placeholders and a 56,120 sf `The Landing - PDR` record under `p0005640` with no floorplan and no rent |
+| Rent roll | Leasable apartments — 263 |
+
+Reconciling them into one bar would mean deciding which is wrong, so each bar is
+the roll's own count for its bedroom type — leased plus vacant equals the bar by
+construction — and the directory supplies only the bedrooms. The difference is
+printed in the note rather than absorbed. A plan on the roll the directory has
+never described lands in an `Unknown` bar and is **named**, because that is a
+join failure worth fixing rather than a category. With no roll at all the bars
+are the directory's plain count and the card says so.
+
+**Leased is the same `occupied` flag the rest of the block uses** — a resident
+code *and* a non-zero rent — so a unit on notice or holding over counts as
+leased: it has someone in it. That is occupancy, not risk; holdover and
+month-to-month remain a different question and stay in `SCD_MISSING`.
+
+One fix came with it. `parse_rent_roll._property` searched only the first 30
+rows, and `RentRoll09_11_2026.xlsx` says just "For Selected Properties" at the
+top and names the buildings in a summary block at **row 278**, below every unit.
+So the roll parsed and then routed nowhere — `[warn] unknown property code
+'None' … skipping` — and a pipeline run left the whole feed untouched, silently
+reusing whatever `metrics.json` already held. The header is still searched
+first; the rest of the sheet is a fallback. That roll names two codes
+(`p0005611` and `The Landing - PDR(p0005640)`); the first wins, which is the
+residential one, and the unit count tying out against the report's own Total row
+is what would catch it if that ever stopped being true.
+
+`scripts/test_occupancy.py` holds it down — 28 checks against a roll and a
+directory built in a temp dir, no network and no fixtures. The ones that matter
+are the invisible failures: a vacant unit carrying a market rent must not count
+as leased, a unit on notice must, nothing unit level may reach the published
+block, a plan the directory cannot describe must be named rather than dropped,
+and a roll naming its property below the unit rows must still route.
 
 ### The two leasing parsers
 

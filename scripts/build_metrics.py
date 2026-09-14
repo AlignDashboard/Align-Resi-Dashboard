@@ -780,6 +780,21 @@ def rent_roll_summary(rr):
         })
 
     hold = [u for u in occ if (d := to_date(u.get("lease_expiration"))) and as_of and d < as_of]
+
+    # Leased and vacant per floorplan, which is what lets the Unit Inventory
+    # card split its bars. The roll names the plan and the directory says how
+    # many bedrooms a plan has, so the counts are published per plan and the
+    # page rolls them onto bedroom groups -- neither report can do it alone.
+    # Counts only: a plan with one unit says that plan has one unit, which the
+    # directory already says in public, so this survives into metrics.json where
+    # the rest of the per-unit roll cannot.
+    by_plan = {}
+    for u in units:
+        code = str(u.get("unit_type") or "").strip() or "(no plan)"
+        b = by_plan.setdefault(code, {"units": 0, "leased": 0, "vacant": 0})
+        b["units"] += 1
+        b["leased" if u.get("occupied") else "vacant"] += 1
+
     return {
         "as_of": rr.get("as_of"),
         "landed_at": rr.get("landed_at"),
@@ -811,6 +826,7 @@ def rent_roll_summary(rr):
             "market": round(sum(u.get("market_rent") or 0 for u in hold), 2),
             "gap_yr": gap_yr(hold),
         },
+        "by_plan": dict(sorted(by_plan.items())),
         "rollover": rollover,
         "gaps": gaps,
         "undated_leases": sum(1 for u in occ if not to_date(u.get("lease_expiration"))),

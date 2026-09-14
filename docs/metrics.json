@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-13T18:19:10.183120+00:00",
+    "generated_at": "2026-09-14T18:10:38.457116+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -1302,6 +1302,213 @@
           "inplace": 148217.0,
           "market": 261837.0,
           "gap_yr": 1363440.0
+        },
+        "by_plan": {
+          "laa1": {
+            "units": 88,
+            "leased": 87,
+            "vacant": 1
+          },
+          "laa10": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "laa11": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "laa12": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "laa2": {
+            "units": 7,
+            "leased": 7,
+            "vacant": 0
+          },
+          "laa3": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "laa4": {
+            "units": 2,
+            "leased": 2,
+            "vacant": 0
+          },
+          "laa5": {
+            "units": 13,
+            "leased": 12,
+            "vacant": 1
+          },
+          "laa6": {
+            "units": 13,
+            "leased": 13,
+            "vacant": 0
+          },
+          "laa7": {
+            "units": 6,
+            "leased": 6,
+            "vacant": 0
+          },
+          "laa8": {
+            "units": 2,
+            "leased": 2,
+            "vacant": 0
+          },
+          "laa9": {
+            "units": 2,
+            "leased": 2,
+            "vacant": 0
+          },
+          "lab1": {
+            "units": 3,
+            "leased": 3,
+            "vacant": 0
+          },
+          "lab10": {
+            "units": 3,
+            "leased": 3,
+            "vacant": 0
+          },
+          "lab11": {
+            "units": 3,
+            "leased": 3,
+            "vacant": 0
+          },
+          "lab12": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab13": {
+            "units": 2,
+            "leased": 2,
+            "vacant": 0
+          },
+          "lab14": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab15": {
+            "units": 5,
+            "leased": 5,
+            "vacant": 0
+          },
+          "lab16": {
+            "units": 3,
+            "leased": 3,
+            "vacant": 0
+          },
+          "lab17": {
+            "units": 6,
+            "leased": 6,
+            "vacant": 0
+          },
+          "lab18": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab19": {
+            "units": 24,
+            "leased": 22,
+            "vacant": 2
+          },
+          "lab2": {
+            "units": 3,
+            "leased": 3,
+            "vacant": 0
+          },
+          "lab20": {
+            "units": 2,
+            "leased": 2,
+            "vacant": 0
+          },
+          "lab21": {
+            "units": 9,
+            "leased": 8,
+            "vacant": 1
+          },
+          "lab22": {
+            "units": 2,
+            "leased": 2,
+            "vacant": 0
+          },
+          "lab23": {
+            "units": 4,
+            "leased": 3,
+            "vacant": 1
+          },
+          "lab3": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab4": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab5": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab6": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab7": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lab8": {
+            "units": 3,
+            "leased": 3,
+            "vacant": 0
+          },
+          "lab9": {
+            "units": 30,
+            "leased": 30,
+            "vacant": 0
+          },
+          "lac1": {
+            "units": 9,
+            "leased": 9,
+            "vacant": 0
+          },
+          "lac2": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lac3": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lac4": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          },
+          "lac5": {
+            "units": 3,
+            "leased": 3,
+            "vacant": 0
+          },
+          "lac6": {
+            "units": 1,
+            "leased": 1,
+            "vacant": 0
+          }
         },
         "rollover": [
           {
