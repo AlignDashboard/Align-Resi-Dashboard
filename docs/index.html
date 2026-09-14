@@ -4150,13 +4150,6 @@ async function loadLandingDrive() {
     });
     const bedKeys = Object.keys(beds).sort((a, b) => (a === "?") - (b === "?") || a - b);
     const bedLabel = k => k === "?" ? "Unknown" : k === "0" || k === 0 ? "Studio" : k + " bed";
-    // Weighted by units, not a mean of plans: a 90-unit plan and a 1-unit plan
-    // are not two equal readings of the building.
-    const wAvg = f => totalPlanUnits
-      ? codes.reduce((t, c) => t + (f(plans[c]) || 0) * unitsOf(c), 0) / totalPlanUnits : null;
-    const avgSqft = wAvg(p => p.sqft_avg);
-    const avgRent = wAvg(p => (p.rent_min != null && p.rent_max != null)
-      ? (p.rent_min + p.rent_max) / 2 : null);
 
     // ---- occupancy, from the rent roll ----------------------------------
     // The directory is the building's fixed description and says nothing about
@@ -4186,22 +4179,20 @@ async function loadLandingDrive() {
       .sort((a, b) => (a === "?") - (b === "?") || a - b);
     const splitTotal = splitKeys.reduce((t, k) => t + occBed[k].units, 0);
     const splitOK = splitTotal > 0;
-    const leasedTotal = splitKeys.reduce((t, k) => t + occBed[k].leased, 0);
-    const vacantTotal = splitKeys.reduce((t, k) => t + occBed[k].vacant, 0);
     const barKeys = splitOK ? splitKeys : bedKeys;
     const barTotal = k => splitOK ? occBed[k].units : beds[k];
     const unknownPlans = Object.keys(occPlan).filter(c => !plans[c]);
 
-    statBlock(document.getElementById("diStats"), [
-      [String(dir.residential_units), "apartments"],
-      // The occupancy the bars are split on, in words as well as drawn: at 98%
-      // leased the vacant segment is a few pixels and the number is the point.
-      [splitOK ? fmPct(leasedTotal / splitTotal, 1) : "—",
-       splitOK ? "leased · " + vacantTotal + " vacant" : "leased — awaiting the rent roll"],
-      [String(codes.length), "floorplans"],
-      [avgSqft ? Math.round(avgSqft).toLocaleString() + " sf" : "—", "average, by unit"],
-      [avgRent ? fm$(avgRent) : "—", "average directory rent"],
-    ]);
+    // The counts the bars draw, printed beside them. A bar reads as a
+    // proportion and the question this card gets asked is how many of each
+    // there are, so the column is the same keys and the same totals as the
+    // chart -- it cannot disagree with what it sits next to. A studio or an
+    // undescribed plan gets a line here the day one exists, for the same
+    // reason it gets a bar.
+    const bedStat = k => k === "?" ? "bedrooms unknown"
+      : (k === "0" || k === 0) ? "studios" : k + " bedroom units";
+    statBlock(document.getElementById("diStats"),
+      barKeys.map(k => [String(barTotal(k)), bedStat(k)]));
     document.getElementById("diStats").querySelectorAll(".st")
       .forEach(st => { st.style.marginBottom = "10px"; });
 
@@ -4309,7 +4300,7 @@ async function loadLandingDrive() {
               : "")
           + "They stay inside the export's own total, because the tie-out is "
           + "against that row, and out of every published figure: they are not "
-          + "in the unit count, the floorplan table, the averages or the bars. "
+          + "in the unit count, the floorplan table, the bedroom counts or the bars. "
         : "")
       + "Rent is the directory's own Rent column, shown per plan as the range across "
       + "that plan's units. Bedrooms belong to the plan rather than the unit; a plan "
