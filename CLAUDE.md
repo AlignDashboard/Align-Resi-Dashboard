@@ -100,7 +100,7 @@ every figure on it would move on the next pipeline run.
 
 | Card | Drive source |
 | --- | --- |
-| Operating Summary | T12 statement → `metrics.json` `monthly_pl` |
+| Operating Summary | T12 statement → `metrics.json` `monthly_pl` — a period picker, that period against three others |
 | Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over the current gap by rollover cohort from `rent_roll` |
 | KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
 | Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
@@ -671,6 +671,46 @@ Where each arrival comes from:
 Past `SC_STALE_DAYS` (3, in `index.html`) the timestamp turns red: the daily
 EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
 "Feed arrival times" table lists every feed's arrival beside its as-of date.
+
+### The Operating Summary's period picker
+
+The card used to carry three toggles — Prev month / T3 / T12 — each swapping in
+one comparison against the current month. It now carries a **Comparison:**
+dropdown that picks the period, and shows that period against **three** others
+at once. Selecting Current Month puts all three of the old toggles on screen
+together, at the same numbers they gave.
+
+| Selected | Measured against |
+| --- | --- |
+| Current Month | Prev Month, T3, T12 |
+| T3 | Current Month, T6, T12 |
+| T6 | Current Month, T3, T12 |
+| T12 | Current Month, T3, T6 |
+
+The shape is the same each time — the nearest shorter window, the nearest longer
+one, and the year — which is "how is this running against last, against the
+quarter, against the year".
+
+**Every figure is an annual run rate**, the period's own total scaled to a full
+year (a month ×12, a T3 ×4). That is what lets a month sit beside a quarter at
+all, and it means every cell on a row is the same kind of number, so the
+variances are comparable to each other as well as to the selected period. It is
+the frame the variance is taken in, not a forecast — the note says so.
+
+Each comparison cell prints that period's run rate under the variance against
+it. Three comparisons at once is the point of the card, but three bare
+percentages would leave nowhere to read the money, and that cell is the only
+place the comparison period's figure appears.
+
+A window is **offered only when the series holds it** — `avail()` checks the
+window starts at or after the first month rather than clamping. Clamping would
+print "T12" over eight months of data, which is the kind of label that gets
+quoted. The series is twelve months today (one statement) and lengthens as
+statements accumulate, so all four options are live; a shorter run simply offers
+fewer.
+
+`renderOpSummary` is shared with The Landing tab, so both cards changed
+together. That is the point of it being shared — see the Drive-only tab section.
 
 ## The T12 statement's two expense anchors
 
