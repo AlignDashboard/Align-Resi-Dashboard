@@ -4126,14 +4126,15 @@ async function loadLandingDrive() {
       const t = occBed[k] || (occBed[k] = { units: 0, leased: 0, vacant: 0 });
       t.units += o.units || 0; t.leased += o.leased || 0; t.vacant += o.vacant || 0;
     });
-    // With a roll here it is the census, not an overlay on the directory's. The
-    // two count different things and always will: the directory lists 265 for
-    // The Landing -- two Yardi waitlist placeholders and a 56,120 sf
-    // "The Landing - PDR" record among them -- where the roll lists 263
-    // leasable apartments. Reconciling them to draw one bar would mean deciding
-    // which is wrong, so each bar is the roll's own count for its bedroom type,
-    // which makes leased + vacant equal the bar by construction. The directory
-    // supplies only the bedrooms. The difference is printed in the note.
+    // With a roll here it is the census. The two now agree at 263 for The
+    // Landing -- the directory's floorplan table counts apartments only, its
+    // waitlist placeholders and its non-apartment records having been left out
+    // at the parser -- but they are still counts of different things, taken on
+    // different dates, and a roll is the one that knows about letting. So each
+    // bar is the roll's own count for its bedroom type, which makes leased +
+    // vacant equal the bar by construction whatever the directory says, and the
+    // directory supplies only the bedrooms. Any difference is printed in the
+    // note rather than reconciled away.
     const splitKeys = Object.keys(occBed)
       .sort((a, b) => (a === "?") - (b === "?") || a - b);
     const splitTotal = splitKeys.reduce((t, k) => t + occBed[k].units, 0);
@@ -4233,14 +4234,35 @@ async function loadLandingDrive() {
       + (splitOK ? "LEASED vs VACANT FROM THE RENT ROLL OF " + ((rr && rr.as_of) || "—")
                  : "OCCUPANCY AWAITS THE RENT ROLL")
       + " · DIRECTORY AS OF " + dir.as_of;
-    const placeholders = (dir.units || 0) - (dir.residential_units || 0);
+    // What the export lists but the building does not have. Two kinds, and they
+    // are named separately because they are excluded for different reasons: a
+    // waitlist id is a prospect with no apartment yet, a non-apartment record is
+    // real space that is not a home. Both stay inside the export's own total,
+    // since the tie-out is against that; neither reaches a published figure.
+    const excluded = (dir.units || 0) - (dir.residential_units || 0);
+    const holders = dir.placeholder_units || 0;
+    const nonRes = dir.non_residential || [];
     note.textContent =
       "The building's fixed description, from " + dir.source_file + " of " + dir.as_of
-      + ". " + (placeholders > 0
-        ? "The export counts " + dir.units + " units where " + dir.residential_units
-          + " are apartments: the other " + placeholders + " are Yardi waitlist "
-          + "placeholders, kept in the count because the export's own total row "
-          + "includes them and the tie-out has to as well. "
+      + ". " + (excluded > 0
+        ? "The export lists " + dir.units + " units where " + dir.residential_units
+          + " are apartments. "
+          + (holders > 0
+              ? "Of the other " + excluded + ", " + holders + " "
+                + (holders === 1 ? "is a Yardi waitlist placeholder"
+                                 : "are Yardi waitlist placeholders")
+                + (nonRes.length ? " and " + nonRes.length + " " : ". ")
+              : "The other " + excluded + " ")
+          + (nonRes.length
+              ? (nonRes.length === 1 ? "is not an apartment at all ("
+                                     : "are not apartments at all (")
+                + nonRes.join("; ") + "), carrying no asking rent and no "
+                + "bedrooms — which is what the parser tests, rather than the "
+                + "name, since the next such space will be called something else. "
+              : "")
+          + "They stay inside the export's own total, because the tie-out is "
+          + "against that row, and out of every published figure: they are not "
+          + "in the unit count, the floorplan table, the averages or the bars. "
         : "")
       + "Rent is the directory's own Rent column, shown per plan as the range across "
       + "that plan's units. Bedrooms belong to the plan rather than the unit; a plan "

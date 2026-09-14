@@ -1278,11 +1278,20 @@ async function loadAll() {
         feeds: "Largest Unit Gaps card — the bedrooms and plan sq ft column",
         note: "From " + (pr.source_file || "the Yardi unit directory")
             + " as of " + (pr.as_of || "—") + ". " + (pr.units || "—")
-            + " units in the export, " + (pr.residential_units || "—")
-            + " residential — the difference is Yardi's WAITLIST placeholders, "
-            + "counted because the export's own total counts them. Bedrooms "
-            + "belong to the plan, not the unit; nothing else in the pipeline "
-            + "says how many a plan has.",
+            + " rows in the export, " + (pr.residential_units || "—")
+            + " apartments — the difference is "
+            + [(pr.placeholder_units ? pr.placeholder_units + " Yardi waitlist "
+                 + "placeholder" + (pr.placeholder_units === 1 ? "" : "s") : null),
+               ((pr.non_residential || []).length
+                 ? (pr.non_residential || []).length + " non-apartment record"
+                   + ((pr.non_residential || []).length === 1 ? "" : "s")
+                   + " (" + (pr.non_residential || []).join("; ") + "), carrying "
+                   + "no asking rent and no bedrooms"
+                 : null)].filter(Boolean).join(" and ")
+            + ". Both are counted in the export's own total, which the parser ties "
+            + "out against, and excluded from every figure below — the plan table "
+            + "sums to the apartments. Bedrooms belong to the plan, not the unit; "
+            + "nothing else in the pipeline says how many a plan has.",
         cols: [{ key: "plan", label: "Floorplan" },
                { key: "bedrooms", label: "Beds", fmt: "int" },
                { key: "baths", label: "Baths", fmt: "num" },

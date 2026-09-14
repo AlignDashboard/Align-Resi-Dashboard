@@ -59,6 +59,30 @@ PLACEHOLDER = re.compile(r"^wait", re.I)
 CENT = 0.01
 
 
+def non_residential(row):
+    """A row the export lists that is not an apartment.
+
+    The Landing's directory carries one: unit 100, "The Landing - PDR", under
+    its own building code p0005640 — 56,120 sf of commercial space with no
+    asking rent and no bedrooms, and a "unit type" of `resident` that is not a
+    floorplan at all. Counted as a unit it makes the building 264 apartments;
+    grouped as a floorplan it invents a 42nd plan, puts a Studio bar on the Unit
+    Inventory chart, and drags the weighted average unit from 818 sf to 1,027.
+
+    The test is no rent AND no bedrooms, which is what a commercial record looks
+    like from this export and what no apartment does. Both halves are needed: a
+    studio has no bedrooms but does have a rent, and a genuinely offline
+    apartment might have no rent but still has its bedroom count. Checked
+    against the 2026-08-25 export — of 685 unit rows across every property, this
+    is the only one with no rent.
+
+    Deliberately not a match on "PDR", the property code, or the `resident`
+    plan: the shape of the row is the thing that makes it not an apartment, and
+    the next such space will be called something else.
+    """
+    return not (row.get("rent") or 0) and not (row.get("beds") or 0)
+
+
 def _num(v):
     if v is None or isinstance(v, bool):
         return None
@@ -148,9 +172,18 @@ def parse(path):
         """Finish the open section against the Total row that ends it."""
         if cur is None:
             return
-        real = [r for r in cur["rows"] if not PLACEHOLDER.match(r["unit"])]
         holders = [r for r in cur["rows"] if PLACEHOLDER.match(r["unit"])]
-        plans, mixed = _plans(cur["rows"])
+        others = [r for r in cur["rows"]
+                  if not PLACEHOLDER.match(r["unit"]) and non_residential(r)]
+        real = [r for r in cur["rows"] if not PLACEHOLDER.match(r["unit"])
+                and not non_residential(r)]
+        # Apartments only. The floorplan table is what the page draws bedrooms,
+        # unit counts and the weighted averages from, so a placeholder or a
+        # commercial record inside it is a wrong number on the card rather than
+        # a harmless extra row. The section's own `units` still counts every
+        # row, because the export's Total row does and the tie-out is against
+        # that.
+        plans, mixed = _plans(real)
         sqft = sum(r["sqft"] or 0 for r in cur["rows"])
         rent = sum(r["rent"] or 0 for r in cur["rows"])
         checks = []
@@ -178,6 +211,12 @@ def parse(path):
             "residential_units": len(real),
             "placeholder_units": len(holders),
             "placeholders": sorted(r["unit"] for r in holders),
+            "non_residential_units": len(others),
+            # Named, not just counted: a row dropped from every published
+            # figure has to be identifiable, or the difference between the
+            # export's total and the dashboard's is unexplainable.
+            "non_residential": sorted(
+                f"{r['unit']} {r.get('address') or ''}".strip() for r in others),
             "sqft_total": round(sqft, 2),
             "rent_total": round(rent, 2),
             "plans": plans,
@@ -216,6 +255,12 @@ def parse(path):
             continue
         cur["rows"].append({
             "unit": label,
+            # Kept only so a row dropped as non-residential can be named in the
+            # output: "100" says nothing, "100 The Landing - PDR" says what was
+            # left out. It is a space description, not a resident.
+            "address": (str(ws.cell(row=r, column=fields["address"]).value).strip()
+                        if fields.get("address")
+                        and ws.cell(row=r, column=fields["address"]).value else None),
             "plan": str(plan).strip(),
             "rent": _num(ws.cell(row=r, column=fields["rent"]).value),
             "sqft": _num(ws.cell(row=r, column=fields["sqft"]).value),

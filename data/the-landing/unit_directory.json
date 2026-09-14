@@ -3,20 +3,25 @@
   "property": "The Landing",
   "property_code": "p0005611",
   "property_codes": [
-    "p0005611"
+    "p0005611",
+    "p0005640"
   ],
   "as_of": "2026-08-25",
-  "units": 265,
+  "units": 266,
   "residential_units": 263,
   "placeholder_units": 2,
+  "non_residential_units": 1,
+  "non_residential": [
+    "100 The Landing - PDR"
+  ],
   "plans": {
     "laa1": {
       "bedrooms": 1,
       "baths": 1.0,
-      "units": 90,
+      "units": 88,
       "sqft_min": 520.0,
-      "sqft_max": 821.0,
-      "sqft_avg": 587,
+      "sqft_max": 763.0,
+      "sqft_avg": 584,
       "rent_min": 5485.0,
       "rent_max": 5800.0
     },
@@ -431,16 +436,18 @@
         "WAIT1B1B",
         "WAITLIST"
       ],
+      "non_residential_units": 0,
+      "non_residential": [],
       "sqft_total": 216864.0,
       "rent_total": 1815489.0,
       "plans": {
         "laa1": {
           "bedrooms": 1,
           "baths": 1.0,
-          "units": 90,
+          "units": 88,
           "sqft_min": 520.0,
-          "sqft_max": 821.0,
-          "sqft_avg": 587,
+          "sqft_max": 763.0,
+          "sqft_avg": 584,
           "rent_min": 5485.0,
           "rent_max": 5800.0
         },
@@ -865,6 +872,40 @@
           "gap": 0.0
         }
       ]
+    },
+    {
+      "property_code": "p0005640",
+      "units": 1,
+      "residential_units": 0,
+      "placeholder_units": 0,
+      "placeholders": [],
+      "non_residential_units": 1,
+      "non_residential": [
+        "100 The Landing - PDR"
+      ],
+      "sqft_total": 56120.0,
+      "rent_total": 0,
+      "plans": {},
+      "checks": [
+        {
+          "check": "unit count",
+          "parsed": 1,
+          "report": 1,
+          "gap": 0
+        },
+        {
+          "check": "rent total",
+          "parsed": 0,
+          "report": 0.0,
+          "gap": 0.0
+        },
+        {
+          "check": "sqft total",
+          "parsed": 56120.0,
+          "report": 56120.0,
+          "gap": 0.0
+        }
+      ]
     }
   ],
   "problems": [],
@@ -873,8 +914,8 @@
   "checks": [
     {
       "check": "grand total unit count",
-      "parsed": 265,
-      "report": 265,
+      "parsed": 682,
+      "report": 682,
       "gap": 0
     }
   ]

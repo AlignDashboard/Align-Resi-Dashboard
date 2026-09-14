@@ -41,6 +41,13 @@ LANDING = [
     ("355", "lab19", 8241, 1095, 2, 2),
     ("WAITLIST", "laa1", 5565, 821, 1, 1),
 ]
+# The Landing's real shape: a second building code whose only row is 56,120 sf
+# of commercial space with no rent and no bedrooms. Counted as a unit it makes
+# the building 264 apartments; grouped as a plan it invents a 42nd floorplan and
+# drags the weighted average unit size up by a quarter.
+PDR = [
+    ("100", "resident", 0, 56120, 0, 0, "The Landing - PDR"),
+]
 CHORUS = [
     ("0201", "cha1V", 5005, 684, 1, 1),
     ("0312", "chs1F", 3897, 505, 0, 1),      # a studio: Room = 0
@@ -62,10 +69,13 @@ def build(path, rows_by_code, break_section=None, break_grand=False,
     for code, rows in rows_by_code.items():
         ws.append(pad + [code])
         rent = sqft = 0
-        for i, (unit, plan, r, sf, bed, bath) in enumerate(rows):
+        for i, (unit, plan, r, sf, bed, bath, *rest) in enumerate(rows):
             if mixed_beds and code == "p0005611" and plan == "laa1" and i == 1:
                 bed = 2                      # same plan, a different bedroom count
-            ws.append(pad + [unit, "somewhere", plan, float(r), 0.0, float(sf),
+            # A row may carry its own address, which is how a non-apartment
+            # record names itself in the output.
+            ws.append(pad + [unit, rest[0] if rest else "somewhere", plan,
+                             float(r), 0.0, float(sf),
                              float(bed), float(bath), None])
             rent += r
             sqft += sf
@@ -109,14 +119,55 @@ def main():
     pl = land["plans"]
     ok("one entry per plan", sorted(pl) == ["laa1", "lab19", "lac1"], sorted(pl))
     ok("bedrooms and baths carried", pl["lac1"]["bedrooms"] == 3 and pl["lac1"]["baths"] == 2.0, pl["lac1"])
-    ok("plan unit count includes its placeholder", pl["laa1"]["units"] == 3, pl["laa1"])
-    ok("sqft range and average",
-       pl["laa1"]["sqft_min"] == 536 and pl["laa1"]["sqft_max"] == 821
-       and pl["laa1"]["sqft_avg"] == round((560 + 536 + 821) / 3), pl["laa1"])
-    ok("rent range", pl["laa1"]["rent_min"] == 5565 and pl["laa1"]["rent_max"] == 5640, pl["laa1"])
+    # The plan table is what the page draws bedrooms, unit counts and the
+    # weighted averages from, so it counts apartments and nothing else. The
+    # WAITLIST row is a prospect with no apartment yet; leaving it in put a
+    # phantom unit in a plan and dragged that plan's sqft and rent ranges out to
+    # a unit nobody can rent.
+    ok("plan unit count is apartments only, not the placeholder",
+       pl["laa1"]["units"] == 2, pl["laa1"])
+    ok("sqft range and average exclude it",
+       pl["laa1"]["sqft_min"] == 536 and pl["laa1"]["sqft_max"] == 560
+       and pl["laa1"]["sqft_avg"] == round((560 + 536) / 2), pl["laa1"])
+    ok("rent range excludes it",
+       pl["laa1"]["rent_min"] == 5595 and pl["laa1"]["rent_max"] == 5640, pl["laa1"])
+    ok("the plan table sums to the apartments",
+       sum(v["units"] for v in pl.values()) == land["residential_units"],
+       (sum(v["units"] for v in pl.values()), land["residential_units"]))
     ok("a studio keeps bedrooms 0, not null",
        p["sections"][1]["plans"]["chs1F"]["bedrooms"] == 0,
        p["sections"][1]["plans"]["chs1F"])
+
+    print("space that is not an apartment")
+    withpdr = os.path.join(tmp, "UnitDirectory08_25_2026.xlsx".replace("08", "10"))
+    build(withpdr, {"p0005611": LANDING, "p0005640": PDR})
+    pp = ud.parse(withpdr)
+    pdr = [x for x in pp["sections"] if x["property_code"] == "p0005640"][0]
+    land2 = [x for x in pp["sections"] if x["property_code"] == "p0005611"][0]
+    ok("the export's own row count still includes it, so the tie-out holds",
+       pdr["units"] == 1 and not any("tie out" in x for x in pp["problems"]),
+       (pdr["units"], pp["problems"]))
+    ok("but it is not an apartment",
+       pdr["residential_units"] == 0 and pdr["non_residential_units"] == 1, pdr)
+    ok("and it is named, not merely counted",
+       pdr["non_residential"] == ["100 The Landing - PDR"], pdr["non_residential"])
+    ok("it invents no floorplan", pdr["plans"] == {}, pdr["plans"])
+    ok("the apartments are untouched beside it",
+       land2["residential_units"] == 4 and len(land2["plans"]) == 3, land2)
+    ok("so the building is its apartments across both codes, and no more",
+       sum(x["residential_units"] for x in pp["sections"]) == 4
+       and sum(x["units"] for x in pp["sections"]) == 6,
+       [(x["property_code"], x["residential_units"], x["units"])
+        for x in pp["sections"]])
+
+    # Both halves of the test matter, and each has a real counterexample.
+    ok("a studio is not caught by it — no bedrooms, but it has a rent",
+       not ud.non_residential({"rent": 3897, "beds": 0}))
+    ok("nor is a rent-free apartment — no rent, but it has bedrooms",
+       not ud.non_residential({"rent": 0, "beds": 1}))
+    ok("a row with neither is",
+       ud.non_residential({"rent": 0, "beds": 0})
+       and ud.non_residential({"rent": None, "beds": None}))
 
     print("refusals")
     bad = os.path.join(tmp, "UnitDirectory08_25_2026.xlsx".replace("08", "09"))

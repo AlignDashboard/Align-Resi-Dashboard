@@ -634,13 +634,29 @@ def store_unit_directory(prop, parsed):
     merged["units"] = sum(s.get("units") or 0 for s in secs)
     merged["residential_units"] = sum(s.get("residential_units") or 0 for s in secs)
     merged["placeholder_units"] = sum(s.get("placeholder_units") or 0 for s in secs)
+    merged["non_residential_units"] = sum(s.get("non_residential_units") or 0
+                                          for s in secs)
+    merged["non_residential"] = [n for s in secs for n in (s.get("non_residential") or [])]
+    # The floorplan table is what every per-unit figure on the page is drawn or
+    # divided by, so it has to account for exactly the apartments and no more.
+    # Anything else means a placeholder or a commercial record has found its way
+    # back in, and the numbers would shift by a hair rather than break.
+    plan_units = sum(p.get("units") or 0 for p in plans.values())
+    if plan_units != merged["residential_units"]:
+        clash.append(f"floorplans sum to {plan_units} units but the sections "
+                     f"count {merged['residential_units']} apartments")
     merged["problems"] = (parsed.get("problems") or []) + clash
+    if merged["non_residential"]:
+        print(f"[note] {prop['name']}: {merged['non_residential_units']} non-apartment "
+              f"record(s) excluded from every published figure: "
+              f"{', '.join(merged['non_residential'])}")
     for pr in merged["problems"]:
         print(f"[warn] {prop['name']} unit directory: {pr}")
     return store_report(prop, merged, "unit_directory.json",
                         ["report_type", "property", "property_code",
                          "property_codes", "as_of", "units",
-                         "residential_units", "placeholder_units", "plans",
+                         "residential_units", "placeholder_units",
+                         "non_residential_units", "non_residential", "plans",
                          "sections", "problems"])
 
 
@@ -1255,6 +1271,12 @@ def build_metrics_json():
                          "source_file": ud.get("source_file"),
                          "units": ud.get("units"),
                          "residential_units": ud.get("residential_units"),
+                         "placeholder_units": ud.get("placeholder_units"),
+                         # What the export lists that the dashboard does not
+                         # count, named — the gap between the export's own total
+                         # and the building has to be explainable on the page.
+                         "non_residential_units": ud.get("non_residential_units"),
+                         "non_residential": ud.get("non_residential") or [],
                          "codes": [s.get("property_code") for s in ud.get("sections") or []],
                          "plans": ud.get("plans") or {}})
     metrics["unit_directory"] = {"available": bool(ud_props), "properties": ud_props}
