@@ -693,12 +693,15 @@
         <div class="card-head">
           <div>
             <h2>Operating Summary</h2>
-            <span class="eyebrow" id="lopEyebrow">ONE PERIOD vs THREE · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
+            <span class="eyebrow" id="lopEyebrow">PICK A PERIOD, PICK WHAT IT IS MEASURED AGAINST · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
             <div class="opsel">
               <label for="lopSelect">Comparison:</label>
               <select class="prop-select" id="lopSelect"></select>
             </div>
           </div>
+          <!-- Filled by renderOpSummary: which buttons exist depends on what
+               the select is reading the card from. -->
+          <div class="togrow" id="lopTogs" role="group" aria-label="Measured against"></div>
         </div>
         <div id="lopTbl"></div>
         <div class="blu-note" id="lopNote" style="color:var(--muted);"></div>
@@ -811,12 +814,15 @@
         <div class="card-head">
           <div>
             <h2>Operating Summary</h2>
-            <span class="eyebrow" id="dopEyebrow">ONE PERIOD vs THREE · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
+            <span class="eyebrow" id="dopEyebrow">PICK A PERIOD, PICK WHAT IT IS MEASURED AGAINST · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
             <div class="opsel">
               <label for="dopSelect">Comparison:</label>
               <select class="prop-select" id="dopSelect"></select>
             </div>
           </div>
+          <!-- Filled by renderOpSummary: which buttons exist depends on what
+               the select is reading the card from. -->
+          <div class="togrow" id="dopTogs" role="group" aria-label="Measured against"></div>
         </div>
         <div id="dopTbl"></div>
         <div class="blu-note" id="dopNote" style="color:var(--muted);"></div>
@@ -2426,68 +2432,98 @@ async function renderOpSummary(slug, ids) {
   // percentage keeps its own sign -- what flips is the colour.
   const vcell = (pctChange, goodWhenUp) => {
     const favourable = goodWhenUp ? pctChange > 0 : pctChange < 0;
-    const e = elc("span", null,
-      (pctChange > 0 ? "+" : "") + (pctChange * 100).toFixed(1) + "%");
+    // The same minus sign the money column uses, not the hyphen toFixed emits:
+    // the two sit side by side and the mismatch is visible at this size.
+    const e = elc("span", null, (pctChange > 0 ? "+" : "")
+      + (pctChange * 100).toFixed(1).replace("-", "\u2212") + "%");
     e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
     return e;
   };
-  // A comparison cell carries the variance over what it is a variance against.
-  // Three comparisons at once is the point of the card, but three bare
-  // percentages leave nowhere to read the money, and this row is the only place
-  // that period's figure appears.
-  const cmpCell = (pct, against, goodWhenUp) => {
-    const wrap = elc("span");
-    wrap.style.display = "inline-block";
-    const top = elc("div");
-    top.appendChild(pct === null ? document.createTextNode("\u2014")
-                                 : vcell(pct, goodWhenUp));
-    const sub = elc("div", null, fm$(against));
-    sub.style.cssText = "font-size:9px;letter-spacing:.5px;color:" + C.muted
-      + ";margin-top:2px;";
-    wrap.appendChild(top);
-    wrap.appendChild(sub);
-    return wrap;
+  // The same judgement in money. A percentage alone hides the size of the
+  // thing: 15% on the expense row is $600k a year and on nothing much is not.
+  const dcell = (diff, goodWhenUp) => {
+    const favourable = goodWhenUp ? diff > 0 : diff < 0;
+    const e = elc("span", null, (diff > 0 ? "+" : diff < 0 ? "\u2212" : "")
+      + fm$(Math.abs(diff)));
+    e.style.color = diff === 0 ? C.muted : favourable ? C.green : C.red;
+    return e;
   };
-
   const options = CHOICES.filter(avail);
-  function render(selKey) {
-    const S = PERIODS[selKey] ? selKey : options[0];
-    const cmps = (COMPARE[S] || []).filter(k => k !== S && avail(k));
+  // The select picks what the card is read from; the buttons pick what that is
+  // measured against, and which buttons exist follows the select. Two controls
+  // rather than one grid of columns because the card answers a single question
+  // at a time -- "how is this running against that" -- and both sides of it are
+  // a choice.
+  function comparisonsFor(baseKey) {
+    return (COMPARE[baseKey] || []).filter(k => k !== baseKey && avail(k));
+  }
+
+  function render(baseKey, cmpKey) {
+    const B = PERIODS[baseKey] ? baseKey : options[0];
+    const cmps = comparisonsFor(B);
+    const C2 = cmps.indexOf(cmpKey) >= 0 ? cmpKey : cmps[0];
     const row = (label, series, goodWhenUp) => {
-      const a = annualOf(PERIODS[S], series);
-      return [label, fm$(a)].concat(cmps.map(ck => {
-        const b = annualOf(PERIODS[ck], series);
-        const pct = b ? (a - b) / Math.abs(b) : null;
-        return cmpCell(pct, b, goodWhenUp);
-      }));
+      const a = annualOf(PERIODS[B], series);
+      const b = annualOf(PERIODS[C2], series);
+      const diff = a - b;
+      const pct = b ? diff / Math.abs(b) : null;
+      return [label, fm$(a), fm$(b), dcell(diff, goodWhenUp),
+              pct === null ? "\u2014" : vcell(pct, goodWhenUp)];
     };
     buildTable(document.getElementById(ids.tbl),
-      [{ t: "" }, { t: headOf(S), num: true }]
-        .concat(cmps.map(ck => ({ t: "vs " + headOf(ck), num: true }))),
+      [{ t: "" },
+       { t: headOf(B), num: true },
+       { t: headOf(C2), num: true },
+       { t: "Variance $", num: true },
+       { t: "Variance %", num: true }],
       [row("Operating revenue", pt.revenue, true),
        row(expLabel, pt.opex, false),
        row(noiLabel, pt.noi, true)]);
-    document.getElementById(ids.note).textContent = noteFor(S);
+    togs.querySelectorAll(".tog").forEach(t =>
+      t.setAttribute("aria-pressed", String(t.dataset.cmp === C2)));
+    document.getElementById(ids.note).textContent = noteFor(B, C2);
   }
-  // The note changes with the selection, and this card sits above everything
+
+  // Rebuild the button row for a base, keeping the comparison if that base
+  // still offers it -- switching Current Month -> T3 leaves T12 selected rather
+  // than snapping back to the first button under the cursor.
+  function setBase(baseKey, keep) {
+    const B = PERIODS[baseKey] ? baseKey : options[0];
+    const cmps = comparisonsFor(B);
+    const C2 = cmps.indexOf(keep) >= 0 ? keep : cmps[0];
+    togs.textContent = "";
+    cmps.forEach(k => {
+      const b = elc("button", "tog");
+      b.type = "button";
+      b.dataset.cmp = k;
+      b.textContent = PERIODS[k].label;
+      b.setAttribute("aria-pressed", String(k === C2));
+      b.addEventListener("click", () => render(B, k));
+      togs.appendChild(b);
+    });
+    render(B, C2);
+  }
+
+  // The note changes with both controls, and this card sits above everything
   // else in the view -- when its text gained a line the whole page below moved
-  // 10px. Built as a function of the selection so every option can be measured
+  // 10px. Built as a function of the pair so every combination can be measured
   // and the tallest reserved; see reserveTallest.
-  function noteFor(selKey) {
-    const S = PERIODS[selKey] ? selKey : options[0];
-    const cmps = (COMPARE[S] || []).filter(k => k !== S && avail(k));
-    const names = cmps.map(k => PERIODS[k].label + " (" + spanOf(k) + ")");
-    const list = names.length > 1
-      ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
-      : names.join("");
+  function noteFor(baseKey, cmpKey) {
+    const B = PERIODS[baseKey] ? baseKey : options[0];
+    const cmps = comparisonsFor(B);
+    const C2 = cmps.indexOf(cmpKey) >= 0 ? cmpKey : cmps[0];
     return "The same statement the expense cards read, refreshed on the same daily run \u2014 "
       + "the current month follows the statement, so it moves to the new month when one "
-      + "is posted. " + PERIODS[S].label + " (" + spanOf(S) + ") is measured against "
-      + list + ". Every figure is an annual run rate \u2014 the period's own total scaled "
-      + "to a full year, so " + (PERIODS[S].k === 1 ? "a month" : "a " + PERIODS[S].k
-        + "-month window") + " and a year are the same kind of number and can be set "
-      + "side by side. It is the frame the variance is taken in, not a forecast. Each "
-      + "comparison column prints that period's run rate under the variance against it. "
+      + "is posted. " + PERIODS[B].label + " (" + spanOf(B) + ") is measured against "
+      + PERIODS[C2].label + " (" + spanOf(C2) + "); the buttons offer "
+      + cmps.map(k => PERIODS[k].label).join(", ") + ", and which ones they are follows "
+      + "the period on the left. Both columns are annual run rates \u2014 each period's "
+      + "own total scaled to a full year, so "
+      + (PERIODS[B].k === PERIODS[C2].k ? "the two windows"
+          : "a " + (PERIODS[B].k === 1 ? "month" : PERIODS[B].k + "-month window")
+            + " and a " + (PERIODS[C2].k === 1 ? "month" : PERIODS[C2].k + "-month window"))
+      + " are the same kind of number and can be set side by side. It is the frame the "
+      + "variance is taken in, not a forecast. "
       + (totalScope
           ? "The expense row is the statement's own total expenses line ("
             + (pt.basis || "") + ") \u2014 the whole expense load, operating and "
@@ -2496,19 +2532,27 @@ async function renderOpSummary(slug, ids) {
             + "is excluded. "
           : "NOI is revenue less operating expense (" + (pt.basis || "") + "), so the "
             + "three rows reconcile; non-operating items below that line are excluded. ")
-      + "Variance is the percentage difference, coloured by favourability rather than by "
-      + "sign: green is more revenue, more NOI, or less expense.";
+      + "Variance is the difference between the two columns, coloured by favourability "
+      + "rather than by sign: green is more revenue, more NOI, or less expense.";
   }
+
+  const togs = document.getElementById(ids.togs);
   const sel = ids.sel && document.getElementById(ids.sel);
   if (sel) {
     sel.textContent = "";
     options.forEach(k => sel.appendChild(
       Object.assign(elc("option"), { value: k, textContent: PERIODS[k].label })));
     sel.value = options[0];
-    sel.addEventListener("change", () => render(sel.value));
+    sel.addEventListener("change", () => {
+      const held = togs.querySelector('.tog[aria-pressed="true"]');
+      setBase(sel.value, held && held.dataset.cmp);
+    });
   }
-  render(options[0]);
-  reserveTallest(document.getElementById(ids.note), options.map(noteFor));
+  setBase(options[0], null);
+  reserveTallest(document.getElementById(ids.note),
+    options.reduce((acc, b) => acc.concat(
+      comparisonsFor(b).map(c => noteFor(b, c))), []));
+
   return pt;
 }
 
@@ -2883,7 +2927,8 @@ async function loadLanding() {
   // workbook -- it draws the pipeline's own T12 series -- which is why both
   // tabs can show the same card.
   renderOpSummary("the-landing",
-    { card: "cOpSummary", tbl: "lopTbl", note: "lopNote", sel: "lopSelect" });
+    { card: "cOpSummary", tbl: "lopTbl", note: "lopNote", sel: "lopSelect",
+      togs: "lopTogs" });
 
   /* ---- Expense & NOI ---- */
   (async function noi() {
@@ -3431,7 +3476,8 @@ async function loadLandingDrive() {
 
   /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
   renderOpSummary(SCD_SLUG,
-    { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote", sel: "dopSelect" });
+    { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote", sel: "dopSelect",
+      togs: "dopTogs" });
 
   /* ---- Loss to lease — the statement's own rental-income section ---- */
   (function rentCaptureDrive() {

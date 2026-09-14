@@ -100,7 +100,7 @@ every figure on it would move on the next pipeline run.
 
 | Card | Drive source |
 | --- | --- |
-| Operating Summary | T12 statement → `metrics.json` `monthly_pl` — a period picker, that period against three others |
+| Operating Summary | T12 statement → `metrics.json` `monthly_pl` — a period select on the left, comparison boxes on the right |
 | Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over the current gap by rollover cohort from `rent_roll` |
 | KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
 | Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
@@ -672,50 +672,50 @@ Past `SC_STALE_DAYS` (3, in `index.html`) the timestamp turns red: the daily
 EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
 "Feed arrival times" table lists every feed's arrival beside its as-of date.
 
-### The Operating Summary's period picker
+### The Operating Summary's two controls
 
 The card used to carry three toggles — Prev month / T3 / T12 — each swapping in
-one comparison against the current month. It now carries a **Comparison:**
-dropdown **on the left of the card, under the eyebrow**, which picks what the
-card is read from and shows that against **three** comparisons at once.
-Selecting Current Month puts all three of the old toggles on screen together, at
-the same numbers they gave.
+one comparison against the current month, with the current month fixed. Both
+sides are a choice now:
 
-| Selected | Measured against |
+- a **Comparison:** select on the **left of the card**, under the eyebrow, for
+  what the card is read from — **Current Month or T3**;
+- the **clickable boxes on the right** for what that is measured against, and
+  **which boxes exist follows the select**.
+
+| Selected | Boxes offered |
 | --- | --- |
 | Current Month | Prev Month, T3, T12 |
 | T3 | Current Month, T6, T12 |
 
 The shape is the same both times — the nearest shorter window, the nearest
-longer one, and the year — which is "how is this running against last, against
-the quarter, against the year".
+longer one, and the year. `CHOICES` is `["cm", "t3"]`; T6 and T12 are comparison
+targets only, since reading the card from the year round would only restate the
+same variances inverted.
 
-**Two choices, not four.** `CHOICES` is `["cm", "t3"]`; T6 and T12 are
-comparison targets only. The question the card answers is how the current month
-or the current quarter is running, and reading it from the year round would only
-restate the same three variances inverted. The select sits on the left because
-the selection names what the other columns are measured against — it reads as
-the first thing on that row, not as a control off to one side, and at phone
-width it stays put while the table scrolls inside its own box.
+Switching the select **keeps the comparison where the new set still offers it** —
+Current Month → T3 leaves T12 selected rather than snapping back to the first
+button under the cursor. Prev Month is not in T3's set, so coming back from T3
+falls to it.
 
-**Every figure is an annual run rate**, the period's own total scaled to a full
-year (a month ×12, a T3 ×4). That is what lets a month sit beside a quarter at
-all, and it means every cell on a row is the same kind of number, so the
-variances are comparable to each other as well as to the selected period. It is
-the frame the variance is taken in, not a forecast — the note says so.
+**Both columns are annual run rates**, each period's own total scaled to a full
+year (a month ×12, a T3 ×4). The old card could put a month beside a T3 only by
+multiplying the month by three; that trick does not generalise to an arbitrary
+pair, and T3 against T6 needs it. The run rate does, and it means the variance
+reads the same way whichever pair is showing. It is the frame the variance is
+taken in, not a forecast — the note says so.
 
-Each comparison cell prints that period's run rate under the variance against
-it. Three comparisons at once is the point of the card, but three bare
-percentages would leave nowhere to read the money, and that cell is the only
-place the comparison period's figure appears.
+Four data columns: the two run rates, then the variance in **dollars** and in
+**percent**. A percentage alone hides the size of the thing — 15% on the expense
+row is $759k a year. Both are coloured by favourability rather than by sign, so
+less expense is green, and both use the same typographic minus, since they sit
+in adjacent columns at 15px and a hyphen beside a minus is visible.
 
 A window is **offered only when the series holds it** — `avail()` checks the
 window starts at or after the first month rather than clamping, and it filters
-the comparisons as well as the choices. Clamping would print "T12" over eight
-months of data, which is the kind of label that gets quoted. The series is
-twelve months today (one statement) and lengthens as statements accumulate, so
-both choices and every comparison are live; a shorter run simply shows fewer
-columns.
+the boxes as well as the select. Clamping would print "T12" over eight months of
+data, which is the kind of label that gets quoted. Twelve months today, so both
+choices and every box are live; a shorter run simply offers fewer.
 
 `renderOpSummary` is shared with The Landing tab, so both cards changed
 together. That is the point of it being shared — see the Drive-only tab section.
