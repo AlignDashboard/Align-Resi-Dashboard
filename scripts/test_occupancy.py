@@ -203,11 +203,15 @@ def main():
            and drc["sections"][0]["residential_units"] == 5,
            drc["sections"][0])
         raw_census, rolled = bed_rollup(occ["by_plan"], plans, residential=False)
-        ok("the directory's census over-counts the 1-bed group, and that is fine",
-           raw_census[1] == 4 and rolled[1]["units"] == 3, (raw_census, rolled))
-        ok("the difference is visible, so the note can report it rather than "
-           "reconcile it",
-           sum(raw_census.values()) - sum(g["units"] for g in rolled.values()) == 1,
+        # Since the directory's plan table became apartments-only these agree,
+        # and on the real data both read 263. They are still counted from two
+        # reports on two dates, so the card follows the roll rather than
+        # assuming the agreement holds — the next check is what guarantees the
+        # bars, and it does not depend on the directory at all.
+        ok("the directory's plan census now agrees with the roll",
+           raw_census[1] == 3 and rolled[1]["units"] == 3, (raw_census, rolled))
+        ok("neither counts the placeholder",
+           sum(raw_census.values()) == sum(g["units"] for g in rolled.values()) == 5,
            (raw_census, rolled))
         ok("the rollup is the split the bars draw",
            rolled[1] == {"units": 3, "leased": 2, "vacant": 1}
