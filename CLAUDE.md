@@ -686,17 +686,21 @@ sides are a choice now:
 | Selected | Boxes offered |
 | --- | --- |
 | Current Month | Prev Month, T3, T12 |
-| T3 | Current Month, T6, T12 |
+| T3 | T6, T12 |
 
-The shape is the same both times — the nearest shorter window, the nearest
-longer one, and the year. `CHOICES` is `["cm", "t3"]`; T6 and T12 are comparison
-targets only, since reading the card from the year round would only restate the
-same variances inverted.
+**A window is never set against one it contains.** T3 is May–Jul, so measuring
+it against the current month would put a quarter beside its own last third and
+read the overlap as a variance — so T3's boxes are the two windows that extend
+past it. Current Month has no such problem: Prev Month is the month before, not
+inside it, so it keeps all three.
+
+`CHOICES` is `["cm", "t3"]`; T6 and T12 are comparison targets only, since
+reading the card from the year round would only restate the same variances
+inverted.
 
 Switching the select **keeps the comparison where the new set still offers it** —
-Current Month → T3 leaves T12 selected rather than snapping back to the first
-button under the cursor. Prev Month is not in T3's set, so coming back from T3
-falls to it.
+Current Month with T12 showing stays on T12 when it becomes T3. Prev Month is
+not in T3's set, so that pair falls to T6.
 
 **Both columns are annual run rates**, each period's own total scaled to a full
 year (a month ×12, a T3 ×4). The old card could put a month beside a T3 only by

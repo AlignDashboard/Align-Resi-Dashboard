@@ -2393,17 +2393,21 @@ async function renderOpSummary(slug, ids) {
     t12:  { k: 12, back: 0, label: "T12" },
   };
   // The two the card can be read from, and what each is measured against.
-  // Three comparisons each, and the selected period never appears among its
-  // own. The shape is the same both times: the nearest shorter window, the
-  // nearest longer one, and the year — "how is this running against last,
-  // against the quarter, against the year". T6 and T12 are comparison targets
-  // only, not choices: the question the card answers is how the current month
-  // or the current quarter is running, and reading it from the year round
-  // would only restate the same three variances inverted.
+  // The selected period never appears among its own comparisons, and neither
+  // does a window contained by it: T3 is May–Jul, so setting it against the
+  // current month would measure a quarter against its own last third and read
+  // the overlap as a variance. T3's boxes are therefore the two windows that
+  // extend past it. Current Month has no such problem — Prev Month is the month
+  // before, not inside it — so it keeps all three.
+  //
+  // T6 and T12 are comparison targets only, not choices: the question the card
+  // answers is how the current month or the current quarter is running, and
+  // reading it from the year round would only restate the same variances
+  // inverted.
   const CHOICES = ["cm", "t3"];
   const COMPARE = {
     cm: ["prev", "t3", "t12"],
-    t3: ["cm", "t6", "t12"],
+    t3: ["t6", "t12"],
   };
   const endOf = P => cur - P.back;
   const startOf = P => endOf(P) - P.k + 1;
