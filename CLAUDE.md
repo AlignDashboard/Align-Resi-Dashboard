@@ -503,6 +503,15 @@ to it. Hovering a segment gives its count, its share of that bedroom type, and
 the group's whole leased/vacant/occupied line. The Landing reads 97.7% leased —
 1 bed 135/2, 2 bed 106/4, 3 bed 16/0.
 
+The column beside the bars is the **unit count per bedroom type** and nothing
+else — 137 / 110 / 16 — as of 2026-09-14. It is built from the same keys and the
+same totals the chart draws, so a figure there cannot disagree with the bar it
+sits next to, and a studio or an undescribed plan gets a line the day it gets a
+bar. It replaced a five-stat block (apartments, leased %, floorplans, average
+sqft, average directory rent). Nothing was lost from the card: the apartment and
+floorplan counts are in the eyebrow, and the leased share is on the hover and in
+the table's own Leased and Vacant columns.
+
 It takes two reports, because neither can draw it alone. The rent roll knows
 which units are let but not how many bedrooms a floorplan has; the unit
 directory knows what a floorplan is and nothing about who is in it. So
