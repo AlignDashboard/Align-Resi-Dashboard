@@ -852,10 +852,7 @@
              the gap moved, the roll says who is carrying it. -->
         <div id="drcSnapshot" style="margin-top:18px;">
           <span class="eyebrow" id="drcEyebrow">IN-PLACE vs MARKET RENT · FROM THE CURRENT RENT ROLL</span>
-          <div style="display:flex;gap:22px;flex-wrap:wrap;">
-            <div style="flex:0 0 auto;min-width:170px;" id="drcStats"></div>
-            <div class="chartwrap" style="flex:1 1 300px;height:230px;"><canvas id="dcCaptureCohort"></canvas></div>
-          </div>
+          <div class="statrow" id="drcStats"></div>
           <div class="blu-note" id="drcFoot" style="color:var(--muted);"></div>
         </div>
       </div>
@@ -3962,46 +3959,23 @@ async function loadLandingDrive() {
       ["$" + rr.inplace_psf.toFixed(2) + " / $" + rr.market_psf.toFixed(2),
        "in-place vs market $/sqft"],
     ]);
-    // By rollover cohort: how much of the gap sits in leases already expired
-    // versus each future expiry window. That is the actionable cut of a
-    // snapshot -- the gap you can reprice soonest is the gap that matters.
-    const coh = [
-      { label: "Holdover", pick: b => b.month === "Expired" },
-      { label: "0–3 mo", pick: (b, i) => i >= 1 && i <= 3 },
-      { label: "4–6 mo", pick: (b, i) => i >= 4 && i <= 6 },
-      { label: "7–12 mo", pick: (b, i) => i >= 7 && i <= 12 },
-      { label: "12 mo+", pick: (b, i) => i > 12 },
-    ];
-    const idx = b => rr.rollover.indexOf(b);
-    const cohorts = coh.map(c => {
-      const rows = rr.rollover.filter((b, i) => c.pick(b, i));
-      return { label: c.label, units: rows.reduce((t, b) => t + b.units, 0),
-               gap: rows.reduce((t, b) => t + b.uncaptured, 0) };
-    }).filter(c => c.units > 0);
-    new Chart(document.getElementById("dcCaptureCohort"), {
-      type: "bar",
-      data: { labels: cohorts.map(c => c.label),
-        datasets: [{ label: "Uncaptured rent $/mo", data: cohorts.map(c => c.gap),
-                     backgroundColor: cohorts.map(c =>
-                       c.label === "Holdover" ? C.red : C.teal) }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => fm$(c.parsed.x) + "/mo across "
-                    + cohorts[c.dataIndex].units + " units" } } },
-        scales: { x: { grid: gridCfg, ticks: { callback: v => fm$(v) } },
-                  y: { grid: { display: false } } } }
-    });
+    // The cohort chart that used to sit here is gone: it bucketed rr.rollover
+    // into Holdover / 0-3 / 4-6 / 7-12 / 12 mo+ and plotted the uncaptured rent
+    // in each, which is the Rollover Schedule card one below re-grouped -- the
+    // same array and the same uncaptured figures, in coarser buckets. The stats
+    // stay: nothing else on the tab carries the loss-to-lease dollars.
     document.getElementById("drcEyebrow").textContent =
       "IN-PLACE vs MARKET RENT · RENT ROLL OF " + asOf;
     document.getElementById("drcFoot").textContent =
       "Market rent less in-place rent across the " + rr.occupied + " occupied units on the "
-      + "rent roll of " + asOf + ", split by when each lease comes up. Vacant units are "
+      + "rent roll of " + asOf + ". Vacant units are "
       + "excluded: a vacant unit has an asking rent and no in-place rent, so counting it "
       + "would book the whole asking rent as loss to lease (" + fmPct(rr.loss_to_lease_pct, 1)
       + " becomes " + fmPct((rr.market_rent_total - rr.actual_rent_total) / rr.market_rent_total, 1)
       + " on all " + rr.units + "). A rent roll is a single snapshot, so this half reports "
       + "where the gap sits today; the chart above it is the same gap month by month, from "
-      + "the statement's own revenue lines.";
+      + "the statement's own revenue lines, and the Rollover Schedule card below splits it "
+      + "by when each lease comes up.";
 
     /* ---- Rollover schedule ---- */
     const roll = rr.rollover;

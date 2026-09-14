@@ -101,7 +101,7 @@ every figure on it would move on the next pipeline run.
 | Card | Drive source |
 | --- | --- |
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` — a period select on the left, comparison boxes on the right |
-| Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over the current gap by rollover cohort from `rent_roll` |
+| Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over today's gap in figures from `rent_roll` |
 | KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
 | Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
 | Rollover Schedule | `rent_roll` — lease expirations by month |
@@ -129,8 +129,16 @@ first run. Three things that matter about how it is read:
   when each lease comes up. The 19-month view it cannot give came from the
   statement's revenue detail lines later the same day — see the rent-capture
   section below — and the two now share one card: the series as the chart, the
-  roll's cohorts and stats beneath. The roll's half hides itself when no roll
-  has arrived, since the chart above does not depend on one.
+  roll's own figures beneath. The roll's half hides itself when no roll has
+  arrived, since the chart above does not depend on one.
+
+  That half used to carry a bar chart too — the gap bucketed into Holdover /
+  0–3 / 4–6 / 7–12 / 12 mo+ — and it came off on 2026-09-14. It was the
+  **Rollover Schedule** card directly below it re-grouped: the same
+  `rr.rollover` array and the same `uncaptured` figures, in coarser buckets.
+  The stats stayed, since nothing else on the tab carries the loss-to-lease
+  dollars, and the footnote now points at the Rollover card for the split by
+  expiry.
 
 `renderOpSummary` and `renderExpenseDeep` are **shared** with The Landing rather
 than copied. Neither ever read the workbook; the workbook half of the deep dive
