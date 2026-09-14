@@ -435,11 +435,13 @@
      Both Landing tabs carry this card and it is one renderer, so it is one set
      of rules rather than a copy that drifts. */
   #lopTbl table.dt, #dopTbl table.dt { table-layout: fixed; }
+  /* Five columns now -- the row label, the selected period, and three
+     comparisons -- so the four data columns split what the label leaves. */
   #lopTbl table.dt th, #lopTbl table.dt td,
-  #dopTbl table.dt th, #dopTbl table.dt td { width: 15.6%; }
+  #dopTbl table.dt th, #dopTbl table.dt td { width: 19.5%; }
   #lopTbl table.dt th:first-child, #lopTbl table.dt td:first-child,
   #dopTbl table.dt th:first-child, #dopTbl table.dt td:first-child { width: 22%; }
-  #lopTbl table.dt th, #dopTbl table.dt th { vertical-align: bottom; height: 44px; }
+  #lopTbl table.dt th, #dopTbl table.dt th { vertical-align: bottom; height: 52px; }
   /* It is the board's header table -- three rows above everything else -- so it
      is set larger than the data tables further down the page. */
   #lopTbl table.dt, #dopTbl table.dt { font-size: 15px; margin-top: 14px; }
@@ -505,6 +507,12 @@
     font-family: inherit; font-size: 11px; letter-spacing: 1px; padding: 6px 10px;
     text-transform: uppercase; cursor: pointer; outline: none; }
   .prop-select:focus { border-color: var(--amber); }
+  /* "Comparison:" beside the operating summary's period select. Baseline-
+     aligned to the box rather than the row, so the label does not ride up when
+     the head wraps at narrow widths. */
+  .opsel { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .opsel label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); white-space: nowrap; }
   .prop-select option { background: var(--panel); color: var(--text); }
   .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   /* The deep dive's period toggle used to drop onto a line of its own the moment
@@ -684,12 +692,11 @@
         <div class="card-head">
           <div>
             <h2>Operating Summary</h2>
-            <span class="eyebrow" id="lopEyebrow">CURRENT MONTH vs A TRAILING WINDOW · ANNUALIZED · FROM THE T12 STATEMENT</span>
+            <span class="eyebrow" id="lopEyebrow">ONE PERIOD vs THREE · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
           </div>
-          <div class="togrow" role="group" aria-label="Comparison basis">
-            <button class="tog" type="button" data-basis="prev" aria-pressed="true">Prev month</button>
-            <button class="tog" type="button" data-basis="t3" aria-pressed="false">T3</button>
-            <button class="tog" type="button" data-basis="t12" aria-pressed="false">T12</button>
+          <div class="opsel">
+            <label for="lopSelect">Comparison:</label>
+            <select class="prop-select" id="lopSelect"></select>
           </div>
         </div>
         <div id="lopTbl"></div>
@@ -803,12 +810,11 @@
         <div class="card-head">
           <div>
             <h2>Operating Summary</h2>
-            <span class="eyebrow" id="dopEyebrow">CURRENT MONTH vs A TRAILING WINDOW · ANNUALIZED · FROM THE T12 STATEMENT</span>
+            <span class="eyebrow" id="dopEyebrow">ONE PERIOD vs THREE · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
           </div>
-          <div class="togrow" role="group" aria-label="Comparison basis">
-            <button class="tog" type="button" data-basis="prev" aria-pressed="true">Prev month</button>
-            <button class="tog" type="button" data-basis="t3" aria-pressed="false">T3</button>
-            <button class="tog" type="button" data-basis="t12" aria-pressed="false">T12</button>
+          <div class="opsel">
+            <label for="dopSelect">Comparison:</label>
+            <select class="prop-select" id="dopSelect"></select>
           </div>
         </div>
         <div id="dopTbl"></div>
@@ -2369,44 +2375,51 @@ async function renderOpSummary(slug, ids) {
     ? pt.months : monthKeysBack(pt.period_end, n);
   const key = i => keys[i];
 
-  // Each basis puts a trailing window on the left and the current month
-  // scaled to the same length on the right: T3 is the last three months
-  // against July run three times over, T12 the last twelve against July run
-  // twelve times. The right-hand column is therefore the current month's rate
-  // held for the window, not three or twelve actual months -- which is the
-  // comparison, "is this month running above or below the trailing average".
-  const sum = (a, from, len) => a.slice(from, from + len).reduce((x, y) => x + y, 0);
-  const trail = (a, k) => sum(a, n - Math.min(k, n), Math.min(k, n));
-  const span = k => shortMo(key(n - Math.min(k, n))) + "–" + shortMo(key(cur));
-  const BASES = {
-    prev: { k: 1,
-            base: series => series[cur - 1],
-            head: () => shortMo(key(cur - 1)),
-            label: () => shortMo(key(cur - 1)),
-            curHead: () => "Current Month (" + shortMo(key(cur)) + ")",
-            curLabel: () => "Current Month",
-            blurb: () => "the prior month, " + shortMo(key(cur - 1)) },
-    t3:   { k: 3,
-            base: series => trail(series, 3),
-            head: () => "T3 (" + span(3) + ")",
-            label: () => "T3",
-            curHead: () => "Current ×3 (" + shortMo(key(cur)) + ")",
-            curLabel: () => "Current ×3",
-            blurb: () => "the trailing " + Math.min(3, n) + " months, " + span(3) },
-    t12:  { k: 12,
-            base: series => trail(series, 12),
-            head: () => "T12 (" + span(12) + ")",
-            label: () => "T12",
-            curHead: () => "Current ×12 (" + shortMo(key(cur)) + ")",
-            curLabel: () => "Current ×12",
-            blurb: () => "the trailing " + Math.min(12, n) + " months, " + span(12) },
+  // The periods the card can put on either side of a comparison. `k` is the
+  // window in months and `back` how far before the newest month it ends, so
+  // "Prev Month" is the same one-month window stepped back one.
+  const PERIODS = {
+    cm:   { k: 1,  back: 0, label: "Current Month" },
+    prev: { k: 1,  back: 1, label: "Prev Month" },
+    t3:   { k: 3,  back: 0, label: "T3" },
+    t6:   { k: 6,  back: 0, label: "T6" },
+    t12:  { k: 12, back: 0, label: "T12" },
   };
+  // What each choice is measured against. Three each, and the selected period
+  // never appears among its own comparisons. The shape is the same every time:
+  // the nearest shorter window, the nearest longer one, and the year — which is
+  // "how does this run against last, against the quarter, against the year".
+  const COMPARE = {
+    cm:  ["prev", "t3", "t12"],
+    t3:  ["cm", "t6", "t12"],
+    t6:  ["cm", "t3", "t12"],
+    t12: ["cm", "t3", "t6"],
+  };
+  const endOf = P => cur - P.back;
+  const startOf = P => endOf(P) - P.k + 1;
+  // A window is offered only when the series actually holds it. Clamping
+  // instead would print "T12" over eight months of data, which is the kind of
+  // label that gets quoted.
+  const avail = k => PERIODS[k] && startOf(PERIODS[k]) >= 0;
+  const sumOf = (P, series) => series.slice(startOf(P), endOf(P) + 1)
+    .reduce((x, y) => x + y, 0);
+  // Every figure on the card is an annual run rate: one month times twelve, a
+  // T3 times four. Without that a month could not be set beside a quarter at
+  // all, and with it every column on a row is the same kind of number, so the
+  // variances between them are comparable to each other as well.
+  const annualOf = (P, series) => sumOf(P, series) * (12 / P.k);
+  const spanOf = k => {
+    const P = PERIODS[k];
+    return P.k === 1 ? shortMo(key(endOf(P)))
+      : shortMo(key(startOf(P))) + "\u2013" + shortMo(key(endOf(P)));
+  };
+  const headOf = k => PERIODS[k].label + " (" + spanOf(k) + ")";
 
-  // Variance is the change between the two columns as a percentage, coloured
-  // by favourability rather than by sign: more revenue and more NOI are good,
-  // more expense is not, so the expense row's colour is inverted. Without that
-  // inversion July's $24k saving would print red for being a negative number.
-  // The percentage keeps its own sign -- what flips is the colour.
+  // Variance is the change between two run rates as a percentage, coloured by
+  // favourability rather than by sign: more revenue and more NOI are good, more
+  // expense is not, so the expense row's colour is inverted. Without that
+  // inversion a saving would print red for being a negative number. The
+  // percentage keeps its own sign -- what flips is the colour.
   const vcell = (pctChange, goodWhenUp) => {
     const favourable = goodWhenUp ? pctChange > 0 : pctChange < 0;
     const e = elc("span", null,
@@ -2414,78 +2427,84 @@ async function renderOpSummary(slug, ids) {
     e.style.color = pctChange === 0 ? C.muted : favourable ? C.green : C.red;
     return e;
   };
-  function render(basisKey) {
-    const B = BASES[basisKey] || BASES.prev;
-    const k = Math.min(B.k, n);
-    // 12 / window: what turns either column into an annual figure. Both are
-    // scaled by the same factor, so the right-hand column always annualizes
-    // to the current month x 12 whichever basis is showing.
-    const factor = 12 / k;
+  // A comparison cell carries the variance over what it is a variance against.
+  // Three comparisons at once is the point of the card, but three bare
+  // percentages leave nowhere to read the money, and this row is the only place
+  // that period's figure appears.
+  const cmpCell = (pct, against, goodWhenUp) => {
+    const wrap = elc("span");
+    wrap.style.display = "inline-block";
+    const top = elc("div");
+    top.appendChild(pct === null ? document.createTextNode("\u2014")
+                                 : vcell(pct, goodWhenUp));
+    const sub = elc("div", null, fm$(against));
+    sub.style.cssText = "font-size:9px;letter-spacing:.5px;color:" + C.muted
+      + ";margin-top:2px;";
+    wrap.appendChild(top);
+    wrap.appendChild(sub);
+    return wrap;
+  };
+
+  const options = ["cm", "t3", "t6", "t12"].filter(avail);
+  function render(selKey) {
+    const S = PERIODS[selKey] ? selKey : options[0];
+    const cmps = (COMPARE[S] || []).filter(k => k !== S && avail(k));
     const row = (label, series, goodWhenUp) => {
-      const a = B.base(series), b = series[cur] * k;
-      const aYr = a * factor, bYr = b * factor;
-      const pct = aYr ? (bYr - aYr) / Math.abs(aYr) : null;
-      return [label, fm$(a), fm$(b), fm$(aYr), fm$(bYr),
-              pct === null ? "—" : vcell(pct, goodWhenUp)];
+      const a = annualOf(PERIODS[S], series);
+      return [label, fm$(a)].concat(cmps.map(ck => {
+        const b = annualOf(PERIODS[ck], series);
+        const pct = b ? (a - b) / Math.abs(b) : null;
+        return cmpCell(pct, b, goodWhenUp);
+      }));
     };
     buildTable(document.getElementById(ids.tbl),
-      [{ t: "" },
-       { t: B.head(), num: true },
-       { t: B.curHead(), num: true },
-       { t: B.label() + " annualized", num: true },
-       { t: B.curLabel() + " annualized", num: true },
-       { t: "Variance", num: true }],
+      [{ t: "" }, { t: headOf(S), num: true }]
+        .concat(cmps.map(ck => ({ t: "vs " + headOf(ck), num: true }))),
       [row("Operating revenue", pt.revenue, true),
        row(expLabel, pt.opex, false),
        row(noiLabel, pt.noi, true)]);
-
-    // Deliberately does not name the horizon: the eyebrow sits above the
-    // table, so a string that changed length with the toggle would rewrap at
-    // narrow widths and push the whole table up and down. The column headings
-    // say which horizon is showing.
-    document.getElementById(ids.note).textContent = noteFor(basisKey);
-    card.querySelectorAll(".tog").forEach(t =>
-      t.setAttribute("aria-pressed", String(t.dataset.basis === basisKey)));
+    document.getElementById(ids.note).textContent = noteFor(S);
   }
-  // The note does change with the horizon, and this card sits above everything
+  // The note changes with the selection, and this card sits above everything
   // else in the view -- when its text gained a line the whole page below moved
-  // 10px. Built as a function of the horizon so all three can be measured and
-  // the tallest reserved; see reserveTallest.
-  function noteFor(basisKey) {
-    const B = BASES[basisKey] || BASES.prev;
-    const k = Math.min(B.k, n);
-    const factor = 12 / k;
-    return "The same statement the expense cards read, refreshed on the same daily run — "
+  // 10px. Built as a function of the selection so every option can be measured
+  // and the tallest reserved; see reserveTallest.
+  function noteFor(selKey) {
+    const S = PERIODS[selKey] ? selKey : options[0];
+    const cmps = (COMPARE[S] || []).filter(k => k !== S && avail(k));
+    const names = cmps.map(k => PERIODS[k].label + " (" + spanOf(k) + ")");
+    const list = names.length > 1
+      ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
+      : names.join("");
+    return "The same statement the expense cards read, refreshed on the same daily run \u2014 "
       + "the current month follows the statement, so it moves to the new month when one "
-      + "is posted. " + shortMo(key(cur)) + " is measured against " + B.blurb() + ". "
-      + (k > 1
-          ? "The left column is " + k + " real months; the right is "
-            + shortMo(key(cur)) + " multiplied by " + k + " — that month's rate held "
-            + "for the same span, not " + k + " actual months — so the two sides carry "
-            + "the same weight and the variance reads as how far above or below the "
-            + "trailing average the current month is running. "
-          : "The left column is the month before and the right is "
-            + shortMo(key(cur)) + " itself — one real month on each side, no scaling "
-            + "— so the two sides carry the same weight and the variance reads as how "
-            + "far above or below last month the current month is running. ")
-      + "Annualized scales both columns by ×" + factor + " to a full year, which is the "
-      + "frame the variance is taken in, not a forecast. "
+      + "is posted. " + PERIODS[S].label + " (" + spanOf(S) + ") is measured against "
+      + list + ". Every figure is an annual run rate \u2014 the period's own total scaled "
+      + "to a full year, so " + (PERIODS[S].k === 1 ? "a month" : "a " + PERIODS[S].k
+        + "-month window") + " and a year are the same kind of number and can be set "
+      + "side by side. It is the frame the variance is taken in, not a forecast. Each "
+      + "comparison column prints that period's run rate under the variance against it. "
       + (totalScope
           ? "The expense row is the statement's own total expenses line ("
-            + (pt.basis || "") + ") — the whole expense load, operating and "
-            + "non-operating, not the operating slice alone — and NOI is revenue "
+            + (pt.basis || "") + ") \u2014 the whole expense load, operating and "
+            + "non-operating, not the operating slice alone \u2014 and NOI is revenue "
             + "less it, so the three rows reconcile. Financing sits below that line and "
             + "is excluded. "
           : "NOI is revenue less operating expense (" + (pt.basis || "") + "), so the "
             + "three rows reconcile; non-operating items below that line are excluded. ")
-      + "Variance is the percentage difference, "
-      + "coloured by favourability rather than by sign: green is more revenue, more NOI, "
-      + "or less expense.";
+      + "Variance is the percentage difference, coloured by favourability rather than by "
+      + "sign: green is more revenue, more NOI, or less expense.";
   }
-  card.querySelectorAll(".tog").forEach(t =>
-    t.addEventListener("click", () => render(t.dataset.basis)));
-  render("prev");
-  reserveTallest(document.getElementById(ids.note), Object.keys(BASES).map(noteFor));
+  const sel = ids.sel && document.getElementById(ids.sel);
+  if (sel) {
+    sel.textContent = "";
+    options.forEach(k => sel.appendChild(
+      Object.assign(elc("option"), { value: k, textContent: PERIODS[k].label })));
+    sel.value = options[0];
+    sel.addEventListener("change", () => render(sel.value));
+  }
+  render(options[0]);
+  reserveTallest(document.getElementById(ids.note), options.map(noteFor));
   return pt;
 }
 
@@ -2859,7 +2878,8 @@ async function loadLanding() {
   // Shared with the Drive-only tab; see renderOpSummary. It never read the
   // workbook -- it draws the pipeline's own T12 series -- which is why both
   // tabs can show the same card.
-  renderOpSummary("the-landing", { card: "cOpSummary", tbl: "lopTbl", note: "lopNote" });
+  renderOpSummary("the-landing",
+    { card: "cOpSummary", tbl: "lopTbl", note: "lopNote", sel: "lopSelect" });
 
   /* ---- Expense & NOI ---- */
   (async function noi() {
@@ -3406,7 +3426,8 @@ async function loadLandingDrive() {
     + "on the last card.";
 
   /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
-  renderOpSummary(SCD_SLUG, { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote" });
+  renderOpSummary(SCD_SLUG,
+    { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote", sel: "dopSelect" });
 
   /* ---- Loss to lease — the statement's own rental-income section ---- */
   (function rentCaptureDrive() {
