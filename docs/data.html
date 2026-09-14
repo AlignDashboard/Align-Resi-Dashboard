@@ -1334,6 +1334,28 @@ async function loadAll() {
         ],
       });
       renderTable(host, {
+        id: "t-occupancy-" + (pr.slug || i), group: "Portfolio",
+        title: "Occupancy by floorplan — " + (pr.name || pr.slug),
+        feeds: "Unit Inventory card (Landing (Drive) tab) — the leased/vacant bars",
+        note: src + "Counts per plan, which is the grain the Unit Inventory card "
+            + "splits its bars on: the roll names the plan and the unit directory "
+            + "says how many bedrooms a plan has, so neither report can draw that "
+            + "chart alone. Leased is the same occupied flag as above — a resident "
+            + "code and a non-zero rent — so a unit on notice or holding over counts "
+            + "as leased.",
+        cols: [{ key: "plan", label: "Floorplan" },
+               { key: "units", label: "Units", fmt: "int" },
+               { key: "leased", label: "Leased", fmt: "int" },
+               { key: "vacant", label: "Vacant", fmt: "int" },
+               { key: "occupied_pct", label: "Occupied", fmt: "pct1" }],
+        rows: Object.keys(pr.by_plan || {}).sort().map(k => {
+          const b = pr.by_plan[k];
+          return { plan: k, units: b.units, leased: b.leased, vacant: b.vacant,
+                   occupied_pct: b.units ? b.leased / b.units : null };
+        }),
+        filterable: true,
+      });
+      renderTable(host, {
         id: "t-rollover-" + (pr.slug || i), group: "Portfolio",
         title: "Rollover schedule — " + (pr.name || pr.slug),
         feeds: "Rollover Schedule card (Landing (Drive) tab)",

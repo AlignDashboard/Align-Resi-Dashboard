@@ -211,7 +211,9 @@ DRIVE_FLOWS = {
             {"script": "scripts/parse_rent_roll.py",
              "does": "Reads unit rows until the section marker; keeps the "
                      "resident code only to tell an occupied unit from a "
-                     "vacant one.",
+                     "vacant one. Finds the property line wherever Yardi put "
+                     "it — this export names it below every unit row, not in "
+                     "the header.",
              "checks": "Every published total ties to the report's own Total "
                        "row; refuses the file if that row is missing."},
             {"script": "scripts/build_metrics.py",
@@ -231,14 +233,20 @@ DRIVE_FLOWS = {
             {"card": "Largest Unit Gaps", "tab": "Landing (Drive)", "anchor": "cdGaps",
              "primary": "t-gaps-*", "tables": ["t-gaps-*", "t-unitdir-*"],
              "holds": "Top units by annual gap to market"},
+            {"card": "Unit Inventory", "tab": "Landing (Drive)", "anchor": "cdInventory",
+             "primary": "t-occupancy-*", "tables": ["t-occupancy-*", "t-unitdir-*"],
+             "holds": "The leased/vacant split on the bedroom bars"},
         ],
-        "tables": ["t-rentroll-*", "t-rollover-*", "t-gaps-*"],
+        "tables": ["t-rentroll-*", "t-occupancy-*", "t-rollover-*", "t-gaps-*"],
         "note": "Live since 2026-09-11, the first roll ever to reach the "
                 "pipeline. Both published totals tied to the report's own "
                 "Total row to the cent on that first run. Occupancy is the "
                 "parser's occupied flag — a resident code AND a non-zero rent "
                 "— because Yardi carries a code on vacant units too, and a "
-                "code-only test reads 100% on a property at 97.7%.",
+                "code-only test reads 100% on a property at 97.7%. The "
+                "occupancy counts per floorplan published alongside are the "
+                "one part of a roll aggregate enough to leave data/, which is "
+                "what lets the Unit Inventory card split its bars.",
     },
     ("Residential AR Analytics", "ar_analytics"): {
         "id": "delinquency",

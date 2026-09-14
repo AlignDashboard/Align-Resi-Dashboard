@@ -4111,8 +4111,45 @@ async function loadLandingDrive() {
     const avgRent = wAvg(p => (p.rent_min != null && p.rent_max != null)
       ? (p.rent_min + p.rent_max) / 2 : null);
 
+    // ---- occupancy, from the rent roll ----------------------------------
+    // The directory is the building's fixed description and says nothing about
+    // who is in it; the roll knows which units are let but not how many
+    // bedrooms a floorplan has. So the roll's per-plan counts are rolled onto
+    // the bedroom groups the bars already use. A plan the directory has never
+    // described lands in the same "?" group an undescribed plan would, and is
+    // named in the note -- that is a join failure worth fixing, not a category.
+    const occPlan = (rr && rr.by_plan) || {};
+    const occBed = {};
+    Object.keys(occPlan).forEach(code => {
+      const p = plans[code], o = occPlan[code];
+      const k = (!p || p.bedrooms == null) ? "?" : p.bedrooms;
+      const t = occBed[k] || (occBed[k] = { units: 0, leased: 0, vacant: 0 });
+      t.units += o.units || 0; t.leased += o.leased || 0; t.vacant += o.vacant || 0;
+    });
+    // With a roll here it is the census, not an overlay on the directory's. The
+    // two count different things and always will: the directory lists 265 for
+    // The Landing -- two Yardi waitlist placeholders and a 56,120 sf
+    // "The Landing - PDR" record among them -- where the roll lists 263
+    // leasable apartments. Reconciling them to draw one bar would mean deciding
+    // which is wrong, so each bar is the roll's own count for its bedroom type,
+    // which makes leased + vacant equal the bar by construction. The directory
+    // supplies only the bedrooms. The difference is printed in the note.
+    const splitKeys = Object.keys(occBed)
+      .sort((a, b) => (a === "?") - (b === "?") || a - b);
+    const splitTotal = splitKeys.reduce((t, k) => t + occBed[k].units, 0);
+    const splitOK = splitTotal > 0;
+    const leasedTotal = splitKeys.reduce((t, k) => t + occBed[k].leased, 0);
+    const vacantTotal = splitKeys.reduce((t, k) => t + occBed[k].vacant, 0);
+    const barKeys = splitOK ? splitKeys : bedKeys;
+    const barTotal = k => splitOK ? occBed[k].units : beds[k];
+    const unknownPlans = Object.keys(occPlan).filter(c => !plans[c]);
+
     statBlock(document.getElementById("diStats"), [
       [String(dir.residential_units), "apartments"],
+      // The occupancy the bars are split on, in words as well as drawn: at 98%
+      // leased the vacant segment is a few pixels and the number is the point.
+      [splitOK ? fmPct(leasedTotal / splitTotal, 1) : "—",
+       splitOK ? "leased · " + vacantTotal + " vacant" : "leased — awaiting the rent roll"],
       [String(codes.length), "floorplans"],
       [avgSqft ? Math.round(avgSqft).toLocaleString() + " sf" : "—", "average, by unit"],
       [avgRent ? fm$(avgRent) : "—", "average directory rent"],
@@ -4120,39 +4157,82 @@ async function loadLandingDrive() {
     document.getElementById("diStats").querySelectorAll(".st")
       .forEach(st => { st.style.marginBottom = "10px"; });
 
+    // One bar per bedroom group, the whole of that type either way: with a roll
+    // it is leased + vacant stacked, without one the plain unit count. Stacked
+    // rather than grouped so the bar keeps reading as the bedroom type itself,
+    // which is what the card is for.
+    const unitWord = n => n === 1 ? "1 unit" : n + " units";
     new Chart(document.getElementById("dcInv"), {
       type: "bar",
-      data: { labels: bedKeys.map(bedLabel),
-        datasets: [{ data: bedKeys.map(k => beds[k]),
-          backgroundColor: bedKeys.map(k => k === "?" ? C.muted : C.teal) }] },
+      data: { labels: barKeys.map(bedLabel),
+        datasets: splitOK
+          ? [{ label: "Leased", data: barKeys.map(k => occBed[k].leased),
+               backgroundColor: C.amber, stack: "units" },
+             { label: "Vacant", data: barKeys.map(k => occBed[k].vacant),
+               backgroundColor: C.teal, stack: "units" }]
+          : [{ label: "Units", data: barKeys.map(k => beds[k]),
+               backgroundColor: barKeys.map(k => k === "?" ? C.muted : C.teal) }] },
       options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => c.parsed.x + " of the " + totalPlanUnits
-            + " units the directory lists · "
-            + fmPct(c.parsed.x / totalPlanUnits, 0) } } },
-        scales: { x: { grid: gridCfg, beginAtZero: true, ticks: { precision: 0 } },
-          y: { grid: { display: false } } } }
+        plugins: {
+          legend: splitOK
+            ? { display: true, position: "bottom",
+                labels: { boxWidth: 10, boxHeight: 10, padding: 14 } }
+            : { display: false },
+          tooltip: {
+            callbacks: splitOK ? {
+              // Hovering a segment answers about that bedroom type, not the
+              // building: "3 of the 110 2-bed" is the question the bar asks.
+              label: c => c.dataset.label + " " + unitWord(c.parsed.x) + " of the "
+                + barTotal(barKeys[c.dataIndex]) + " " + bedLabel(barKeys[c.dataIndex])
+                + " · " + fmPct(c.parsed.x / (barTotal(barKeys[c.dataIndex]) || 1), 1),
+              footer: items => {
+                const o = occBed[barKeys[items[0].dataIndex]];
+                return o.leased + " leased · " + o.vacant + " vacant · "
+                  + fmPct(o.leased / (o.units || 1), 1) + " occupied";
+              },
+            } : {
+              label: c => unitWord(c.parsed.x) + " of the " + totalPlanUnits
+                + " units the directory lists · "
+                + fmPct(c.parsed.x / totalPlanUnits, 0),
+            },
+          },
+        },
+        scales: {
+          x: { stacked: splitOK, grid: gridCfg, beginAtZero: true,
+               ticks: { precision: 0 } },
+          y: { stacked: splitOK, grid: { display: false } } } }
     });
 
     const range = (lo, hi, fmt) => lo == null ? "—"
       : (lo === hi ? fmt(lo) : fmt(lo) + "–" + fmt(hi));
     const sqft = n => Math.round(n).toLocaleString();
+    // The leased/vacant columns are where the split is actually legible: at 98%
+    // occupancy the vacant segment is a few pixels wide, and "which plans are
+    // the empty ones in" is the question that follows.
     buildTable(document.getElementById("diTbl"),
-      [{ t: "Plan" }, { t: "Beds" }, { t: "Baths", num: true }, { t: "Units", num: true },
-       { t: "SF", num: true }, { t: "Directory rent", num: true }],
+      [{ t: "Plan" }, { t: "Beds" }, { t: "Baths", num: true }, { t: "Units", num: true }]
+        .concat(splitOK ? [{ t: "Leased", num: true }, { t: "Vacant", num: true }] : [])
+        .concat([{ t: "SF", num: true }, { t: "Directory rent", num: true }]),
       codes.sort((a, b) => unitsOf(b) - unitsOf(a) || a.localeCompare(b)).map(c => {
-        const p = plans[c];
+        const p = plans[c], o = occPlan[c] || {};
         return [c,
           p.bedrooms == null ? "—" : p.bedrooms === 0 ? "Studio" : p.bedrooms + " BR",
           p.baths == null ? "—" : String(p.baths),
-          String(p.units),
-          range(p.sqft_min, p.sqft_max, sqft),
-          range(p.rent_min, p.rent_max, fm$)];
+          // The roll's count where the split is showing, so the row adds up:
+          // the directory's would leave laa1 reading 90 units against 88 on the
+          // roll, the two missing ones being placeholders the roll has never
+          // heard of. Same census as the bars, for the same reason.
+          String(splitOK ? (o.units || 0) : p.units)]
+          .concat(splitOK ? [String(o.leased || 0), String(o.vacant || 0)] : [])
+          .concat([range(p.sqft_min, p.sqft_max, sqft),
+                   range(p.rent_min, p.rent_max, fm$)]);
       }));
 
     document.getElementById("diEyebrow").textContent =
-      codes.length + " FLOORPLANS · " + dir.residential_units + " APARTMENTS · AS OF "
-      + dir.as_of;
+      codes.length + " FLOORPLANS · " + dir.residential_units + " APARTMENTS · "
+      + (splitOK ? "LEASED vs VACANT FROM THE RENT ROLL OF " + ((rr && rr.as_of) || "—")
+                 : "OCCUPANCY AWAITS THE RENT ROLL")
+      + " · DIRECTORY AS OF " + dir.as_of;
     const placeholders = (dir.units || 0) - (dir.residential_units || 0);
     note.textContent =
       "The building's fixed description, from " + dir.source_file + " of " + dir.as_of
@@ -4163,10 +4243,36 @@ async function loadLandingDrive() {
           + "includes them and the tie-out has to as well. "
         : "")
       + "Rent is the directory's own Rent column, shown per plan as the range across "
-      + "that plan's units. This is a description of the building, not a lease report — "
-      + "it carries no resident, no lease and no occupancy, which is why nothing here "
-      + "needs scrubbing. Bedrooms belong to the plan rather than the unit; a plan whose "
-      + "rows disagree is flagged by the parser, never averaged."
+      + "that plan's units. Bedrooms belong to the plan rather than the unit; a plan "
+      + "whose rows disagree is flagged by the parser, never averaged. The directory is "
+      + "a description of the building, not a lease report — it carries no resident and "
+      + "no lease, which is why nothing in it needs scrubbing."
+      + (splitOK
+          ? " The bars are split by occupancy, and the rent roll of "
+            + ((rr && rr.as_of) || "—") + " (" + ((rr && rr.source_file) || "—")
+            + ") is what they count: the directory cannot say which units are let, and "
+            + "the roll cannot say how many bedrooms a floorplan has, so the roll's own "
+            + "plan counts are rolled onto the directory's bedrooms. Each bar is the "
+            + "whole of its bedroom type and the two segments partition it, so leased "
+            + "plus vacant is the bar rather than something added to it."
+            + (splitTotal !== totalPlanUnits
+                ? " The roll counts " + splitTotal + " apartments where the directory "
+                  + "lists " + totalPlanUnits + "; the directory also carries waitlist "
+                  + "placeholders and non-apartment records, so the two are not the same "
+                  + "census and the bars follow the roll."
+                : "")
+            + (unknownPlans.length
+                ? " Floorplan" + (unknownPlans.length === 1 ? " " : "s ")
+                  + unknownPlans.join(", ") + (unknownPlans.length === 1 ? " is" : " are")
+                  + " on the roll but not in the directory, so those units sit in the "
+                  + "Unknown bar until the directory describes them."
+                : "")
+            + " Leased means the roll shows a resident and a rent against the unit, so a "
+            + "unit on notice or holding over counts as leased — it has someone in it. "
+            + "Only counts per floorplan are published: the roll itself is unit level, "
+            + "arrives with resident names and stops in data/."
+          : " Occupancy is not shown: it needs a rent roll, and none has been fetched, "
+            + "so the bars are the directory's own unit count.")
       + (scdBlocker("unit_directory")
           ? " Note this is the one card here that cannot refresh itself today: "
             + scdBlocker("unit_directory") + ". The figures are Drive-derived and tied "

@@ -67,12 +67,34 @@ def _text_cells(ws, max_row=30, max_col=None):
 
 
 def _property(ws):
-    """('The Landing', 'p0005611') from a line like 'The Landing (p0005611)'."""
-    for t in _text_cells(ws):
-        m = re.match(r"^(.{2,60}?)\s*\(([A-Za-z0-9._-]{4,20})\)\s*$", t)
-        if m and not m.group(1).lower().startswith("column "):
-            return m.group(1).strip(), m.group(2).strip()
-    return None, None
+    """('The Landing', 'p0005611') from a line like 'The Landing (p0005611)'.
+
+    Yardi does not always put that line in the header. RentRoll09_11_2026 says
+    only "For Selected Properties" at the top and names the properties in a
+    summary block at row 278, below every unit -- so a header-only scan returns
+    nothing and the whole roll is skipped as unattributed, which is what kept
+    this feed from routing on a pipeline run. The header is still searched
+    first, since that is where the line belongs and the first match wins; the
+    rest of the sheet is a fallback rather than the primary read.
+
+    A roll covering several building codes names them all (The Landing's also
+    lists "The Landing - PDR(p0005640)", the commercial record). The first is
+    returned, which is the residential one on every export seen so far; a roll
+    that needs splitting per code would need section handling the parser does
+    not have, and the unit count tying out against the report's own Total row
+    is what would catch it.
+    """
+    def find(cells):
+        for t in cells:
+            m = re.match(r"^(.{2,60}?)\s*\(([A-Za-z0-9._-]{4,20})\)\s*$", t)
+            if m and not m.group(1).lower().startswith("column "):
+                return m.group(1).strip(), m.group(2).strip()
+        return None, None
+
+    name, code = find(_text_cells(ws))
+    if code:
+        return name, code
+    return find(_text_cells(ws, max_row=ws.max_row))
 
 
 def _as_of(ws):
