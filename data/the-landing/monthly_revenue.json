@@ -1,15 +1,15 @@
 {
-  "revenue_month": 1328218.38,
+  "revenue_month": 1273804.96,
   "basis": "GL 4999-9999 total operating revenue, latest reported month per code",
-  "landed_at": "2026-08-26T23:15:02.942Z",
+  "landed_at": "2026-09-14T22:09:04.106Z",
   "source_files": [
-    "12_Month_Statement_Accrual.xlsx"
+    "2026-09-14 12_Month_Statement_Accrual (1).xlsx"
   ],
   "codes": {
     "p0005611": {
-      "month": "Jul",
-      "revenue": 1328218.38,
-      "period_end": "Jul 2026"
+      "month": "Aug",
+      "revenue": 1273804.96,
+      "period_end": "Aug 2026"
     }
   }
 }
