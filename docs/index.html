@@ -507,10 +507,11 @@
     font-family: inherit; font-size: 11px; letter-spacing: 1px; padding: 6px 10px;
     text-transform: uppercase; cursor: pointer; outline: none; }
   .prop-select:focus { border-color: var(--amber); }
-  /* "Comparison:" beside the operating summary's period select. Baseline-
-     aligned to the box rather than the row, so the label does not ride up when
-     the head wraps at narrow widths. */
-  .opsel { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  /* "Comparison:" beside the operating summary's period select. It sits on the
+     left of the card under the eyebrow, not opposite it: the selection names
+     what the table's other columns are measured against, so it reads as the
+     first thing on that row rather than a control off to one side. */
+  .opsel { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   .opsel label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
     color: var(--muted); white-space: nowrap; }
   .prop-select option { background: var(--panel); color: var(--text); }
@@ -693,10 +694,10 @@
           <div>
             <h2>Operating Summary</h2>
             <span class="eyebrow" id="lopEyebrow">ONE PERIOD vs THREE · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
-          </div>
-          <div class="opsel">
-            <label for="lopSelect">Comparison:</label>
-            <select class="prop-select" id="lopSelect"></select>
+            <div class="opsel">
+              <label for="lopSelect">Comparison:</label>
+              <select class="prop-select" id="lopSelect"></select>
+            </div>
           </div>
         </div>
         <div id="lopTbl"></div>
@@ -811,10 +812,10 @@
           <div>
             <h2>Operating Summary</h2>
             <span class="eyebrow" id="dopEyebrow">ONE PERIOD vs THREE · ANNUAL RUN RATE · FROM THE T12 STATEMENT</span>
-          </div>
-          <div class="opsel">
-            <label for="dopSelect">Comparison:</label>
-            <select class="prop-select" id="dopSelect"></select>
+            <div class="opsel">
+              <label for="dopSelect">Comparison:</label>
+              <select class="prop-select" id="dopSelect"></select>
+            </div>
           </div>
         </div>
         <div id="dopTbl"></div>
@@ -2385,15 +2386,18 @@ async function renderOpSummary(slug, ids) {
     t6:   { k: 6,  back: 0, label: "T6" },
     t12:  { k: 12, back: 0, label: "T12" },
   };
-  // What each choice is measured against. Three each, and the selected period
-  // never appears among its own comparisons. The shape is the same every time:
-  // the nearest shorter window, the nearest longer one, and the year — which is
-  // "how does this run against last, against the quarter, against the year".
+  // The two the card can be read from, and what each is measured against.
+  // Three comparisons each, and the selected period never appears among its
+  // own. The shape is the same both times: the nearest shorter window, the
+  // nearest longer one, and the year — "how is this running against last,
+  // against the quarter, against the year". T6 and T12 are comparison targets
+  // only, not choices: the question the card answers is how the current month
+  // or the current quarter is running, and reading it from the year round
+  // would only restate the same three variances inverted.
+  const CHOICES = ["cm", "t3"];
   const COMPARE = {
-    cm:  ["prev", "t3", "t12"],
-    t3:  ["cm", "t6", "t12"],
-    t6:  ["cm", "t3", "t12"],
-    t12: ["cm", "t3", "t6"],
+    cm: ["prev", "t3", "t12"],
+    t3: ["cm", "t6", "t12"],
   };
   const endOf = P => cur - P.back;
   const startOf = P => endOf(P) - P.k + 1;
@@ -2445,7 +2449,7 @@ async function renderOpSummary(slug, ids) {
     return wrap;
   };
 
-  const options = ["cm", "t3", "t6", "t12"].filter(avail);
+  const options = CHOICES.filter(avail);
   function render(selKey) {
     const S = PERIODS[selKey] ? selKey : options[0];
     const cmps = (COMPARE[S] || []).filter(k => k !== S && avail(k));

@@ -676,20 +676,27 @@ EliseAI feed should keep the newest arrival inside a day or two. `data.html`'s
 
 The card used to carry three toggles — Prev month / T3 / T12 — each swapping in
 one comparison against the current month. It now carries a **Comparison:**
-dropdown that picks the period, and shows that period against **three** others
-at once. Selecting Current Month puts all three of the old toggles on screen
-together, at the same numbers they gave.
+dropdown **on the left of the card, under the eyebrow**, which picks what the
+card is read from and shows that against **three** comparisons at once.
+Selecting Current Month puts all three of the old toggles on screen together, at
+the same numbers they gave.
 
 | Selected | Measured against |
 | --- | --- |
 | Current Month | Prev Month, T3, T12 |
 | T3 | Current Month, T6, T12 |
-| T6 | Current Month, T3, T12 |
-| T12 | Current Month, T3, T6 |
 
-The shape is the same each time — the nearest shorter window, the nearest longer
-one, and the year — which is "how is this running against last, against the
-quarter, against the year".
+The shape is the same both times — the nearest shorter window, the nearest
+longer one, and the year — which is "how is this running against last, against
+the quarter, against the year".
+
+**Two choices, not four.** `CHOICES` is `["cm", "t3"]`; T6 and T12 are
+comparison targets only. The question the card answers is how the current month
+or the current quarter is running, and reading it from the year round would only
+restate the same three variances inverted. The select sits on the left because
+the selection names what the other columns are measured against — it reads as
+the first thing on that row, not as a control off to one side, and at phone
+width it stays put while the table scrolls inside its own box.
 
 **Every figure is an annual run rate**, the period's own total scaled to a full
 year (a month ×12, a T3 ×4). That is what lets a month sit beside a quarter at
@@ -703,11 +710,12 @@ percentages would leave nowhere to read the money, and that cell is the only
 place the comparison period's figure appears.
 
 A window is **offered only when the series holds it** — `avail()` checks the
-window starts at or after the first month rather than clamping. Clamping would
-print "T12" over eight months of data, which is the kind of label that gets
-quoted. The series is twelve months today (one statement) and lengthens as
-statements accumulate, so all four options are live; a shorter run simply offers
-fewer.
+window starts at or after the first month rather than clamping, and it filters
+the comparisons as well as the choices. Clamping would print "T12" over eight
+months of data, which is the kind of label that gets quoted. The series is
+twelve months today (one statement) and lengthens as statements accumulate, so
+both choices and every comparison are live; a shorter run simply shows fewer
+columns.
 
 `renderOpSummary` is shared with The Landing tab, so both cards changed
 together. That is the point of it being shared — see the Drive-only tab section.
