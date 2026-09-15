@@ -793,18 +793,35 @@ Switching the select **keeps the comparison where the new set still offers it** 
 Current Month with T12 showing stays on T12 when it becomes T3. Prev Month is
 not in T3's set, so that pair falls to T6.
 
-**Both columns are annual run rates**, each period's own total scaled to a full
-year (a month ×12, a T3 ×4). The old card could put a month beside a T3 only by
-multiplying the month by three; that trick does not generalise to an arbitrary
-pair, and T3 against T6 needs it. The run rate does, and it means the variance
-reads the same way whichever pair is showing. It is the frame the variance is
-taken in, not a forecast — the note says so.
+**Both columns are measured over the comparison's own window** — the period on
+the right. Set against Prev Month the figures are one-month totals, against T3
+three-month totals, against T12 a year. So the right column is simply its own
+total, and the left is its monthly rate over that same span — which the header
+marks, because a figure three times August sitting under a header that reads
+`Current Month (Aug 26)` would be read as August:
 
-Four data columns: the two run rates, then the variance in **dollars** and in
+| Pair | Left column | Right column |
+| --- | --- | --- |
+| Current Month vs Prev Month | Aug as reported | Jul as reported |
+| Current Month vs T3 | `Current Month (Aug 26) ×3` | Jun–Aug |
+| Current Month vs T12 | `Current Month (Aug 26) ×12` | Sep–Aug |
+| T3 vs T6 | `T3 (Jun 26–Aug 26) ×2` | Mar–Aug |
+| T3 vs T12 | `T3 (Jun 26–Aug 26) ×4` | Sep–Aug |
+
+Both sides were an **annual run rate** until 2026-09-15 — every period scaled to
+twelve months. That did make a month comparable with a quarter, but it also
+scaled the one pair that needs no scaling at all: two consecutive months, printed
+×12, where the actual month-over-month totals are what the card is being read
+for. Measuring in the comparison's window keeps every pair comparable and leaves
+the equal-length pair alone. It is still the frame the variance is taken in, not
+a forecast, and the note still says so.
+
+Four data columns: the two periods, then the variance in **dollars** and in
 **percent**. A percentage alone hides the size of the thing — 15% on the expense
-row is $759k a year. Both are coloured by favourability rather than by sign, so
-less expense is green, and both use the same typographic minus, since they sit
-in adjacent columns at 15px and a hyphen beside a minus is visible.
+row is $55k over a month and $660k over a year. Both are coloured by
+favourability rather than by sign, so less expense is green, and both use the
+same typographic minus, since they sit in adjacent columns at 15px and a hyphen
+beside a minus is visible.
 
 A window is **offered only when the series holds it** — `avail()` checks the
 window starts at or after the first month rather than clamping, and it filters
