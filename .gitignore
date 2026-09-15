@@ -25,3 +25,5 @@ tests/fixtures/
 
 # clasp writes this at deploy time; it carries the Apps Script project id
 .clasp.json
+config/drive_folders.local.json
+build/
