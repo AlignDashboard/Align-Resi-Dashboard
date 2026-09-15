@@ -526,10 +526,12 @@ guesswork would file one building's concessions under another.
 
 ### Occupancy on the Unit Inventory bars
 
-The card's bars are units by bedroom type, each one stacked leased (amber)
-against vacant (teal) so the two segments partition the bar rather than adding
-to it. Hovering a segment gives its count, its share of that bedroom type, and
-the group's whole leased/vacant/occupied line. The Landing reads 97.7% leased —
+The card's bars are units by bedroom type, each one stacked vacant (teal) from
+the axis then leased (amber), so the two segments partition the bar rather than
+adding to it. Vacant is first in `datasets` and that is the whole of what puts
+it on the left — Chart.js stacks in dataset order. Hovering a segment gives its
+count, its share of that bedroom type, and the group's whole
+leased/vacant/occupied line. The Landing reads 97.7% leased —
 1 bed 135/2, 2 bed 106/4, 3 bed 16/0.
 
 The column beside the bars is the **unit count per bedroom type** and nothing
