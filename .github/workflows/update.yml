@@ -38,9 +38,26 @@ jobs:
       - name: Build metrics
         run: python scripts/build_metrics.py
 
+      # The statement-derived cells --from-landing owns alone -- NOI Margin %,
+      # Concession Load %, Controllable OpEx/Unit, Budget Variance %, Month to
+      # Month Leases -- used to move only when someone ran this by hand, so they
+      # published July figures for a month after the August statement landed
+      # (open item H1).
+      #
+      # It runs BEFORE the --from-pipeline loop, not after, and the order is the
+      # whole point. Both paths fill the same two delinquency cells and the last
+      # run wins; a --from-landing run going last is what put a six-week-old
+      # workbook tab in front of a same-week Drive AR report on 2026-09-03,
+      # moving the published rate from 6.7% to 4.6% with nothing failing and
+      # nothing saying so (open item G3). Going first, its figures stand where
+      # no Drive feed owns the cell and are overwritten where one does.
+      - name: Fill workbook-derived KPI values into the scorecard
+        run: python scripts/populate_scorecard.py --from-landing
+
       # The measured KPI values have to be filled here, not locally: the reports
       # only exist on this runner. build_metrics has just written the scrubbed
-      # data/<slug>/delinquency.json that this reads.
+      # data/<slug>/delinquency.json that this reads. This is also what takes
+      # the delinquency cells back from the step above, per G3.
       - name: Fill measured KPI values into the scorecard
         run: |
           set -euo pipefail

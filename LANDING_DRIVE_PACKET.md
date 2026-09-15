@@ -25,12 +25,40 @@ in the wrong folder is still found by the rescue sweep (one exception, below).
 | 1 | 12-Month Statement, **Accrual** | `12_Month_Statement` | `T12 Expenses` | monthly | Operating Summary, Expense Load & NOI, Expense Deep Dive, Loss to Lease (series) |
 | 2 | 12-Month **Budget**, Accrual | `12_Month_Budget` | `Budgets` | annual / on reforecast | Budget variance tile |
 | 3 | **Rent Roll** | `RentRoll` | `Rent Roll` | weekly | Loss to Lease (today's gap), Rollover Schedule, Largest Unit Gaps, Unit Inventory |
-| 4 | `rs_rp_DelinquencySummaryReport` | `Delinquency` | `Residential AR Analytics` | monthly | Delinquency card + tile |
+| 4 | `rs_rp_DelinquencySummaryReport` | `Delinquency` | `Delinquency` | monthly | Delinquency card + tile |
 | 5 | `Daily Report- Week Ending <date>` | `Daily Report` + `Week Ending` | `Daily Leasing Reports` | weekly | Trade-outs (new leases) |
 | 6 | Landing 2025 Renewal Tracker – Full | `Renewal Tracker` | `Renewal Tracker` | weekly | Trade-outs (renewals) |
 | 7 | Yardi **Unit Directory** | `UnitDirectory` | `Building Info` ⚠️ | on floorplan change | Unit Inventory, Largest Unit Gaps (bedroom join), Expense Load & NOI (per-unit) |
 | 8 | EliseAI **building metrics** export | `metrics-building` | `EliseAI Reports` | monthly | Leased %, Trade-out % tiles |
 | 9 | EliseAI weekly **funnel** | `leasing_funnel_report` | `EliseAI Reports` | weekly | — (has never covered The Landing) |
+
+### Where each folder is
+
+Two parents. Everything churning daily is under **Report Lander**; the
+hand-curated library is **Resi Dashboard**, and the unit directory is the one
+packet report that lives there.
+
+| Folder | Path | Open |
+| --- | --- | --- |
+| **Report Lander** | the filer's drop folder | _(link in the PDF)_ |
+| T12 Expenses | Report Lander → T12 Expenses | _(link in the PDF)_ |
+| Budgets | Report Lander → Budgets | _(link in the PDF)_ |
+| Rent Roll | Report Lander → Rent Roll | _(link in the PDF)_ |
+| Delinquency | Report Lander → Delinquency | _(link in the PDF)_ |
+| Daily Leasing Reports | Report Lander → Daily Leasing Reports | _(link in the PDF)_ |
+| Renewal Tracker | Report Lander → Renewal Tracker | _(link in the PDF)_ |
+| EliseAI Reports | Report Lander → EliseAI Reports | _(link in the PDF)_ |
+| **Resi Dashboard** | the curated library | _(link in the PDF)_ |
+| Building Info ⚠️ | Resi Dashboard → Building Info | _(link in the PDF)_ |
+| `_Unsorted` | Report Lander → _Unsorted — where anything unrecognised waits | _(link in the PDF)_ |
+
+**`Residential AR Analytics` does not exist in Drive.** `report_map.json` still
+carries it as an active entry and the scorecard's provenance line still names
+it, but no folder by that name has ever been there and the filer has only one
+delinquency rule, pointing at `Delinquency`. Every AR report has landed in
+`Delinquency` all along. The label is wrong, not the data — but someone sent
+looking for that folder will not find it. (Recorded as an open item; the fix is
+to drop the dead entry, which also stops it claiming the provenance string.)
 
 Four things worth knowing about this table:
 
@@ -68,6 +96,16 @@ _Feed state as of 2026-09-15 — regenerate with `python scripts/landing_drive_s
 | EliseAI bldg metrics | 2026-08-31 | 2026-08-31 | 15d — current |
 | **EliseAI funnel** | — | — | **never arrived** |
 <!-- END STATUS -->
+
+> **These are publication dates, not Drive dates.** The table reports what the
+> pipeline last *published*, which is only the same thing as what is in Drive
+> while the daily job is succeeding. It is not right now: `update.yml` has
+> failed on its **Commit changes** step since 2026-09-14 — every pipeline step
+> succeeds, then the commit's push-retry loop hits a merge conflict on the data
+> JSON and gives up (`Pulling is not possible because you have unmerged
+> files`). So the site has published nothing since 2026-09-13, and a delinquency
+> report that landed 2026-09-14 is parsed but unpublished. Until that is fixed,
+> treat every row here as a floor: Drive may be ahead.
 
 The script reads only published JSON — `docs/metrics.json`, `docs/scorecard.json`
 and `data/the-landing/*.json` — so it needs no Drive access and runs anywhere the
@@ -108,6 +146,11 @@ that has already arrived.
 Newest first. Add a line when a feed, a card or a packet row changes — not for
 routine arrivals, which section 2 already reports.
 
+- **2026-09-15** — Added the Drive folder IDs and links, after confirming each
+  one exists. Two findings: `Residential AR Analytics` is registered but has
+  never existed in Drive (everything AR lands in `Delinquency`), and the daily
+  job has been failing on its commit step since 09-14, so published state is
+  behind Drive.
 - **2026-09-15** — Created. Nine feeds, ten cards. Eight of nine feeds current;
   the EliseAI weekly funnel has never covered The Landing, and the unit directory
   is the oldest arrival at 20 days. `scripts/landing_drive_status.py` added so
