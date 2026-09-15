@@ -23,9 +23,10 @@ ask for the PR; do not open one preemptively.
 | Path | Purpose |
 | --- | --- |
 | `docs/index.html` | The whole dashboard: markup, CSS, and Chart.js rendering in one file |
-| `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
+| `docs/metrics.json.enc` | Data the page fetches at load, sealed — written by the pipeline, not by hand. The plaintext `docs/metrics.json` beside it is a working copy and is gitignored |
+| `docs/unlock.js` | Opens the sealed data in the browser; shared by both pages |
 | `docs/data.html` | Two views behind the same gate: the **data-flow** chain, and the **tables** holding every number the JSON carries |
-| `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand |
+| `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand. Sealed like the rest |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json`; `gmail_drive_filing.js` is the Apps Script that files reports into Drive in the first place |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
@@ -1281,13 +1282,18 @@ is often needed after a deploy, since the page caches aggressively.
 
 ### Keeping data out of git history (migration, not yet active)
 
-Committing the data JSON means every past month's financials stay readable in
-history forever. `.github/workflows/deploy.yml` fixes that: it deploys `docs/`
-to Pages from an artifact assembled at run time, taking the site shell from
-`main` and the data JSON from a `data` branch.
+Committing the data means every past month's financials stay in history forever.
+Encrypting them narrows that but does not close it: history still holds every
+**plaintext** version committed before the sealing, and the sealed versions after
+it all open under whichever password sealed them.
+`.github/workflows/deploy.yml` is the structural fix: it deploys `docs/` to Pages
+from an artifact assembled at run time, taking the site shell from `main` and the
+data from a `data` branch that keeps no history at all.
 
 `docs/lineage.json` travels with the other three data files — `update.yml`
-commits it, `publish_data.sh` publishes it and `deploy.yml` overlays it.
+commits it, `publish_data.sh` publishes it and `deploy.yml` overlays it. All four
+move in their **sealed** form (`*.json.enc`); the plaintext is gitignored and
+never leaves the runner.
 
 `scripts/publish_data.sh` writes that branch as a **single commit with no
 parent**, force-replacing it each time, so only the current data exists in git —
@@ -1313,13 +1319,158 @@ After flipping it, in order:
 
 1. `scripts/publish_data.sh` — create the `data` branch.
 2. Confirm the site still loads, then stop committing data to `main`: drop
-   `docs/*.json` from tracking and change `update.yml` to publish to the `data`
-   branch instead of committing.
+   `docs/*.json.enc` from tracking and change `update.yml` to publish to the
+   `data` branch instead of committing. (The *plaintext* half of this step is
+   already done — `docs/*.json` came out of tracking when the data was sealed,
+   and `check_no_pii.py` now fails if it goes back in.)
 3. `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`, to
    remove the data already in history. Tested on a throwaway clone: 63 commits →
    40, every data path gone from every commit, site shell and scripts intact.
    Read the script's header first — it rewrites history, needs a force-push, and
    **cannot un-publish anything that was already public.**
+
+## The data files are encrypted
+
+`docs/metrics.json` and its three siblings are neither published nor committed.
+What ships is `docs/metrics.json.enc` — AES-256-GCM ciphertext under a key
+derived from the dashboard password by 600,000 rounds of PBKDF2-HMAC-SHA256 —
+and the gate is what opens it. There is no password constant in `index.html` any
+more, because there is nothing left for one to do: typing the password derives
+the key, and a wrong password is simply a file that does not decrypt.
+
+That is what the old gate never was. The password was a readable line in a public
+repository, and the data it stood in front of was one `curl` away from anyone who
+never met the gate at all.
+
+| Piece | What |
+| --- | --- |
+| `scripts/crypto_data.py` | Seals and opens the files, and is where the envelope format is defined. `encrypt` / `decrypt` / `check` / `rotate` |
+| `docs/unlock.js` | The reader half — WebCrypto only, no library — shared by `index.html` and `data.html` so the two cannot disagree about a format |
+| `docs/*.json.enc` | What is committed and served |
+| `docs/*.json` | The plaintext the pipeline reads and rewrites between runs. **Gitignored** |
+| `scripts/test_encryption.py` | 42 fixture-free checks, including running `unlock.js` itself under Node against files Python sealed |
+
+### The protection is exactly as good as the passphrase
+
+Nothing else is holding it up. The ciphertext is public, so an attacker takes a
+copy once and guesses offline at whatever rate their hardware allows — no rate
+limit, no lockout, nobody watching, and as long as they like. 600,000 iterations
+make each guess cost real time; they do not make a guessable password safe.
+
+**`AlignExecs` is what this was first sealed under** — the password that was
+already sitting in `index.html` in public, kept so the site would keep working
+the moment this deployed. It would fall to a targeted wordlist in seconds.
+Rotating it is the step that turns this from a mechanism into protection:
+
+    python scripts/crypto_data.py rotate        # prompts for the old, then the new
+
+Then set the new value as the **`DASHBOARD_PASSWORD` repository secret**, or the
+next pipeline run cannot open its own data. `rotate` refuses a new password under
+12 characters, and opens every file before rewriting any — a rotation that
+half-finished would leave no single password able to read the set.
+
+Two more things encryption does not do. It does not reach backwards: every
+version committed before this is still in git history in the clear, which is what
+`scripts/purge_data_history.sh` is for (open item E3). And it does not survive
+the password: anyone who has it can hand the data on, and a copy of today's
+ciphertext stays readable under today's password forever, whatever it is rotated
+to later.
+
+### The envelope
+
+JSON, so GitHub Pages can serve it as a static file, and self-describing so the
+reader needs nothing but the file:
+
+    {"v":1, "alg":"AES-256-GCM", "kdf":"PBKDF2-HMAC-SHA256", "iter":600000,
+     "salt":"<b64>", "iv":"<b64>", "ct":"<b64>", "aad":"align-dashboard/v1/metrics.json"}
+
+Every choice in it is there so the browser half needs no library: WebCrypto does
+PBKDF2 and AES-GCM natively, and Python's `AESGCM.encrypt` returns
+ciphertext‖tag, which is exactly what `SubtleCrypto.decrypt` expects. Four things
+worth knowing:
+
+- **One salt per run, a fresh IV per file.** One derivation therefore opens all
+  four, which matters because the derivation is deliberately expensive. IVs are
+  never shared — reusing one under a single key breaks GCM outright.
+- **The filename is bound in as additional authenticated data.** Without it,
+  `scorecard.json.enc` served under `metrics.json`'s name decrypts happily and
+  the page draws one file's numbers under another's heading. With it, a swapped
+  file fails to open. Tested on both sides.
+- **Unchanged data is not re-sealed.** Salt and IV are random, so a plain
+  re-encrypt writes different bytes every night and the daily cron would commit a
+  diff on days nothing moved. `encrypt` opens the existing envelope first and
+  leaves it alone when the plaintext matches — which is also why `--replace`
+  deletes the plaintext *outside* that branch, since an already-current envelope
+  is exactly the run that would otherwise leave a clear copy behind.
+- **The iteration count lives in the envelope**, not in the reader, so the cost
+  can be raised by re-encrypting without touching the page.
+
+### The pipeline round-trips through the plaintext
+
+This is why the secret is not optional. `build_metrics` reloads the previous
+`docs/metrics.json` to carry the hand-authored blocks through, and
+`populate_scorecard` merges into the existing `docs/scorecard.json` rather than
+replacing it — so a run has to read last run's output. `update.yml` therefore
+opens the sealed files immediately after installing dependencies and re-seals
+them at the end:
+
+    check the key is present  ->  decrypt  ->  fetch/build/fill  ->  check_no_pii
+                              ->  encrypt --replace  ->  check  ->  commit *.enc
+
+The key check is first on purpose: without it the run cannot read the data it
+exists to update, and discovering that after fetching Drive and rebuilding
+everything wastes the whole run. It **fails** rather than carrying on, because
+the alternative — carrying on and committing plaintext — quietly undoes all of
+this.
+
+`check_no_pii.py` runs on the **plaintext**, before the encrypt step, which is
+the only point at which it can mean anything; once sealed there is nothing for it
+to read. It says `SEALED` rather than `PASS` when it can only see ciphertext, so
+it cannot pass for the wrong reason, and it now fails outright on a plaintext
+`docs/*.json` that is tracked or staged — in a 100,000-line JSON diff that is
+invisible otherwise.
+
+### Three modes, and the page is told which one it is in
+
+| Mode | What it means |
+| --- | --- |
+| `encrypted` | `docs/*.json.enc` is present. The gate derives a key and opens them. This is the live site |
+| `plain` | No `.enc`, but `docs/*.json` is there — a local checkout that ran the pipeline and did not seal it. It loads, with no gate, under a red **UNSEALED DATA** banner |
+| `missing` | Neither. An honest error rather than an empty dashboard |
+
+`plain` exists because the pipeline writes plaintext and a developer should not
+have to seal it to look at the page. The banner is not decoration: an unsealed
+build that looked identical to a sealed one is how an unsealed one gets deployed.
+It cannot reach production anyway — `check_no_pii` refuses to commit the
+plaintext and `deploy.yml` refuses to publish an artifact containing it.
+
+Other things the page does:
+
+- **The session key is the derived key, not the password**, kept in
+  `sessionStorage` so `data.html` opens without a second prompt. It is
+  non-extractable once imported, and it is dropped when the salt changes — the
+  daily run re-seals, so a tab left open across it re-prompts rather than
+  showing nothing.
+- **`sessionStorage` is per tab.** A new tab gets the gate again. That is the
+  behaviour, not a bug.
+- **`crypto.subtle` only exists in a secure context.** HTTPS or `localhost`;
+  opening the file over `file://` gives no crypto at all. Serve `docs/` with
+  `python3 -m http.server` to look at it locally — which the page says, rather
+  than failing as `undefined`.
+- **`scorecard.json` had to become lazy.** It was fetched at script-parse time,
+  before the gate had been passed — harmless when the file was public, and
+  impossible now that opening it needs the key the gate produces. Callers that
+  ask for data before unlocking **park** rather than fail, which is what lets
+  the several top-level render calls in `index.html` keep their shape.
+
+`scripts/test_encryption.py` covers the failures that would otherwise be
+invisible, since ciphertext looks equally opaque whether it is protecting
+anything or not: a wrong password appearing to work, a tampered file opening
+anyway, one file's ciphertext serving as another's, plaintext surviving inside
+the envelope, a nightly re-seal churning the repo, a half-finished rotation. It
+also runs `docs/unlock.js` under Node against files `crypto_data.py` sealed —
+two implementations of one format drift the moment either is edited alone, and
+the symptom is a live dashboard that shows nothing to anybody.
 
 ## Tenant names must not leave the pipeline
 
@@ -1344,22 +1495,26 @@ Raw reports are gitignored (`_downloads/`, `*.xlsx`, `tests/fixtures/`,
 **Anything the page displays is in a file anyone with the URL can download.**
 There is no "visible on the page but not otherwise accessible" on a static site
 — the page fetches JSON over HTTP. That is why names are dropped from the data
-entirely rather than merely hidden from a table. Displaying them would require
-encrypting the JSON or putting the site behind real auth.
+entirely rather than merely hidden from a table.
+
+The data being encrypted now does **not** relax this, and the rule is unchanged.
+The password is shared with everyone who reads the dashboard, so "encrypted" here
+means "readable by every viewer" — which is the wrong bar for a resident's name.
+And the ciphertext is public and permanent: a password that leaks once exposes
+every copy ever published, retroactively. Names stay out of the data.
 
 ## Notes
 
-- The page is gated by a client-side password constant in `index.html`. This is
-  visibility deterrence, not encryption — the source is public and readable. Do
-  not treat it as protecting anything. Real financials need client-side
-  encryption of `metrics.json` first.
-- `index.html` is the only place the password is entered. Unlocking sets
-  `sessionStorage["align-unlocked"]`; `data.html` requires that marker and
-  redirects to `index.html?next=data.html` without it, so the data tables are
-  not a second way in. The unlock lasts the browser session, not forever. Any
-  new gated page should follow the same pattern rather than adding its own
-  password field — and note the marker is client-side like the gate itself, so
-  it deters, it does not protect.
+- The page is no longer gated by a password constant — there is no constant.
+  The password is the decryption key for `docs/*.json.enc`; see **The data files
+  are encrypted** above, including the part about rotating it, which is what
+  makes any of it worth having.
+- `index.html` is the only place the password is entered. Unlocking puts the
+  derived key in `sessionStorage`; `data.html` borrows it and redirects to
+  `index.html?next=data.html` when there is none, so the data tables are not a
+  second way in — and now cannot be, since without the key there is nothing
+  there to read. Any new gated page should call `AlignUnlock.load()` rather than
+  fetching JSON itself or adding its own password field.
 - `metrics.json` values flow into the DOM. When rendering anything from it,
   prefer `textContent` / `createElement` over `innerHTML` so pipeline data
   cannot inject markup.
