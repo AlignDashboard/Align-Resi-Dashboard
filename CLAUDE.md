@@ -6,6 +6,11 @@ Static dashboard published with GitHub Pages, fed by a daily metrics pipeline.
 each one is waiting on. Read it after this file when picking up work — it is
 where state that used to arrive as a pasted handoff note now lives.
 
+`LANDING_DRIVE_PACKET.md` is the working document for the `Landing (Drive)`
+tab: which export feeds which card, where in Drive it goes, and what has
+actually arrived. Its current-state section is generated — refresh it with
+`python scripts/landing_drive_status.py --write` rather than editing it.
+
 ## Workflow
 
 **Commit and push small changes directly to `main`. Do not open a pull request
@@ -91,7 +96,8 @@ on the new run-rate instead of one-time make-ready/downtime costs.
 `Landing (Drive)` sits beside `The Landing` and shows the same building with the
 V37 workbook taken out of it: every number on it comes from a report the Gmail
 filer drops into Drive and the pipeline parses, so **dropping a fresh direct
-export in Drive is the whole refresh**. The Landing tab is still the fuller
+export in Drive is the whole refresh**. `LANDING_DRIVE_PACKET.md` is the
+list of those exports and where each one goes. The Landing tab is still the fuller
 view — it just cannot move on its own, because refreshing it means pasting into
 grey tabs, recalculating in Excel and re-running `extract_landing.py`.
 
