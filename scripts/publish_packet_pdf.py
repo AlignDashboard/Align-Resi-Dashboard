@@ -62,24 +62,29 @@ with open(SOURCE) as fh:
 LINKS = os.path.join(ROOT, "config", "drive_folders.local.json")
 if os.path.exists(LINKS):
     import json as _json
+    import re as _re
     folders = _json.load(open(LINKS)).get("folders", {})
-    lines = []
-    for line in md.split("\n"):
-        if "_(link in the PDF)_" in line:
-            name = line.split("|")[1].strip().strip("*").replace(" ⚠️", "").strip("`")
-            fid = folders.get(name)
-            if fid:
-                line = line.replace(
-                    "_(link in the PDF)_",
-                    f"[open](https://drive.google.com/drive/folders/{fid})")
-            else:
-                # Naming a folder the map does not know is a packet/Drive
-                # mismatch worth seeing, not something to paper over.
-                print(f"  [warn] no Drive id for folder {name!r}", file=sys.stderr)
-        lines.append(line)
-    md = "\n".join(lines)
+    unknown = set()
+
+    # Every packet row names its destination as a path -- "Report Lander -> Rent
+    # Roll". The last segment is the folder, so that is what gets looked up; the
+    # whole path becomes the link text, because the path is what someone reads.
+    def link(m):
+        parent, child = m.group(1), m.group(2).rstrip()
+        fid = folders.get(child)
+        if not fid:
+            unknown.add(child)
+            return m.group(0)
+        return f"[{parent} \u2192 {child}](https://drive.google.com/drive/folders/{fid})"
+
+    md = _re.sub(r"(Report Lander|Resi Dashboard) \u2192 (_?[A-Za-z0-9][A-Za-z0-9 &_-]*?)(?=\s*[|*\n.]|$)",
+                 link, md)
+    if unknown:
+        # A destination the map cannot name is a packet/Drive mismatch worth
+        # seeing, not something to quietly leave unlinked.
+        print("  [warn] no Drive id for: " + ", ".join(sorted(unknown)), file=sys.stderr)
 else:
-    print(f"  [note] {os.path.basename(LINKS)} absent — PDF will carry no Drive links")
+    print(f"  [note] {os.path.basename(LINKS)} absent - PDF will carry no Drive links")
 
 # `tables` for the packet's tables, `fenced_code` for the command blocks,
 # `attr_list` so nothing in the source needs raw HTML to lay out.

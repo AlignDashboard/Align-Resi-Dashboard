@@ -16,51 +16,57 @@ a card or a feed does. Section 2 is **generated** — do not hand-edit it. Secti
 
 ## 1 · The packet
 
-Ten cards, nine feeds. The filer routes on the **filename**, so naming the export
+Nine reports. The filer routes on the **filename**, so naming the export
 correctly is the whole job — no folder navigation needed, and a file that lands
 in the wrong folder is still found by the rescue sweep (one exception, below).
 
-| # | Report (as exported) | Filename must contain | Drive folder | Cadence | Cards it moves |
-| --- | --- | --- | --- | --- | --- |
-| 1 | 12-Month Statement, **Accrual** | `12_Month_Statement` | `T12 Expenses` | monthly | Operating Summary, Expense Load & NOI, Expense Deep Dive, Loss to Lease (series) |
-| 2 | 12-Month **Budget**, Accrual | `12_Month_Budget` | `Budgets` | annual / on reforecast | Budget variance tile |
-| 3 | **Rent Roll** | `RentRoll` | `Rent Roll` | weekly | Loss to Lease (today's gap), Rollover Schedule, Largest Unit Gaps, Unit Inventory |
-| 4 | `rs_rp_DelinquencySummaryReport` | `Delinquency` | `Delinquency` | monthly | Delinquency card + tile |
-| 5 | `Daily Report- Week Ending <date>` | `Daily Report` + `Week Ending` | `Daily Leasing Reports` | weekly | Trade-outs (new leases) |
-| 6 | Landing 2025 Renewal Tracker – Full | `Renewal Tracker` | `Renewal Tracker` | weekly | Trade-outs (renewals) |
-| 7 | Yardi **Unit Directory** | `UnitDirectory` | `Building Info` ⚠️ | on floorplan change | Unit Inventory, Largest Unit Gaps (bedroom join), Expense Load & NOI (per-unit) |
-| 8 | EliseAI **building metrics** export | `metrics-building` | `EliseAI Reports` | monthly | Leased %, Trade-out % tiles |
-| 9 | EliseAI weekly **funnel** | `leasing_funnel_report` | `EliseAI Reports` | weekly | — (has never covered The Landing) |
+### Weekly
 
-### Where each folder is
-
-Two parents. Everything churning daily is under **Report Lander**; the
-hand-curated library is **Resi Dashboard**, and the unit directory is the one
-packet report that lives there.
-
-| Folder | Path | Open |
+| Report (as exported) | Filename must contain | Where it goes |
 | --- | --- | --- |
-| **Report Lander** | the filer's drop folder | _(link in the PDF)_ |
-| T12 Expenses | Report Lander → T12 Expenses | _(link in the PDF)_ |
-| Budgets | Report Lander → Budgets | _(link in the PDF)_ |
-| Rent Roll | Report Lander → Rent Roll | _(link in the PDF)_ |
-| Delinquency | Report Lander → Delinquency | _(link in the PDF)_ |
-| Daily Leasing Reports | Report Lander → Daily Leasing Reports | _(link in the PDF)_ |
-| Renewal Tracker | Report Lander → Renewal Tracker | _(link in the PDF)_ |
-| EliseAI Reports | Report Lander → EliseAI Reports | _(link in the PDF)_ |
-| **Resi Dashboard** | the curated library | _(link in the PDF)_ |
-| Building Info ⚠️ | Resi Dashboard → Building Info | _(link in the PDF)_ |
-| `_Unsorted` | Report Lander → _Unsorted — where anything unrecognised waits | _(link in the PDF)_ |
+| **Rent Roll** | `RentRoll` | Report Lander → Rent Roll |
+| `Daily Report- Week Ending <date>` | `Daily Report` + `Week Ending` | Report Lander → Daily Leasing Reports |
+| Landing 2025 Renewal Tracker – Full | `Renewal Tracker` | Report Lander → Renewal Tracker |
+| EliseAI weekly **funnel** | `leasing_funnel_report` | Report Lander → EliseAI Reports |
+
+### Monthly
+
+| Report (as exported) | Filename must contain | Where it goes |
+| --- | --- | --- |
+| 12-Month Statement, **Accrual** | `12_Month_Statement` | Report Lander → T12 Expenses |
+| `rs_rp_DelinquencySummaryReport` | `Delinquency` | Report Lander → Delinquency |
+| EliseAI **building metrics** export | `metrics-building` | Report Lander → EliseAI Reports |
+
+### Annually, or when it changes
+
+| Report (as exported) | Filename must contain | Where it goes |
+| --- | --- | --- |
+| 12-Month **Budget**, Accrual | `12_Month_Budget` | Report Lander → Budgets |
+| Yardi **Unit Directory** ⚠️ | `UnitDirectory` | Resi Dashboard → Building Info |
+
+Anything the filer cannot identify waits in **Report Lander → _Unsorted**.
+
+### What each report feeds
+
+| Report | Cards it moves |
+| --- | --- |
+| 12-Month Statement | Operating Summary, Expense Load & NOI, Expense Deep Dive, Loss to Lease (series) |
+| Rent Roll | Loss to Lease (today's gap), Rollover Schedule, Largest Unit Gaps, Unit Inventory |
+| Unit Directory | Unit Inventory, Largest Unit Gaps (bedroom join), Expense Load & NOI (per-unit) |
+| Daily Report / Renewal Tracker | Trade-outs — new leases and renewals respectively |
+| Delinquency | Delinquency card + tile |
+| EliseAI building metrics | Leased %, Trade-out % tiles |
+| 12-Month Budget | Budget variance tile |
+| EliseAI weekly funnel | — (has never covered The Landing) |
 
 **`Residential AR Analytics` does not exist in Drive.** `report_map.json` still
 carries it as an active entry and the scorecard's provenance line still names
 it, but no folder by that name has ever been there and the filer has only one
 delinquency rule, pointing at `Delinquency`. Every AR report has landed in
 `Delinquency` all along. The label is wrong, not the data — but someone sent
-looking for that folder will not find it. (Recorded as an open item; the fix is
-to drop the dead entry, which also stops it claiming the provenance string.)
+looking for that folder will not find it.
 
-Four things worth knowing about this table:
+Four things worth knowing about the tables above:
 
 - **#7 goes to the Drive library, not Report Lander.** `Building Info` is in the
   `reference` tree, which the filename rescue sweep never reads — deliberately,
@@ -173,6 +179,11 @@ and the folder ids sit in a gitignored `config/drive_folders.local.json`.
 Newest first. Add a line when a feed, a card or a packet row changes — not for
 routine arrivals, which section 2 already reports.
 
+- **2026-09-15** — Section 1 regrouped by cadence, with each report's Drive
+  path on its own row (linked in the PDF) instead of a separate folder table.
+  What each report feeds moved to its own table so the pull list stays a pull
+  list. Also fixed the daily job's commit step, which had been failing since
+  09-14.
 - **2026-09-15** — Added the Drive folder IDs and links, after confirming each
   one exists. Two findings: `Residential AR Analytics` is registered but has
   never existed in Drive (everything AR lands in `Delinquency`), and the daily
