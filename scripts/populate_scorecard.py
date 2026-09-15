@@ -20,11 +20,13 @@ Which KPIs a delinquency report can actually answer:
 
 --from-landing also fills one KPI a delinquency report cannot:
 
-  Loss to Lease %           the current month's loss to lease over market rent
-                            potential, from the workbook's Rent Capture series,
-                            as a whole number of percent. The published basis is
-                            the current rent roll, so the newest month answers it
-                            rather than the TTM column.
+  Loss to Lease %           market rent less in-place rent over market rent,
+                            across OCCUPIED units, from the Drive rent roll --
+                            which is what the band's own "how" always said, and
+                            what the workbook fill never was. Owner's call,
+                            2026-09-15 (open item A8). Filled on BOTH paths from
+                            the same published aggregate, so neither run can
+                            take the cell off the other.
   NOI Margin %              the current month's NOI over revenue, from the
                             Expense & NOI series behind that card. The published
                             band's basis is T12, and a single accrual month
@@ -286,6 +288,47 @@ def classify(value, t):
 SPLIT_LABELS = ["31-60", "61-90", "90+"]
 
 
+def rent_roll_ltl(slug, path="docs/metrics.json"):
+    """Loss to lease from the rent roll, or (None, why).
+
+    The owner's call, 2026-09-15 (open item A8): the rent roll is the source
+    for this KPI. It is also the only source that matches the band's own
+    published "how" -- "(Market rent - in-place rent) / market rent, current
+    rent roll" -- which the workbook fill never did: that one was the T12
+    statement's monthly revenue lines, a different measurement of a similarly
+    named thing, and it read 27% against the roll's 36.5%.
+
+    Read from the published aggregate in metrics.json rather than
+    data/<slug>/rent_roll.json, which is gitignored (it is unit level and
+    arrives with resident names) and therefore exists only during a pipeline
+    run. build_metrics writes metrics.json before this script runs, and the
+    block is committed, so the same figure is available in CI and locally.
+
+    Occupied units only, per the parser's own basis: a vacant unit has an
+    asking rent and no in-place rent, so counting it books the whole asking
+    rent as a loss (38.1% against the 36.5% published).
+    """
+    if not os.path.exists(path):
+        return None, "no docs/metrics.json to read the rent roll from"
+    block = (json.load(open(path)) or {}).get("rent_roll") or {}
+    pr = next((x for x in (block.get("properties") or [])
+               if x.get("slug") == slug), None)
+    if pr is None:
+        return None, f"no rent roll published for {slug}"
+    if pr.get("loss_to_lease_pct") is None:
+        return None, "the rent roll carries no loss-to-lease figure"
+    return {
+        "pct": pr["loss_to_lease_pct"],
+        "dollars": pr.get("loss_to_lease"),
+        "market": pr.get("market_rent_occupied"),
+        "actual": pr.get("actual_rent_occupied"),
+        "occupied": pr.get("occupied"),
+        "as_of": pr.get("as_of"),
+        "received_at": pr.get("landed_at"),
+        "source": pr.get("source_file"),
+    }, None
+
+
 def facts_from_landing(path="docs/landing.json"):
     doc = json.load(open(path))
     d = doc["delinquency"]
@@ -302,6 +345,7 @@ def facts_from_landing(path="docs/landing.json"):
     # from today's.
     rc = doc.get("rent_capture") or {}
     ltl_series, months = rc.get("ltl_pct") or [], rc.get("months") or []
+    rr_ltl, rr_ltl_why = rent_roll_ltl("the-landing")
     # NOI margin, likewise from the monthly series behind the Expense Load & NOI
     # card rather than its TTM column. Note the published band's own basis says
     # T12: a single accrual month swings hard (Apr 2026 reads 47.0% on that
@@ -353,8 +397,12 @@ def facts_from_landing(path="docs/landing.json"):
     return {
         "as_of": d.get("as_of"),
         "gross_owed": d.get("gross_owed"),
-        "ltl_pct": ltl_series[-1] if ltl_series else None,
-        "ltl_month": months[-1] if months else None,
+        # The rent roll owns this cell (A8, owner 2026-09-15). The workbook's
+        # own figure is kept beside it, never published, so the two readings of
+        # a similarly named thing are on the record rather than confused.
+        "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
+        "ltl_workbook_pct": ltl_series[-1] if ltl_series else None,
+        "ltl_workbook_month": months[-1] if months else None,
         "noi_margin": noi_series[-1] if noi_series else None,
         "noi_margin_month": noi_months[-1] if noi_months else None,
         "noi_margin_ttm": (en.get("ttm") or {}).get("noi_margin"),
@@ -391,9 +439,24 @@ def facts_from_pipeline(slug, monthly_rent=None):
     Total Deliquency ratio needs --monthly-rent; without it that KPI is left
     alone rather than guessed at.
     """
+    # The rent roll fills Loss to Lease % on both paths, from the same
+    # published aggregate, so whichever run goes last writes the same number --
+    # the mistake G3 records, designed out rather than sequenced around.
+    rr_ltl, rr_ltl_why = rent_roll_ltl(slug)
+
     path = os.path.join("data", slug, "delinquency.json")
     if not os.path.exists(path):
-        return None
+        if rr_ltl is None:
+            return None
+        # A property with a rent roll and no AR report still has a cell to
+        # fill. "no_report" says the unprefixed family has nothing behind it
+        # this run, so main() leaves whatever feed owns it alone: writing a
+        # placeholder source here took a real AR report's arrival time off the
+        # page while leaving its figure in place, which is precisely the
+        # provenance damage G1 and G3 are about.
+        return {"no_report": True, "source": None, "as_of": None,
+                "received_at": None, "received_what": None,
+                "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why}
     d = json.load(open(path))
     s = d.get("summary") or {}
     a = s.get("aging") or {}
@@ -429,6 +492,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
         "source": f"{d.get('source_file') or path}"
                   + (f" ({'+'.join(c for c in d.get('property_codes') or [] if c)})"
                      if d.get("property_codes") else ""),
+        "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
     }
 
 
@@ -465,11 +529,12 @@ def measurements(f):
         out[KPI_TOTAL] = (None, None,
                           "needs one month's billed rent — pass --monthly-rent")
 
-    if f.get("ltl_pct") is not None:
-        out[KPI_LTL] = (f["ltl_pct"], pct0(f["ltl_pct"]), None)
+    rr = f.get("rr_ltl")
+    if rr:
+        out[KPI_LTL] = (rr["pct"], pct0(rr["pct"]), None)
     else:
         out[KPI_LTL] = (None, None,
-                        "this source carries no market-rent-vs-in-place series")
+                        f.get("rr_ltl_why") or "no rent roll published for this property")
 
     if f.get("noi_margin") is not None:
         out[KPI_NOI] = (f["noi_margin"], pct1(f["noi_margin"]), None)
@@ -656,9 +721,15 @@ def main():
                  f"(have: {[p['slug'] for p in sc['properties'] if p['slug']]})")
     thresholds = sc.get("thresholds") or {}
 
-    print(f"source: {facts['source']}  ·  as of {facts['as_of']}  ·  "
-          f"property: {prop['label']}")
-    if facts.get("received_at"):
+    if facts.get("no_report"):
+        print(f"source: the rent roll alone — no delinquency report for "
+              f"{prop['label']}; the cells another feed owns are left as they are")
+    else:
+        print(f"source: {facts['source']}  ·  as of {facts['as_of']}  ·  "
+              f"property: {prop['label']}")
+    if facts.get("no_report"):
+        pass
+    elif facts.get("received_at"):
         print(f"arrived: {facts['received_at']}"
               + (f" ({facts['received_what']})" if facts.get("received_what") else ""))
     else:
@@ -715,7 +786,9 @@ def main():
     # same dict under their own prefix (bldg_*, eliseai_*), and replacing it
     # wholesale dropped them whenever this script ran out of the documented
     # order -- taking their arrival times off the page with them.
-    meas.setdefault(slug, {}).update({
+    meas.setdefault(slug, {})
+    if not facts.get("no_report"):
+        meas[slug].update({
                  "source": facts["source"], "as_of": facts["as_of"],
                  # arrival time, not coverage date: what the page reports as
                  # "data last updated". None when the source carries none.
@@ -741,6 +814,34 @@ def main():
         if t and t.get("how") != CONTROLLABLE_HOW:
             t.setdefault("how_workbook", t.get("how"))
             t["how"] = CONTROLLABLE_HOW
+    rr = facts.get("rr_ltl")
+    if rr:
+        # Its own feed family: this cell is the rent roll's, not the workbook's
+        # and not the AR report's, so its arrival and provenance are recorded
+        # apart from the unprefixed family. "rentroll_" is in SC_FEED_PREFIXES
+        # in index.html and the matching list in data.html.
+        meas[slug].update({
+            "rentroll_source": rr.get("source"),
+            "rentroll_as_of": rr.get("as_of"),
+            "rentroll_received_at": rr.get("received_at"),
+            "rentroll_received_what": "rent roll in the Drive Rent Roll folder",
+            "rentroll_kpis": [KPI_LTL],
+            "ltl_basis": (
+                f"${rr['dollars']:,.0f} market rent less in-place rent across "
+                f"{rr['occupied']} occupied units (${rr['market']:,.0f} market, "
+                f"${rr['actual']:,.0f} in place) on the rent roll of "
+                f"{rr['as_of']}. Occupied units only: a vacant unit has an "
+                f"asking rent and no in-place rent, so counting it would book "
+                f"the whole asking rent as loss"),
+        })
+        # what the workbook's own series said for the same concept, kept so the
+        # two readings are never mistaken for one another
+        if facts.get("ltl_workbook_pct") is not None:
+            meas[slug]["ltl_workbook"] = (
+                f"{facts['ltl_workbook_pct'] * 100:.0f}% for "
+                f"{facts['ltl_workbook_month']} on the T12 statement's monthly "
+                f"revenue lines — a different measurement, not published")
+
     bv = facts.get("bv") or {}
     if bv.get("pct") is not None:
         # Its own feed family, because this cell is not the workbook's: both
