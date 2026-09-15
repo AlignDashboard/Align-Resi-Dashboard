@@ -102,7 +102,7 @@ every figure on it would move on the next pipeline run.
 | --- | --- |
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` — a period select on the left, comparison boxes on the right |
 | Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over today's gap in figures from `rent_roll` |
-| KPI Scorecard — Drive feeds only | the eleven `scorecard.json` cells a Drive report fills |
+| Four KPI tiles | `scorecard.json` — Leased %, Trade-out %, Budget variance, Delinquency, each with its grade |
 | Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
 | Rollover Schedule | `rent_roll` — lease expirations by month |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
@@ -169,12 +169,55 @@ unrefreshable number on a page that promises only live ones:
   quote the Drive report's filename in that state: `build_lineage` attributes
   evidence to whichever feed owns the cell, so the Landing row disappears from
   the `delinquency` flow the moment the workbook takes it.
-- **`# of Renewals` prints as the rate alone.** The published `42/88.9%` splices
-  the workbook tracker's count onto the export's rate, and only the rate comes
-  from Drive.
 - **NOI margin and controllable/door are derived, not borrowed.** The
   scorecard's cells for both are workbook-owned, so the tab computes them from
   `monthly_pl` / `expense_buckets` and the directory's `residential_units`.
+
+### The KPI grid became four tiles
+
+A `KPI Scorecard — Drive feeds only` card sat between the Operating Summary and
+the tile row until 2026-09-15: every `scorecard.json` cell a Drive report
+currently owned, laid out in the workbook's own groups with its bands. It is
+four tiles now, in the same row shape as the statement's tiles below them —
+**Leased %, Trade-out %, Budget variance, Delinquency**. Nothing changed in
+`scorecard.json`, in `populate_scorecard.py` or on any other tab; the other
+cells are on The Landing's own card and the portfolio scorecard as before.
+
+Two things the grid did that a bare number does not, and both are kept:
+
+- **The grade.** Each tile's subtitle leads with where the cell sits against
+  its published band (`in target range`, `exceeding target`, `below target`),
+  and the full prose the grid's cells carried — the band itself, the feed, the
+  link hint — is on hover, composed by the same `scCellTitle` the scorecard tab
+  uses, so the two cannot word it differently. A cell that is reported but not
+  graded gets no grade word rather than an invented one.
+- **The Drive gate.** `scdFeedIsDrive` is asked per tile exactly as the grid
+  asked it, so a cell whose family the workbook wrote last reads `— not
+  Drive-fed today` rather than quietly borrowing a workbook number — and that
+  is told apart from `— awaiting the feed`, a cell no report has ever filled.
+
+Two details worth knowing:
+
+- **Budget variance prints the percentage, with the dollars beneath it.** The
+  published cell is `+$116,402/+12.1%`, two figures spliced, and at 20px that is
+  wider than a tile is at phone width. `measured[slug]` publishes
+  `budget_variance_pct` and `budget_variance_dollars` separately for exactly
+  this reason, so the tile reads the halves rather than truncating the cell.
+  Both keep their sign: the band grades magnitude, but an overspend and an
+  underspend are not the same news.
+- **Trade-out % does not jump to the Trade-outs card.** Every tile jumps to the
+  card showing the working behind its own number; where no card on this tab
+  draws that feed, the jump goes to `What Feeds This Tab`. The tile's 34.9% is
+  the EliseAI export's trailing month, the card's 82.8% is the weekly leasing
+  workbook and the renewal tracker — two feeds, two windows, two definitions,
+  and landing a reader on one from the other under the same name is the
+  disagreement this tab exists to avoid. Leased % is the same case (the tile is
+  `100 − exposure` from the export, Unit Inventory is the rent roll's 97.7%),
+  and so is Budget variance, which no card draws. Delinquency jumps to
+  `cdDelq`, which draws that exact cell.
+
+`SCD_RATE_ONLY` went with the grid: its only consumer was the grid's `# of
+Renewals` cell, which is not one of the four tiles.
 
 Since `1819adb` and `2f34b17` moved `monthly_pl` and the expense ratio onto the
 statement's **total expenses** line, everything on this card reconciles: NOI

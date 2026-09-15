@@ -826,18 +826,13 @@
         <div class="blu-note" id="dopNote" style="color:var(--muted);"></div>
       </div>
 
-      <div class="card wide" id="cdScorecard">
-        <div class="card-head">
-          <div>
-            <h2>KPI Scorecard — Drive feeds only</h2>
-            <span class="eyebrow" id="dscEyebrow">LOADING…</span>
-          </div>
-          <div class="sc-health" id="dscHealth"></div>
-        </div>
-        <div class="sc-strip" id="dscStrip"></div>
-        <div class="sc-legend" id="dscLegend"></div>
-        <div class="sc-note" id="dscNote"></div>
-      </div>
+      <!-- Two tile rows, not a scorecard grid. The KPI Scorecard card that
+           stood here came off 2026-09-15: the four cells worth keeping are
+           tiles now, in the same row shape as the statement's below them. What
+           the grid added over the numbers was the band, so each tile carries
+           its grade in its own subtitle and the grid's full band prose on
+           hover. -->
+      <div class="kpis" id="dkpisSc"></div>
 
       <div class="kpis" id="dkpis"></div>
 
@@ -3391,27 +3386,18 @@ function prefixed(meas, prefix) {
   return out;
 }
 
-// "42/88.9%" splices the analyst workbook's renewal count (populate_
-// building_metrics.RENEWAL_COUNT_SOURCE, from landing.json, to its own tracker
-// date) onto the export's trailing rate. The rate is the export's and is what
-// the band grades; the count is not, so this tab shows the rate alone rather
-// than half a workbook cell.
-const SCD_RATE_ONLY = {
-  "# of Renewals": v => (v && v.raw != null)
-    ? { raw: v.raw, display: fmPct(v.raw, 1) } : v,
-};
 
 // The Drive flows behind this tab, and what each one puts on it. Arrival times
 // are read from lineage.json's evidence rather than restated here, so the card
 // reports what the last pipeline run actually found.
 const SCD_FEED_ROWS = [
   { flow: "t12", fills: "Operating Summary · Loss to Lease · Expense Load & NOI · Expense Deep Dive" },
-  { flow: "bldg_metrics", fills: "Eight scorecard cells · the Leased tile" },
+  { flow: "bldg_metrics", fills: "The Leased % and Trade-out % tiles" },
   // What this one fills depends on which populate_scorecard run wrote last, so
   // it is asked rather than asserted.
-  { flow: "delinquency", fills: "Delinquency card · two scorecard cells",
+  { flow: "delinquency", fills: "Delinquency card and tile",
     fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
-  { flow: "budget", fills: "One scorecard cell — Budget Variance %" },
+  { flow: "budget", fills: "The Budget variance tile" },
   { flow: "rent_roll", fills: "Loss to Lease · Rollover Schedule · Largest Unit Gaps" },
   { flow: "daily_leasing", fills: "Trade-outs — the new-lease series" },
   { flow: "renewal_tracker", fills: "Trade-outs — the renewal series and the MTM count" },
@@ -3537,27 +3523,50 @@ async function loadLandingDrive() {
   const ctrlKeys = eb ? monthKeysBack(eb.period_end, eb.labels.length) : [];
   const ctrlPerDoorMo = ctrl ? ctrl.map(v => v / doors) : null;
 
-  /* ---- KPI strip ---- */
+  /* ---- The two tile rows ----
+     One builder, because this tab carries two rows of them now and a second
+     copy would drift the first time one was edited. A tile is
+     [value, label, subtitle, card to jump to, what that card is, hover text].
+     Each tile jumps to the card that shows the working behind its own number;
+     where no card on this tab draws that feed, the jump goes to the feed table
+     rather than to a card printing a same-named figure from somewhere else. */
+  const jump = id => {
+    const card = document.getElementById(id);
+    if (!card) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    card.classList.remove("flash");
+    void card.offsetWidth;
+    card.classList.add("flash");
+    card.addEventListener("animationend", () => card.classList.remove("flash"), { once: true });
+  };
+  function tileRow(hostId, tiles) {
+    const host = document.getElementById(hostId);
+    host.textContent = "";
+    tiles.forEach(([v, k, s, target, where, title]) => {
+      const kp = elc("button", "kpi");
+      kp.type = "button";
+      kp.appendChild(elc("div", "v amber", v));
+      kp.appendChild(elc("div", "k", k));
+      kp.appendChild(elc("div", "s", s));
+      const arrow = elc("span", "jump", "↓");
+      arrow.setAttribute("aria-hidden", "true");
+      kp.appendChild(arrow);
+      kp.setAttribute("aria-label", k + ": " + v + ". Jump to " + where + ".");
+      if (title) kp.title = title;
+      kp.addEventListener("click", () => jump(target));
+      host.appendChild(kp);
+    });
+  }
+
+  /* ---- KPI strip — what the statement itself reports ---- */
   (function kpis() {
-    const host = document.getElementById("dkpis");
-    const jump = id => {
-      const card = document.getElementById(id);
-      if (!card) return;
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-      card.classList.remove("flash");
-      void card.offsetWidth;
-      card.classList.add("flash");
-      card.addEventListener("animationend", () => card.classList.remove("flash"), { once: true });
-    };
     const plKeys = pl
       ? ((pl.months && pl.months.length === pl.revenue.length)
           ? pl.months : monthKeysBack(pl.period_end, pl.revenue.length))
       : [];
     const last = pl ? pl.revenue.length - 1 : -1;
     const sum = a => a.reduce((x, y) => x + y, 0);
-    const cell = scored => (prop && scValue(prop, scored)) || null;
-    const asOf = k => { const d = scKpiAsOf(SCD_SLUG, k); return d ? " · as of " + d : ""; };
 
     const tiles = [];
     if (pl) {
@@ -3576,132 +3585,91 @@ async function loadLandingDrive() {
          "per year at " + shortMo(ctrlKeys[ctrlKeys.length - 1]) + " · " + doors + " doors",
          "cdNoi", "expense load & NOI"]
       : ["—", "Controllable / door", ctrlWhy, "cdNoi", "expense load & NOI"]);
-    const leased = cell("Leased %");
-    tiles.push(leased && leased.display
-      ? [leased.display, "Leased", "100 − exposure" + asOf("Leased %"),
-         "cdScorecard", "the Drive scorecard"]
-      : ["—", "Leased", "awaiting the leasing feed", "cdScorecard", "the Drive scorecard"]);
-    // Same gate as the card: a value exists, but the workbook may own it today.
-    const arFeed = SCD_DRIVE_FEEDS.find(f => f.prefix === "");
-    const delq = scdFeedIsDrive(arFeed, meas) ? cell("Total Deliquency") : null;
-    tiles.push(delq && delq.display
-      ? [delq.display, "Delinquency", "resident AR over one month's revenue",
-         "cdDelq", "the delinquency card"]
-      : ["—", "Delinquency", "not Drive-fed today", "cdDelq", "the delinquency card"]);
-
-    host.textContent = "";
-    tiles.forEach(([v, k, s, target, where]) => {
-      const kp = elc("button", "kpi");
-      kp.type = "button";
-      kp.appendChild(elc("div", "v amber", v));
-      kp.appendChild(elc("div", "k", k));
-      kp.appendChild(elc("div", "s", s));
-      const arrow = elc("span", "jump", "↓");
-      arrow.setAttribute("aria-hidden", "true");
-      kp.appendChild(arrow);
-      kp.setAttribute("aria-label", k + ": " + v + ". Jump to " + where + ".");
-      kp.addEventListener("click", () => jump(target));
-      host.appendChild(kp);
-    });
+    // Leased and Delinquency used to finish this row. They are scorecard cells
+    // rather than statement figures, so they moved up into the row above when
+    // the grid came off, instead of being printed twice on one tab.
+    tileRow("dkpis", tiles);
   })();
 
-  /* ---- KPI scorecard, Drive-owned cells only ---- */
-  (function scorecard() {
-    const eyebrow = document.getElementById("dscEyebrow");
-    const note = document.getElementById("dscNote");
-    if (!SC || !prop) {
-      eyebrow.textContent = "SCORECARD UNAVAILABLE";
-      return;
-    }
-    // kpi -> the feed that owns it
-    const owned = new Map();
-    SCD_DRIVE_FEEDS.forEach(f => {
-      if (!scdFeedIsDrive(f, meas)) return;
-      (meas[f.prefix + "kpis"] || []).forEach(k => {
-        if (f.only && f.only.indexOf(k) < 0) return;
-        if (!owned.has(k)) owned.set(k, f);
-      });
-    });
-    const groups = SC.groups
-      .map(g => ({ name: g.name, metrics: g.metrics.filter(k => owned.has(k)) }))
-      .filter(g => g.metrics.length);
-    const shown = groups.reduce((t, g) => t + g.metrics.length, 0);
-    if (!shown) {
-      eyebrow.textContent = "NO DRIVE FEED HAS FILLED A KPI HERE YET";
-      note.textContent = "Every measured cell on this property's scorecard came from the "
-        + "analyst workbook, so none of them belongs on this tab.";
-      return;
-    }
-    const roll = scRollUp(prop, groups);
-    eyebrow.textContent = roll.scored === 0
-      ? shown + " DRIVE-FED CELLS · NONE GRADED"
-      : roll.counts.below === 0
-        ? "ALL " + roll.scored + " GRADED DRIVE-FED KPIs AT OR ABOVE TARGET"
-        : roll.counts.below + " OF " + roll.scored + " GRADED DRIVE-FED KPIs BELOW TARGET";
+  /* ---- The scorecard cells this tab keeps, as tiles ----
+     A twelve-cell KPI grid stood here until 2026-09-15. Four cells are worth a
+     tile; the rest are on The Landing's own card and the portfolio scorecard,
+     unchanged, and scorecard.json still carries every one of them.
 
-    const health = document.getElementById("dscHealth");
-    health.textContent = "";
-    const big = elc("div", "big", roll.at_or_above == null ? "—" : fmPct(roll.at_or_above, 0));
-    if (roll.scored) big.classList.add("sc-state-" + scTone(roll.counts));
-    health.appendChild(big);
-    health.appendChild(elc("div", "lbl", roll.scored
-      ? "at or above target · " + roll.scored + " of " + shown + " graded"
-      : "nothing graded yet"));
-    const upd = scUpdatedEl(SCD_SLUG,
-      SCD_DRIVE_FEEDS.filter(f => scdFeedIsDrive(f, meas)).map(f => f.prefix));
-    if (upd) health.appendChild(upd);
+     Two things the grid did that a bare number does not, and both are kept:
 
-    const strip = document.getElementById("dscStrip");
-    strip.textContent = "";
+     - The GRADE. Each tile's subtitle leads with where the cell sits against
+       its published band, and the full prose the grid's cells carried -- the
+       band itself, the feed, the link hint -- is on hover, from scCellTitle,
+       so the wording cannot drift from the scorecard tab's.
+     - The DRIVE GATE. The delinquency pair is filled by whichever
+       populate_scorecard run went last, and on 2026-09-03 that was the
+       workbook. A tile reading the KPI list alone would publish a workbook
+       number on a tab that promises only live ones, so the owning feed is
+       asked (scdFeedIsDrive) exactly as the grid asked it, and a displaced
+       cell shows as absent with the reason rather than borrowed. */
+  const SCD_GRADE = { exceeding: "exceeding target", in_range: "in target range",
+                      below: "below target" };
+  (function scTiles() {
+    if (!SC || !prop) { tileRow("dkpisSc", []); return; }
     const unscored = scUnscoredSet();
-    groups.forEach(g => {
-      strip.appendChild(elc("div", "g", g.name));
-      g.metrics.forEach(name => {
-        const row = elc("div", "m");
-        const st = prop.statuses[name];
-        const raw = scValue(prop, name);
-        const v = SCD_RATE_ONLY[name] ? SCD_RATE_ONLY[name](raw) : raw;
-        const un = unscored.has(name);
-        const src = (prop.status_source || {})[name];
-        row.appendChild(elc("span", "nm", name));
-        row.appendChild(scChip(st, v, un, prop.label, name, src));
-        row.title = scCellTitle(name, st, v, un, null, src)
-          + "\n\nFeed: " + owned.get(name).what
-          + (SCD_RATE_ONLY[name]
-              ? "\nShown as the rate alone here: the published cell splices a renewal "
-                + "count from the analyst workbook onto the export's rate, and only the "
-                + "rate comes from Drive."
-              : "");
-        strip.appendChild(row);
-      });
-    });
+    // The family that lists a cell, whether or not it owns it today -- which is
+    // what tells "no report has ever filled this" from "one has, and something
+    // else wrote it last".
+    const listedBy = kpi => SCD_DRIVE_FEEDS.find(f =>
+      (!f.only || f.only.indexOf(kpi) >= 0)
+      && (meas[f.prefix + "kpis"] || []).indexOf(kpi) >= 0);
+    const asOf = k => { const d = scKpiAsOf(SCD_SLUG, k); return d ? " · as of " + d : ""; };
+    const signed = (x, f) => (x >= 0 ? "+" : "−") + f(Math.abs(x));
 
-    scLegendInto(document.getElementById("dscLegend"));
-    // A Drive feed whose cells something else owns today takes its cells out of
-    // this card -- and out of the tally with them. The Landing's one below-target
-    // AR cell leaving that way turns 6-of-7 into a clean 6-of-6, which would read
-    // as an improvement rather than as a cell going missing.
-    const displaced = SCD_DRIVE_FEEDS.filter(f =>
-      (meas[f.prefix + "kpis"] || []).length && !scdFeedIsDrive(f, meas));
-    const displacedNote = displaced.length
-      ? "Another feed currently owns the cells the "
-        + displaced.map(f => f.what.split(" · ")[0]).join(" and ")
-        + " fills, so they are off this card and out of the tally above. That is a cell "
-        + "leaving, not a score improving; the card below says which and why. "
-      : "";
-    const off = SC.groups.reduce((t, g) => t + g.metrics.length, 0) - shown;
-    note.textContent =
-      (roll.below_metrics.length
-        ? "Below target: " + roll.below_metrics.join(", ") + ". " : "")
-      + displacedNote
-      + "These are the " + shown + " cells a Drive report fills; the other " + off
-      + " on the scorecard are either awaiting a feed or measured from the analyst "
-      + "workbook, and stay on The Landing's own card and the portfolio scorecard. "
-      + "The bands and the KPI list "
-      + "themselves come from the KPI scorecard workbook — a scoring rubric, not a "
-      + "number that refreshes — so the cells move with Drive and the thresholds they "
-      + "are graded against do not. "
-      + SC.meta.note;
+    // read() returns [what the tile prints, what sits under it]. It exists
+    // because two of these cells publish more than a tile can carry.
+    const WANTED = [
+      { kpi: "Leased %", label: "Leased %", to: "cdFeeds", where: "what feeds this tab",
+        read: v => [v.display, "100 − exposure"] },
+      // 34.9% here is the EliseAI export's trailing month; the Trade-outs card
+      // below reads 82.8% from the weekly leasing workbook and the renewal
+      // tracker. Two feeds, two windows, two definitions -- so this tile does
+      // NOT jump there. One number landing on a card showing another under the
+      // same name is the disagreement this tab exists to avoid.
+      { kpi: "Trade-out %", label: "Trade-out %", to: "cdFeeds", where: "what feeds this tab",
+        read: v => [v.display, "new + renewal blend"] },
+      // The published cell is "+$116,402/+12.1%", two figures spliced, and at
+      // 20px that is wider than a tile is at phone width. measured[slug]
+      // publishes the halves separately for exactly this reason, so the tile
+      // takes the percentage and puts the dollars underneath rather than
+      // truncating a number. Sign is kept on both: the band grades magnitude,
+      // but an overspend and an underspend are not the same news.
+      { kpi: "Budget Variance %", label: "Budget variance", to: "cdFeeds",
+        where: "what feeds this tab",
+        read: () => (meas.budget_variance_pct == null ? null
+          : [signed(meas.budget_variance_pct, x => fmPct(x, 1)),
+             signed(meas.budget_variance_dollars, fm$) + " on controllable opex"]) },
+      { kpi: "Total Deliquency", label: "Delinquency", to: "cdDelq",
+        where: "the delinquency card",
+        read: v => [v.display, "resident AR over one month's rent"] },
+    ];
+
+    const tiles = WANTED.map(t => {
+      const owner = listedBy(t.kpi);
+      const live = owner && scdFeedIsDrive(owner, meas);
+      const v = live ? scValue(prop, t.kpi) : null;
+      const shown = v && v.display != null ? t.read(v) : null;
+      if (!shown) {
+        return ["—", t.label,
+                owner ? "not Drive-fed today" : "awaiting the feed",
+                t.to, t.where, ""];
+      }
+      const st = prop.statuses[t.kpi];
+      const src = (prop.status_source || {})[t.kpi];
+      const graded = src === "measured" && !unscored.has(t.kpi) && SCD_GRADE[st];
+      return [String(shown[0]), t.label,
+              (graded ? graded + " · " : "") + shown[1] + asOf(t.kpi),
+              t.to, t.where,
+              scCellTitle(t.kpi, st, v, unscored.has(t.kpi), null, src)
+                + "\n\nFeed: " + owner.what];
+    });
+    tileRow("dkpisSc", tiles);
   })();
 
   /* ---- Expense load & NOI, entirely from the statement ---- */
