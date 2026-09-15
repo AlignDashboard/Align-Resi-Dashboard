@@ -101,6 +101,26 @@ jobs:
       - name: Build the data lineage
         run: python scripts/build_lineage.py
 
+      # The packet PDF lives in Drive for the people who pull the Yardi exports
+      # and do not read this repo. It is regenerated from
+      # LANDING_DRIVE_PACKET.md every run so the two cannot disagree, and the
+      # upload REPLACES the file already there rather than adding one, so the
+      # link stays the same. Both steps no-op without their secret.
+      #
+      # The PDF is not committed: it carries Drive folder links, and this repo
+      # is public. build/ is gitignored for that reason.
+      - name: Rebuild the packet PDF
+        run: |
+          pip install --quiet markdown
+          python scripts/landing_drive_status.py --write
+          python scripts/publish_packet_pdf.py
+
+      - name: Upload the packet PDF to Drive
+        env:
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
+          GDRIVE_PACKET_FOLDER_ID: ${{ secrets.GDRIVE_PACKET_FOLDER_ID }}
+        run: python scripts/upload_packet_pdf.py
+
       - name: Refuse to commit if personal data leaked into the output
         run: python scripts/check_no_pii.py
 

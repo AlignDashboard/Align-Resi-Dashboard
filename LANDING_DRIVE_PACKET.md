@@ -141,6 +141,33 @@ that has already arrived.
 
 ---
 
+## The PDF in Drive
+
+The PDF is generated from this file, never edited directly, so the two cannot
+disagree:
+
+```
+python scripts/landing_drive_status.py --write   # refresh section 2
+python scripts/publish_packet_pdf.py             # render build/…pdf
+python scripts/upload_packet_pdf.py              # replace the copy in Drive
+```
+
+`update.yml` runs all three after every pipeline run, so the Drive copy tracks
+the dashboard without anyone remembering to refresh it. The upload **replaces**
+the existing file rather than adding one, so its link never changes.
+
+Two things it needs, both one-time:
+
+| | What | Why |
+| --- | --- | --- |
+| Secret `GDRIVE_PACKET_FOLDER_ID` | the Drive folder the PDF lives in | folder ids are secrets here — this repo is public |
+| Service account granted **Editor** on that folder | `GDRIVE_SA_KEY` is read-only today | the upload asks for `drive.file`, which reaches only files it created itself, so it can maintain its PDF and cannot touch a report |
+
+Until both exist the step prints why and exits 0 — a missing upload never fails
+the run that produced the metrics. The PDF is not committed: it carries Drive
+folder links and this repo is public, which is also why `build/` is gitignored
+and the folder ids sit in a gitignored `config/drive_folders.local.json`.
+
 ## Log
 
 Newest first. Add a line when a feed, a card or a packet row changes — not for
