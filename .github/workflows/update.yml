@@ -10,6 +10,14 @@ on:
 permissions:
   contents: write          # needed to commit metrics.json + data/ back
 
+# Two runs overlapping is one way the commit step ends up racing itself, and a
+# second run rebuilding the same day's data buys nothing. Queue rather than
+# cancel: a run that has already fetched Drive and rebuilt should be allowed to
+# finish and push.
+concurrency:
+  group: update-metrics
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -126,31 +134,67 @@ jobs:
 
       - name: Commit changes
         run: |
+          set -u
+          PATHS="data docs/metrics.json docs/scorecard.json docs/lineage.json"
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A data docs/metrics.json docs/scorecard.json docs/lineage.json 2>/dev/null \
+          git add -A $PATHS 2>/dev/null \
             || git add docs/metrics.json docs/scorecard.json docs/lineage.json
           if git diff --staged --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "Auto-update metrics ($(date -u +%Y-%m-%d))"
-            # The commit only exists on this runner, so a transient 500 from
-            # GitHub on push throws away the whole day's build — reports fetched,
-            # metrics rebuilt, PII checked — with nothing left to recover from.
-            # (Observed 2026-08-13.) Retry with backoff, rebasing between tries
-            # in case the remote moved.
-            for attempt in 1 2 3 4 5; do
-              if git push; then
-                echo "Pushed on attempt $attempt."
-                exit 0
-              fi
-              if [ "$attempt" -eq 5 ]; then
-                echo "::error::push failed after $attempt attempts"
-                exit 1
-              fi
-              delay=$((2 ** attempt))
-              echo "Push failed; retrying in ${delay}s."
-              sleep "$delay"
-              git pull --rebase origin main || true
-            done
+            exit 0
           fi
+          MSG="Auto-update metrics ($(date -u +%Y-%m-%d))"
+          git commit -qm "$MSG"
+          # The commit only exists on this runner, so a transient 500 from
+          # GitHub on push throws away the whole day's build — reports fetched,
+          # metrics rebuilt, PII checked — with nothing left to recover from.
+          # (Observed 2026-08-13.) Hence the retry.
+          #
+          # What it must NOT do between tries is `git pull --rebase`. Every path
+          # here is regenerated output, so a push that lost a race conflicts on
+          # the very files the run just wrote. The rebase then stops on the
+          # conflict, `|| true` swallows it, and the loop spins in a half-rebase
+          # — "Pulling is not possible because you have unmerged files", then a
+          # detached HEAD it cannot push from. That is not hypothetical: it is
+          # why nothing published between 2026-09-13 and 2026-09-15.
+          #
+          # These paths are this run's product, not a document two authors edit,
+          # so the answer is to replay them onto the new main rather than merge
+          # them line by line — a three-way merge of regenerated JSON yields a
+          # file no run ever wrote. Reset to the remote, restore this run's
+          # files over it, commit again. The commit that landed mid-run keeps
+          # its place in history; only the generated files are overwritten, and
+          # the log names them.
+          for attempt in 1 2 3 4 5; do
+            if git push -q origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::push failed after $attempt attempts"
+              exit 1
+            fi
+            delay=$((2 ** attempt))
+            echo "Push failed; retrying in ${delay}s."
+            sleep "$delay"
+            git fetch -q origin main || continue
+            moved=$(git diff --name-only HEAD origin/main -- $PATHS 2>/dev/null || true)
+            if [ -n "$moved" ]; then
+              echo "::warning::main moved under this run; replaying this run's output over:"
+              echo "$moved" | sed 's/^/  /'
+            fi
+            tmp=$(mktemp -d)
+            for p in $PATHS; do
+              [ -e "$p" ] && cp -a --parents "$p" "$tmp/" 2>/dev/null || true
+            done
+            git reset -q --hard origin/main
+            cp -a "$tmp/." . && rm -rf "$tmp"
+            git add -A $PATHS 2>/dev/null \
+              || git add docs/metrics.json docs/scorecard.json docs/lineage.json
+            if git diff --staged --quiet; then
+              echo "Remote already carries this run's output; nothing left to push."
+              exit 0
+            fi
+            git commit -qm "$MSG"
+          done
