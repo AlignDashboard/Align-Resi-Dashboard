@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}   # allows manual "Run workflow" from the Actions tab
 
 permissions:
-  contents: write          # needed to commit metrics.json + data/ back
+  contents: write          # needed to commit the sealed metrics + data/ back
 
 jobs:
   update:
@@ -24,6 +24,32 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      # Checked first, not when the encrypt step is reached: without it this run
+      # cannot read the data it is meant to update, and finding that out after
+      # fetching Drive and rebuilding everything wastes the whole run. Failing
+      # is deliberate — the alternative, carrying on and committing plaintext,
+      # would quietly undo the encryption.
+      - name: Check the data key is available
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        run: |
+          if [ -z "${DASHBOARD_PASSWORD:-}" ]; then
+            echo "::error::DASHBOARD_PASSWORD is not set. The published data files are"
+            echo "::error::encrypted, so this run cannot read or rewrite them. Add the"
+            echo "::error::repository secret (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+          echo "data key present"
+
+      # The repo holds only docs/*.json.enc. The pipeline reads and rewrites the
+      # plaintext — build_metrics carries the hand-authored blocks through from
+      # the previous metrics.json, and populate_scorecard merges into the
+      # existing scorecard.json — so it is opened here and re-sealed at the end.
+      - name: Open the sealed data files
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        run: python scripts/crypto_data.py decrypt
 
       - name: Fetch reports from Google Drive
         env:
@@ -84,15 +110,27 @@ jobs:
       - name: Build the data lineage
         run: python scripts/build_lineage.py
 
+      # Runs on the PLAINTEXT, which is the only point at which it can mean
+      # anything — once sealed there is nothing for it to read. Hence the order:
+      # check, then encrypt, then commit.
       - name: Refuse to commit if personal data leaked into the output
         run: python scripts/check_no_pii.py
+
+      # --replace leaves no plaintext behind, so there is nothing for the commit
+      # step to pick up by accident even if the ignore rules were edited.
+      - name: Seal the data files
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        run: |
+          python scripts/crypto_data.py encrypt --replace
+          python scripts/crypto_data.py check
 
       - name: Commit changes
         run: |
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A data docs/metrics.json docs/scorecard.json docs/lineage.json 2>/dev/null \
-            || git add docs/metrics.json docs/scorecard.json docs/lineage.json
+          git add -A data docs/metrics.json.enc docs/scorecard.json.enc docs/lineage.json.enc 2>/dev/null \
+            || git add docs/metrics.json.enc docs/scorecard.json.enc docs/lineage.json.enc
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else

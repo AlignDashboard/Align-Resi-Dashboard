@@ -1,6 +1,6 @@
 # Open Items
 
-State as of 2026-09-15, HEAD `d188f75`. IDs are stable — when an item closes, move
+State as of 2026-09-15, HEAD `8a94c12`. IDs are stable — when an item closes, move
 it to *Closed* rather than renumbering, so "A3" means the same thing next week.
 
 **Live and uncertain** marks an item where the dashboard is publishing something
@@ -19,6 +19,7 @@ first: everything else is a gap, but these are assertions.
 | A10 | Extend the COA mapping workbook to cover the 10 JPM accounts (~$115k of T12) it does not map: Carpets, Alarm monitoring, Courtesy patrol, two Turnover lines, Credit reports, Credit Card Fees, Courtesy/Concierge REIT-sensitive, Gross Rec./Bus. Lic. Tax, and a Professional Fees line. The pipeline groups them by label and logs them loudly meanwhile | Clean Align-tree grouping in the Expense Deep Dive and the controllable basket | contained — grouped by label, flagged each run |
 | A11 | Confirm the five folder names now in the routing table — `Renewal Tracker`, `Prospect Reports`, `Daily Leasing Reports`, `Daily Tracker`, `Demographics` — and two judgement calls inside them: the **box score goes to `Property Status`** (the SOP's own routing table says box score is the property-status report), and **`Daily Tracker` is kept separate from `Daily Leasing Reports`**, which I split on file size (~157KB vs ~55KB) without opening either, so they may be one family. Less pressing now that new types name their own folders: a wrong name is visible in Drive and fixed by editing one rule | Which folder five report families live in | no — nothing publishes from them |
 | A12 | `scripts/gmail_drive_filing.js` carries `TARGET_FOLDER_ID` as a literal, and it is now committed to a public repo — while the same ID is a *secret* (`GDRIVE_FOLDER_ID`) on the pipeline side. A Drive folder ID is not a credential (it grants nothing without permission), but the two halves treat it inconsistently and history cannot be un-published without E3's rewrite. Your call: move it to a script property like `BUILDING_INFO_FOLDER_ID`, or accept it and drop the secret | Nothing today — noting it rather than deciding it for you | no |
+| A14 | **Rotate the dashboard password and set the `DASHBOARD_PASSWORD` repository secret.** The data files are now AES-256-GCM ciphertext (`docs/*.json.enc`) and the password is the key — but they are sealed under `AlignExecs`, the password that has been sitting in `index.html` in a public repository all along, kept so the site kept working the moment this deployed. The ciphertext is public and guessable offline with no rate limit, so until it is rotated the encryption is a mechanism rather than a protection. Two steps, in this order: `python scripts/crypto_data.py rotate` (refuses anything under 12 characters, and opens every file before rewriting any), then set the same value as the secret under Settings → Secrets and variables → Actions. **The secret is needed either way** — the daily cron opens the sealed files to read last run's output and fails loudly without it, which is deliberate: the alternative is a run that carries on and commits plaintext | Whether the encryption protects anything | **yes** — the published data is sealed under a password that is public |
 
 ## B · Blocked on an answer from EliseAI
 
@@ -71,13 +72,16 @@ after. D3 joins them: the two box-score exports are its first samples.
 
 ## E · Keeping data out of git history
 
-Documented in CLAUDE.md and built but not activated. Strictly ordered.
+Documented in CLAUDE.md and built but not activated. Strictly ordered. Encrypting
+the data (2026-09-15) changed what is at stake here rather than settling it: new
+commits carry ciphertext, but history is unchanged and a single password opens
+every sealed version ever published.
 
 | # | Step |
 | --- | --- |
 | E1 | Settings → Pages → Build and deployment → Source → **GitHub Actions**. `deploy.yml` is not dormant before this: it runs on every push and loses a race with GitHub's own branch build, harmless only while both publish identical bytes. Once data comes from the `data` branch they would differ and the winner would be a coin toss |
-| E2 | `scripts/publish_data.sh` to create the `data` branch, confirm the site loads, then drop `docs/*.json` from tracking and change `update.yml` to publish to `data` instead of committing |
-| E3 | `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`. Rewrites history, needs a force-push, and cannot un-publish anything already public |
+| E2 | `scripts/publish_data.sh` to create the `data` branch, confirm the site loads, then drop `docs/*.json.enc` from tracking and change `update.yml` to publish to `data` instead of committing. The plaintext half is **done**: `docs/*.json` left tracking when the data was sealed, and `check_no_pii.py` fails if it returns |
+| E3 | `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`. Rewrites history, needs a force-push, and cannot un-publish anything already public. **Sealing the data did not do this job**: every version committed before it is still plaintext in history. `docs/lineage.json` was missing from the script's path list and has been added |
 
 ## F · Cosmetic, awaiting a yes/no
 
@@ -111,6 +115,22 @@ which is why neither shows up as a wrong-looking number on the page.
 | H2 | **The three workbook-fed KPIs cannot follow the statement at all.** Loss to Lease %, NOI Margin % and Concession Load % are read from `docs/landing.json`, which is refreshed by hand in Excel, so they are pinned to the workbook's last extract (Jul 2026) no matter how many statements arrive. The pipeline now carries the same series to the cent — `metrics.json` `rent_capture` is on Aug 2026, thirteen months — so all three could be sourced from it and would then move on their own. That is the rewiring of `facts_from_landing` flagged when the block was built: not hard, but it decides which feed owns those cells, so it wants doing with G3 rather than before it | Three KPIs that move when a report arrives rather than when someone opens Excel | contained — the figures are right for the month they name |
 
 ## Closed
+
+2026-09-15 — **the page is actually encrypted.** The gate used to compare what you
+typed against `const PASSWORD = "AlignExecs"` in a public file, in front of
+`docs/*.json` that anyone could fetch without ever meeting it. The four data files
+are now AES-256-GCM ciphertext (`docs/*.json.enc`) under a key derived from the
+password by 600,000 PBKDF2-HMAC-SHA256 rounds; there is no password constant left,
+because a wrong password is simply a file that does not decrypt. `crypto_data.py`
+seals and opens them, `unlock.js` is the browser half (WebCrypto, no library,
+shared by both pages), and the plaintext left git tracking — `check_no_pii.py`
+fails if it returns and `deploy.yml` refuses an artifact carrying it. The cron
+opens the sealed files at the start of a run and re-seals at the end, because
+`build_metrics` and `populate_scorecard` both read last run's output; it needs the
+`DASHBOARD_PASSWORD` secret and fails loudly without it rather than reverting to
+plaintext. 42 fixture-free checks plus a browser pass through the real gate.
+**A14 is what makes this worth anything**: it is sealed under the password that was
+already public, so it must be rotated.
 
 2026-09-11 — **the monthly loss-to-lease series, without the rent roll.** The Drive
 tab listed Loss to Lease as unrefreshable, needing per-unit market rent against

@@ -6,6 +6,9 @@
 <title>Align Asset Dashboard</title>
 <!-- Chart.js 4.4.1, vendored locally so the page has no CDN dependency -->
 <script src="chart.umd.min.js"></script>
+<!-- Opens the sealed data files. Shared with data.html so the two cannot
+     disagree about the envelope format; scripts/crypto_data.py writes them. -->
+<script src="unlock.js"></script>
 <script>
   // Applied before first paint so a stored light preference does not flash dark.
   (function () {
@@ -575,14 +578,15 @@
 <body>
 
   <!-- =================== PASSWORD GATE ===================
-       NOTE: This is a client-side visibility gate, NOT encryption.
-       It deters casual viewing but the page source is readable.
-       Before loading REAL financial data, replace this with true
-       client-side AES encryption of metrics.json (see footer note). -->
+       The password is not checked against anything in this file — there is
+       nothing here to check it against. It is the key: it decrypts
+       metrics.json.enc, and a wrong one simply fails to open the file. So
+       there is no constant to read out of the source, and no plaintext data
+       sitting beside the page for someone who skips the gate entirely. -->
   <div id="gate">
     <div class="mark"></div>
     <h1>Align Asset Dashboard</h1>
-    <div class="sub">The Landing · Chorus · The Madelon. Enter the password to view.</div>
+    <div class="sub">The Landing · Chorus · The Madelon. The password decrypts the data — there is nothing to see without it.</div>
     <div class="pwrow">
       <input id="pw" type="password" placeholder="PASSWORD" autocomplete="off" />
       <button id="unlock">Unlock</button>
@@ -941,15 +945,19 @@
 <script>
 /* ============================================================
    PASSWORD GATE
-   ============================================================ */
-const PASSWORD = "AlignExecs";   // <-- change here to update the gate password
 
-// This page is the only place the password is entered. Unlocking records a
-// marker that data.html reads, so the data tables open without a second
-// prompt — and cannot be opened at all without coming through here first.
-// sessionStorage, not localStorage: the unlock lasts for the browser session
-// rather than forever on the machine.
-const SESSION_KEY = "align-unlocked";
+   There is no password in this file. There is nothing to compare against,
+   because the password IS the key: docs/*.json.enc are AES-256-GCM ciphertext
+   under a key derived from it, and "wrong password" is simply the file failing
+   to open. That is the whole difference from what used to be here — a constant
+   anyone could read out of the source, guarding files anyone could fetch
+   without ever meeting the gate.
+
+   unlock.js does the crypto and holds the derived key for the browser session
+   so data.html opens without a second prompt. scripts/crypto_data.py is the
+   other end of the format.
+   ============================================================ */
+
 // Pages data.html may send us back to after unlocking. An allowlist, so the
 // ?next= parameter can never be pointed somewhere else.
 const ALLOWED_NEXT = ["data.html"];
@@ -958,10 +966,8 @@ const gate   = document.getElementById("gate");
 const app    = document.getElementById("app");
 const pwInput = document.getElementById("pw");
 const errEl  = document.getElementById("err");
+const unlockBtn = document.getElementById("unlock");
 
-function sessionUnlocked() {
-  try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch (e) { return false; }
-}
 function reveal() {
   gate.style.display = "none";
   app.style.display = "block";
@@ -970,30 +976,66 @@ function reveal() {
   // now that the page is actually visible.
   if (location.hash) setTimeout(focusCardFromHash, 0);
 }
-function tryUnlock() {
-  if (pwInput.value === PASSWORD) {
-    try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (e) {}
-    // came here from a gated page? go back to it
-    const q = new URLSearchParams(location.search);
-    const next = q.get("next");
-    if (ALLOWED_NEXT.includes(next)) {
-      // data.html hands its fragment over as ?at= when it bounces someone here
-      // to unlock. Restore it so a deep link survives the round trip; the
-      // pattern keeps it to a plain anchor name.
-      const at = q.get("at") || "";
-      location.replace(next + (/^[A-Za-z0-9_-]+$/.test(at) ? "#" + at : ""));
-      return;
-    }
-    reveal();
-  } else {
+
+// Came here from data.html to unlock? Go back there. Otherwise show the board.
+function proceed() {
+  const q = new URLSearchParams(location.search);
+  const next = q.get("next");
+  if (ALLOWED_NEXT.includes(next)) {
+    // data.html hands its fragment over as ?at= when it bounces someone here
+    // to unlock. Restore it so a deep link survives the round trip; the
+    // pattern keeps it to a plain anchor name.
+    const at = q.get("at") || "";
+    location.replace(next + (/^[A-Za-z0-9_-]+$/.test(at) ? "#" + at : ""));
+    return;
+  }
+  reveal();
+}
+
+// Deriving the key is deliberately slow — 600,000 PBKDF2 rounds, which is what
+// makes guessing the password offline expensive. That is most of a second on a
+// phone, so the button has to say something is happening rather than appear dead.
+async function tryUnlock() {
+  const label = unlockBtn.textContent;
+  errEl.textContent = "";
+  unlockBtn.disabled = pwInput.disabled = true;
+  unlockBtn.textContent = "Opening…";
+  try {
+    if (await AlignUnlock.tryPassword(pwInput.value)) { proceed(); return; }
     errEl.textContent = "Incorrect password";
     pwInput.value = "";
+  } catch (e) {
+    // Not a wrong password — no secure context, no network, nothing published.
+    // Say which, because "Incorrect password" would send someone hunting for a
+    // typo that is not there.
+    errEl.textContent = (e && e.message) || String(e);
+  } finally {
+    unlockBtn.disabled = pwInput.disabled = false;
+    unlockBtn.textContent = label;
     pwInput.focus();
   }
 }
-document.getElementById("unlock").addEventListener("click", tryUnlock);
+unlockBtn.addEventListener("click", tryUnlock);
 pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
-window.addEventListener("load", () => { if (!sessionUnlocked()) pwInput.focus(); });
+
+/* Which state is this build in? Sealed data behind the gate is the live site;
+   plaintext in docs/ is a local checkout that has not run the encrypt step, and
+   says so in a banner rather than looking identical to the real thing. */
+(async function boot() {
+  let mode = "missing";
+  try { mode = await AlignUnlock.detect(); } catch (e) { /* handled below */ }
+
+  if (mode === "plain") { AlignUnlock.plainBanner(); reveal(); return; }
+  if (mode === "missing") {
+    errEl.textContent = "No data published — run the pipeline, then "
+      + "scripts/crypto_data.py encrypt.";
+    return;
+  }
+  // Already unlocked this browser session (a reload, or coming back from the
+  // data tables)? The key is still in sessionStorage; skip the gate.
+  try { if (await AlignUnlock.resume()) { proceed(); return; } } catch (e) {}
+  pwInput.focus();
+})();
 
 /* ============================================================
    PROPERTY TABS
@@ -1074,7 +1116,7 @@ const PLACEHOLDER_PROPERTIES = [
       note.className = "sc-note"; note.id = ids.note;
       sc.append(head, strip, legend, note);
       grid.appendChild(sc);
-      // scPromise is declared further down the script — record the mount and
+      // scJson() is declared further down the script — record the mount and
       // let the scorecard section render it once the JSON arrives
       propScorecardMounts.push({ slug: p.slug, ids });
     }
@@ -1295,18 +1337,14 @@ applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "li
 // One fetch of metrics.json for the cards that need it after the first render.
 // The Landing's view is built from landing.json; the few cards that also read
 // the pipeline's own output share this rather than each fetching again.
-let _metricsPromise = null;
-const metricsJson = () => (_metricsPromise = _metricsPromise
-  || fetch("metrics.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
+const metricsJson = () => AlignUnlock.load("metrics.json").catch(() => null);
 
 /* ---- where each card's numbers live, for the corner link ----
    The targets come from lineage.json rather than a map kept here, so
    build_lineage.py's checks cover them: it refuses to write a lineage naming a
    card anchor this page does not define or a table data.html does not build.
    A card with no entry simply gets no link — better than a link to nowhere. */
-let _lineagePromise = null;
-const lineageJson = () => (_lineagePromise = _lineagePromise
-  || fetch("lineage.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
+const lineageJson = () => AlignUnlock.load("lineage.json").catch(() => null);
 
 function cardSrcLink(entry, label) {
   const a = elc("a", "cardsrc", "Data \u2197");
@@ -1341,9 +1379,7 @@ async function mountCardLinks() {
 async function loadDashboard() {
   let d;
   try {
-    const res = await fetch("metrics.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    d = await res.json();
+    d = await AlignUnlock.load("metrics.json");
   } catch (e) {
     app.innerHTML = '<div class="loaderr">Could not load metrics.json — check the pipeline has run.</div>';
     return;
@@ -1356,8 +1392,10 @@ async function loadDashboard() {
   document.getElementById("footer").innerHTML =
     "Data source: metrics.json (written by email ingestion pipeline). " +
     (d.meta?.note || "") +
-    "<br>SECURITY: password gate is client-side only and not encryption. " +
-    "Before loading real financials, encrypt metrics.json client-side (AES) and decrypt with the password, so raw data never ships in plaintext.";
+    "<br>SECURITY: the data files are AES-256-GCM ciphertext; the password you " +
+    "entered is the key that opened them, and nothing on this site is readable " +
+    "without it. The ciphertext is public, so the protection is exactly as strong " +
+    "as the passphrase — it can be guessed at offline.";
 
   /* ---- 1. TRADE OUTS (line, or empty state) ---- */
   const to = d.trade_outs;
@@ -1666,14 +1704,14 @@ const numOr = (inp, fallback) => {
    still the workbook's hand-set symbols.
    ============================================================ */
 let SC = null;                       // parsed scorecard.json, shared by both views
-const scPromise = (async () => {
-  try {
-    const res = await fetch("scorecard.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    SC = await res.json();
-  } catch (e) { SC = null; }
-  return SC;
-})();
+// Lazy, not eager. This used to run at script-parse time — before the gate had
+// been passed, which was harmless when the file was public and impossible now
+// that opening it needs the key the gate produces. Memoised, so the several
+// views that await it still share one decrypt.
+let _scPromise = null;
+const scJson = () => (_scPromise = _scPromise || AlignUnlock.load("scorecard.json")
+  .then(doc => (SC = doc))
+  .catch(() => (SC = null)));
 
 // Colour swatch for the legend — status is carried by colour alone, no
 // symbols, so the legend shows the same fill the chips use. In range is
@@ -1990,7 +2028,7 @@ function scHealthChart(canvasId) {
 // Renders the full matrix into one set of mount points. Called for both the
 // Scorecard tab and the top of the Portfolio view — same data, same code.
 async function renderScorecard(ids) {
-  await scPromise;
+  await scJson();
   const eyebrow = document.getElementById(ids.eyebrow);
   if (!SC) {
     eyebrow.textContent = "SCORECARD UNAVAILABLE";
@@ -2156,7 +2194,7 @@ renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
 renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
                   legend: "poscLegend", note: "poscNote", chart: "poscChart" });
 // property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
-scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
+scJson().then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
 
 // Groups a property tab leaves off its own scorecard. A display filter only:
 // scorecard.json still carries all 28 KPIs, the portfolio scorecard and every
@@ -2840,9 +2878,7 @@ async function renderExpenseDeep(slug, ids, wb) {
 async function loadLanding() {
   let L;
   try {
-    const res = await fetch("landing.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    L = await res.json();
+    L = await AlignUnlock.load("landing.json");
   } catch (e) {
     document.getElementById("view2").textContent = "";
     document.getElementById("view2").appendChild(
@@ -2850,7 +2886,7 @@ async function loadLanding() {
     return;
   }
   // This property's slice of the KPI scorecard, at the top of its view.
-  await scPromise;
+  await scJson();
   renderPropertyScorecard("the-landing", {
     health: "lscHealth", strip: "lscStrip",
     legend: "lscLegend", note: "lscNote",
@@ -3445,7 +3481,7 @@ const SCD_MISSING = [
 
 async function loadLandingDrive() {
   const m = await metricsJson();
-  await scPromise;
+  await scJson();
   const pick = (block, slug) => (((m || {})[block] || {}).properties || [])
     .find(x => x.slug === slug) || null;
   const pl = pick("monthly_pl", SCD_SLUG);
@@ -4414,11 +4450,6 @@ async function loadLandingDrive() {
     + "cron — drop a fresh export in Drive and the next run picks it up.";
 }
 
-/* ============================================================
-   Already unlocked this browser session (a reload, or coming back
-   from the data tables)? Skip straight past the gate.
-   ============================================================ */
-if (sessionUnlocked()) reveal();
 </script>
 </body>
 </html>

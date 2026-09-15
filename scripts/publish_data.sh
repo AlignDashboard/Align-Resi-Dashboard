@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Publish the dashboard's data files to the `data` branch as a SINGLE commit,
-# replacing whatever was there. The branch is rewritten each time, so only the
+# Publish the dashboard's SEALED data files to the `data` branch as a SINGLE
+# commit, replacing whatever was there. The branch is rewritten each time, so only the
 # current data exists in git — nothing accumulates, and there is no back
 # catalogue of last month's financials sitting in history.
 #
@@ -18,7 +18,10 @@ REMOTE="${REMOTE:-origin}"
 DRY=0
 [ "${1:-}" = "--dry-run" ] && DRY=1
 
-FILES=(docs/metrics.json docs/landing.json docs/scorecard.json docs/lineage.json)
+# The sealed form is what is published. The plaintext beside it is a local
+# working copy and is gitignored; publishing it would undo the encryption.
+FILES=(docs/metrics.json.enc docs/landing.json.enc \
+       docs/scorecard.json.enc docs/lineage.json.enc)
 
 cd "$(git rev-parse --show-toplevel)"
 

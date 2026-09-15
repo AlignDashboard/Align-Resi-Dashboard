@@ -25,3 +25,13 @@ tests/fixtures/
 
 # clasp writes this at deploy time; it carries the Apps Script project id
 .clasp.json
+
+# The published data, in the clear. docs/*.json.enc is what is committed and
+# served; these are the working copies the pipeline reads and writes between
+# runs, and the repository is public, so committing them would hand over every
+# number the encryption exists to protect.
+# Regenerate with:  python scripts/crypto_data.py decrypt
+docs/metrics.json
+docs/landing.json
+docs/scorecard.json
+docs/lineage.json
