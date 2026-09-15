@@ -195,6 +195,11 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard — Budget Variance %", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
+            # The one cell this flow fills is a tile on the Drive-only tab: the
+            # percentage, with the nominal dollars under it, since the published
+            # cell splices the two and a tile cannot carry both at 20px.
+            {"card": "Budget variance tile", "tab": "Landing (Drive)",
+             "anchor": "dkpisSc", "tile": True},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "Actuals come from the same T12 statement the Expense Deep "
@@ -286,9 +291,10 @@ DRIVE_FLOWS = {
             {"card": "Delinquency", "tab": "Landing (Drive)",
              "anchor": "cdDelq", "primary": "t-sc-measured",
              "tables": ["t-sc-measured", "t-sc-arrivals"]},
-            {"card": "KPI Scorecard — Drive feeds only", "tab": "Landing (Drive)",
-             "anchor": "cdScorecard", "primary": "t-sc-measured",
-             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-thresholds"]},
+            # The Drive-only tab's KPI grid came off 2026-09-15; Total
+            # Deliquency is a tile there now, beside the card above it.
+            {"card": "Delinquency tile", "tab": "Landing (Drive)",
+             "anchor": "dkpisSc", "tile": True},
             {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
              "anchor": "cdFeeds", "tables": []},
         ],
@@ -358,12 +364,12 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
              "anchor": "cLandingScorecard", "primary": "t-sc-measured",
              "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
-            # Eight of the ten cells on the Drive-only tab's scorecard are this
-            # export's; # of Renewals shows there as the rate alone, since the
-            # count half of the published cell comes from the analyst workbook.
-            {"card": "KPI Scorecard — Drive feeds only", "tab": "Landing (Drive)",
-             "anchor": "cdScorecard", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
+            # The Drive-only tab carried eight of this export's cells on a KPI
+            # grid until 2026-09-15. Two of them are tiles there now -- Leased %
+            # and Trade-out % -- and the other six are on the cards above,
+            # unchanged.
+            {"card": "Leased % and Trade-out % tiles", "tab": "Landing (Drive)",
+             "anchor": "dkpisSc", "tile": True},
             {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
              "anchor": "cdFeeds", "tables": []},
             {"card": "KPI Scorecard — Chorus", "tab": "Chorus",
