@@ -1,6 +1,6 @@
 # Open Items
 
-State as of 2026-09-01, HEAD `bcecf55`. IDs are stable — when an item closes, move
+State as of 2026-09-15, HEAD `d188f75`. IDs are stable — when an item closes, move
 it to *Closed* rather than renumbering, so "A3" means the same thing next week.
 
 **Live and uncertain** marks an item where the dashboard is publishing something
@@ -13,8 +13,8 @@ first: everything else is a gap, but these are assertions.
 | --- | --- | --- | --- |
 | A4 | Supply a market-survey export for the PSF chart (subject + comps, 30-day avg rent/sqft — the RealPage market survey or the AIRM feed both carry it). Owner confirmed the $4.01 is old | A live PSF card. The chart now says "hand-entered, date unknown — likely stale" on its face until a feed exists | contained — the staleness is disclosed on the card |
 | A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** The funnel parser is live for both the `EliseAI Reports` and `Weekly Leasing Reports` folders, so the weeklies parse wherever the gmail-filing fix (C3) lands them. The Aug 18 file parses the day it moves out of `_Unsorted` | C3 only | no |
-| A6 | Which property does the concession burn-off export cover? Settled empirically that the file itself cannot answer: the parser now walks it as sections and the only heading text is "Projection by Unit" — report structure, not a property name. Parses and ties out clean every run (−$54,990 recurring concessions as of 08/10), stored nowhere. Needs your word on what "For Selected Properties" selected, or a per-property re-export; the moment a heading or filename names a property, sections route and store by themselves | Concession Load % and the Effective-vs-Gross-Rent card | no — nothing publishes from it yet |
-| A8 | Loss to Lease % now grades **red at 27%** against a band whose ceiling is 10%. The threshold sheet's own basis note warned about exactly this: if Yardi `Market rent potential` is aspirational rather than achievable, the KPI reads artificially high — and the market-rent table was revised up sharply from Apr 2026 (TTM reads 17.2% vs the current month's 27%). Wired per your instruction; whether the band or the denominator gets revisited is your call | Whether the red cell is a finding or an artifact of the denominator | **yes** — graded red off a disputed denominator |
+| A6 | Which property does the concession burn-off export cover? Settled empirically that the file itself cannot answer: the parser now walks it as sections and the only heading text is "Projection by Unit" — report structure, not a property name. Parses and ties out clean every run (−$54,990 recurring concessions as of 08/10), stored nowhere. Needs your word on what "For Selected Properties" selected, or a per-property re-export; the moment a heading or filename names a property, sections route and store by themselves | The Effective-vs-Gross-Rent card. **No longer blocks Concession Load %** — that cell has been filled from the T12 statement's own rental-income lines since 2026-09-03 (0.37%, exceeding), on the owner's equation | no — nothing publishes from it yet |
+| A8 | Loss to Lease % now grades **red at 27%** against a band whose ceiling is 10%. The threshold sheet's own basis note warned about exactly this: if Yardi `Market rent potential` is aspirational rather than achievable, the KPI reads artificially high — and the market-rent table was revised up sharply from Apr 2026 (TTM reads 17.2% vs the current month's 27%). Wired per your instruction; whether the band or the denominator gets revisited is your call | Whether the red cell is a finding or an artifact of the denominator. **The 2026-09-11 rent roll made it three numbers for one concept**: 36.5% on the roll (occupied units, today), 27% on the workbook's Jul 2026 month, 17.2% TTM. The spread is the question, not any one of them | **yes** — graded red off a disputed denominator, and the three sources disagree by 19 points |
 | A9 | Controllable OpEx/Unit's cutoffs ($7,200 / $8,600) were bracketed around the old basket's $7,784/unit T12 actual. The basket now excludes taxes, insurance, utilities **and the management fee** (set 2026-08-28), under which the twelve months run $5,659–$8,458 (avg ~$6,997) and July grades exceeding. Worth re-bracketing the cutoffs to the basket they now grade, in the ranges sheet | Whether "exceeding" means outperformance or a band calibrated to a bigger basket | contained — the page's `how` states the live basket; `how_workbook` keeps the sheet's |
 | A10 | Extend the COA mapping workbook to cover the 10 JPM accounts (~$115k of T12) it does not map: Carpets, Alarm monitoring, Courtesy patrol, two Turnover lines, Credit reports, Credit Card Fees, Courtesy/Concierge REIT-sensitive, Gross Rec./Bus. Lic. Tax, and a Professional Fees line. The pipeline groups them by label and logs them loudly meanwhile | Clean Align-tree grouping in the Expense Deep Dive and the controllable basket | contained — grouped by label, flagged each run |
 | A11 | Confirm the five folder names now in the routing table — `Renewal Tracker`, `Prospect Reports`, `Daily Leasing Reports`, `Daily Tracker`, `Demographics` — and two judgement calls inside them: the **box score goes to `Property Status`** (the SOP's own routing table says box score is the property-status report), and **`Daily Tracker` is kept separate from `Daily Leasing Reports`**, which I split on file size (~157KB vs ~55KB) without opening either, so they may be one family. Less pressing now that new types name their own folders: a wrong name is visible in Drive and fixed by editing one rule | Which folder five report families live in | no — nothing publishes from them |
@@ -86,6 +86,7 @@ Documented in CLAUDE.md and built but not activated. Strictly ordered.
 | F1 | The floorplan table is still on `data.html`. The card is off the Landing board; the data table stayed because that page exists to show everything the JSON holds |
 | F2 | The shared scorecard note prints on every property card, including the line about Palma's lease-up overrides, which reads oddly on Chorus. Can be scoped per property |
 | F3 | Unit 647 is classed `lab21` in the Yardi Unit Directory and `lab9` in the workbook. At 830 sqft it sits inside lab9's range (827–863) and far outside lab21's other units (1,022–1,069), so the directory looks wrong — worth a word to the PM to fix in Yardi. No bedroom impact (both plans are 2-bed) |
+| F4 | CLAUDE.md still says the directory "counts **265 units** where the rent roll counts 263". Since `d2a5d36` split the PDR space out it publishes **266** — 263 apartments + 2 Yardi waitlist placeholders + 1 commercial record. Two lines to correct; no published number is affected |
 
 ## G · Found while building the Drive-only Landing tab
 
@@ -98,7 +99,46 @@ state per-cell provenance out loud. G3 is the one to take first: it is live.
 | G2 | **Publish an aggregate delinquency block.** `data/<slug>/delinquency.json` is gitignored because it is unit level, so the only delinquency numbers that reach the page are the two scorecard cells — the rate and the 30/60/90 split. But `summary` already holds the aggregate the aging chart needs (gross owed, the four buckets, unit counts) and carries no names. Publishing that block into `metrics.json` from `store_report`'s already-scrubbed output would give the Drive tab a real aging chart and a gross-owed figure, and cost nothing in exposure — the aggregates are strictly less than what the scorecard cell already publishes | The Drive tab's delinquency card is a rate and a split where it could be the chart The Landing has | no |
 | G3 | **A `--from-landing` run took The Landing's delinquency cells back off the Drive report, unnoticed.** `Total Deliquency` and `Split Between 30/60/90` are filled by *either* `populate_scorecard --from-pipeline` (the Drive `rs_rp_DelinquencySummaryReport`) or `--from-landing` (the workbook's Source Delinquency tab); they own the same two cells and the last run wins. The 2026-09-01 run had put the Drive report of 2026-08-31 in front — B4 turns on that — and the 2026-09-03 run that added Concession Load % put the workbook of **2026-07-20** back, moving the published rate from **6.7% to 4.6%** and the split from `5,780/5,733/1,356` to `6,708/539/3,586`. Nothing failed and nothing said so: `measured` records the workbook as the source, and the page reports its arrival time, so the cell looks healthy. Two fixes, and they are independent: run `--from-pipeline` for this property after any `--from-landing` run (or have `--from-landing` skip cells a Drive feed already owns, the way `populate_building_metrics.owned_by_other_feeds` does), and give the two feeds distinct key families so one cannot silently replace the other | Whether The Landing's AR cell is the 2026-08-31 Drive report or a six-week-old workbook tab; B4's comparison, which assumed the Drive report was still the owner | **yes** — the live page publishes 4.6% off the workbook while a same-week Drive report sits parsed and unused |
 
+## H · How the scorecard actually refreshes
+
+Found 2026-09-15 by checking the published cells against what a fill would
+produce today. Both are about *when* a cell moves rather than what it means,
+which is why neither shows up as a wrong-looking number on the page.
+
+| # | Item | What it blocks | Live and uncertain |
+| --- | --- | --- | --- |
+| H1 | **`populate_scorecard --from-landing` is never run by the cron.** `update.yml` runs `--from-pipeline` per property (which fills the two delinquency cells) and nothing else, so the six cells `--from-landing` owns — Loss to Lease %, NOI Margin %, Concession Load %, Controllable OpEx/Unit, Budget Variance %, Month to Month Leases — only move when someone runs the command by hand. Two of them are **demonstrably stale right now**, because the Aug 2026 statement landed and they did not follow it: Controllable OpEx/Unit publishes **$6,697** where a fill today gives **$6,757**, and Budget Variance % publishes **+$116,402/+12.1% (Jan–Jul)** where a fill today gives **+$152,298/+14.2% (Jan–Aug)**. Neither is wrong-looking on the page; both are last month's answer with this month's framing. Fix is a step in `update.yml` after the `--from-pipeline` loop — but see G3 first, because running it unconditionally is what takes the delinquency cells back off the Drive report | Every statement-derived KPI tracking the statement | **yes** — two cells publish July figures a month after August arrived |
+| H2 | **The three workbook-fed KPIs cannot follow the statement at all.** Loss to Lease %, NOI Margin % and Concession Load % are read from `docs/landing.json`, which is refreshed by hand in Excel, so they are pinned to the workbook's last extract (Jul 2026) no matter how many statements arrive. The pipeline now carries the same series to the cent — `metrics.json` `rent_capture` is on Aug 2026, thirteen months — so all three could be sourced from it and would then move on their own. That is the rewiring of `facts_from_landing` flagged when the block was built: not hard, but it decides which feed owns those cells, so it wants doing with G3 rather than before it | Three KPIs that move when a report arrives rather than when someone opens Excel | contained — the figures are right for the month they name |
+
 ## Closed
+
+2026-09-11 — **the monthly loss-to-lease series, without the rent roll.** The Drive
+tab listed Loss to Lease as unrefreshable, needing per-unit market rent against
+in-place rent. That was wrong: the card plots accrued rental income against market
+rent potential, and both are GL lines in the T12 statement the pipeline already
+fetched daily, under `410400-0000 RESIDENTIAL RENTAL INCOME`. The analyst
+workbook's Rent Capture block turned out to be that section retyped — all six
+series agree **to the cent** across the twelve overlapping months, and both TTM
+totals match exactly. `parse_t12_statement.rent_capture` now reads it, flipping the
+deduction signs to the workbook's convention so one renderer draws either source;
+every unnamed leaf under `410400-` is summed into `other` and the section must
+reproduce its own `410499-9999` month by month or it is refused. The Align tree's
+five counterparts come from `coa_map` and are read, but that tree has no section
+total, so income is derived there and the point says so — **still unverified
+against a real Align statement**. 21 fixture-free checks; the basis-cut guard
+verified by mutation. Spawned H2.
+
+2026-09-03 — **Budget Variance % and Concession Load % wired.** Budget Variance is
+calendar-YTD actual controllable opex against the same months of the year's budget,
+printed as `$ nominal/% variance` and graded on absolute magnitude per its own band;
+the budget is the Yardi `12_Month_Budget_Accrual.xlsx` now registered as a Drive
+`Budgets` folder, parsed by `parse_budget.py` reusing the T12 parser's anchors and
+tie-outs and refusing a file that is not a Jan–Dec budget. Concession Load is
+concessions over market rent potential less loss to lease less vacancy loss, the
+owner's equation — which freed A6, since that cell no longer waits on the burn-off.
+Both restate a `how` the sheet wrote for a different basis and keep the sheet's
+wording in `how_workbook`. Note both bands' cutoffs predate the 2026-08-28
+controllable basket (A9).
 
 2026-09-02 — a new report type now makes its own folder. Anything matching no routing rule used to land in `_Unsorted`, which is how four weeks of arrivals went unnoticed; the filer now derives a report type from the filename — stripping the arrival date, copy suffixes, `30Days`/`60Days` window markers, every property name, alias and code, and any leftover date — and files under that. It refuses to guess below four characters, reuses a folder that normalises the same rather than starting a sibling, caps itself at five new folders per run, and never overrides a rule. `fetch_drive` then flags the folder as `NEW REPORT TYPE … not in report_map.json`, which is the daily prompt to write a parser. Derived names are clumsy on purpose-ish — the point is that a wrong one is visible in Drive and fixed by adding one rule, rather than invisible in `_Unsorted`. `test_routing.py` covers 14 naming cases plus the property-list contract, each verified to fail when its guard is removed.
 
