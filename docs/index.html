@@ -4206,16 +4206,18 @@ async function loadLandingDrive() {
     // One bar per bedroom group, the whole of that type either way: with a roll
     // it is leased + vacant stacked, without one the plain unit count. Stacked
     // rather than grouped so the bar keeps reading as the bedroom type itself,
-    // which is what the card is for.
+    // which is what the card is for. Vacant is the first dataset, so it is the
+    // segment drawn from the axis: Chart.js stacks in dataset order and that is
+    // the only thing that decides which end a segment sits at.
     const unitWord = n => n === 1 ? "1 unit" : n + " units";
     new Chart(document.getElementById("dcInv"), {
       type: "bar",
       data: { labels: barKeys.map(bedLabel),
         datasets: splitOK
-          ? [{ label: "Leased", data: barKeys.map(k => occBed[k].leased),
-               backgroundColor: C.amber, stack: "units" },
-             { label: "Vacant", data: barKeys.map(k => occBed[k].vacant),
-               backgroundColor: C.teal, stack: "units" }]
+          ? [{ label: "Vacant", data: barKeys.map(k => occBed[k].vacant),
+               backgroundColor: C.teal, stack: "units" },
+             { label: "Leased", data: barKeys.map(k => occBed[k].leased),
+               backgroundColor: C.amber, stack: "units" }]
           : [{ label: "Units", data: barKeys.map(k => beds[k]),
                backgroundColor: barKeys.map(k => k === "?" ? C.muted : C.teal) }] },
       options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
