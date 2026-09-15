@@ -1810,6 +1810,7 @@ const SC_FEED_PREFIXES = [
   { prefix: "eliseai_", fallbackWhat: "EliseAI daily email" },
   { prefix: "bldg_", fallbackWhat: "EliseAI building metrics export" },
   { prefix: "budget_", fallbackWhat: "12-month budget" },
+  { prefix: "rentroll_", fallbackWhat: "rent roll" },
 ];
 function scFeeds() {
   const out = [];
@@ -3363,6 +3364,12 @@ const SCD_DRIVE_FEEDS = [
   // needed -- nothing else writes this cell.
   { prefix: "budget_", only: null,
     what: "12-month budget · Drive “Budgets”, against the T12 statement" },
+  // Loss to Lease % moved onto the rent roll on 2026-09-15 (open item A8), and
+  // is filled from the same published aggregate by both populate_scorecard
+  // paths — so unlike the delinquency pair above it needs no fromDrive
+  // predicate: whichever run goes last writes the same number.
+  { prefix: "rentroll_", only: null,
+    what: "rent roll · Drive “Rent Roll”" },
 ];
 
 // Is a feed family currently a Drive report? Used both by the scorecard filter

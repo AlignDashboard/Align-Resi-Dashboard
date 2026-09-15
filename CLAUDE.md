@@ -249,17 +249,46 @@ A delinquency report answers exactly two of the 27 published KPIs:
 `POs over 30 days` and `# of invoices processed` are accounts *payable* and a
 resident AR report cannot speak to them.
 
-`--from-landing` fills a third KPI the delinquency report cannot: **`Loss to
-Lease %`**, the **current month's** loss to lease over market rent potential
-from the workbook's Rent Capture series, as a whole number of percent. The
-published basis is the current rent roll, so the newest month answers it rather
-than the TTM column — which for The Landing differ sharply (27% for Jul 2026
-against 17.2% TTM), because Yardi's market-rent table was revised up from Apr
-2026. The threshold sheet's own basis note flags the risk this creates: if
-`Market rent potential` is aspirational rather than achievable, every property
-reads artificially high and grades red against a band whose ceiling is 10%. It
-is wired and graded; whether the band or the denominator wants revisiting is
-the owner's call.
+**`Loss to Lease %` is the rent roll's** — owner's call, 2026-09-15, closing
+open item A8. Market rent less in-place rent over market rent, across
+**occupied units**, from the Drive rent roll: The Landing reads **37%**
+($713,920 across 257 units on the roll of 2026-09-11).
+
+That is what the band's own published `how` always said — "(Market rent −
+in-place rent) / market rent, current rent roll" — and what the previous fill
+never was. Until 2026-09-15 the cell came from the workbook's Rent Capture
+series, i.e. the T12 statement's monthly revenue lines: a different measurement
+of a similarly named thing, reading 27% for Jul 2026 against the roll's 37% and
+17.2% on the TTM column. No `how` restatement was needed here, unlike the
+controllable basket or the concession equation — the definition was right and
+the source was wrong.
+
+`rent_roll_ltl()` reads the **published aggregate in `metrics.json`**, not
+`data/<slug>/rent_roll.json`, which is gitignored (unit level, arrives with
+names) and so exists only during a pipeline run. `build_metrics` writes
+`metrics.json` before this script runs and the block is committed, so the same
+figure is available in CI and locally.
+
+**Both fill paths read it**, `--from-pipeline` and `--from-landing` alike, from
+that one aggregate. So unlike the delinquency pair this cell has no
+last-run-wins race to sequence around: whichever runs last writes the same
+number. It records under its own **`rentroll_`** family (registered in
+`SC_FEED_PREFIXES`, `data.html`'s matching list and `SCD_DRIVE_FEEDS`), so the
+rent roll's own arrival shows on the page and the Drive tab carries the cell.
+The workbook's figure is kept in `measured[slug].ltl_workbook` as a note and
+never published.
+
+Occupied units only, per the roll's own basis: a vacant unit has an asking rent
+and no in-place rent, so counting it books the whole asking rent as a loss —
+38.1% against the 37% published.
+
+**A8's underlying question is not closed by this.** The threshold's own basis
+note warned that if Yardi `Market rent potential` is aspirational rather than
+achievable, every property reads artificially high against a band whose ceiling
+is 10% — and the roll shows that table revised up **+17.9% in eight weeks**
+while in-place rent moved +0.07%. The cell now measures what the band says it
+measures; whether the band's 10% ceiling is right for that measurement is still
+open (A9 is its sibling for the controllable basket).
 
 `--from-landing` also fills **`NOI Margin %`** the same way — the current
 month's NOI over revenue from the Expense & NOI series behind that card, to one
@@ -883,10 +912,12 @@ Four things worth knowing:
 the sign flip, the `other` bucket, the refusals, the Align path and the stitch.
 The basis-cut guard is verified by mutation: removing it fails a check.
 
-Two scorecard cells derive from these same series and are still **workbook**-fed
-through `--from-landing`: `Loss to Lease %` and `Concession Load %`. Moving them
-to the pipeline means rewiring `facts_from_landing` to read `metrics.json`, and
-interacts with the source-precedence problem in G3 — not done, deliberately.
+`Concession Load %` still derives from these series through `--from-landing`
+and is therefore still **workbook**-fed. `Loss to Lease %` no longer does: it
+moved to the rent roll on 2026-09-15 (A8), which is a different source from
+this section entirely — see the scorecard notes above. Moving the concession
+cell to the pipeline means rewiring `facts_from_landing` to read `metrics.json`,
+and interacts with the source-precedence problem in G3 — not done, deliberately.
 
 ## How reports reach Drive
 
