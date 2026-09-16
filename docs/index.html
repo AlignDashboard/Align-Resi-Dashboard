@@ -706,7 +706,13 @@
         </div>
         <div class="sc-scroll"><div id="scTable"></div></div>
         <div class="sc-legend" id="scLegend"></div>
-        <div class="sc-note" id="scNote"></div>
+        <!-- No note block on this tab, by request: the standing prose that used
+             to close the card is off. What it carried is not lost -- coverage is
+             in the eyebrow, the "reported, not graded" and "awaiting a feed"
+             markers are in the legend, each cell's band and source are on its
+             hover, and the source workbook is a click away on the data page.
+             The Portfolio view's copy of this matrix keeps its note; the
+             renderer simply skips the block where a mount does not declare one. -->
       </div>
     </div>
     </div><!-- /viewScorecard -->
@@ -2082,9 +2088,13 @@ function scFillSelect(el, chosen) {
 async function renderScorecard(ids, chosen) {
   await scPromise;
   const eyebrow = document.getElementById(ids.eyebrow);
+  // The note block is optional — the Scorecard tab has none — so the load
+  // failure still has to be visible without it. The eyebrow carries it either
+  // way; the note adds the fix when there is somewhere to put it.
+  const noteEl = ids.note ? document.getElementById(ids.note) : null;
   if (!SC) {
     eyebrow.textContent = "SCORECARD UNAVAILABLE";
-    document.getElementById(ids.note).textContent =
+    if (noteEl) noteEl.textContent =
       "Could not load scorecard.json — run scripts/extract_scorecard.py.";
     return;
   }
@@ -2247,6 +2257,8 @@ async function renderScorecard(ids, chosen) {
   // anything on the unfiltered matrix; by_metric lives on SC.portfolio and is
   // not part of a single property's roll-up. Filtered, the useful equivalent
   // is simply which of this property's own cells are below.
+  if (!noteEl) return;   // nothing below this builds anything but the note
+
   // Not sliced for one property: "Most below-target" is a top-3 by design,
   // but "Below target:" reads as the whole list, and The Landing has four.
   // renderPropertyScorecard names all of them on the property's own tab too.
@@ -2257,7 +2269,7 @@ async function renderScorecard(ids, chosen) {
         .map(m => m.name + " (" + m.counts.below + ")");
   const unmapped = SC.properties.filter(p => !p.slug).map(p => p.label);
   const nUn = (SC.unscored || []).length;
-  document.getElementById(ids.note).textContent =
+  noteEl.textContent =
     (only
       ? "Showing " + only.label + " alone — the headline figures and the cells below "
         + "are this property's; the chart stays portfolio-wide, because where this "
@@ -2285,8 +2297,9 @@ async function renderScorecard(ids, chosen) {
     " Source: " + SC.meta.source_workbook + ".";
 }
 // the Scorecard tab and the top of the Portfolio view carry the same matrix
+// No `note` on this mount: the Scorecard tab carries no closing prose.
 renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
-                  legend: "scLegend", note: "scNote", chart: "scChart",
+                  legend: "scLegend", chart: "scChart",
                   select: "scPropSelect" });
 renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
                   legend: "poscLegend", note: "poscNote", chart: "poscChart" });

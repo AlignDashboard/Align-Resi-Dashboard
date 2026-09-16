@@ -474,7 +474,8 @@ Three things it does deliberately:
 - **The chart stays portfolio-wide.** It ranks every property by the share of
   its graded KPIs at or above target, which is where the selected property
   *sits against the others* — a question filtering would destroy rather than
-  answer. The note says so whenever a property is selected.
+  answer. (The Portfolio view's copy says so in its note; this tab has no note
+  block — see below.)
 - **The filter is a view of this card, not of the data.** Only a mount that
   declares `ids.select` gets one, so the Portfolio view's copy of the same
   matrix — same function, same `scorecard.json` — has no select and never
@@ -488,6 +489,23 @@ A property with **no slug** — on the scorecard but not yet in the property
 master, which the note already names — is still selectable, keyed on its label.
 It gets no "data last updated" line rather than the portfolio's, because
 `scUpdatedEl` reads a falsy slug as "every feed".
+
+**This tab carries no closing note.** The standing paragraph that used to end
+the card came off 2026-09-16, by request. `ids.note` is optional now: a mount
+that does not declare one renders without it, and `renderScorecard` returns
+before building it — the Portfolio view's copy of the same matrix still passes
+`poscNote` and still prints the full prose, as do the property tabs through
+`renderPropertyScorecard`.
+
+What that paragraph carried is still on the card, which is why dropping it
+loses nothing material: coverage (`31 of 135 graded · 12 reported, not graded ·
+92 awaiting a feed`) is in the eyebrow, the `reported, not graded` and
+`awaiting a feed` markers are in the legend, and each cell's band, feed and
+as-of date are on its own hover through `scCellTitle`. Three things were only
+there — "most below-target KPIs", the Palma lease-up-override sentence and the
+source workbook's filename — and those are a click away under `Data ↗`. The
+load-failure path still reports through the eyebrow (`SCORECARD UNAVAILABLE`),
+which is why it does not depend on a note block existing.
 
 The `<h2>` moved inside a `.card-head` to make room for the select. That is
 also what keeps the corner `Data ↗` link clear: `.card > h2` no longer matches
