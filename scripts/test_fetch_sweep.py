@@ -82,7 +82,10 @@ LIVE = {
             (FILE, "metrics-building-2026-08-31.csv", "e2")],
     "cb":  [(FILE, "2026-08-10 ConcessionBurnOff08_10_2026.xlsx", "c1")],
     "bi":  [(FILE, "UnitDirectory08_25_2026.xlsx", "b1")],
-    # the owner groups budgets by property one level down
+    # the owner grouped budgets by property one level down on 2026-09-16.
+    # Those two files have since been moved back up into Budgets by hand, so
+    # this is the shape the descent EXISTS for rather than today's Drive -- a
+    # grouping nobody has to undo by hand the next time someone makes one.
     "bg": [(FOLDER, "Landing", "bgl")],
     "bgl": [(FILE, "Landing 2025 Resi Budget.xlsx", "g1"),
             (FILE, "Landing 2026 Resi Budget.xlsx", "g2")],

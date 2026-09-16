@@ -22,10 +22,15 @@ Checks, all fixture-free:
   - every file_glob starts with "*" (the filer prefixes the arrival date)
   - real report filenames, verbatim from Drive, route where they belong
   - a file that is filed correctly today does not move
+  - a file the filer routes to an ACTIVE folder is one that folder's entry can
+    actually claim, by file_glob or name_patterns. Routing a report correctly
+    and then never reading it is the same silent failure wearing a tidier
+    Drive -- see check 10.
 
 Run: python scripts/test_routing.py
 """
 
+import fnmatch
 import json
 import pathlib
 import re
@@ -175,6 +180,11 @@ CASES = [
     ("2026-08-26 UnitDirectory08_25_2026.xlsx",                     "Building Info"),
     ("12_Month_Budget_Accrual.xlsx",                                "Budgets"),
     ("2026-09-03 12_Month_Budget_Accrual.xlsx",                     "Budgets"),
+    # Hand-uploaded on 2026-09-16, named nothing like the Yardi export. The
+    # filer's /budget/ rule always routed these; it was the PIPELINE that could
+    # not claim them -- see the name_patterns check below.
+    ("Landing 2026 Resi Budget.xlsx",                               "Budgets"),
+    ("Landing 2025 Resi Budget.xlsx",                               "Budgets"),
     # already filed correctly today -- these must not move
     ("12_Month_Statement_Accrual.xlsx",                             "T12 Expenses"),
     ("2026-07-16 12_Month_Statement_rs335_accrual.xlsx",            "T12 Expenses"),
@@ -307,6 +317,37 @@ def main():
             stolen += 1
     if not stolen:
         print(f"   PASS all {len(CASES)} rule-owned files still reach their rule")
+
+    print("\n10. a file the filer routes is a file the pipeline can claim")
+    # The failure this catches is invisible from either side alone: the filer
+    # puts a report in the right folder and reports success, the pipeline scans
+    # that folder and reports success, and the report is never read because no
+    # glob and no name_pattern matches it. That is exactly what happened to
+    # "Landing 2026 Resi Budget.xlsx" on 2026-09-16 -- the filer's /budget/ rule
+    # routed it correctly, while the entry only claimed *12_month_budget* and
+    # *budget_accrual*. Only folders with an ACTIVE entry are checked: a pending
+    # folder has no parser yet, so not claiming a file is its whole point.
+    active = {}
+    for e in cfg["subfolders"]:
+        if e.get("status") == "active":
+            active.setdefault(e["drive_folder"], []).append(e)
+    unclaimable = 0
+    for filename, want in CASES:
+        entries = active.get(want)
+        if not entries:
+            continue
+        low = filename.lower()
+        if any(fnmatch.fnmatch(filename, e.get("file_glob") or "*")
+               or any(fnmatch.fnmatch(low, p.lower())
+                      for p in e.get("name_patterns") or [])
+               for e in entries):
+            continue
+        print(f"   FAIL {filename!r} lands in {want!r}, which no active entry "
+              f"can claim (glob or name_patterns)")
+        failures.append(f"{filename!r} reaches {want!r} but is never read")
+        unclaimable += 1
+    if not unclaimable:
+        print("   PASS every routed file matches an entry that reads its folder")
 
     print()
     if failures:
