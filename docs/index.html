@@ -260,7 +260,16 @@
   .card h2 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
     font-weight: 600; margin-bottom: 2px; }
   .card .eyebrow { font-size: 10px; letter-spacing: 1px; color: var(--amber); margin-bottom: 12px; display:block; }
-  .chartwrap { position: relative; height: 300px; }
+  /* min-width: 0 is the same trap `.grid > *` above guards against, one level
+     further in. A flex item's default min-width is its own content's, and a
+     Chart.js canvas holds the pixel width it last rendered at, so a chartwrap
+     sitting in a flex row never shrinks: it keeps its first-render width at
+     every viewport below it. On the Drive tab that wrapped the delinquency
+     row (leaving the bucket headings lining up with a chart 222px further
+     down) and pushed Unit Inventory's 902px chart out of a 340px card,
+     scrolling the whole page sideways by 555px at phone width. It is a no-op
+     for a chartwrap in normal block flow, where min-width is already 0. */
+  .chartwrap { position: relative; height: 300px; min-width: 0; }
   .card.wide .chartwrap { height: 320px; }
   /* This card is shorter than the one it shares a grid row with, so the row
      stretched it and left ~180px empty below the note -- every other card sits
@@ -458,6 +467,29 @@
   .statrow .st { min-width: 100px; }
   .statrow .st .v { font-size: 17px; font-weight: 700; color: var(--amber); }
   .statrow .st .k { font-size: 9px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-top: 3px; }
+
+  /* The bucket headings beside the delinquency bars. Each one is placed at its
+     own bar's centre, read from the chart's y scale on every layout -- spacing
+     them evenly down the block would miss, because Chart.js insets the plot
+     area by the x-axis labels at the bottom and by nothing at the top. The
+     block's height is set from the chart's wrapper at the same time, since
+     absolute children give their parent none. */
+  /* Narrow enough to stay beside the chart at 390px, where the card is
+     about 316px wide inside its padding: 84 + the row's 22px gap + the
+     chart's 150px basis fits, and 150 did not. Headings beside bars is
+     the whole point of the card, so it holds at phone width rather than
+     falling back there. */
+  .delq-buckets { flex: 0 0 auto; min-width: 84px; position: relative; }
+  .delq-buckets .st { position: absolute; left: 0; right: 0; }
+  .delq-buckets .st .v { font-size: 17px; font-weight: 700; color: var(--amber); }
+  .delq-buckets .st .k { font-size: 9px; letter-spacing: 1px; color: var(--muted);
+    text-transform: uppercase; margin-top: 3px; }
+  /* Narrow enough that the chart wrapped onto its own line anyway: there is no
+     bar beside a heading to line it up with, so the block reads as a plain
+     list -- and the chart puts its own axis labels back, since nothing else is
+     naming its bars then. */
+  .delq-buckets.stacked { height: auto; }
+  .delq-buckets.stacked .st { position: static; margin-bottom: 10px; }
 
   table.dt { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 10px; }
   table.dt th { text-align: left; color: var(--muted); font-size: 9px; letter-spacing: 1px;
@@ -985,9 +1017,13 @@
       <div class="card wide" id="cdDelq">
         <h2>Delinquency</h2>
         <span class="eyebrow" id="ddEyebrow">RESIDENT AR · FROM THE DRIVE DELINQUENCY REPORT</span>
-        <div style="display:flex;gap:22px;flex-wrap:wrap;">
-          <div style="flex:0 0 auto;min-width:170px;" id="ddStats"></div>
-          <div class="chartwrap" style="flex:1 1 260px;height:200px;"><canvas id="dcDelq"></canvas></div>
+        <!-- The rate is the card's one graded figure and is not derivable from
+             the buckets, so it sits above the row rather than inside the
+             bucket headings, which are each one bar's own value. -->
+        <div class="statrow" id="ddRate"></div>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;" id="ddRow">
+          <div class="delq-buckets" id="ddStats"></div>
+          <div class="chartwrap" style="flex:1 1 150px;height:200px;"><canvas id="dcDelq"></canvas></div>
         </div>
         <div class="blu-note" id="ddNote" style="color:var(--muted);"></div>
       </div>
@@ -4865,19 +4901,63 @@ async function loadLandingDrive() {
           + "is live and the Drive folder is registered.";
       return;
     }
-    eyebrow.textContent = "RESIDENT AR · " + (meas.source || "FROM THE DRIVE AR REPORT");
-    const stats = [];
-    if (rate && rate.display) stats.push([rate.display, "of one month's revenue"]);
-    if (parts) {
-      stats.push([fm$(parts.reduce((t, v) => t + v, 0)), "past 30 days"]);
-      const over90 = parts[parts.length - 1];
-      stats.push([fm$(over90), "over 90 days"]);
-    }
-    statBlock(document.getElementById("ddStats"), stats);
-    document.getElementById("ddStats").querySelectorAll(".st")
-      .forEach(st => { st.style.marginBottom = "10px"; });
+    // The eyebrow is the report's own as-of date and nothing else. A
+    // YYYY-MM-DD string parses as UTC midnight and renders a day early west of
+    // Greenwich, so the parts are handed to the Date constructor rather than
+    // the string -- this is the one place on the page formatting a date with no
+    // time in it.
+    const asOfDay = iso => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+      if (!m) return null;
+      return new Date(+m[1], +m[2] - 1, +m[3])
+        .toLocaleString([], { month: "short", day: "numeric", year: "numeric" });
+    };
+    const asOf = asOfDay(meas.as_of);
+    // Every other eyebrow on the page is typed in capitals; this one is built,
+    // so it is upper-cased rather than reading as the odd one out.
+    eyebrow.textContent = asOf ? "AS OF " + asOf.toUpperCase() : "AS OF DATE NOT RECORDED";
+    eyebrow.title = meas.source
+      ? "From " + meas.source + ". The date is the period the report covers, not "
+        + "when it arrived \u2014 the feed table at the foot of this tab carries "
+        + "arrivals."
+      : "";
+
+    statBlock(document.getElementById("ddRate"),
+      rate && rate.display ? [[rate.display, "of one month's revenue"]] : []);
 
     if (parts && labels) {
+      // One heading per bar, carrying that bar's own value. The chart's y-axis
+      // labels come off with them: the heading beside a bar names it, and
+      // printing the bucket twice on one row is noise.
+      const host = document.getElementById("ddStats");
+      const wrap = document.querySelector("#cdDelq .chartwrap");
+      statBlock(host, parts.map((v, i) => [fm$(v), labels[i] + " days"]));
+
+      // Read off the chart's own scale, on every layout, so a resize cannot
+      // slide the headings off the bars they belong to.
+      const alignToBars = chart => {
+        const stacked = host.offsetTop !== wrap.offsetTop;
+        host.classList.toggle("stacked", stacked);
+        // Wrapped: the headings are no longer beside anything, so the chart has
+        // to name its own bars again or they are three unlabelled rectangles.
+        // Flipping that costs one more update; the equality test is what stops
+        // it recurring, and the raw config is what is mutated -- chart.options
+        // is a resolved proxy (see restyleCharts).
+        const yTicks = chart.config.options.scales.y.ticks;
+        if (!!yTicks.display !== stacked) {
+          yTicks.display = stacked;
+          chart.update("none");
+        }
+        if (stacked) { host.style.height = ""; return; }
+        const h = wrap.clientHeight + "px";
+        if (host.style.height !== h) host.style.height = h;
+        const y = chart.scales.y;
+        [...host.querySelectorAll(".st")].forEach((el, i) => {
+          el.style.top =
+            Math.round(y.getPixelForValue(i) - el.offsetHeight / 2) + "px";
+        });
+      };
+
       new Chart(document.getElementById("dcDelq"), {
         type: "bar",
         data: { labels: labels,
@@ -4885,9 +4965,11 @@ async function loadLandingDrive() {
             backgroundColor: [C.amber, C.amber, C.red] }] },
         options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
           plugins: { legend: { display: false }, tooltip: { callbacks: {
+            title: c => c[0].label + " days past due",
             label: c => fm$(c.parsed.x) } } },
           scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(1) + "k" } },
-            y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+            y: { grid: { display: false }, ticks: { display: false } } } },
+        plugins: [{ id: "delqHeadings", afterUpdate: alignToBars }]
       });
     }
     note.textContent =
