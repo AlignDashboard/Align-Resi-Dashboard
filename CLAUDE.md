@@ -353,15 +353,23 @@ graded, per the owner; `noi_margin_ttm` is recorded beside it in
 through the T12 statement's newest month) actual controllable operating
 expense against the same months of the year's budget, printed as **`$
 nominal/% variance`**, signed, positive meaning an overspend. The budget is
-the Yardi `12_Month_Budget_Accrual.xlsx` in the Drive **`Budgets`** folder —
+any budget in the Drive **`Budgets`** folder — `12_Month_Budget_Accrual.xlsx`
+is the Yardi export's own name, but not the only one that arrives: a budget
+uploaded by hand is named whatever the person named it. The entry's
+`name_patterns` is therefore the single word `budget`, matching the filer's
+own `/budget/` rule rather than any export's filename, because a pattern
+narrower than the filer's means a file the filer puts in this folder that the
+pipeline then refuses to claim — routed correctly and never read. That is what
+`Landing 2026 Resi Budget.xlsx` hit on 2026-09-16, and `test_routing.py`'s
+check 10 is what now fails when the two halves drift apart. It is
 the T12 statement's own layout on the JPM tree, so `parse_budget.py` reuses
 the T12 parser's anchors, COA translation and Align-tree grouping (and its
 to-the-cent tie-out), refusing a file with no `Budget` marker row or a period
 that is not Jan–Dec of one year. Both sides of the variance are the **same
 basket**: the Align-grouped buckets less `NOT_CONTROLLABLE`, actuals from
 `data/<slug>/expense_buckets.json`, plan from `data/<slug>/budget.json`, with
-the all-exclusions-found guard on each and a refusal when the budget's year
-does not match the statement's. The band grades the **absolute magnitude**,
+the all-exclusions-found guard on each and a refusal when no plan on file
+covers the statement's year. The band grades the **absolute magnitude**,
 per its own "how" (a 12% underspend flags exactly like a 12% overrun). The
 Landing reads **+$116,402/+12.1%** for Jan–Jul 2026, below; the workbook's
 hand-set symbol said in-range and is kept in `status_workbook`. The signed
@@ -996,6 +1004,14 @@ newest one on file. With several years stored, taking the newest would measure
 this year's actuals against next year's plan and publish the difference as a
 variance.
 
+Both plans reached the pipeline as `Landing 2025 Resi Budget.xlsx` and
+`Landing 2026 Resi Budget.xlsx`, in the Drive `Budgets` folder. The 2026 file
+is the plan the earlier `12_Month_Budget_Accrual.xlsx` carried, to the cent on
+all thirteen buckets and on both the revenue and operating-expense lines —
+which is corroboration rather than coincidence, since the two exports name
+different property codes in their header (four against one). The four codes
+were the report's filter, not its scope.
+
 `scripts/test_budget_vs_actual.py` holds it down — 23 fixture-free checks
 against budgets and a statement built in a temp dir. The load-bearing three
 (per-year storage, null-not-zero for an unplanned month, and picking the
@@ -1149,14 +1165,19 @@ report still reaches its parser, and the log says where it was found
 `active` entries take part. An entry without it stays strictly folder-bound.
 
 **A registered folder's own subfolders are read as part of it**, one level
-deep. The owner groups a feed's files by property once there is more than one
-building's worth — `Budgets/Landing/` is the first — and the sweep is no
-backstop for that, because it walks the drop tree's top level too. Before the
-descent existed, a file one level down was invisible to both passes and the
-folder simply reported empty. One level, not a recursion, and never into a
-`NEVER_SWEEP` name: an archive nested inside a live folder is still an archive,
-and walking arbitrarily deep would eventually find one under a name the list
-does not know. `test_fetch_sweep.py` covers all three, each by mutation.
+deep. The sweep is no backstop for a file one level down, because it walks the
+drop tree's top level too — so before the descent existed such a file was
+invisible to *both* passes and the folder simply reported empty, with nothing
+in the log to say otherwise. That is what `Budgets/Landing/` did on
+2026-09-16: two budgets sat in a per-property subfolder the owner had made,
+and neither pass could see them. Those two were moved back up into `Budgets`
+by hand, so the descent is not what is carrying them today — it is what stops
+the next such grouping from stranding a report, the same way the rescue sweep
+stopped a misfiled name from stranding one. One level, not a recursion, and
+never into a `NEVER_SWEEP` name: an archive nested inside a live folder is
+still an archive, and walking arbitrarily deep would eventually find one under
+a name the list does not know. `test_fetch_sweep.py` covers all three, each
+verified by mutation.
 
 The sweep is scoped, and each limit exists for a reason:
 

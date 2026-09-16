@@ -189,12 +189,10 @@
       "parser": "parse_budget",
       "file_glob": "*.xlsx",
       "name_patterns": [
-        "*12_month_budget*",
-        "*budget_accrual*",
-        "*resi budget*"
+        "*budget*"
       ],
       "status": "active",
-      "_comment": "Yardi 12-month budget, same layout as the T12 statement on the JPM tree. One file per calendar year, kept per year rather than overwritten, because the Budget vs Actual card on the Portfolio tab draws a T12 window that crosses the year boundary. Feeds that card and the scorecard's Budget Variance % (calendar-YTD controllable opex vs plan). The owner groups these by property inside the folder (Budgets/Landing/), which the folder pass reads: see fetch_drive.contents."
+      "_comment": "Yardi 12-month budget, same layout as the T12 statement on the JPM tree. ONE FILE PER CALENDAR YEAR, kept per year rather than overwritten, because the Budget vs Actual card on the Portfolio tab draws a T12 window that crosses the year boundary -- see build_metrics.store_budget. Feeds that card and the scorecard's Budget Variance % (calendar-YTD controllable opex vs plan). name_patterns is the single word 'budget' ON PURPOSE, matching the filer's own /budget/ rule: the two are halves of one contract, and a pattern narrower than the filer's means a file the filer puts in this folder that the pipeline then refuses to claim. It was '*12_month_budget*' and '*budget_accrual*' until 2026-09-16, when 'Landing 2026 Resi Budget.xlsx' arrived and matched neither. Those files also arrived in a Budgets/Landing/ subfolder; they have since been moved up, and fetch_drive.contents now reads one level of subfolders anyway, so the same grouping does not strand a report a second time."
     }
   ]
 }
