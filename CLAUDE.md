@@ -940,11 +940,25 @@ removed (verified by mutation).
 
 ## Budget vs Actual (Portfolio tab)
 
-The Portfolio tab's `Budget vs Actual` card is a T12 of plan against actual:
-two bars per month, the plan on the left and the actual on the right, each
-**stacked into the same Align-tree categories the Expense Deep Dive uses** and
-painted in the same colours, so a reader can move between the two cards
-without relearning which colour is what.
+The Portfolio tab's `Budget vs Actual` card is a T12 of **variance**: one bar
+a month, actual less plan, **stacked into the same Align-tree categories the
+Expense Deep Dive uses** and painted in the same colours, so a reader can move
+between the two cards without relearning which colour is what. Above the line
+is an overspend, below it an underspend.
+
+It drew the plan and the actual as two bars side by side until 2026-09-16.
+Both were legible, but twenty-four bars a screen answered "how big is this
+building" — which the Expense Deep Dive already answers — where one bar of the
+difference answers "how far off the plan was it", which nothing else did. The
+variance was the number a reader had to do in their head from the old shape.
+
+A dashed **net line** rides over the bars. A month with offsetting misses
+stacks positives up and negatives down and leaves its net in neither
+direction, so without the line the card cannot answer "did this month run
+over" at a glance. The net **follows the checkbox grid** rather than staying
+on the whole basket: unticking Taxes and leaving a line drawn through
+$270k of tax reversal would put it a screen away from the bars it claims to
+summarise.
 
 That shared palette is now a real shared thing rather than two copies:
 `BUCKET_PAL`, `bucketColor` and `bucketOrder` in `index.html` are what both
@@ -983,21 +997,25 @@ numbers:
   buckets tie out against its own total expenses, so nothing is missing from
   it — the plan for that category is nil, not unknown. The distinction is the
   whole reason the two cases are `0` and `null` rather than both blank.
-- **Negative months are drawn, not absorbed.** An accrual statement books
-  reversals and true-ups in the month they are found, and the newest month
-  carries most of them — Aug 2026 reads Taxes −$118,781 and Utilities −$31,450
-  for a net of $48,572, which `monthly_pl` agrees with. A stacked bar with
-  negative segments extends below the axis and the month's net is then in
-  neither direction, so it is on the hover and the note names the months.
+- **Reversal months are drawn, not absorbed, and are named as timing.** An
+  accrual statement books reversals and true-ups in the month it finds them,
+  and the newest month carries most of them — Aug 2026 reads Taxes −$118,781
+  and Utilities −$31,450 for a net of $48,572, which `monthly_pl` agrees with.
+  Against plan that is a −$276k "underspend" in one month, which is a timing
+  difference and not money unspent; the note says which months carry credits
+  and says exactly that. It is also what sets the y scale for all twelve
+  months, which is why the note points at the Taxes checkbox.
 
 **This card and the scorecard's `Budget Variance %` measure different things
 off the same two files, and can point opposite ways.** The card is the whole
-expense basket over the statement's twelve months (Sep 25–Aug 26: plan $4.45M
-against $4.40M actual, a 1.0% underspend). The KPI is the *controllable*
-basket — taxes, insurance, utilities and the management fee taken out — over
-the calendar year to date. Taxes are ~46% of the basket and land close to plan,
-which is most of the difference. The card says so on its face rather than
-leaving a reader to find it.
+expense basket over the statement's twelve months — Sep 25–Aug 26 nets
+**−$44k on a plan of $4.45M, a 1.0% underspend**, though **nine of the twelve
+months ran over** (worst Mar 26 +$64k, Dec 25 +$62k, Feb 26 +$59k) and the
+year only nets down because of Aug's tax reversal. The KPI is the
+*controllable* basket — taxes, insurance, utilities and the management fee
+taken out — over the calendar year to date. Taxes are ~46% of the basket, so
+they are most of the difference between the two. The card says so on its face
+rather than leaving a reader to find it.
 
 `budget_variance_ytd` picks the plan for the **statement's own year**, not the
 newest one on file. With several years stored, taking the newest would measure
