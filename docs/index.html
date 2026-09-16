@@ -634,6 +634,20 @@
         <div class="chartwrap" id="tradeOutWrap"><canvas id="tradeOut"></canvas></div>
       </div>
 
+      <div class="card wide" id="cBudgetActual">
+        <div class="card-head">
+          <div>
+            <h2>Budget vs Actual</h2>
+            <span class="eyebrow" id="baEyebrow">LOADING…</span>
+          </div>
+          <select class="prop-select" id="baSelect" style="display:none;"
+                  aria-label="Property"></select>
+        </div>
+        <div class="ckgrid" id="baCks" role="group" aria-label="Categories shown"></div>
+        <div class="chartwrap" id="baWrap" style="height:330px;"><canvas id="budgetActual"></canvas></div>
+        <div class="blu-note" id="baNote" style="color:var(--muted);"></div>
+      </div>
+
       <div class="card" id="cExpTrend">
         <h2>Expense Trend</h2>
         <span class="eyebrow" id="evEyebrow">LOADING…</span>
@@ -1497,6 +1511,8 @@ async function loadDashboard() {
     document.getElementById("erEyebrow").textContent = "AWAITING SOURCE DATA";
   }
 
+  await renderBudgetActual(d);
+
   /* ---- PLACEHOLDER CHARTS (awaiting source feeds) ---- */
   const phGrid = document.getElementById("placeholderGrid");
   if (phGrid && Array.isArray(d.placeholders) && d.placeholders.length) {
@@ -1563,6 +1579,33 @@ const monthKeysBack = (periodEnd, n) => {
     const t = end - (n - 1 - i);
     return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
   });
+};
+// The expense-bucket palette. Shared by the Expense Deep Dive (The Landing and
+// the Drive tab) and the Portfolio tab's Budget vs Actual card, so one category
+// is one colour wherever it is drawn -- the budget card exists to be read
+// against the deep dive, and two cards naming the same thing in two colours is
+// the disagreement this dashboard keeps trying not to publish.
+// Muted grey is the page's "soft number" colour and stays reserved for
+// Other / unclassified; every real category takes a hue.
+const BUCKET_PAL = [C.teal, C.amber, C.red, C.green, "#6aa9e9", "#b58fd6",
+                    "#d98fb0", "#8fd6a8", "#d6c88f", "#8fa3d6", "#d68f6a",
+                    "#7fc4d6", "#c4a3e0"];
+const bucketColor = (n, i) => n.startsWith("Other") ? C.muted : BUCKET_PAL[i % BUCKET_PAL.length];
+// Largest first, Other last -- a stable order every card that draws these
+// groups shares, so the colour a category gets does not depend on which card
+// is drawing it. Toggling categories never re-sorts, so nothing is repainted
+// under the reader.
+const bucketOrder = buckets => Object.keys(buckets).sort((a, b) => {
+  const oa = a.startsWith("Other"), ob = b.startsWith("Other");
+  if (oa !== ob) return oa ? 1 : -1;
+  const t = n => buckets[n].reduce((x, y) => x + (y || 0), 0);
+  return t(b) - t(a);
+});
+// #rrggbb at an alpha, for the budget half of a paired bar.
+const fade = (hex, a) => {
+  const h = String(hex).replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 };
 const elc = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -2567,6 +2610,267 @@ async function renderOpSummary(slug, ids) {
   return pt;
 }
 
+/* ---- Budget vs Actual (Portfolio tab) ----
+   The T12 the Expense Deep Dive draws, with the year's plan beside it: two bars
+   per month, the plan on the left and the actual on the right, each stacked
+   into the same Align-tree categories the deep dive uses and painted in the
+   same colours, so a reader can move between the two cards without relearning
+   which colour is what.
+
+   The window is the ACTUALS' own twelve months, not the budget's calendar year.
+   That is the whole reason budgets are kept per year (see build_metrics.
+   store_budget): the statement runs Sep-Aug today, so a card drawing a single
+   plan file would have four months with nothing to compare against. The
+   published block carries explicit YYYY-MM keys for exactly this join.
+
+   A month in a year with no budget on file draws no plan bar and is counted in
+   the note. A category a PLANNED year does not name is a real zero, not a gap:
+   that year's buckets tie out against its own total expenses, so nothing is
+   missing from it -- the plan for that category is nil. */
+async function renderBudgetActual(d) {
+  const card = document.getElementById("cBudgetActual");
+  if (!card) return;
+  const eyebrow = document.getElementById("baEyebrow");
+  const wrap = document.getElementById("baWrap");
+  const cks = document.getElementById("baCks");
+  const note = document.getElementById("baNote");
+  const sel = document.getElementById("baSelect");
+
+  const buds = ((d.budget || {}).properties) || [];
+  const acts = ((d.expense_buckets || {}).properties) || [];
+  // Both halves or neither: a plan with no actuals is not a comparison, and
+  // drawing one bar under a title that promises two invites the reader to
+  // treat the empty side as a zero.
+  const pairs = buds.map(b => ({ b, a: acts.find(x => x.slug === b.slug) }))
+    .filter(x => x.a && x.a.buckets && x.b.buckets);
+
+  if (!pairs.length) {
+    cks.hidden = true;
+    sel.style.display = "none";
+    wrap.textContent = "";
+    const empty = elc("div", "empty");
+    empty.appendChild(elc("div", "dash"));
+    empty.appendChild(elc("div", "big",
+      buds.length ? "No statement to measure the plan against"
+                  : "No budget has reached the pipeline"));
+    empty.appendChild(elc("div", null,
+      buds.length
+        ? 'A plan on its own is not a comparison. This card draws once the '
+          + 'property’s 12-month statement is in the Drive "T12 Expenses" folder.'
+        : 'Drop the Yardi 12-month budget accrual into the Drive "Budgets" folder '
+          + '— one file per calendar year — and the pipeline groups it on the '
+          + 'same account tree as the actuals and draws it here.'));
+    empty.appendChild(elc("div", "dash"));
+    wrap.appendChild(empty);
+    eyebrow.textContent = "AWAITING THE FEED";
+    note.textContent = "";
+    return;
+  }
+
+  let chart = null;
+  const hidden = new Set();          // survives a property switch, like the deep dive's
+
+  function draw(slug) {
+    const { a, b } = pairs.find(p => p.b.slug === slug) || pairs[0];
+    const keys = monthKeysBack(a.period_end, a.labels.length);
+    const at = new Map(b.months.map((m, i) => [m, i]));
+    // A month is planned when the budget block holds a real figure for it --
+    // it publishes null across every category for a year with no file.
+    const planned = keys.map(k => {
+      const j = at.get(k);
+      return j !== undefined
+        && Object.keys(b.buckets).some(n => b.buckets[n][j] !== null);
+    });
+
+    // The actuals' own order, so every category the deep dive draws keeps the
+    // colour it has there. Categories only the budget names are appended, and
+    // step past any hue already spoken for rather than doubling one up.
+    const shared = bucketOrder(a.buckets);
+    const names = shared.concat(
+      Object.keys(b.buckets).filter(n => !(n in a.buckets)).sort());
+    const used = new Set();
+    const colors = {};
+    names.forEach((n, i) => {
+      let c = bucketColor(n, i);
+      for (let k = i; used.has(c) && k < i + BUCKET_PAL.length; k++) c = bucketColor(n, k + 1);
+      used.add(c);
+      colors[n] = c;
+    });
+
+    const series = names.map(n => {
+      const arow = a.buckets[n];
+      const brow = b.buckets[n];
+      return {
+        name: n,
+        color: colors[n],
+        actual: keys.map((_, i) => (arow ? arow[i] : 0) || 0),
+        budget: keys.map((_, i) => {
+          if (!planned[i]) return null;
+          return brow ? (brow[at.get(keys[i])] || 0) : 0;
+        }),
+      };
+    });
+
+    const sum = xs => xs.reduce((t, v) => t + (v || 0), 0);
+    const totActual = sum(series.map(s => sum(s.actual)));
+    const totBudget = sum(series.map(s => sum(s.budget)));
+    // Measured over the months that HAVE a plan, so an unplanned month cannot
+    // read as a saving. The note says how many were left out.
+    const plannedIdx = keys.map((_, i) => i).filter(i => planned[i]);
+    const actualOnPlanned = sum(series.map(s => sum(plannedIdx.map(i => s.actual[i]))));
+    const variance = actualOnPlanned - totBudget;
+
+    if (chart) { chart.destroy(); chart = null; }
+    wrap.textContent = "";
+    const cv = elc("canvas");
+    cv.id = "budgetActual";
+    wrap.appendChild(cv);
+
+    const datasets = [];
+    series.forEach(s => {
+      // The plan is the reference and the actual is the thing being judged, so
+      // the actual carries the solid fill. Same hue on both halves, so the pair
+      // is one category read twice rather than two series -- and the pale/solid
+      // difference survives a colour-blind reader and a black-and-white print,
+      // which a second hue would not.
+      datasets.push({ label: s.name, kind: "Budget", data: s.budget, stack: "budget",
+                      backgroundColor: fade(s.color, .3), borderColor: s.color,
+                      borderWidth: 1, hidden: hidden.has(s.name) });
+      datasets.push({ label: s.name, kind: "Actual", data: s.actual, stack: "actual",
+                      backgroundColor: s.color, borderWidth: 0,
+                      hidden: hidden.has(s.name) });
+    });
+
+    // The hovered month's two stacks, over what is actually on screen -- a
+    // total that counted hidden categories would not match the bars it sits on.
+    const stackTotals = i => {
+      let bud = 0, act = 0, anyBud = false;
+      datasets.forEach((ds, k) => {
+        if (chart && !chart.isDatasetVisible(k)) return;
+        const v = ds.data[i];
+        if (ds.kind === "Budget") { if (v !== null) { bud += v; anyBud = true; } }
+        else act += v || 0;
+      });
+      return { bud, act, anyBud };
+    };
+
+    chart = new Chart(cv, {
+      type: "bar",
+      data: { labels: keys.map(shortMo), datasets },
+      options: {
+        maintainAspectRatio: false, responsive: true,
+        interaction: { mode: "nearest", intersect: true },
+        plugins: {
+          legend: { display: false },     // the checkbox grid above is the legend
+          tooltip: { callbacks: {
+            title: it => shortMo(keys[it[0].dataIndex]),
+            label: c => `${c.dataset.kind} · ${c.dataset.label}: ${fm$(c.parsed.y)}`,
+            footer: it => {
+              const { bud, act, anyBud } = stackTotals(it[0].dataIndex);
+              if (!anyBud) return "Shown: actual " + fm$(act) + " · no plan on file";
+              const v = act - bud;
+              return "Shown: plan " + fm$(bud) + " · actual " + fm$(act)
+                + " · " + (v >= 0 ? "+" : "−") + fm$(Math.abs(v))
+                + (bud ? " (" + (v >= 0 ? "+" : "−")
+                       + fmPct(Math.abs(v / bud), 1) + ")" : "");
+            },
+          } },
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+          y: { stacked: true, beginAtZero: true, grid: gridCfg,
+               ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+        },
+      },
+    });
+
+    cks.hidden = false;
+    ckGrid(cks, names.map((n, i) => ({ label: n, color: colors[n], i })),
+      it => !hidden.has(it.label),
+      it => {
+        if (hidden.has(it.label)) hidden.delete(it.label);
+        else hidden.add(it.label);
+        const on = !hidden.has(it.label);
+        // one category is two datasets -- the plan and the actual move together
+        chart.setDatasetVisibility(it.i * 2, on);
+        chart.setDatasetVisibility(it.i * 2 + 1, on);
+        chart.update();
+      });
+
+    eyebrow.textContent = "PLAN vs ACTUAL · "
+      + shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[keys.length - 1]).toUpperCase();
+
+    const unplanned = keys.filter((_, i) => !planned[i]);
+    // months whose actual carries a credit in some category -- see the note
+    const reversed = keys.filter((_, i) => series.some(s => s.actual[i] < 0));
+    const years = (b.years || []).map(y => y.year).join(" and ");
+    note.textContent =
+      "Pale bar the plan, solid bar the actual; each stacked into the categories "
+      + "the Expense Deep Dive uses, in the same colours. The boxes above switch "
+      + "categories on and off — Taxes dwarfs the rest, so unticking it opens up "
+      + "the others. "
+      // No overlap at all is its own sentence. Printing "over the 0 planned
+      // months the plan is $0 against $0 actual" would be arithmetically true
+      // and read as a building that spent nothing.
+      + (plannedIdx.length === 0
+          ? "No month of this window has a budget on file — the plan"
+            + (years ? "s held cover " + years : " on file covers another year")
+            + ", and the statement runs " + shortMo(keys[0]) + "–"
+            + shortMo(keys[keys.length - 1]) + ". The actual bars are drawn; "
+            + "there is nothing yet to measure them against. "
+          : "Over the "
+            + (plannedIdx.length === keys.length ? "twelve months"
+                                                 : plannedIdx.length + " planned months")
+            + " the plan is " + fm$(totBudget) + " against " + fm$(actualOnPlanned) + " actual, "
+            + (variance >= 0 ? "an overspend of " : "an underspend of ") + fm$(Math.abs(variance))
+            + (totBudget ? " (" + fmPct(Math.abs(variance / totBudget), 1) + ")" : "") + ". "
+            + (unplanned.length
+                ? unplanned.length + " month(s) in this window have no budget on file ("
+                  + unplanned.map(shortMo).join(", ") + ") and draw no plan bar; they are "
+                  + "left out of the totals above rather than counted as a saving. "
+                : ""))
+      + "Totals are the whole basket, ticked or not. Plan from the Drive "
+      + "“Budgets” folder (" + years + "), actual from the property’s "
+      + "12-month statement — both grouped on the Align account tree through the "
+      + "COA mapping and tied out against their own total expenses month by month, "
+      + "so the two sides are the same basket rather than two slices of one."
+      // A stacked bar with negative segments extends below the axis, and the
+      // month's net is then in neither direction -- it is on the hover. Saying
+      // which months those are beats leaving a reader to decide whether the
+      // chart is broken: an accrual statement books reversals and true-ups in
+      // the month they are found, and the newest month carries most of them.
+      + (reversed.length
+          ? " " + reversed.map(shortMo).join(", ")
+            + (reversed.length === 1 ? " carries" : " carry")
+            + " negative amounts in the statement — accrual reversals and "
+            + "true-ups, booked in the month they were found — so "
+            + (reversed.length === 1 ? "that bar extends" : "those bars extend")
+            + " below the axis and the month’s net is on the hover rather "
+            + "than at the top of the stack."
+          : "")
+      // The scorecard grades a different question off the same two files, and
+      // the two answers can point opposite ways. Naming that here is cheaper
+      // than a reader finding it themselves and trusting neither.
+      + " Note this is the whole expense basket over the statement’s twelve "
+      + "months; the scorecard’s Budget Variance % is the controllable "
+      + "basket (taxes, insurance, utilities and the management fee taken out) "
+      + "over the calendar year to date, so the two measure different things "
+      + "and can point opposite ways.";
+  }
+
+  if (pairs.length > 1) {
+    sel.style.display = "";
+    sel.textContent = "";
+    pairs.forEach(p => {
+      const o = elc("option", null, p.b.name);
+      o.value = p.b.slug;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", () => draw(sel.value));
+  }
+  draw(pairs[0].b.slug);
+}
+
 /* ---- Expense deep dive ----
    Shared by both Landing tabs. Both views draw from the property's own T12
    statement, translated to the Align account tree through the COA mapping and
@@ -2597,13 +2901,10 @@ async function renderExpenseDeep(slug, ids, wb) {
   const b = wb ? (wb.buckets || []).filter(x => x.name !== "Total") : [];
   const statusColor = x => x === "FLAG" ? C.red : x === "WATCH" ? C.amber : C.green;
   const monthKeys = () => monthKeysBack(pt.period_end, pt.labels.length);
-  // largest first, Other last -- a stable order both views share
-  const groupNames = () => Object.keys(pt.buckets).sort((a, b2) => {
-    const oa = a.startsWith("Other"), ob = b2.startsWith("Other");
-    if (oa !== ob) return oa ? 1 : -1;
-    const t = n => pt.buckets[n].reduce((x, y) => x + y, 0);
-    return t(b2) - t(a);
-  });
+  // largest first, Other last -- a stable order both views share, and the same
+  // one the Portfolio tab's Budget vs Actual card uses, so a category is the
+  // same colour on both cards
+  const groupNames = () => bucketOrder(pt.buckets);
   const barColor = n => n.startsWith("Other") ? C.muted : C.teal;
   // The P&L expense for one of the statement's months, matched on the month key
   // rather than on position: the two series can start in different months.
@@ -2684,12 +2985,7 @@ async function renderExpenseDeep(slug, ids, wb) {
     const names = groupNames();
     const keys = monthKeys();
     const total = names.reduce((t, n) => t + pt.buckets[n].reduce((x, y) => x + y, 0), 0);
-    // muted grey is this page's "soft number" colour and stays reserved for
-    // Other / unclassified; every real category cycles the palette
-    const PAL = [C.teal, C.amber, C.red, C.green, "#6aa9e9", "#b58fd6",
-                 "#d98fb0", "#8fd6a8", "#d6c88f", "#8fa3d6", "#d68f6a",
-                 "#7fc4d6", "#c4a3e0"];
-    const color = (n, i) => n.startsWith("Other") ? C.muted : PAL[i % PAL.length];
+    const color = bucketColor;
     if (chart) { chart.destroy(); chart = null; }
     chart = new Chart(canvas(), {
       type: "line",

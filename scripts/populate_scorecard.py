@@ -223,25 +223,43 @@ def budget_variance_ytd(slug):
         return {"why": "no budget in data/ for this property"}
     if not os.path.exists(epath):
         return {"why": "no T12 statement grouped by account for this property"}
-    bud = json.load(open(bpath))
-    out = {"source": bud.get("source_file"), "received_at": bud.get("landed_at")}
-
-    def no(why):
-        return dict(out, why=why)
+    # budget.json holds one point per budget year (see build_metrics.store_budget);
+    # files written before that change are a single flat plan, so read both.
+    raw = json.load(open(bpath))
+    years = raw.get("years") if isinstance(raw, dict) else None
+    if years is None:
+        years = [raw] if isinstance(raw, dict) and raw.get("year") is not None else []
+    if not years:
+        return {"why": "budget file carries no plan"}
 
     pts = (json.load(open(epath)) or {}).get("points") or []
-    if not pts or not bud.get("buckets"):
-        return no("budget or statement carries no bucket detail")
+    if not pts:
+        return {"why": "no T12 statement grouped by account for this property"}
     pt = pts[-1]
     try:
         end_mon, end_year = pt["period_end"].split()
         n = MONTHS.index(end_mon) + 1              # Jul -> 7 months of YTD
     except (ValueError, KeyError, AttributeError):
-        return no(f"cannot read the statement's period end "
-                  f"({pt.get('period_end')!r})")
-    if bud.get("year") != int(end_year):
-        return no(f"budget is for {bud.get('year')}, the statement ends in "
-                  f"{end_year}")
+        return {"why": f"cannot read the statement's period end "
+                       f"({pt.get('period_end')!r})"}
+
+    # The KPI is calendar-YTD, so the plan that answers it is the statement's
+    # own year -- not simply the newest one on file. Since budgets are kept per
+    # year, picking the wrong one would compare this year's actuals against
+    # last year's plan and read the difference as a variance.
+    bud = next((y for y in years if y.get("year") == int(end_year)), None)
+    if bud is None:
+        return {"source": years[-1].get("source_file"),
+                "received_at": years[-1].get("landed_at"),
+                "why": f"no {end_year} budget on file "
+                       f"(held: {', '.join(str(y.get('year')) for y in years)})"}
+    out = {"source": bud.get("source_file"), "received_at": bud.get("landed_at")}
+
+    def no(why):
+        return dict(out, why=why)
+
+    if not bud.get("buckets"):
+        return no("budget or statement carries no bucket detail")
     labels = pt.get("labels") or []
     if len(labels) < n or labels[-n] != "Jan":
         return no("the statement's last twelve months do not reach back to "

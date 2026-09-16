@@ -1269,6 +1269,41 @@ async function loadAll() {
       });
     });
 
+    // The plan behind the Portfolio tab's Budget vs Actual card. One row per
+    // month across every budget year on file, not just the current one: the
+    // card's window is the statement's T12 and crosses the calendar boundary,
+    // so the year before is as load-bearing as the year in progress. A blank
+    // cell is a month with no budget on file, which the card draws as no bar
+    // rather than as a plan of nothing.
+    const bg = d.budget || {};
+    (bg.properties || []).forEach((pr, i) => {
+      const names = Object.keys(pr.buckets || {}).sort();
+      const years = (pr.years || []);
+      renderTable(host, {
+        id: "t-budget-" + (pr.slug || i), group: "Portfolio",
+        title: "Budget, by month — " + (pr.name || pr.slug),
+        feeds: "Budget vs Actual card (Portfolio tab) — the pale bars; "
+             + "Budget Variance % on the scorecard",
+        note: [pr.basis,
+               years.map(y => y.year + " from " + (y.source_file || "—")
+                              + (y.landed_at ? ", landed " + y.landed_at : "")).join(" · "),
+               ((pr.years_missing || []).length
+                 ? "no budget on file for " + (pr.years_missing || []).join(", ")
+                 : null)].filter(Boolean).join(" · "),
+        cols: [{ key: "month", label: "Month" },
+               { key: "revenue", label: "Budgeted revenue", fmt: "money" },
+               { key: "opex_operating", label: "Budgeted operating expense", fmt: "money" }]
+          .concat(names.map(n => ({ key: n, label: n, fmt: "money" }))),
+        rows: (pr.months || []).map((mo, j) => {
+          const row = { month: mo, revenue: (pr.revenue || [])[j],
+                        opex_operating: (pr.opex_operating || [])[j] };
+          names.forEach(n => { row[n] = (pr.buckets[n] || [])[j]; });
+          return row;
+        }),
+        filterable: true,
+      });
+    });
+
     const ud = d.unit_directory || {};
     (ud.properties || []).forEach((pr, i) => {
       const plans = pr.plans || {};

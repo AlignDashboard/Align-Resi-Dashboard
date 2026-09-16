@@ -146,8 +146,34 @@ def main():
         return trees.get(entry.get("tree", "reports"), {})
 
     def contents(entry):
-        return [f for f in _list_children(svc, folders_for(entry)[entry["drive_folder"]])
-                if f["mimeType"] != FOLDER_MIME]
+        """Every file in an entry's folder, including one level of subfolders.
+
+        The owner groups a feed's files by property once there is more than one
+        building's worth -- Budgets/Landing/ is the first -- and a folder pass
+        that read only direct children would report the folder as empty while
+        the files sat one level down. The rescue sweep is no backstop for that:
+        it walks the drop tree's top level too. So a registered folder's own
+        subfolders are read as part of it, which is what "drop it in Drive and
+        the pipeline picks it up" has to mean.
+
+        One level, not a full recursion, and never through NEVER_SWEEP: an
+        archive nested inside a live folder is still an archive, and walking
+        arbitrarily deep would eventually find one.
+        """
+        root = folders_for(entry)[entry["drive_folder"]]
+        out = []
+        for f in _list_children(svc, root):
+            if f["mimeType"] != FOLDER_MIME:
+                out.append(dict(f, _sub=None))
+                continue
+            if f["name"] in NEVER_SWEEP:
+                print(f"[info] '{entry['drive_folder']}/{f['name']}' not read "
+                      f"(NEVER_SWEEP: an archive of superseded reports)")
+                continue
+            for g in _list_children(svc, f["id"]):
+                if g["mimeType"] != FOLDER_MIME:
+                    out.append(dict(g, _sub=f["name"]))
+        return out
 
     manifest = []
     # Folders the config does not mention at all — a report dropped in one of
@@ -249,7 +275,7 @@ def main():
             print(f"[note] '{name}': {len(skipped)} file(s) outside this "
                   f"entry's glob: {skipped}")
         for f in files:
-            take(entry, f, name)
+            take(entry, f, f"{name}/{f['_sub']}" if f.get("_sub") else name)
 
     # ---------------------------------------------------------------- pass 2
     # Any file in the drop tree that nobody claimed, matched on its own name.

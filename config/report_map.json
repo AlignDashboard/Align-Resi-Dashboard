@@ -190,10 +190,11 @@
       "file_glob": "*.xlsx",
       "name_patterns": [
         "*12_month_budget*",
-        "*budget_accrual*"
+        "*budget_accrual*",
+        "*resi budget*"
       ],
       "status": "active",
-      "_comment": "Yardi 12-month budget, same layout as the T12 statement on the JPM tree; feeds the scorecard's Budget Variance % (calendar-YTD controllable opex vs plan)."
+      "_comment": "Yardi 12-month budget, same layout as the T12 statement on the JPM tree. One file per calendar year, kept per year rather than overwritten, because the Budget vs Actual card on the Portfolio tab draws a T12 window that crosses the year boundary. Feeds that card and the scorecard's Budget Variance % (calendar-YTD controllable opex vs plan). The owner groups these by property inside the folder (Budgets/Landing/), which the folder pass reads: see fetch_drive.contents."
     }
   ]
 }

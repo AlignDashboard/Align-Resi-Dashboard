@@ -693,21 +693,58 @@ def store_concessions(prop, parsed):
                          "unit_count", "totals"])
 
 
+BUDGET_KEYS = ["report_type", "property", "property_code", "property_codes",
+               "tree", "year", "as_of", "labels", "revenue_monthly",
+               "opex_operating_monthly", "buckets", "buckets_unmapped",
+               "buckets_tieout_gap", "buckets_error"]
+
+
 def store_budget(prop, parsed):
-    """data/<slug>/budget.json — the year's plan, in the T12 statement's shape.
+    """data/<slug>/budget.json — the plans, one point per budget YEAR.
 
     Monthly revenue and operating-expense lines plus the Align-grouped expense
     buckets, exactly as the actuals' expense_buckets are grouped, so the
     scorecard's Budget Variance fill compares one basket against itself. A
     budget carries no resident, but it goes through store_report like every
     other feed so the central scrub covers it by default.
+
+    Keyed on the year and ACCUMULATED rather than overwritten, the way
+    expense_buckets keeps a point per statement period. A budget is a calendar
+    year and the T12 window the dashboard draws is not: the actuals run Sep-Aug
+    today, so a store that held only the newest year would leave four months of
+    that window with no plan to compare against, and the Budget vs Actual card
+    would report a gap where the file that answers it was simply overwritten.
+    Re-filing the same year replaces that year's point, so re-processing a
+    re-export is idempotent.
     """
-    return store_report(prop, parsed, "budget.json",
-                        ["report_type", "property", "property_code",
-                         "property_codes", "tree", "year", "as_of", "labels",
-                         "revenue_monthly", "opex_operating_monthly",
-                         "buckets", "buckets_unmapped", "buckets_tieout_gap",
-                         "buckets_error"])
+    year = parsed.get("year")
+    if year is None:
+        print(f"[warn] {prop['name']}: budget carries no year -- not stored")
+        return None
+
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / "budget.json"
+    hist = json.load(open(fp)) if fp.exists() else {}
+    # Files written before budgets were kept per year are a single flat plan.
+    # Carry that one in as its own year rather than dropping it on the floor.
+    years = hist.get("years")
+    if years is None:
+        years = [hist] if hist.get("year") is not None else []
+
+    point = {k: scrub(parsed.get(k)) for k in BUDGET_KEYS}
+    point["source_file"] = parsed.get("source_file")
+    point["landed_at"] = parsed.get("landed_at")
+    point["checks"] = parsed.get("checks")
+
+    years = [y for y in years if y.get("year") != year]
+    years.append(point)
+    years.sort(key=lambda y: y["year"])
+    json.dump({"years": years}, open(fp, "w"), indent=2, default=str)
+    print(f"[ok] stored budget for {prop['name']} ({year}) from "
+          f"{parsed.get('source_file')}: {len(point.get('buckets') or {})} bucket(s), "
+          f"{len(years)} year(s) on file")
+    return fp
 
 
 def rent_roll_summary(rr):
@@ -1253,6 +1290,70 @@ def build_metrics_json():
         "available": bool(bucket_props),
         "properties": bucket_props,
     }
+
+    # The budgeted twin of the block above, for the Portfolio tab's Budget vs
+    # Actual card. Published on explicit YYYY-MM month keys rather than on the
+    # statement's bare "Aug".."Jul" labels, because this series spans calendar
+    # years by construction -- the whole point of it is to line a plan up
+    # against a T12 window that starts in one year and ends in the next, and
+    # bare labels cannot say which year a month belongs to.
+    budget_props = []
+    for p_ in props:
+        if not p_.get("active", True):
+            continue
+        fp = DATA / p_["slug"] / "budget.json"
+        if not fp.exists():
+            continue
+        raw = json.load(open(fp))
+        years = raw.get("years")
+        if years is None:                      # pre-per-year file: one flat plan
+            years = [raw] if raw.get("year") is not None else []
+        years = [y for y in years if y.get("buckets") and y.get("year") is not None]
+        if not years:
+            continue
+        years.sort(key=lambda y: y["year"])
+        lo, hi = years[0]["year"], years[-1]["year"]
+        months = [f"{y}-{m:02d}" for y in range(lo, hi + 1) for m in range(1, 13)]
+        by_year = {y["year"]: y for y in years}
+        # A category a covered year does not carry is a real zero -- that year's
+        # buckets tie out against its own TOTAL EXPENSES, so nothing is missing
+        # from it. A month in a year with NO budget on file is null, and the
+        # card draws no bar there rather than a plan of nothing.
+        names = sorted({n for y in years for n in y["buckets"]})
+        buckets = {n: [] for n in names}
+        revenue, opex = [], []
+        for key in months:
+            yr, mo = int(key[:4]), int(key[5:]) - 1
+            y = by_year.get(yr)
+            for n in names:
+                buckets[n].append(None if y is None
+                                  else round((y["buckets"].get(n) or [0.0] * 12)[mo], 2))
+            revenue.append(None if y is None else (y.get("revenue_monthly") or [None] * 12)[mo])
+            opex.append(None if y is None else (y.get("opex_operating_monthly") or [None] * 12)[mo])
+        missing = sorted(set(range(lo, hi + 1)) - set(by_year))
+        if missing:
+            print(f"[warn] {p_['name']}: no budget on file for "
+                  f"{', '.join(str(y) for y in missing)} -- those months publish "
+                  f"as unplanned rather than as zero")
+        budget_props.append({
+            "slug": p_["slug"], "name": p_["name"],
+            "months": months,
+            "buckets": buckets,
+            "revenue": revenue,
+            "opex_operating": opex,
+            "years": [{"year": y["year"], "source_file": y.get("source_file"),
+                       "landed_at": y.get("landed_at"), "as_of": y.get("as_of"),
+                       "tieout_gap": y.get("buckets_tieout_gap")} for y in years],
+            "years_missing": missing,
+            "basis": ("Yardi 12-month budget accrual, grouped on the Align account "
+                      "tree through config/coa_map.json and tied out against each "
+                      "file's own total expenses month by month -- the same basket "
+                      "the actuals' expense buckets carry"),
+        })
+        print(f"[ok] budget for {p_['name']}: {len(years)} year(s) "
+              f"({lo}-{hi}), {len(names)} bucket(s)")
+    metrics["budget"] = {"available": bool(budget_props),
+                         "properties": budget_props}
 
     # The floorplan table per property, for joining a unit's plan code to its
     # bedroom count. Static description of the building, refreshed when a new

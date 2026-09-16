@@ -73,7 +73,7 @@ LIVE = {
         ("_Unsorted", "u"), ("Rent Roll", "rr"), ("T12 Expenses", "t12"),
         ("Delinquency", "dq"), ("EliseAI Reports", "el"),
         ("Concession Burnoff", "cb"), ("Residential AR Analytics", "ar"),
-        ("Property Status", "ps")]],
+        ("Property Status", "ps"), ("Budgets", "bg")]],
     "L": [(FOLDER, "Building Info", "bi"), (FOLDER, "Archive Reports", "arch")],
     "t12": [(FILE, "12_Month_Statement_Accrual.xlsx", "t1")],
     "dq":  [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d1")],
@@ -82,6 +82,10 @@ LIVE = {
             (FILE, "metrics-building-2026-08-31.csv", "e2")],
     "cb":  [(FILE, "2026-08-10 ConcessionBurnOff08_10_2026.xlsx", "c1")],
     "bi":  [(FILE, "UnitDirectory08_25_2026.xlsx", "b1")],
+    # the owner groups budgets by property one level down
+    "bg": [(FOLDER, "Landing", "bgl")],
+    "bgl": [(FILE, "Landing 2025 Resi Budget.xlsx", "g1"),
+            (FILE, "Landing 2026 Resi Budget.xlsx", "g2")],
     "rr": [], "ps": [],
     # stranded in _Unsorted: two the pipeline can read, six it cannot
     "u": [(FILE, "2026-08-25 leasing_funnel_report_2026-08-25.xlsx", "f1"),
@@ -143,6 +147,17 @@ def main():
     check("the unit directory still comes from the reference tree",
           any(e["report_type"] == "unit_directory" and e["found_in"] == "Building Info"
               for e in man))
+    # Budgets/Landing/ -- the owner groups a feed's files by property once
+    # there is more than one building's worth. Both years have to arrive, or
+    # the Budget vs Actual card's T12 window loses the months only the older
+    # plan covers.
+    budgets = {e["name"] for e in man if e["report_type"] == "budget"}
+    check("a registered folder's subfolder is read as part of it",
+          budgets == {"Landing 2025 Resi Budget.xlsx",
+                      "Landing 2026 Resi Budget.xlsx"})
+    check("a file found one level down says which subfolder it sat in",
+          all(e["found_in"] == "Budgets/Landing"
+              for e in man if e["report_type"] == "budget"))
 
     print("\n2. an archive inside the DROP tree is still never swept")
     man = run(fd, {"R": [(FOLDER, "Archive Reports", "arch"), (FOLDER, "Rent Roll", "rr")],
@@ -162,7 +177,28 @@ def main():
               reference="L")
     check("a library folder with no special name is still not swept", not man)
 
-    print("\n4. one filename, two report types -> reported, not guessed")
+    print("\n4. the descent into a registered folder is bounded")
+    # An archive nested inside a live folder is still an archive. Without the
+    # NEVER_SWEEP check in contents(), the July rent roll below is republished
+    # as the current one -- the exact failure the sweep's tree scoping exists
+    # to prevent, arriving through the folder pass instead.
+    man = run(fd, {"R": [(FOLDER, "Rent Roll", "rr")],
+                   "rr": [(FOLDER, "Archive Reports", "arch"),
+                          (FILE, "RentRoll09_11_2026.xlsx", "r1")],
+                   "arch": [(FILE, "2026-07-14 RentRoll07_14_2026.xlsx", "a1")]})
+    check("an archive nested inside a live folder is not descended into",
+          {e["name"] for e in man} == {"RentRoll09_11_2026.xlsx"})
+
+    # One level, not a recursion: anything deeper is a tree nobody described,
+    # and walking it would eventually find somebody's archive under a name
+    # NEVER_SWEEP does not know.
+    man = run(fd, {"R": [(FOLDER, "Rent Roll", "rr")],
+                   "rr": [(FOLDER, "2026", "y26")],
+                   "y26": [(FOLDER, "Q3", "q3")],
+                   "q3": [(FILE, "RentRoll09_11_2026.xlsx", "r1")]})
+    check("the descent stops at one level", not man)
+
+    print("\n5. one filename, two report types -> reported, not guessed")
     real = json.loads((ROOT / "config" / "report_map.json").read_text())
     for e in real["subfolders"]:
         if e["report_type"] == "rent_roll":
@@ -179,7 +215,7 @@ def main():
         fd.json.load = original
     check("an ambiguous filename is refused", not man)
 
-    print("\n5. the same filename in two folders does not overwrite on disk")
+    print("\n6. the same filename in two folders does not overwrite on disk")
     man = run(fd, {"R": [(FOLDER, "Delinquency", "dq"), (FOLDER, "_Unsorted", "u")],
                    "dq": [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d1")],
                    "u":  [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d9")]})
