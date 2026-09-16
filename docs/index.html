@@ -1232,7 +1232,12 @@ function restyleCharts() {
     // that Chart.js reports as "Recursion detected".
     const opt = ch.config.options || (ch.config.options = {});
     Object.values(opt.scales || {}).forEach(sc => {
-      if (sc.grid) sc.grid.color = grid;
+      // A grid colour that is a FUNCTION is deciding something per tick — the
+      // Budget vs Actual card draws its zero line heavier than the rest,
+      // because above it is an overspend — and a flat swap would erase that on
+      // the first theme toggle. Those callbacks read gridCfg.color and C.muted
+      // themselves, both set just above, so they re-theme without help.
+      if (sc.grid && typeof sc.grid.color !== "function") sc.grid.color = grid;
       (sc.ticks || (sc.ticks = {})).color = tick;
     });
     const lg = opt.plugins && opt.plugins.legend;
@@ -1601,12 +1606,11 @@ const bucketOrder = buckets => Object.keys(buckets).sort((a, b) => {
   const t = n => buckets[n].reduce((x, y) => x + (y || 0), 0);
   return t(b) - t(a);
 });
-// #rrggbb at an alpha, for the budget half of a paired bar.
-const fade = (hex, a) => {
-  const h = String(hex).replace("#", "");
-  const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
-};
+// A variance always carries its sign: the size of a miss and its direction are
+// two different facts and a reader needs both. The typographic minus, not a
+// hyphen, to match the Operating Summary's variance columns.
+const signed$ = v => (v >= 0 ? "+" : "−") + fm$(Math.abs(v));
+const signed = (x, d = 1) => (x >= 0 ? "+" : "−") + fmPct(Math.abs(x), d);
 const elc = (tag, cls, text) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -2710,9 +2714,16 @@ async function renderBudgetActual(d) {
         }),
       };
     });
+    // Months whose actual carries a credit in some category -- see the note.
+    const reversedMonths = keys.filter((_, i) => series.some(s => s.actual[i] < 0));
+    // Actual less plan, per category per month: positive is an overspend.
+    // Null where the month has no plan -- a variance against nothing is not
+    // zero, and a bar of zero there would read as "on budget".
+    series.forEach(s => {
+      s.variance = keys.map((_, i) => planned[i] ? s.actual[i] - s.budget[i] : null);
+    });
 
     const sum = xs => xs.reduce((t, v) => t + (v || 0), 0);
-    const totActual = sum(series.map(s => sum(s.actual)));
     const totBudget = sum(series.map(s => sum(s.budget)));
     // Measured over the months that HAVE a plan, so an unplanned month cannot
     // read as a saving. The note says how many were left out.
@@ -2726,32 +2737,37 @@ async function renderBudgetActual(d) {
     cv.id = "budgetActual";
     wrap.appendChild(cv);
 
-    const datasets = [];
-    series.forEach(s => {
-      // The plan is the reference and the actual is the thing being judged, so
-      // the actual carries the solid fill. Same hue on both halves, so the pair
-      // is one category read twice rather than two series -- and the pale/solid
-      // difference survives a colour-blind reader and a black-and-white print,
-      // which a second hue would not.
-      datasets.push({ label: s.name, kind: "Budget", data: s.budget, stack: "budget",
-                      backgroundColor: fade(s.color, .3), borderColor: s.color,
-                      borderWidth: 1, hidden: hidden.has(s.name) });
-      datasets.push({ label: s.name, kind: "Actual", data: s.actual, stack: "actual",
-                      backgroundColor: s.color, borderWidth: 0,
-                      hidden: hidden.has(s.name) });
-    });
+    // One bar a month, stacked by category: overspends above the line,
+    // underspends below it. Half the bars of a plan-beside-actual pair and the
+    // number a reader is actually after -- the size of the miss, not the size
+    // of the building.
+    const datasets = series.map(s => ({
+      label: s.name, data: s.variance,
+      backgroundColor: s.color, borderWidth: 0,
+      hidden: hidden.has(s.name),
+    }));
 
-    // The hovered month's two stacks, over what is actually on screen -- a
-    // total that counted hidden categories would not match the bars it sits on.
-    const stackTotals = i => {
-      let bud = 0, act = 0, anyBud = false;
-      datasets.forEach((ds, k) => {
-        if (chart && !chart.isDatasetVisible(k)) return;
-        const v = ds.data[i];
-        if (ds.kind === "Budget") { if (v !== null) { bud += v; anyBud = true; } }
-        else act += v || 0;
+    // The month's net, over what is actually on screen. Without it a month
+    // with offsetting misses reads as two piles and no answer: positives stack
+    // up, negatives stack down, and the one number the card exists to give --
+    // did this month run over -- is in neither direction.
+    const netAt = i => {
+      let net = null;
+      series.forEach(s => {
+        if (hidden.has(s.name) || s.variance[i] === null) return;
+        net = (net || 0) + s.variance[i];
       });
-      return { bud, act, anyBud };
+      return net;
+    };
+    const NET = "Net variance";
+    datasets.push({
+      label: NET, type: "line", data: keys.map((_, i) => netAt(i)),
+      borderColor: C.muted, backgroundColor: C.muted, borderWidth: 1.5,
+      borderDash: [4, 4], pointRadius: 2.5, tension: 0, spanGaps: false,
+    });
+    const netIdx = datasets.length - 1;
+    const refreshNet = () => {
+      datasets[netIdx].data = keys.map((_, i) => netAt(i));
     };
 
     chart = new Chart(cv, {
@@ -2764,22 +2780,44 @@ async function renderBudgetActual(d) {
           legend: { display: false },     // the checkbox grid above is the legend
           tooltip: { callbacks: {
             title: it => shortMo(keys[it[0].dataIndex]),
-            label: c => `${c.dataset.kind} · ${c.dataset.label}: ${fm$(c.parsed.y)}`,
+            // A variance in dollars says how big the miss is; the same miss
+            // over that category's own plan says whether it is a big one.
+            label: c => {
+              const i = c.dataIndex, v = c.parsed.y;
+              if (c.dataset.label === NET) return "Net of what is shown: " + signed$(v);
+              const s = series[c.datasetIndex];
+              const plan = s.budget[i];
+              // fm$ renders a negative with a hyphen; signed$ uses the
+              // typographic minus, and both sit on this one line.
+              const level = x => (x < 0 ? "\u2212" : "") + fm$(Math.abs(x));
+              return c.dataset.label + ": " + signed$(v)
+                + " (plan " + level(plan) + (plan ? ", " + signed(v / plan) : "")
+                + ", actual " + level(s.actual[i]) + ")";
+            },
             footer: it => {
-              const { bud, act, anyBud } = stackTotals(it[0].dataIndex);
-              if (!anyBud) return "Shown: actual " + fm$(act) + " · no plan on file";
-              const v = act - bud;
-              return "Shown: plan " + fm$(bud) + " · actual " + fm$(act)
-                + " · " + (v >= 0 ? "+" : "−") + fm$(Math.abs(v))
-                + (bud ? " (" + (v >= 0 ? "+" : "−")
-                       + fmPct(Math.abs(v / bud), 1) + ")" : "");
+              const i = it[0].dataIndex;
+              const net = netAt(i);
+              if (net === null) return "No plan on file for this month";
+              let plan = 0;
+              series.forEach(s => {
+                if (!hidden.has(s.name) && s.budget[i] !== null) plan += s.budget[i];
+              });
+              return "Shown: " + signed$(net) + " against a plan of " + fm$(plan)
+                + (plan ? " (" + signed(net / plan) + ")" : "");
             },
           } },
         },
         scales: {
           x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
-          y: { stacked: true, beginAtZero: true, grid: gridCfg,
-               ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+          // The zero line is the whole reading of this chart -- above it is an
+          // overspend -- so it is drawn at the axis's own colour rather than
+          // the recessive grid's, which would leave it one line among twelve.
+          y: { stacked: true, grid: {
+                 color: ctx => ctx.tick.value === 0 ? C.muted : gridCfg.color,
+                 lineWidth: ctx => ctx.tick.value === 0 ? 1.5 : 1,
+                 drawTicks: false },
+               ticks: { callback: v => (v > 0 ? "+$" : v < 0 ? "−$" : "$")
+                                       + Math.abs(v / 1e3).toFixed(0) + "k" } },
         },
       },
     });
@@ -2790,69 +2828,76 @@ async function renderBudgetActual(d) {
       it => {
         if (hidden.has(it.label)) hidden.delete(it.label);
         else hidden.add(it.label);
-        const on = !hidden.has(it.label);
-        // one category is two datasets -- the plan and the actual move together
-        chart.setDatasetVisibility(it.i * 2, on);
-        chart.setDatasetVisibility(it.i * 2 + 1, on);
+        chart.setDatasetVisibility(it.i, !hidden.has(it.label));
+        // the net follows what is on screen, or unticking Taxes would leave a
+        // line floating a hundred thousand above bars it no longer describes
+        refreshNet();
         chart.update();
       });
 
-    eyebrow.textContent = "PLAN vs ACTUAL · "
-      + shortMo(keys[0]).toUpperCase() + "–" + shortMo(keys[keys.length - 1]).toUpperCase();
+    eyebrow.textContent = "VARIANCE · ACTUAL LESS PLAN · "
+      + shortMo(keys[0]).toUpperCase() + "\u2013" + shortMo(keys[keys.length - 1]).toUpperCase();
 
     const unplanned = keys.filter((_, i) => !planned[i]);
-    // months whose actual carries a credit in some category -- see the note
-    const reversed = keys.filter((_, i) => series.some(s => s.actual[i] < 0));
     const years = (b.years || []).map(y => y.year).join(" and ");
+    // The months that ran over, worst first -- the reason to look at the chart
+    const over = plannedIdx
+      .map(i => ({ i, v: series.reduce((t, s) => t + (s.variance[i] || 0), 0) }))
+      .filter(x => x.v > 0)
+      .sort((x, y) => y.v - x.v);
     note.textContent =
-      "Pale bar the plan, solid bar the actual; each stacked into the categories "
-      + "the Expense Deep Dive uses, in the same colours. The boxes above switch "
-      + "categories on and off — Taxes dwarfs the rest, so unticking it opens up "
-      + "the others. "
-      // No overlap at all is its own sentence. Printing "over the 0 planned
-      // months the plan is $0 against $0 actual" would be arithmetically true
-      // and read as a building that spent nothing.
+      "One bar a month: actual less plan, stacked into the categories the "
+      + "Expense Deep Dive uses, in the same colours. Above the line is an "
+      + "overspend, below it an underspend, and the dashed line is the month\u2019s "
+      + "net. The boxes above switch categories on and off, and the net follows "
+      + "them rather than being left behind \u2014 worth doing with Taxes, whose "
+      + "one reversal month sets the scale for all twelve and flattens everything "
+      + "else against it. "
       + (plannedIdx.length === 0
-          ? "No month of this window has a budget on file — the plan"
+          ? "No month of this window has a budget on file \u2014 the plan"
             + (years ? "s held cover " + years : " on file covers another year")
-            + ", and the statement runs " + shortMo(keys[0]) + "–"
-            + shortMo(keys[keys.length - 1]) + ". The actual bars are drawn; "
-            + "there is nothing yet to measure them against. "
+            + ", and the statement runs " + shortMo(keys[0]) + "\u2013"
+            + shortMo(keys[keys.length - 1]) + ", so there is nothing to draw a "
+            + "variance against. "
           : "Over the "
             + (plannedIdx.length === keys.length ? "twelve months"
                                                  : plannedIdx.length + " planned months")
-            + " the plan is " + fm$(totBudget) + " against " + fm$(actualOnPlanned) + " actual, "
-            + (variance >= 0 ? "an overspend of " : "an underspend of ") + fm$(Math.abs(variance))
-            + (totBudget ? " (" + fmPct(Math.abs(variance / totBudget), 1) + ")" : "") + ". "
+            + " the variance is " + signed$(variance)
+            + (totBudget ? " on a plan of " + fm$(totBudget)
+                           + " (" + signed(variance / totBudget) + ")" : "")
+            + " \u2014 " + (variance >= 0 ? "an overspend" : "an underspend") + ". "
+            + (over.length
+                ? over.length + " of the " + plannedIdx.length + " ran over, worst "
+                  + over.slice(0, 3).map(x => shortMo(keys[x.i]) + " " + signed$(x.v)).join(", ")
+                  + ". "
+                : "No month ran over. ")
             + (unplanned.length
-                ? unplanned.length + " month(s) in this window have no budget on file ("
-                  + unplanned.map(shortMo).join(", ") + ") and draw no plan bar; they are "
-                  + "left out of the totals above rather than counted as a saving. "
+                ? unplanned.length + " month(s) have no budget on file ("
+                  + unplanned.map(shortMo).join(", ") + ") and draw no bar: a variance "
+                  + "against nothing is not zero, and they are left out of the total "
+                  + "above rather than counted as a saving. "
                 : ""))
-      + "Totals are the whole basket, ticked or not. Plan from the Drive "
-      + "“Budgets” folder (" + years + "), actual from the property’s "
-      + "12-month statement — both grouped on the Align account tree through the "
+      + "The figure above is the whole basket, ticked or not. Plan from the Drive "
+      + "\u201cBudgets\u201d folder (" + years + "), actual from the property\u2019s "
+      + "12-month statement \u2014 both grouped on the Align account tree through the "
       + "COA mapping and tied out against their own total expenses month by month, "
       + "so the two sides are the same basket rather than two slices of one."
-      // A stacked bar with negative segments extends below the axis, and the
-      // month's net is then in neither direction -- it is on the hover. Saying
-      // which months those are beats leaving a reader to decide whether the
-      // chart is broken: an accrual statement books reversals and true-ups in
-      // the month they are found, and the newest month carries most of them.
-      + (reversed.length
-          ? " " + reversed.map(shortMo).join(", ")
-            + (reversed.length === 1 ? " carries" : " carry")
-            + " negative amounts in the statement — accrual reversals and "
-            + "true-ups, booked in the month they were found — so "
-            + (reversed.length === 1 ? "that bar extends" : "those bars extend")
-            + " below the axis and the month’s net is on the hover rather "
-            + "than at the top of the stack."
+      // A month's actual can itself be negative -- an accrual statement books
+      // reversals and true-ups where it finds them -- and that shows up here as
+      // a large underspend that is a timing artefact rather than a saving.
+      + (reversedMonths.length
+          ? " " + reversedMonths.map(shortMo).join(", ")
+            + (reversedMonths.length === 1 ? " carries" : " carry")
+            + " negative amounts in the statement \u2014 accrual reversals and true-ups, "
+            + "booked in the month they were found \u2014 so the underspend "
+            + (reversedMonths.length === 1 ? "it shows" : "they show")
+            + " is a timing difference rather than money not spent."
           : "")
       // The scorecard grades a different question off the same two files, and
       // the two answers can point opposite ways. Naming that here is cheaper
       // than a reader finding it themselves and trusting neither.
-      + " Note this is the whole expense basket over the statement’s twelve "
-      + "months; the scorecard’s Budget Variance % is the controllable "
+      + " Note this is the whole expense basket over the statement\u2019s twelve "
+      + "months; the scorecard\u2019s Budget Variance % is the controllable "
       + "basket (taxes, insurance, utilities and the management fee taken out) "
       + "over the calendar year to date, so the two measure different things "
       + "and can point opposite ways.";
