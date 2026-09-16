@@ -686,8 +686,19 @@
     <div class="view" id="viewScorecard" role="tabpanel" aria-labelledby="tabScorecard" tabindex="0" hidden>
     <div class="grid">
       <div class="card wide" id="cScorecard">
-        <h2>KPI Scorecard</h2>
-        <span class="eyebrow" id="scEyebrow">PORTFOLIO HEALTH · LOADING…</span>
+        <!-- The h2 moves inside .card-head so the corner link is cleared by the
+             head's own padding-right rather than by ".card > h2", which no
+             longer matches it -- see the "Reserve the corner" CSS note. -->
+        <div class="card-head">
+          <div>
+            <h2>KPI Scorecard</h2>
+            <span class="eyebrow" id="scEyebrow">PORTFOLIO HEALTH · LOADING…</span>
+          </div>
+          <div class="opsel">
+            <label for="scPropSelect">Property:</label>
+            <select class="prop-select" id="scPropSelect"></select>
+          </div>
+        </div>
         <!-- the canvas sits outside #scHead, which the renderer clears -->
         <div class="sc-topline">
           <div class="sc-head" id="scHead"></div>
@@ -695,7 +706,13 @@
         </div>
         <div class="sc-scroll"><div id="scTable"></div></div>
         <div class="sc-legend" id="scLegend"></div>
-        <div class="sc-note" id="scNote"></div>
+        <!-- No note block on this tab, by request: the standing prose that used
+             to close the card is off. What it carried is not lost -- coverage is
+             in the eyebrow, the "reported, not graded" and "awaiting a feed"
+             markers are in the legend, each cell's band and source are on its
+             hover, and the source workbook is a click away on the data page.
+             The Portfolio view's copy of this matrix keeps its note; the
+             renderer simply skips the block where a mount does not declare one. -->
       </div>
     </div>
     </div><!-- /viewScorecard -->
@@ -2034,24 +2051,84 @@ function scHealthChart(canvasId) {
   });
 }
 
+/* ---- The property filter on the Scorecard tab ----
+   "" is every property: the matrix this card has always shown, unchanged. A
+   key narrows it to one row AND recomputes the head from that property alone,
+   because a headline reading "HEALTH ACROSS 4 PROPERTIES · 91%" over a single
+   row is the kind of figure that gets quoted at the wrong scale.
+
+   Only a mount that declares ids.select gets one. The Portfolio view renders
+   the same matrix through the same function and has no select, so it keeps
+   every property and never filters -- the filter is a view of this card, not a
+   property of the data.
+
+   Keyed on slug where there is one and the label otherwise: a property on the
+   scorecard that is not yet in the property master has no slug (SC.properties
+   carries them either way, and the note names them), and it still needs to be
+   selectable rather than silently missing from its own dropdown. */
+const SC_ALL = "";
+const scKey = p => p.slug || p.label;
+
+function scFillSelect(el, chosen) {
+  el.textContent = "";
+  const all = elc("option", null, "All properties");
+  all.value = SC_ALL;
+  el.appendChild(all);
+  SC.properties.forEach(p => {
+    const o = elc("option", null, p.label);
+    o.value = scKey(p);
+    el.appendChild(o);
+  });
+  // A key that no longer matches any property (a renamed building between
+  // deploys) falls back to All rather than rendering an empty matrix.
+  el.value = SC.properties.some(p => scKey(p) === chosen) ? chosen : SC_ALL;
+  return el.value;
+}
+
 // Renders the full matrix into one set of mount points. Called for both the
 // Scorecard tab and the top of the Portfolio view — same data, same code.
-async function renderScorecard(ids) {
+// `chosen` is the property filter; omitted, the mount's own select decides,
+// which is what makes the change handler a plain re-render.
+async function renderScorecard(ids, chosen) {
   await scPromise;
   const eyebrow = document.getElementById(ids.eyebrow);
+  // The note block is optional — the Scorecard tab has none — so the load
+  // failure still has to be visible without it. The eyebrow carries it either
+  // way; the note adds the fix when there is somewhere to put it.
+  const noteEl = ids.note ? document.getElementById(ids.note) : null;
   if (!SC) {
     eyebrow.textContent = "SCORECARD UNAVAILABLE";
-    document.getElementById(ids.note).textContent =
+    if (noteEl) noteEl.textContent =
       "Could not load scorecard.json — run scripts/extract_scorecard.py.";
     return;
   }
-  const P = SC.portfolio;
+  // Wire the filter, if this mount has one. The select is the state, so a
+  // re-render with no argument simply reads it back.
+  const selEl = ids.select && document.getElementById(ids.select);
+  let pick = SC_ALL;
+  if (selEl) {
+    pick = scFillSelect(selEl, chosen === undefined ? selEl.value : chosen);
+    if (!selEl.dataset.wired) {
+      selEl.dataset.wired = "1";
+      selEl.addEventListener("change", () => renderScorecard(ids, selEl.value));
+    }
+  }
+  const only = pick === SC_ALL ? null : SC.properties.find(p => scKey(p) === pick);
+  const rows = only ? [only] : SC.properties;
+
+  // The head is the portfolio's roll-up, or the selected property's own. Both
+  // come out of the published figures: scRollUp over every group reproduces
+  // scorecard.json's scored / counts / coverage / at_or_above exactly, so one
+  // property selected is the same arithmetic on one row, not a second opinion.
+  const P = only ? scRollUp(only, SC.groups) : SC.portfolio;
   // Coverage, not just the score: the percentage is taken over graded cells
   // only, so how many cells that is out of the whole grid belongs beside it.
   // Without this the headline moving is indistinguishable from performance
   // moving, when most of the grid is simply still waiting for a feed.
   const cov = P.coverage || {};
-  eyebrow.textContent = "HEALTH ACROSS " + P.property_count + " PROPERTIES · " +
+  eyebrow.textContent = (only
+      ? only.label.toUpperCase() + " · "
+      : "HEALTH ACROSS " + P.property_count + " PROPERTIES · ") +
     P.scored + " OF " + cov.total + " KPI CELLS GRADED" +
     (cov.reported_ungraded ? " · " + cov.reported_ungraded + " REPORTED, NOT GRADED" : "") +
     (cov.awaiting ? " · " + cov.awaiting + " AWAITING A FEED" : "");
@@ -2063,7 +2140,12 @@ async function renderScorecard(ids) {
   // that turns 91% into a verdict. The tally beside it and the per-property
   // percentages carry the color, where worst-state is unambiguous.
   const hb = elc("div", "sc-health");
-  hb.appendChild(elc("div", "big", P.at_or_above == null ? "—" : fmPct(P.at_or_above, 0)));
+  const big = elc("div", "big", P.at_or_above == null ? "—" : fmPct(P.at_or_above, 0));
+  // One property's figure IS coloured, as it is on that property's own tab:
+  // worst-state across its cells is unambiguous. The portfolio's stays plain
+  // for the reason above — an average across buildings is not a verdict.
+  if (only && P.scored) big.classList.add("sc-state-" + scTone(P.counts));
+  hb.appendChild(big);
   hb.appendChild(elc("div", "lbl", "of graded KPIs at or above target"));
   head.appendChild(hb);
   const tally = elc("div", "sc-tally");
@@ -2076,7 +2158,10 @@ async function renderScorecard(ids) {
     tally.appendChild(t);
   });
   head.appendChild(tally);
-  const upd = scUpdatedEl();
+  // A property with no slug has no feeds to report, so it gets no freshness
+  // line rather than the portfolio's — scUpdatedEl treats a falsy slug as
+  // "every feed", which under one property's name would be simply wrong.
+  const upd = only ? (only.slug ? scUpdatedEl(only.slug) : null) : scUpdatedEl();
   if (upd) head.appendChild(upd);
 
   // Matrix in the workbook's own orientation: properties are rows, KPIs are
@@ -2149,7 +2234,7 @@ async function renderScorecard(ids) {
     tbl.appendChild(thead);
 
     const tbody = elc("tbody");
-    SC.properties.forEach(p => {
+    rows.forEach(p => {
       const tr = elc("tr");
       tr.appendChild(scPropCell(p));
       names.forEach(name => {
@@ -2172,12 +2257,28 @@ async function renderScorecard(ids) {
 
   scLegendInto(document.getElementById(ids.legend));
 
-  const weakest = P.by_metric.filter(m => m.counts.below > 0)
-    .sort((a, b) => b.counts.below - a.counts.below).slice(0, 3)
-    .map(m => m.name + " (" + m.counts.below + ")");
+  // "Most below-target KPIs" is a count ACROSS properties, so it only means
+  // anything on the unfiltered matrix; by_metric lives on SC.portfolio and is
+  // not part of a single property's roll-up. Filtered, the useful equivalent
+  // is simply which of this property's own cells are below.
+  if (!noteEl) return;   // nothing below this builds anything but the note
+
+  // Not sliced for one property: "Most below-target" is a top-3 by design,
+  // but "Below target:" reads as the whole list, and The Landing has four.
+  // renderPropertyScorecard names all of them on the property's own tab too.
+  const weakest = only
+    ? P.below_metrics
+    : P.by_metric.filter(m => m.counts.below > 0)
+        .sort((a, b) => b.counts.below - a.counts.below).slice(0, 3)
+        .map(m => m.name + " (" + m.counts.below + ")");
   const unmapped = SC.properties.filter(p => !p.slug).map(p => p.label);
   const nUn = (SC.unscored || []).length;
-  document.getElementById(ids.note).textContent =
+  noteEl.textContent =
+    (only
+      ? "Showing " + only.label + " alone — the headline figures and the cells below "
+        + "are this property's; the chart stays portfolio-wide, because where this "
+        + "one sits against the others is the question it answers. "
+      : "") +
     "The chart ranks each property by the share of its GRADED KPIs at or above " +
     "target, with that count in brackets after its name — two graded cells and " +
     "seven are not the same evidence for a percentage. Hover a cell for its " +
@@ -2192,14 +2293,18 @@ async function renderScorecard(ids) {
     (nUn ? (SC.unscored || []).join(", ") + " is reported, not graded — a distribution " +
       "has no single direction it can be good or bad in, so it carries no status and " +
       "is left out of the percentages. " : "") +
-    (weakest.length ? "Most below-target KPIs: " + weakest.join(", ") + ". " : "") +
+    (weakest.length
+      ? (only ? "Below target: " : "Most below-target KPIs: ") + weakest.join(", ") + ". "
+      : "") +
     SC.meta.note +
     (unmapped.length ? " Not yet in the property master: " + unmapped.join(", ") + "." : "") +
     " Source: " + SC.meta.source_workbook + ".";
 }
 // the Scorecard tab and the top of the Portfolio view carry the same matrix
+// No `note` on this mount: the Scorecard tab carries no closing prose.
 renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
-                  legend: "scLegend", note: "scNote", chart: "scChart" });
+                  legend: "scLegend", chart: "scChart",
+                  select: "scPropSelect" });
 renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
                   legend: "poscLegend", note: "poscNote", chart: "poscChart" });
 // property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
