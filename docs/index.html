@@ -185,6 +185,19 @@
     border-radius: 1px; display: grid; place-items: center;
     font-size: 9px; line-height: 1; font-weight: 700; color: #10130f; }
   .ck:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+  .ck[aria-checked="mixed"] { color: var(--text); }
+  /* The basket presets: one row, ruled off from the per-category grid below,
+     because they are a different kind of control — each drives a group of the
+     boxes under it rather than a series of its own. */
+  .ckpreset { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px;
+    margin: 2px 0 9px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .ckpreset[hidden] { display: none; }
+  .ckpreset .lbl { font-size: 9px; letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase; }
+  /* A preset stands for a group, not a series, so its box wears a text token
+     rather than a series colour — and the tick takes the card's own background
+     so it reads against the fill in either theme. */
+  .ckpreset .box { color: var(--panel); }
 
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   /* A grid item's default min-width is its content's size, and a Chart.js
@@ -643,6 +656,7 @@
           <select class="prop-select" id="baSelect" style="display:none;"
                   aria-label="Property"></select>
         </div>
+        <div class="ckpreset" id="baPresets" role="group" aria-label="Expense basket"></div>
         <div class="ckgrid" id="baCks" role="group" aria-label="Categories shown"></div>
         <div class="chartwrap" id="baWrap" style="height:330px;"><canvas id="budgetActual"></canvas></div>
         <div class="blu-note" id="baNote" style="color:var(--muted);"></div>
@@ -1301,26 +1315,37 @@ const gridCfg = { color: C.line, drawTicks: false };
 // Checkbox grid that shows and drives what a chart draws. One button per
 // series, laid out on a shared grid so the boxes line up in columns; the box
 // doubles as the series swatch, filled with its colour and ticked when on.
+// `isOn` may return true, false, or "mixed" — a box standing for a GROUP of
+// series is not on or off when only some of them are shown, and a tick there
+// would be a lie. Returns a repaint-all, because a grid that drives another
+// grid has to redraw the one it drove: ticking "Controllable" changes ten
+// category boxes, and each one paints only itself on its own click.
 function ckGrid(host, items, isOn, onToggle) {
   host.textContent = "";
+  const painters = [];
   items.forEach(it => {
     const b = elc("button", "ck");
     b.type = "button";
     b.setAttribute("role", "checkbox");
+    if (it.title) b.title = it.title;
     const box = elc("span", "box");
     b.appendChild(box);
     b.appendChild(elc("span", null, it.label));
     const paint = () => {
       const on = isOn(it);
       b.setAttribute("aria-checked", String(on));
-      box.textContent = on ? "\u2713" : "";
-      box.style.background = on ? it.color : "transparent";
+      box.textContent = on === "mixed" ? "\u2013" : on ? "\u2713" : "";
+      box.style.background = on === true ? it.color : "transparent";
       box.style.borderColor = it.color;
+      // a dash on the card rather than on the fill, since there is no fill
+      box.style.color = on === "mixed" ? it.color : "";
     };
+    painters.push(paint);
     b.addEventListener("click", () => { onToggle(it); paint(); });
     paint();
     host.appendChild(b);
   });
+  return () => painters.forEach(f => f());
 }
 const legendCfg = { labels: { boxWidth: 10, boxHeight: 10, padding: 16,
   font: { size: 10 } }, position: "top", align: "end" };
@@ -1628,6 +1653,27 @@ const bucketOrder = buckets => Object.keys(buckets).sort((a, b) => {
 // hyphen, to match the Operating Summary's variance columns.
 const signed$ = v => (v >= 0 ? "+" : "−") + fm$(Math.abs(v));
 const signed = (x, d = 1) => (x >= 0 ? "+" : "−") + fmPct(Math.abs(x), d);
+// The four groups the controllable basket takes out. Matched the way
+// scripts/populate_scorecard.py's NOT_CONTROLLABLE matches them -- as a
+// substring of the group's name, case-insensitively, off the same four
+// strings. The two are halves of one definition: the scorecard's Budget
+// Variance % grades this basket, and a page drawing a different one under the
+// same word is the disagreement this dashboard keeps trying not to publish.
+//
+// Prefix-anchored regexes lived here in two copies until 2026-09-16 and were
+// not the same rule: /^tax/ misses "Real estate & other taxes", which is what
+// the Align tree calls that group, so a property on that tree hit the
+// all-exclusions-found guard and had its controllable figures withheld for a
+// name the pipeline reads without trouble. The Landing's four groups match
+// identically either way, so no figure it publishes moves.
+const NOT_CONTROLLABLE = ["tax", "insurance", "utilit", "management fee"];
+const isNotControllable = n => NOT_CONTROLLABLE.some(k => String(n).toLowerCase().includes(k));
+// Every exclusion has to be found by name. A renamed group that silently
+// stopped matching would leave taxes inside "controllable" and the figure
+// would read a third too high with nothing to show for it, so callers withhold
+// rather than guess.
+const controllableMissing = names =>
+  NOT_CONTROLLABLE.filter(k => !names.some(n => String(n).toLowerCase().includes(k)));
 const elc = (tag, cls, text) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -2742,6 +2788,7 @@ async function renderBudgetActual(d) {
   const eyebrow = document.getElementById("baEyebrow");
   const wrap = document.getElementById("baWrap");
   const cks = document.getElementById("baCks");
+  const pre = document.getElementById("baPresets");
   const note = document.getElementById("baNote");
   const sel = document.getElementById("baSelect");
 
@@ -2755,6 +2802,7 @@ async function renderBudgetActual(d) {
 
   if (!pairs.length) {
     cks.hidden = true;
+    pre.hidden = true;
     sel.style.display = "none";
     wrap.textContent = "";
     const empty = elc("div", "empty");
@@ -2819,8 +2867,6 @@ async function renderBudgetActual(d) {
         }),
       };
     });
-    // Months whose actual carries a credit in some category -- see the note.
-    const reversedMonths = keys.filter((_, i) => series.some(s => s.actual[i] < 0));
     // Actual less plan, per category per month: positive is an overspend.
     // Null where the month has no plan -- a variance against nothing is not
     // zero, and a bar of zero there would read as "on budget".
@@ -2829,12 +2875,10 @@ async function renderBudgetActual(d) {
     });
 
     const sum = xs => xs.reduce((t, v) => t + (v || 0), 0);
-    const totBudget = sum(series.map(s => sum(s.budget)));
-    // Measured over the months that HAVE a plan, so an unplanned month cannot
-    // read as a saving. The note says how many were left out.
+    // Only the months that HAVE a plan, so an unplanned month cannot read as a
+    // saving. renderNote says how many were left out, and totals the rest over
+    // whatever is ticked rather than over the whole basket.
     const plannedIdx = keys.map((_, i) => i).filter(i => planned[i]);
-    const actualOnPlanned = sum(series.map(s => sum(plannedIdx.map(i => s.actual[i]))));
-    const variance = actualOnPlanned - totBudget;
 
     if (chart) { chart.destroy(); chart = null; }
     wrap.textContent = "";
@@ -2927,85 +2971,182 @@ async function renderBudgetActual(d) {
       },
     });
 
+    // ---- the two basket presets, above the per-category grid
+    // The same split the scorecard's Budget Variance % grades on, off the same
+    // shared NOT_CONTROLLABLE -- so "controllable" means one thing on this page.
+    // A group with no members is not offered: a property whose account groups
+    // name no tax, insurance, utilities or management fee has nothing for the
+    // non-controllable box to switch, and an empty control that does nothing is
+    // worse than no control.
+    const groups = [
+      { key: "ctrl", label: "Controllable",
+        names: names.filter(n => !isNotControllable(n)),
+        title: "Everything except taxes, insurance, utilities and the management "
+             + "fee \u2014 the basket a PM is answerable for, and the one the "
+             + "scorecard\u2019s Budget Variance % grades." },
+      { key: "fixed", label: "Non-controllable",
+        names: names.filter(isNotControllable),
+        title: "Taxes, insurance, utilities and the management fee \u2014 the four "
+             + "groups the controllable basket takes out. Largely set elsewhere, "
+             + "and between them most of this building\u2019s expense." },
+    ].filter(g => g.names.length);
+
+    const shownIn = g => g.names.filter(n => !hidden.has(n)).length;
+    const stateOf = g => {
+      const k = shownIn(g);
+      return k === 0 ? false : k === g.names.length ? true : "mixed";
+    };
+    const setGroup = (g, on) => g.names.forEach(n => {
+      if (on) hidden.delete(n); else hidden.add(n);
+    });
+    // Every category's visibility re-applied from `hidden`, since a preset
+    // moves several at once and setDatasetVisibility is per dataset.
+    const applyHidden = () => {
+      names.forEach((n, i) => chart.setDatasetVisibility(i, !hidden.has(n)));
+      // the net follows what is on screen, or unticking Taxes would leave a
+      // line floating a hundred thousand above bars it no longer describes
+      refreshNet();
+      chart.update();
+      renderNote();
+    };
+
     cks.hidden = false;
-    ckGrid(cks, names.map((n, i) => ({ label: n, color: colors[n], i })),
+    const repaintCats = ckGrid(cks,
+      names.map((n, i) => ({ label: n, color: colors[n], i })),
       it => !hidden.has(it.label),
       it => {
         if (hidden.has(it.label)) hidden.delete(it.label);
         else hidden.add(it.label);
-        chart.setDatasetVisibility(it.i, !hidden.has(it.label));
-        // the net follows what is on screen, or unticking Taxes would leave a
-        // line floating a hundred thousand above bars it no longer describes
-        refreshNet();
-        chart.update();
+        applyHidden();
+        repaintPresets();
       });
+
+    let repaintPresets = () => {};
+    pre.hidden = groups.length < 2;
+    if (!pre.hidden) {
+      pre.textContent = "";
+      pre.appendChild(elc("span", "lbl", "Basket"));
+      const host = elc("span");
+      host.style.display = "contents";
+      pre.appendChild(host);
+      repaintPresets = ckGrid(host,
+        groups.map(g => ({ label: g.label + " (" + g.names.length + ")",
+                           color: "var(--text)", title: g.title, g })),
+        it => stateOf(it.g),
+        it => {
+          const g = it.g, other = groups.find(x => x !== g);
+          if (stateOf(g) !== true) {
+            setGroup(g, true);                 // part-shown or hidden -> show it all
+          } else {
+            // Turning off the only group left would leave an empty chart, so it
+            // hands over to the other instead -- which is what "show me one or
+            // the other" wants, and the only case the two boxes behave as a
+            // pair rather than independently.
+            setGroup(g, false);
+            if (other && shownIn(other) === 0) setGroup(other, true);
+          }
+          applyHidden();
+          repaintCats();
+          // ckGrid repaints the button that was clicked; the handover above
+          // moves the OTHER one, which would otherwise sit reading "off" over
+          // the four bars it is the only thing still showing.
+          repaintPresets();
+        });
+    }
 
     eyebrow.textContent = "VARIANCE · ACTUAL LESS PLAN · "
       + shortMo(keys[0]).toUpperCase() + "\u2013" + shortMo(keys[keys.length - 1]).toUpperCase();
 
     const unplanned = keys.filter((_, i) => !planned[i]);
     const years = (b.years || []).map(y => y.year).join(" and ");
-    // The months that ran over, worst first -- the reason to look at the chart
-    const over = plannedIdx
-      .map(i => ({ i, v: series.reduce((t, s) => t + (s.variance[i] || 0), 0) }))
-      .filter(x => x.v > 0)
-      .sort((x, y) => y.v - x.v);
-    note.textContent =
-      "One bar a month: actual less plan, stacked into the categories the "
-      + "Expense Deep Dive uses, in the same colours. Above the line is an "
-      + "overspend, below it an underspend, and the dashed line is the month\u2019s "
-      + "net. The boxes above switch categories on and off, and the net follows "
-      + "them rather than being left behind \u2014 worth doing with Taxes, whose "
-      + "one reversal month sets the scale for all twelve and flattens everything "
-      + "else against it. "
-      + (plannedIdx.length === 0
-          ? "No month of this window has a budget on file \u2014 the plan"
-            + (years ? "s held cover " + years : " on file covers another year")
-            + ", and the statement runs " + shortMo(keys[0]) + "\u2013"
-            + shortMo(keys[keys.length - 1]) + ", so there is nothing to draw a "
-            + "variance against. "
-          : "Over the "
-            + (plannedIdx.length === keys.length ? "twelve months"
-                                                 : plannedIdx.length + " planned months")
-            + " the variance is " + signed$(variance)
-            + (totBudget ? " on a plan of " + fm$(totBudget)
-                           + " (" + signed(variance / totBudget) + ")" : "")
-            + " \u2014 " + (variance >= 0 ? "an overspend" : "an underspend") + ". "
-            + (over.length
-                ? over.length + " of the " + plannedIdx.length + " ran over, worst "
-                  + over.slice(0, 3).map(x => shortMo(keys[x.i]) + " " + signed$(x.v)).join(", ")
-                  + ". "
-                : "No month ran over. ")
-            + (unplanned.length
-                ? unplanned.length + " month(s) have no budget on file ("
-                  + unplanned.map(shortMo).join(", ") + ") and draw no bar: a variance "
-                  + "against nothing is not zero, and they are left out of the total "
-                  + "above rather than counted as a saving. "
-                : ""))
-      + "The figure above is the whole basket, ticked or not. Plan from the Drive "
-      + "\u201cBudgets\u201d folder (" + years + "), actual from the property\u2019s "
-      + "12-month statement \u2014 both grouped on the Align account tree through the "
-      + "COA mapping and tied out against their own total expenses month by month, "
-      + "so the two sides are the same basket rather than two slices of one."
-      // A month's actual can itself be negative -- an accrual statement books
-      // reversals and true-ups where it finds them -- and that shows up here as
-      // a large underspend that is a timing artefact rather than a saving.
-      + (reversedMonths.length
-          ? " " + reversedMonths.map(shortMo).join(", ")
-            + (reversedMonths.length === 1 ? " carries" : " carry")
-            + " negative amounts in the statement \u2014 accrual reversals and true-ups, "
-            + "booked in the month they were found \u2014 so the underspend "
-            + (reversedMonths.length === 1 ? "it shows" : "they show")
-            + " is a timing difference rather than money not spent."
-          : "")
-      // The scorecard grades a different question off the same two files, and
-      // the two answers can point opposite ways. Naming that here is cheaper
-      // than a reader finding it themselves and trusting neither.
-      + " Note this is the whole expense basket over the statement\u2019s twelve "
-      + "months; the scorecard\u2019s Budget Variance % is the controllable "
-      + "basket (taxes, insurance, utilities and the management fee taken out) "
-      + "over the calendar year to date, so the two measure different things "
-      + "and can point opposite ways.";
+
+    // The note follows the boxes. It reported the whole basket whatever was
+    // ticked until the basket presets arrived, which was defensible when the
+    // only reason to untick anything was to see past Taxes -- but the whole
+    // point of a Controllable preset is to get the controllable variance, and
+    // a headline that stayed on the full basket while the bars showed ten of
+    // fourteen categories would be answering a question nobody asked.
+    const renderNote = () => {
+      const on = series.filter(s2 => !hidden.has(s2.name));
+      const plan = sum(on.map(s2 => sum(s2.budget)));
+      const act = sum(on.map(s2 => sum(plannedIdx.map(i => s2.actual[i]))));
+      const vari = act - plan;
+      const over = plannedIdx
+        .map(i => ({ i, v: on.reduce((t, s2) => t + (s2.variance[i] || 0), 0) }))
+        .filter(x => x.v > 0)
+        .sort((x, y) => y.v - x.v);
+      const credits = keys.filter((_, i) => on.some(s2 => s2.actual[i] < 0));
+      const allOn = on.length === series.length;
+      // What the figures cover, said in the reader's words rather than a count
+      const basket = allOn ? "the whole basket"
+        : on.length === names.filter(n => !isNotControllable(n)).length
+          && on.every(s2 => !isNotControllable(s2.name))
+          ? "the controllable basket"
+          : on.length === names.filter(isNotControllable).length
+            && on.every(s2 => isNotControllable(s2.name))
+            ? "the non-controllable basket"
+            : "the " + on.length + " of " + series.length + " categories ticked";
+
+      note.textContent =
+        "One bar a month: actual less plan, stacked into the categories the "
+        + "Expense Deep Dive uses, in the same colours. Above the line is an "
+        + "overspend, below it an underspend, and the dashed line is the "
+        + "month\u2019s net. The Basket row switches the controllable and "
+        + "non-controllable halves, the boxes below it one category at a time, "
+        + "and the net and the figures here follow both \u2014 worth doing with "
+        + "Taxes, whose one reversal month sets the scale for all twelve and "
+        + "flattens everything else against it. "
+        + (plannedIdx.length === 0
+            ? "No month of this window has a budget on file \u2014 the plan"
+              + (years ? "s held cover " + years : " on file covers another year")
+              + ", and the statement runs " + shortMo(keys[0]) + "\u2013"
+              + shortMo(keys[keys.length - 1]) + ", so there is nothing to draw a "
+              + "variance against. "
+            : "Across " + basket + ", over the "
+              + (plannedIdx.length === keys.length ? "twelve months"
+                                                   : plannedIdx.length + " planned months")
+              + ", the variance is " + signed$(vari)
+              + (plan ? " on a plan of " + fm$(plan)
+                        + " (" + signed(vari / plan) + ")" : "")
+              + " \u2014 " + (vari >= 0 ? "an overspend" : "an underspend") + ". "
+              + (over.length
+                  ? over.length + " of the " + plannedIdx.length + " ran over, worst "
+                    + over.slice(0, 3).map(x => shortMo(keys[x.i]) + " " + signed$(x.v)).join(", ")
+                    + ". "
+                  : "No month ran over. ")
+              + (unplanned.length
+                  ? unplanned.length + " month(s) have no budget on file ("
+                    + unplanned.map(shortMo).join(", ") + ") and draw no bar: a variance "
+                    + "against nothing is not zero, and they are left out of the total "
+                    + "above rather than counted as a saving. "
+                  : ""))
+        + "Plan from the Drive \u201cBudgets\u201d folder (" + years + "), actual "
+        + "from the property\u2019s 12-month statement \u2014 both grouped on the Align "
+        + "account tree through the COA mapping and tied out against their own total "
+        + "expenses month by month, so the two sides are the same basket rather than "
+        + "two slices of one."
+        // A month's actual can itself be negative -- an accrual statement books
+        // reversals and true-ups where it finds them -- and that shows up here
+        // as a large underspend that is a timing artefact rather than a saving.
+        + (credits.length
+            ? " " + credits.map(shortMo).join(", ")
+              + (credits.length === 1 ? " carries" : " carry")
+              + " negative amounts in the statement \u2014 accrual reversals and "
+              + "true-ups, booked in the month they were found \u2014 so the "
+              + "underspend " + (credits.length === 1 ? "it shows" : "they show")
+              + " is a timing difference rather than money not spent."
+            : "")
+        // The scorecard grades a similar question off the same two files, and
+        // the two answers can still point opposite ways even on this basket.
+        + (allOn
+            ? " Note this is the whole expense basket; the scorecard\u2019s Budget "
+              + "Variance % is the controllable one \u2014 tick Controllable alone "
+              + "above to put this card on the same basket."
+            : " The scorecard\u2019s Budget Variance % grades this same controllable "
+              + "basket, but over the calendar year to date rather than the "
+              + "statement\u2019s twelve months, so the two windows still differ.");
+    };
+    renderNote();
   }
 
   if (pairs.length > 1) {
@@ -3403,20 +3544,15 @@ async function loadLanding() {
     // line starts where the statement does rather than being padded out.
     const doors = L.meta.units;
     const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const NOT_CONTROLLABLE = [/^tax/i, /^insurance/i, /^utilit/i,
-                              /^management fee/i];
     const m = await metricsJson();
     const eb = (((m || {}).expense_buckets || {}).properties || [])
       .find(x => x.slug === "the-landing") || null;
 
-    // Every exclusion has to be found by name. A renamed group that silently
-    // stopped matching would leave taxes inside "controllable" and the figure
-    // would read a third too high with nothing to show for it, so the line is
-    // withheld instead.
-    let ctrl = {}, ctrlNote = "", matched = [];
+    // See controllableMissing: every exclusion has to be found by name, or the
+    // line is withheld rather than drawn with taxes counted as controllable.
+    let ctrl = {}, ctrlNote = "";
     if (eb) {
-      matched = NOT_CONTROLLABLE.filter(re => Object.keys(eb.buckets).some(n => re.test(n)));
-      if (matched.length === NOT_CONTROLLABLE.length) {
+      if (!controllableMissing(Object.keys(eb.buckets)).length) {
         const [em, ey] = eb.period_end.split(" ");
         const end = (+ey) * 12 + MO.indexOf(em);
         eb.labels.forEach((_, i) => {
@@ -3426,7 +3562,7 @@ async function loadLanding() {
           Object.keys(eb.buckets).forEach(n => {
             const v = eb.buckets[n][i] || 0;
             total += v;
-            if (NOT_CONTROLLABLE.some(re => re.test(n))) excluded += v;
+            if (isNotControllable(n)) excluded += v;
           });
           ctrl[key] = total - excluded;
         });
@@ -3958,17 +4094,14 @@ async function loadLandingDrive() {
           than the workbook: residential_units is the apartment count with
           Yardi's two waitlist placeholders taken out. ---- */
   const doors = dir ? dir.residential_units : null;
-  const NOT_CONTROLLABLE = [/^tax/i, /^insurance/i, /^utilit/i, /^management fee/i];
-  // Every exclusion has to be found by name. A renamed group that silently
-  // stopped matching would leave taxes inside "controllable" and the figure
-  // would read a third too high with nothing to show for it, so it is withheld
-  // instead — the same rule the workbook-fed card applies.
+  // See controllableMissing — the same all-must-be-found rule the workbook-fed
+  // card applies, off the same shared definition.
   let ctrl = null, ctrlWhy = "";
   if (!eb) {
     ctrlWhy = "no T12 statement has reached the pipeline";
   } else if (!doors) {
     ctrlWhy = "the unit directory has not been fetched, so there is no door count to divide by";
-  } else if (NOT_CONTROLLABLE.some(re => !Object.keys(eb.buckets).some(n => re.test(n)))) {
+  } else if (controllableMissing(Object.keys(eb.buckets)).length) {
     ctrlWhy = "the statement's account groups no longer name taxes, insurance, "
             + "utilities and the management fee the way this excludes them";
   } else {
@@ -3977,7 +4110,7 @@ async function loadLandingDrive() {
       Object.keys(eb.buckets).forEach(n => {
         const v = eb.buckets[n][i] || 0;
         total += v;
-        if (NOT_CONTROLLABLE.some(re => re.test(n))) excluded += v;
+        if (isNotControllable(n)) excluded += v;
       });
       return total - excluded;
     });

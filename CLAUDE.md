@@ -1020,6 +1020,66 @@ on the whole basket: unticking Taxes and leaving a line drawn through
 $270k of tax reversal would put it a screen away from the bars it claims to
 summarise.
 
+### The two basket presets
+
+A **Basket** row sits above the per-category grid with two boxes —
+**Controllable** and **Non-controllable** — each switching its whole group of
+categories. They are the same split the scorecard's `Budget Variance %` grades
+on, off the same shared `NOT_CONTROLLABLE`, so "controllable" means one thing
+on this page.
+
+They are worth having because **the two baskets point opposite ways**, and the
+whole basket hides it:
+
+| Basket | Sep 25–Aug 26 variance |
+| --- | --- |
+| Whole | **−$44k** on $4.45M — a 1.0% **under**spend |
+| Controllable | **+$170k** on $1.66M — a 10.3% **over**spend |
+| Non-controllable | **−$214k** on $2.79M — a 7.6% underspend, nearly all of it Aug's tax reversal |
+
+So the building is running 10% over on what a PM is answerable for, and the
+headline reads 1% under because a tax true-up in the newest month more than
+covers it. That is the card's most useful reading and it was invisible until
+the presets existed.
+
+Three things about how they behave:
+
+- **Tri-state.** A box standing for a group is not on or off when only some of
+  its categories are shown, so it reads `mixed` and draws a dash — a tick there
+  would be a lie. `ckGrid` gained that third state and a repaint-all, because a
+  grid that drives another grid has to redraw the one it drove.
+- **They hand over rather than empty the chart.** Turning off the only group
+  still showing switches the other one on as it goes — which is what "show me
+  one or the other" wants, and the only case the two boxes behave as a pair
+  rather than independently. Every other click is plain: not-fully-on turns the
+  group fully on, fully-on turns it off.
+- **The note follows them.** It reported the whole basket whatever was ticked
+  until the presets arrived, which was defensible when the only reason to untick
+  anything was to see past Taxes. The point of a Controllable preset is to get
+  the controllable variance, so the figures, the months-that-ran-over list and
+  the closing comparison against the scorecard all recompute from what is shown
+  and the sentence names which basket it is talking about.
+
+A group with no members is not offered, and with fewer than two the row hides
+itself: a property whose account groups name no tax, insurance, utilities or
+management fee has nothing for the non-controllable box to switch, and an empty
+control that does nothing is worse than no control.
+
+### One definition of "controllable" on the page
+
+`NOT_CONTROLLABLE` was written out **twice** in `index.html` as prefix-anchored
+regexes, and a third time in `populate_scorecard.py` as substrings. That is one
+definition in three copies, and two of them were not the same rule: `/^tax/`
+misses **`Real estate & other taxes`**, which is what the Align tree calls that
+group. Checked against the real bucket names — The Landing matches 4 of 4 either
+way, so nothing it publishes moves, but **Palma matches 3 of 4 on the prefix
+rule**, which trips the all-exclusions-found guard and withholds its
+controllable figures for a name the pipeline reads without trouble.
+
+There is now one `NOT_CONTROLLABLE` on the page, matched as the pipeline
+matches it, with `isNotControllable()` and `controllableMissing()` beside it;
+both existing callers and the presets read it.
+
 That shared palette is now a real shared thing rather than two copies:
 `BUCKET_PAL`, `bucketColor` and `bucketOrder` in `index.html` are what both
 cards call. The order is the deep dive's own — largest first, `Other` last,
