@@ -1282,9 +1282,9 @@ async function loadAll() {
       renderTable(host, {
         id: "t-budget-" + (pr.slug || i), group: "Portfolio",
         title: "Budget, by month — " + (pr.name || pr.slug),
-        feeds: "Budget vs Actual card (Portfolio tab) — subtracted from the "
-             + "actuals to give the variance it draws; Budget Variance % on the "
-             + "scorecard",
+        feeds: "Budget vs Actual card (Portfolio tab) — the plan line in its "
+             + "Total view, and subtracted from the actuals for the variance in "
+             + "both; Budget Variance % on the scorecard",
         note: [pr.basis,
                years.map(y => y.year + " from " + (y.source_file || "—")
                               + (y.landed_at ? ", landed " + y.landed_at : "")).join(" · "),

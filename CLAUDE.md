@@ -1011,17 +1011,53 @@ removed (verified by mutation).
 
 ## Budget vs Actual (Portfolio tab)
 
-The Portfolio tab's `Budget vs Actual` card is a T12 of **variance**: one bar
-a month, actual less plan, **stacked into the same Align-tree categories the
-Expense Deep Dive uses** and painted in the same colours, so a reader can move
-between the two cards without relearning which colour is what. Above the line
-is an overspend, below it an underspend.
+The Portfolio tab's `Budget vs Actual` card has **two views**, on a `Total` /
+`Categories` toggle in its head, both over the statement's trailing twelve
+months.
 
-It drew the plan and the actual as two bars side by side until 2026-09-16.
-Both were legible, but twenty-four bars a screen answered "how big is this
-building" — which the Expense Deep Dive already answers — where one bar of the
-difference answers "how far off the plan was it", which nothing else did. The
-variance was the number a reader had to do in their head from the old shape.
+### Total — the default
+
+Two lines over the whole expense basket: the plan **dashed and muted**, the
+actual **solid in the page's accent**. The plan is a yardstick rather than a
+series, which is the same idiom the Categories view's net line uses.
+
+Where the category boxes sit in the other view, Total lists **every month's
+variance and the two totals that get quoted**:
+
+| Summary | Window | The Landing |
+| --- | --- | --- |
+| **YTD** | calendar year to date — Jan through the statement's newest month | **−$99k**, −3.3% of $3.04M |
+| **T12** | the window the chart draws, Sep–Aug | **−$44k**, −1.0% of $4.45M |
+
+Both are on the card because they are **different windows, not two goes at one
+figure** — and YTD is deliberately the scorecard's own window, so the two are
+comparable once you also match the basket (the KPI takes the controllable one;
+see the presets below).
+
+The monthly figures are coloured by **favourability, not by sign** — over plan
+red, under plan green — the way the Operating Summary's variance columns are.
+On expense, less than planned is the good direction whatever the arithmetic
+sign.
+
+**Total always draws every category.** The basket presets are a Categories-view
+control, and a "total" that quietly left four groups out would not be one — so
+the note reads it as the whole basket whatever `hidden` happens to hold from a
+previous visit to the other view.
+
+### Categories
+
+One bar a month, actual less plan, **stacked into the same Align-tree
+categories the Expense Deep Dive uses** and painted in the same colours, so a
+reader can move between the two cards without relearning which colour is what.
+Above the line is an overspend, below it an underspend.
+
+The card drew the plan and the actual as two bars side by side until
+2026-09-16, and was variance-only until the Total view arrived later the same
+day. Twenty-four bars a screen answered "how big is this building" — which the
+Expense Deep Dive already answers — where the difference answers "how far off
+the plan was it", which nothing else did. Total is the default because that is
+the card's first question; Categories is where you go once the answer is yes
+and the next one is which category did it.
 
 A dashed **net line** rides over the bars. A month with offsetting misses
 stacks positives up and negatives down and leaves its net in neither
@@ -1030,6 +1066,13 @@ over" at a glance. The net **follows the checkbox grid** rather than staying
 on the whole basket: unticking Taxes and leaving a line drawn through
 $270k of tax reversal would put it a screen away from the bars it claims to
 summarise.
+
+The shared palette is a real shared thing rather than two copies:
+`BUCKET_PAL`, `bucketColor` and `bucketOrder` in `index.html` are what both
+cards call. The order is the deep dive's own — largest first, `Other` last,
+computed once from the actuals — so toggling categories never re-sorts and
+nothing is repainted under the reader. A category only the *budget* names is
+appended after and steps past any hue already spoken for.
 
 ### The two basket presets
 
@@ -1091,13 +1134,6 @@ There is now one `NOT_CONTROLLABLE` on the page, matched as the pipeline
 matches it, with `isNotControllable()` and `controllableMissing()` beside it;
 both existing callers and the presets read it.
 
-That shared palette is now a real shared thing rather than two copies:
-`BUCKET_PAL`, `bucketColor` and `bucketOrder` in `index.html` are what both
-cards call. The order is the deep dive's own — largest first, `Other` last,
-computed once from the actuals — so toggling categories never re-sorts and
-nothing is repainted under the reader. A category only the *budget* names is
-appended after and steps past any hue already spoken for.
-
 Both sides are the same basket by construction. `parse_budget` is a thin
 wrapper over the T12 parser, so a budget is grouped through the same COA
 mapping and refused unless its groups tie out against its **own** TOTAL
@@ -1117,13 +1153,15 @@ year before is untouched.
 keys** rather than the statement's bare `Jan`..`Dec` labels. Bare labels cannot
 say which year a month belongs to and this series spans two by design.
 
-Three things the card is careful about, because each would be invisible in the
-numbers:
+### Three things both views are careful about
 
-- **A month in a year with no budget on file publishes `null`, and draws no
-  plan bar.** Zero would read as a plan of nothing and turn an unplanned month
-  into a 100% overspend. Those months are named on the card and left out of
-  its totals rather than counted as a saving.
+Each would be invisible in the numbers:
+
+- **A month in a year with no budget on file publishes `null`.** Zero would
+  read as a plan of nothing and turn an unplanned month into a 100% overspend.
+  Categories draws no bar there, Total breaks the plan line and its list says
+  `no plan`, and both leave the month out of their totals rather than counting
+  it as a saving.
 - **A category a *planned* year does not name is a real zero.** That year's
   buckets tie out against its own total expenses, so nothing is missing from
   it — the plan for that category is nil, not unknown. The distinction is the
