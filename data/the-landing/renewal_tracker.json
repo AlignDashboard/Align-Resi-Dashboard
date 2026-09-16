@@ -1,10 +1,10 @@
 {
   "report_type": "renewal_tracker",
   "property": "The Landing",
-  "as_of": "2026-12",
+  "as_of": "2026-11",
   "covers": {
     "from": "2024-01",
-    "to": "2026-12"
+    "to": "2026-11"
   },
   "months": [
     {
@@ -665,11 +665,10 @@
       "offered_rent": 87465.0,
       "wtd_increase": 0.086859,
       "statuses": {
-        "MTM": 1,
+        "MTM": 2,
         "Notice": 3,
         "Offer Accepted": 1,
-        "Renewed": 12,
-        "Waiting For Response": 1
+        "Renewed": 12
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -719,25 +718,6 @@
       "unresolved": 0,
       "sheet": "November 2026",
       "header_row": 9
-    },
-    {
-      "month": "2026-12",
-      "rows": 6,
-      "mean_increase": 0.158289,
-      "leases": 6,
-      "current_rent": 28463.0,
-      "offered_rent": 32984.0,
-      "wtd_increase": 0.158838,
-      "statuses": {
-        "Offer Accepted": 3,
-        "Waiting For Response": 3
-      },
-      "offer_basis": [
-        "offered_rent (a rate)"
-      ],
-      "unresolved": 0,
-      "sheet": "December 2026",
-      "header_row": 9
     }
   ],
   "mtm": {
@@ -751,9 +731,9 @@
     "units_with_charge": 0,
     "statuses": {
       "(blank)": 3,
-      "Notice": 2,
+      "Notice": 4,
       "Renewed": 3,
-      "Waiting For Response": 23
+      "Waiting For Response": 21
     },
     "rows": [
       {
@@ -901,7 +881,7 @@
         "offer_basis": null
       },
       {
-        "status": "Waiting For Response",
+        "status": "Notice",
         "unit": 113,
         "unit_type": "lab5",
         "mtm_charge": "\u00a0",
@@ -1045,7 +1025,7 @@
         "offer_basis": null
       },
       {
-        "status": "Waiting For Response",
+        "status": "Notice",
         "unit": 734,
         "unit_type": "laa1",
         "mtm_charge": "\u00a0",
@@ -1254,18 +1234,27 @@
       }
     ]
   },
-  "unread_sheets": [],
+  "unread_sheets": [
+    {
+      "sheet": "December First 2026",
+      "why": "not a month sheet"
+    },
+    {
+      "sheet": "December Second 2026 ",
+      "why": "not a month sheet"
+    }
+  ],
   "problems": [
     "2025-04 appears on two sheets ('April 2025 - Pending Approval' with 24 offers and 'April 2025' with 25); the fuller one is used",
     "2025-07 appears on two sheets ('July 2025 (2)' with 21 offers and 'July 2025' with 21); the fuller one is used"
   ],
-  "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
-  "landed_at": "2026-09-08T23:28:49.326Z",
+  "source_file": "2026-09-15 Landing 2025 Renewal Tracker - Full (43).xlsx",
+  "landed_at": "2026-09-15T20:28:48.757Z",
   "checks": [
     {
       "check": "month sheets read",
       "ok": true,
-      "note": "36 month sheet(s) read, 0 not read"
+      "note": "35 month sheet(s) read, 2 not read"
     },
     {
       "check": "MTM roster read",
