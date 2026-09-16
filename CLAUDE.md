@@ -197,6 +197,17 @@ Two things the grid did that a bare number does not, and both are kept:
   link hint — is on hover, composed by the same `scCellTitle` the scorecard tab
   uses, so the two cannot word it differently. A cell that is reported but not
   graded gets no grade word rather than an invented one.
+
+  **A below-target tile prints its value red** (`.kpi .v.below`); exceeding and
+  in-range keep the amber, so red on this page means one thing rather than "not
+  the usual colour". The colour follows the grid's own rule for what may be
+  coloured at all — a report supplied the number *and* the published band could
+  place it — so a `value_only` cell (a figure the band cannot grade, e.g. a
+  property in lease-up) stays amber even where the workbook's hand-set symbol
+  says below, and an absent `—` is never red. Verified by mutation: dropping the
+  graded check turns the lease-up case red and fails that check. The subtitle
+  still says "below target" in words, since the grid's legend went with it and
+  colour alone is not a label.
 - **The Drive gate.** `scdFeedIsDrive` is asked per tile exactly as the grid
   asked it, so a cell whose family the workbook wrote last reads `— not
   Drive-fed today` rather than quietly borrowing a workbook number — and that

@@ -378,6 +378,14 @@
   .kpi:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   .kpi .v { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.2; }
   .kpi .v.amber { color: var(--amber); }
+  /* A tile whose graded scorecard cell sits below its published band.
+     Same specificity as .amber above and later in the sheet, so it wins
+     where both are set. Only below is coloured: exceeding and in-range
+     keep the amber, so red on this page means one thing rather than
+     "not the usual colour". The subtitle still says "below target" in
+     words, since the grid's legend went with it and colour alone is
+     not a label. */
+  .kpi .v.below { color: var(--red); }
   .kpi .k { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-top: 5px; line-height: 1.5; }
   .kpi .s { font-size: 9px; color: var(--muted); margin-top: 3px; letter-spacing: .5px; }
   /* jump affordance, only on the tiles that link somewhere */
@@ -4005,10 +4013,10 @@ async function loadLandingDrive() {
   function tileRow(hostId, tiles) {
     const host = document.getElementById(hostId);
     host.textContent = "";
-    tiles.forEach(([v, k, s, target, where, title]) => {
+    tiles.forEach(([v, k, s, target, where, title, below]) => {
       const kp = elc("button", "kpi");
       kp.type = "button";
-      kp.appendChild(elc("div", "v amber", v));
+      kp.appendChild(elc("div", below ? "v below" : "v amber", v));
       kp.appendChild(elc("div", "k", k));
       kp.appendChild(elc("div", "s", s));
       const arrow = elc("span", "jump", "↓");
@@ -4125,11 +4133,16 @@ async function loadLandingDrive() {
       const st = prop.statuses[t.kpi];
       const src = (prop.status_source || {})[t.kpi];
       const graded = src === "measured" && !unscored.has(t.kpi) && SCD_GRADE[st];
+      // Red on exactly what the grid would have coloured: a report supplied the
+      // number AND the published band could place it. A hand-set workbook symbol
+      // with no measurement behind it, or a cell the band cannot grade, stays
+      // amber -- otherwise the colour asserts a verdict nothing reached.
       return [String(shown[0]), t.label,
               (graded ? graded + " · " : "") + shown[1] + asOf(t.kpi),
               t.to, t.where,
               scCellTitle(t.kpi, st, v, unscored.has(t.kpi), null, src)
-                + "\n\nFeed: " + owner.what];
+                + "\n\nFeed: " + owner.what,
+              !!graded && st === "below"];
     });
     tileRow("dkpisSc", tiles);
   })();
