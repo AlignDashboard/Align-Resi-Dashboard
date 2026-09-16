@@ -236,6 +236,38 @@ Two details worth knowing:
 `SCD_RATE_ONLY` went with the grid: its only consumer was the grid's `# of
 Renewals` cell, which is not one of the four tiles.
 
+### The Delinquency card's headings
+
+The left column is **one heading per bar, carrying that bar's own value** —
+`$5,121 / 31-60 DAYS` and so on. It used to hold three derived stats (the rate,
+the past-30 total, the over-90 figure); the total was the three bars added up
+and the over-90 was one of them, so only the rate was not already on the chart,
+and it sits in its own `.statrow` above the row.
+
+**Each heading is placed at its bar's centre, read from the chart's own y
+scale** (`chart.scales.y.getPixelForValue(i)`), from a plugin hook that fires on
+every layout. Spreading them evenly down the block misses: Chart.js insets the
+plot area by the x-axis labels at the bottom and by nothing at the top. The
+chart's own y-axis labels come off with them — a heading beside a bar names it,
+and printing the bucket twice on one row is noise — and the `stacked` fallback
+puts them back, for a width narrow enough that the chart wraps onto its own
+line and there is nothing left to line up with.
+
+The **eyebrow is the report's as-of date and nothing else**. A `YYYY-MM-DD`
+string handed to `new Date()` parses as UTC midnight and renders a day early
+west of Greenwich, so the parts are passed to the constructor separately; this
+is the one place on the page formatting a date with no time in it.
+
+**`.chartwrap` carries `min-width: 0`**, which is the same trap `.grid > *`
+guards against one level further in: a flex item's default min-width is its own
+content's, and a Chart.js canvas holds the pixel width it last rendered at, so
+a chartwrap in a flex row never shrinks — it keeps its first-render width at
+every viewport below it. That wrapped the delinquency row at every width under
+1440 (leaving the headings lining up with a chart 222px further down) and held
+Unit Inventory's chart at 902px inside a 340px card, **scrolling the whole page
+sideways by 555px at phone width**. Both were fixed by the one rule; it is a
+no-op for a chartwrap in normal block flow, where min-width is already 0.
+
 Since `1819adb` and `2f34b17` moved `monthly_pl` and the expense ratio onto the
 statement's **total expenses** line, everything on this card reconciles: NOI
 margin agrees with the workbook's (72.5% against 72.6% for Jul 2026, the
