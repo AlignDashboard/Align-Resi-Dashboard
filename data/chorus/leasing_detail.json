@@ -199,6 +199,47 @@
       "problems": [
         "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
       ]
+    },
+    {
+      "week_ending": "2026-09-20",
+      "source_file": "2026-09-15 09.14.2026- 09.20.2026- Chorus - Daily Report Copy.xlsx",
+      "landed_at": "2026-09-16T01:28:33.195Z",
+      "totals": {
+        "leases": 0,
+        "lease_rent": 0,
+        "prior_rent": 0,
+        "tradeout_amount": 0,
+        "tradeout_pct_mean": null,
+        "sqft": 0,
+        "concession": 0
+      },
+      "leases": [],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 0,
+          "leases": 0
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-09-20 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Chorus (from the filename)"
+        }
+      ],
+      "problems": [
+        "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
+      ]
     }
   ]
 }
