@@ -1634,6 +1634,35 @@ site within a minute or two. `.github/workflows/update.yml` regenerates
 Changes to `index.html` will not appear until they are on `main`. A hard refresh
 is often needed after a deploy, since the page caches aggressively.
 
+### The cron run re-syncs to `main` before it builds
+
+A scheduled run checks out `main` at **run start**, and the run is long — the
+Drive fetch alone was 4h34m on 2026-09-16. Everything after it therefore built
+the repo as it was that morning, and the push-retry loop's replay then put that
+output over whatever had landed since. Every step green, nothing in the log.
+
+That is not hypothetical. Run #86 checked out `b8bcf4d` at 15:20 and committed
+at 19:55; because its `build_metrics.py` predated the budget work it published a
+`metrics.json` with **no `budget` block** (the Budget vs Actual card read
+"no budget has reached the pipeline" with two budgets sitting parsed in Drive),
+rewrote `data/the-landing/budget.json` in the older single-year shape, and
+dropped a hand-added EliseAI day with the scorecard cells behind it — four
+commits undone.
+
+So `update.yml` re-syncs **once, immediately after the fetch**:
+`git fetch origin main` and, if it moved, `git reset --hard` onto it. Two
+things make that the right place rather than at commit time:
+
+- **Everything below it is minutes, not hours**, so one sync closes almost the
+  whole window. A check at commit time could only refuse the day's data.
+- **`_downloads/` is gitignored**, so the reports this run just fetched survive
+  the reset and nothing is downloaded twice.
+
+It takes the newer **data** as well as the newer code, which is the half that
+saves a hand-added feed: the build then accumulates onto the current stores
+rather than the run-start ones. The residual minutes between building and
+pushing are what the retry loop's replay already covers.
+
 ### Keeping data out of git history (migration, not yet active)
 
 Committing the data JSON means every past month's financials stay readable in

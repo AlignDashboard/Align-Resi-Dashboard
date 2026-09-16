@@ -43,6 +43,40 @@ jobs:
           GDRIVE_REFERENCE_FOLDER_ID: ${{ secrets.GDRIVE_REFERENCE_FOLDER_ID }}
         run: python scripts/fetch_drive.py
 
+      # The checkout above is taken at run START, and the Drive fetch is hours
+      # of it -- 4h34m on 2026-09-16. So by the time anything is built, main
+      # can carry code and data this run has never seen, and everything below
+      # would then rebuild the repo as it was this morning and push that over
+      # the day's work. That is not hypothetical: run #86 checked out b8bcf4d
+      # at 15:20, committed at 19:55, and because its build_metrics predated
+      # the budget block it published a metrics.json with no budget in it,
+      # rewrote data/the-landing/budget.json in the older single-year shape,
+      # and dropped a hand-added EliseAI day -- four commits undone with every
+      # step green and nothing in the log to say so.
+      #
+      # Everything from here to the commit is minutes, not hours, so re-syncing
+      # once, here, closes almost the whole window. The reports this run just
+      # fetched are safe: _downloads/ is gitignored, so a reset does not touch
+      # them and nothing is downloaded twice. The residual minutes are what the
+      # push retry below already replays over.
+      - name: Re-sync to main before building
+        run: |
+          set -euo pipefail
+          before=$(git rev-parse HEAD)
+          if ! git fetch -q origin main; then
+            echo "::warning::could not fetch main; building on $before as checked out"
+            exit 0
+          fi
+          after=$(git rev-parse FETCH_HEAD)
+          if [ "$before" = "$after" ]; then
+            echo "Code and data are current ($before)."
+            exit 0
+          fi
+          echo "::warning::main moved during the Drive fetch; rebuilding on it"
+          git log --oneline "$before..$after" 2>/dev/null | sed 's/^/  /' || true
+          git reset -q --hard "$after"
+          git log -1 --format='building on %h %s'
+
       - name: Build metrics
         run: python scripts/build_metrics.py
 

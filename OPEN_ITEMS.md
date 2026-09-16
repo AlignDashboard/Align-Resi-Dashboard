@@ -91,30 +91,66 @@ Documented in CLAUDE.md and built but not activated. Strictly ordered.
 
 ## G · Found while building the Drive-only Landing tab
 
-None is blocked on anyone, and all three were visible only once a page had to
-state per-cell provenance out loud. G3 is the one to take first: it is live.
+None is blocked on anyone, and each was visible only once a page had to state
+per-cell provenance out loud. G3 is the one to take first: it is live.
 
 | # | Item | What it blocks | Live and uncertain |
 | --- | --- | --- | --- |
 | G1 | **`measured[slug].kpis` names cells this feed did not fill.** `populate_scorecard` builds it from `prop.values`, which earlier runs also wrote, so a `--from-pipeline` run for The Landing records six KPIs against the Drive AR report when that report answers two — the other four are `--from-landing` fills off the workbook. Two consequences today: the data-flow page credits the AR report with "6 KPI cell(s)", and `scKpiAsOf` hands a workbook-fed cell the AR report's as-of date. The fix is to record the KPIs *this run* filled (the `filled` loop already knows them) as a separate key, leaving `kpis` alone so the arrivals table does not change shape. Until then `SCD_DRIVE_FEEDS` in `index.html` narrows the family by hand | Honest per-cell provenance anywhere the page reads `<prefix>kpis` | contained — the Drive tab narrows it explicitly and says so |
 | G2 | **Publish an aggregate delinquency block.** `data/<slug>/delinquency.json` is gitignored because it is unit level, so the only delinquency numbers that reach the page are the two scorecard cells — the rate and the 30/60/90 split. But `summary` already holds the aggregate the aging chart needs (gross owed, the four buckets, unit counts) and carries no names. Publishing that block into `metrics.json` from `store_report`'s already-scrubbed output would give the Drive tab a real aging chart and a gross-owed figure, and cost nothing in exposure — the aggregates are strictly less than what the scorecard cell already publishes | The Drive tab's delinquency card is a rate and a split where it could be the chart The Landing has | no |
 | G4 | **Regenerating `lineage.json` outside CI silently downgrades any flow whose store is gitignored.** `evidence_for_store` reads `data/<slug>/*.json`, and `rent_roll.json` / `delinquency.json` are gitignored (unit level, arrive with names), so they exist only during a pipeline run. Running `build_lineage.py` in a fresh clone therefore reports the rent roll — which landed 2026-09-11 and closed C4 — as `waiting`, and would publish a map saying a live feed has never arrived. Worked around by hand this time (the three fields the evidence reads — `as_of`, `source_file`, `landed_at` — are all already published in `metrics.json`, so a local stub restores the truth). The fix is to let `evidence_for_store` fall back to the published aggregate for a store it cannot read, rather than to remember | An honest lineage page from any checkout, not just CI's | contained — checked before committing, and `update.yml` regenerates from the real data each run |
-| G5 | **The scorecard's `Budget Variance %` is a statement behind.** The published cell is `+$116,402/+12.1%` for Jan–Jul 2026; the T12 statement moved to Aug 2026 on 2026-09-14 and the same fill now computes `+$152,298/+14.2%` for Jan–Aug. Nothing is wrong — `populate_scorecard` simply has not run since the statement arrived, and the next daily run restates it. Noted so the gap between the card and the KPI is not read as a disagreement between them | Nothing; it self-corrects on the next `--from-landing` run | no — the published figure is correct for the window it names |
 | G6 | **Is a 10% controllable overspend the story the scorecard should be telling?** The Budget vs Actual card's basket presets put the two side by side for the first time: Sep 25–Aug 26 the controllable basket is **+$170k / +10.3% over** while the whole basket is **−$44k / −1.0% under**, the difference being Aug's tax true-up. The scorecard's `Budget Variance %` already grades the controllable basket, so it is not wrong — but it grades calendar-YTD, and the card's T12 is the window a reader compares against the rest of the Portfolio tab. Worth a look at whether the +10.3% is concentrated (Jul 26 alone is +$36k on payroll) or spread | Nothing on the page; this is a question about the building, not the pipeline | no — both figures are correctly based and both are stated with their basket and window |
 | G3 | **A `--from-landing` run took The Landing's delinquency cells back off the Drive report, unnoticed.** `Total Deliquency` and `Split Between 30/60/90` are filled by *either* `populate_scorecard --from-pipeline` (the Drive `rs_rp_DelinquencySummaryReport`) or `--from-landing` (the workbook's Source Delinquency tab); they own the same two cells and the last run wins. The 2026-09-01 run had put the Drive report of 2026-08-31 in front — B4 turns on that — and the 2026-09-03 run that added Concession Load % put the workbook of **2026-07-20** back, moving the published rate from **6.7% to 4.6%** and the split from `5,780/5,733/1,356` to `6,708/539/3,586`. Nothing failed and nothing said so: `measured` records the workbook as the source, and the page reports its arrival time, so the cell looks healthy. Two fixes, and they are independent: run `--from-pipeline` for this property after any `--from-landing` run (or have `--from-landing` skip cells a Drive feed already owns, the way `populate_building_metrics.owned_by_other_feeds` does), and give the two feeds distinct key families so one cannot silently replace the other | Whether The Landing's AR cell is the 2026-08-31 Drive report or a six-week-old workbook tab; B4's comparison, which assumed the Drive report was still the owner | **yes** — the live page publishes 4.6% off the workbook while a same-week Drive report sits parsed and unused |
 
 ## H · How the scorecard actually refreshes
 
 Found 2026-09-15 by checking the published cells against what a fill would
-produce today. Both are about *when* a cell moves rather than what it means,
-which is why neither shows up as a wrong-looking number on the page.
+produce today. H1 closed 2026-09-16; what is left is about *where* a cell is
+read from rather than what it means, which is why it does not show up as a
+wrong-looking number on the page.
 
 | # | Item | What it blocks | Live and uncertain |
 | --- | --- | --- | --- |
-| H1 | **`populate_scorecard --from-landing` is never run by the cron.** `update.yml` runs `--from-pipeline` per property (which fills the two delinquency cells) and nothing else, so the five cells `--from-landing` still owns alone — NOI Margin %, Concession Load %, Controllable OpEx/Unit, Budget Variance %, Month to Month Leases — only move when someone runs the command by hand. (Loss to Lease % came off this list on 2026-09-15: it is filled by both paths from the same aggregate, so the daily `--from-pipeline` run keeps it current — which is the shape the other five want.) Two of them are **demonstrably stale right now**, because the Aug 2026 statement landed and they did not follow it: Controllable OpEx/Unit publishes **$6,697** where a fill today gives **$6,757**, and Budget Variance % publishes **+$116,402/+12.1% (Jan–Jul)** where a fill today gives **+$152,298/+14.2% (Jan–Aug)**. Neither is wrong-looking on the page; both are last month's answer with this month's framing. Fix is a step in `update.yml` after the `--from-pipeline` loop — but see G3 first, because running it unconditionally is what takes the delinquency cells back off the Drive report | Every statement-derived KPI tracking the statement | **yes** — two cells publish July figures a month after August arrived |
 | H2 | **The three workbook-fed KPIs cannot follow the statement at all.** Loss to Lease %, NOI Margin % and Concession Load % are read from `docs/landing.json`, which is refreshed by hand in Excel, so they are pinned to the workbook's last extract (Jul 2026) no matter how many statements arrive. The pipeline now carries the same series to the cent — `metrics.json` `rent_capture` is on Aug 2026, thirteen months — so all three could be sourced from it and would then move on their own. That is the rewiring of `facts_from_landing` flagged when the block was built: not hard, but it decides which feed owns those cells, so it wants doing with G3 rather than before it | Three KPIs that move when a report arrives rather than when someone opens Excel | contained — the figures are right for the month they name |
 
 ## Closed
+
+2026-09-16 — **the daily cron published four-hour-old code over the day's work.**
+The Budget vs Actual card read "no budget has reached the pipeline" with two
+budgets sitting parsed in Drive. Drive was fine and nothing had been renamed:
+run #86 checked out `b8bcf4d` at 15:20:19Z, ran 4h34m (the Drive fetch is nearly
+all of it) and committed at 19:54:51Z. Its `build_metrics.py` predated the
+budget work, so it wrote a `metrics.json` with **no `budget` block**, rewrote
+`data/the-landing/budget.json` in the older single-year shape, and — because the
+push-retry loop replays this run's files over whatever landed since — dropped a
+hand-added EliseAI day and the scorecard cells behind it. Four commits undone
+with every step green and nothing in the log to say so; the cadence makes it
+routine rather than unlucky, since runs #83–#86 each took four to five hours.
+`update.yml` now re-syncs to `main` **once, right after the fetch** — the one
+place where the sync is cheap (everything below it is minutes), the reports
+survive it (`_downloads/` is gitignored), and it takes the newer data as well
+as the newer code, which is the half that saves a hand-added feed. Verified
+against both a normal and a genuinely shallow clone. The clobbered data was
+rebuilt from the same two budget files and the store now carries 2025 and 2026,
+each tying out to the cent. Residual: the minutes between building and pushing
+are still the replay's, which is a window worth watching but not one that
+undoes a morning.
+
+Two items went with it. **G5** self-corrected exactly as predicted — the run
+restated `Budget Variance %` from `+$116,402/+12.1%` (Jan–Jul) to
+`+$152,298/+14.2%` (Jan–Aug), and the same figure comes back from the per-year
+store, which is the check that the new selection picks the statement's own year.
+**H1** was fixed by `200198d`: the cron runs `--from-landing` before the
+`--from-pipeline` loop, so the five cells it owns alone now follow the
+statement — Controllable OpEx/Unit moved to $6,757 with it.
+
+One thing `build_lineage.py` had quietly got wrong came out of the same repair:
+`evidence_for_store` knew the flat shape and the `points` shape, so the per-year
+budget store read back as `as_of: null, source_file: null` and the page credited
+the budget flow with an arrival it could not name. It reads `years` now, and the
+detail line names every year on file rather than a single date, because a store
+that accumulates years is answering "is there a plan for the month I am looking
+at" and one date cannot say that.
 
 2026-09-11 — **the monthly loss-to-lease series, without the rent roll.** The Drive
 tab listed Loss to Lease as unrefreshable, needing per-unit market rent against
