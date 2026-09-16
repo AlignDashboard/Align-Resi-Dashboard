@@ -165,10 +165,13 @@ DRIVE_FLOWS = {
     },
     ("Budgets", "budget"): {
         "id": "budget",
-        "example": '12_Month_Budget_Accrual.xlsx',
+        "example": '<Property> <year> Resi Budget.xlsx / 12_Month_Budget_Accrual.xlsx',
         "title": "12-month budget",
         "carries": "The year's plan in the T12 statement's own shape: twelve "
-                   "budgeted months of revenue and expense on the JPM tree.",
+                   "budgeted months of revenue and expense on the JPM tree. "
+                   "One file per calendar year; the owner groups them by "
+                   "property one level down (Budgets/Landing/), which the "
+                   "fetch's folder pass reads as part of the folder.",
         "steps": [
             {"script": "scripts/parse_budget.py",
              "does": "Reuses the T12 parser's anchors, COA translation and "
@@ -177,8 +180,13 @@ DRIVE_FLOWS = {
              "checks": "Buckets tie out against the file's own TOTAL EXPENSES "
                        "to the cent, per month, like the actuals."},
             {"script": "scripts/build_metrics.py",
-             "does": "Stores the plan per property as data/<slug>/budget.json.",
-             "checks": "Central scrub in store_report, as everywhere."},
+             "does": "Keeps one point per budget YEAR in data/<slug>/budget.json "
+                     "and publishes metrics.json's budget block on explicit "
+                     "YYYY-MM keys, so a T12 window that crosses the calendar "
+                     "boundary has a plan for every month of it.",
+             "checks": "Re-filing a year replaces that year's point rather than "
+                       "the file, so a re-export is idempotent and the year "
+                       "before is not overwritten. Central scrub as everywhere."},
             {"script": "scripts/populate_scorecard.py --from-landing",
              "does": "Grades calendar-YTD actual controllable opex against the "
                      "same months of the plan, printed as $ nominal/% variance; "
@@ -189,9 +197,13 @@ DRIVE_FLOWS = {
         ],
         "stores": ["data/<slug>/budget.json"],
         "publishes": [
+            {"file": "metrics.json", "key": "budget"},
             {"file": "scorecard.json", "key": "Budget Variance %"},
         ],
         "dashboard": [
+            {"card": "Budget vs Actual", "tab": "Portfolio",
+             "anchor": "cBudgetActual", "primary": "t-budget-*",
+             "tables": ["t-budget-*", "t-buckets-*"]},
             {"card": "KPI Scorecard — Budget Variance %", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
@@ -201,10 +213,12 @@ DRIVE_FLOWS = {
             {"card": "Budget variance tile", "tab": "Landing (Drive)",
              "anchor": "dkpisSc", "tile": True},
         ],
-        "tables": ["t-sc-measured", "t-sc-arrivals"],
+        "tables": ["t-budget-*", "t-sc-measured", "t-sc-arrivals"],
         "note": "Actuals come from the same T12 statement the Expense Deep "
                 "Dive draws; the budget is the comparison, not a new actuals "
-                "source.",
+                "source. That is also why the Budget vs Actual card can stack "
+                "both sides into the same categories: one basket, grouped "
+                "once, tied out on each side against its own file.",
     },
     ("Rent Roll", "rent_roll"): {
         "id": "rent_roll",

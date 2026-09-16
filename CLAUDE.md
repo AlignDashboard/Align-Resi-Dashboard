@@ -377,6 +377,14 @@ budget's own Drive arrival shows on the page, and in `SCD_DRIVE_FEEDS` so the
 `Landing (Drive)` tab carries the cell. It needs no `fromDrive` predicate:
 unlike the delinquency pair, nothing else writes this KPI.
 
+`data/<slug>/budget.json` now holds **one point per budget year** rather than a
+single plan, so this fill picks the plan for the **statement's own year** —
+taking the newest would grade this year's actuals against next year's plan. See
+**Budget vs Actual (Portfolio tab)** below for why the years accumulate. The
+figure above is Jan–Jul 2026 against the statement that ended Jul 2026; the
+statement has since moved to Aug 2026, so the next `populate_scorecard` run
+will restate it on the Jan–Aug window.
+
 `--from-landing` also fills **`Concession Load %`** — the current month's
 concessions over **market rent potential less loss to lease less vacancy
 loss**, per the owner's equation set 2026-09-03. All four series come from the
@@ -922,6 +930,77 @@ statements built in a temp dir by `test_expense_buckets`' own builders, no
 network and no fixtures. Each guard has a check that fails when the guard is
 removed (verified by mutation).
 
+## Budget vs Actual (Portfolio tab)
+
+The Portfolio tab's `Budget vs Actual` card is a T12 of plan against actual:
+two bars per month, the plan on the left and the actual on the right, each
+**stacked into the same Align-tree categories the Expense Deep Dive uses** and
+painted in the same colours, so a reader can move between the two cards
+without relearning which colour is what.
+
+That shared palette is now a real shared thing rather than two copies:
+`BUCKET_PAL`, `bucketColor` and `bucketOrder` in `index.html` are what both
+cards call. The order is the deep dive's own — largest first, `Other` last,
+computed once from the actuals — so toggling categories never re-sorts and
+nothing is repainted under the reader. A category only the *budget* names is
+appended after and steps past any hue already spoken for.
+
+Both sides are the same basket by construction. `parse_budget` is a thin
+wrapper over the T12 parser, so a budget is grouped through the same COA
+mapping and refused unless its groups tie out against its **own** TOTAL
+EXPENSES row month by month — exactly as the actuals are. One grouping, two
+files, each checked against itself.
+
+**Budgets are kept per YEAR, not per property.** A budget is a calendar year
+and the window this card draws is not: the statement runs Sep–Aug today, so a
+store that held only the newest year would leave four months of the window
+with no plan and the card would report a gap where the file that answers it
+had simply been overwritten. `store_budget` keys on the year and accumulates,
+the way `expense_buckets` keeps a point per statement period; re-filing a year
+replaces that year's point, so re-processing a re-export is idempotent and the
+year before is untouched.
+
+`metrics.json`'s `budget` block therefore publishes **explicit `YYYY-MM`
+keys** rather than the statement's bare `Jan`..`Dec` labels. Bare labels cannot
+say which year a month belongs to and this series spans two by design.
+
+Three things the card is careful about, because each would be invisible in the
+numbers:
+
+- **A month in a year with no budget on file publishes `null`, and draws no
+  plan bar.** Zero would read as a plan of nothing and turn an unplanned month
+  into a 100% overspend. Those months are named on the card and left out of
+  its totals rather than counted as a saving.
+- **A category a *planned* year does not name is a real zero.** That year's
+  buckets tie out against its own total expenses, so nothing is missing from
+  it — the plan for that category is nil, not unknown. The distinction is the
+  whole reason the two cases are `0` and `null` rather than both blank.
+- **Negative months are drawn, not absorbed.** An accrual statement books
+  reversals and true-ups in the month they are found, and the newest month
+  carries most of them — Aug 2026 reads Taxes −$118,781 and Utilities −$31,450
+  for a net of $48,572, which `monthly_pl` agrees with. A stacked bar with
+  negative segments extends below the axis and the month's net is then in
+  neither direction, so it is on the hover and the note names the months.
+
+**This card and the scorecard's `Budget Variance %` measure different things
+off the same two files, and can point opposite ways.** The card is the whole
+expense basket over the statement's twelve months (Sep 25–Aug 26: plan $4.45M
+against $4.40M actual, a 1.0% underspend). The KPI is the *controllable*
+basket — taxes, insurance, utilities and the management fee taken out — over
+the calendar year to date. Taxes are ~46% of the basket and land close to plan,
+which is most of the difference. The card says so on its face rather than
+leaving a reader to find it.
+
+`budget_variance_ytd` picks the plan for the **statement's own year**, not the
+newest one on file. With several years stored, taking the newest would measure
+this year's actuals against next year's plan and publish the difference as a
+variance.
+
+`scripts/test_budget_vs_actual.py` holds it down — 23 fixture-free checks
+against budgets and a statement built in a temp dir. The load-bearing three
+(per-year storage, null-not-zero for an unplanned month, and picking the
+statement's year) were each verified by mutation.
+
 ## The statement's rental-income section (Loss to Lease)
 
 The same T12 statement carries, above the expense region, the section the Loss
@@ -1052,9 +1131,10 @@ Set `AUTO_FOLDER.ENABLED = false` to go back to everything unmatched landing in
 
 `fetch_drive.py` runs **two passes**, and the difference matters:
 
-1. **The folder pass** — every active entry's own folder, as always. This is what
-   the Gmail filer's organisation is for, and it is unchanged. Drive stays
-   browsable, one folder per report type, for pulling source data by hand.
+1. **The folder pass** — every active entry's own folder, **and one level of
+   subfolders inside it**. This is what the Gmail filer's organisation is for.
+   Drive stays browsable, one folder per report type, for pulling source data
+   by hand.
 2. **The rescue sweep** — then every other folder in the drop tree, `_Unsorted`
    included, looking for unclaimed files matching an entry's `name_patterns`.
 
@@ -1067,6 +1147,16 @@ report still reaches its parser, and the log says where it was found
 
 `name_patterns` is opt-in per entry, matched case-insensitively, and only
 `active` entries take part. An entry without it stays strictly folder-bound.
+
+**A registered folder's own subfolders are read as part of it**, one level
+deep. The owner groups a feed's files by property once there is more than one
+building's worth — `Budgets/Landing/` is the first — and the sweep is no
+backstop for that, because it walks the drop tree's top level too. Before the
+descent existed, a file one level down was invisible to both passes and the
+folder simply reported empty. One level, not a recursion, and never into a
+`NEVER_SWEEP` name: an archive nested inside a live folder is still an archive,
+and walking arbitrarily deep would eventually find one under a name the list
+does not know. `test_fetch_sweep.py` covers all three, each by mutation.
 
 The sweep is scoped, and each limit exists for a reason:
 
@@ -1238,7 +1328,9 @@ Three details worth knowing:
   Drive T12 and the unit directory produce. The page claims to hold every
   number the JSON carries and did not, which is why the Operating Summary card
   had nowhere to link. `t-monthlypl-<slug>`, `t-buckets-<slug>` and
-  `t-unitdir-<slug>` now cover them.
+  `t-unitdir-<slug>` now cover them, and `t-budget-<slug>` covers the `budget`
+  block — every month of every year on file, not just the year in progress,
+  since the card's window crosses the calendar boundary.
 
 Regenerate with `python scripts/build_lineage.py` (`--check` verifies and writes
 nothing). `update.yml` runs it after the scorecard fills, so the published chain
