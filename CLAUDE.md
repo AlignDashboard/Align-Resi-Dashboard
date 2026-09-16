@@ -353,7 +353,15 @@ graded, per the owner; `noi_margin_ttm` is recorded beside it in
 through the T12 statement's newest month) actual controllable operating
 expense against the same months of the year's budget, printed as **`$
 nominal/% variance`**, signed, positive meaning an overspend. The budget is
-the Yardi `12_Month_Budget_Accrual.xlsx` in the Drive **`Budgets`** folder —
+any budget in the Drive **`Budgets`** folder — `12_Month_Budget_Accrual.xlsx`
+is the Yardi export's own name, but not the only one that arrives: a budget
+uploaded by hand is named whatever the person named it. The entry's
+`name_patterns` is therefore the single word `budget`, matching the filer's
+own `/budget/` rule rather than any export's filename, because a pattern
+narrower than the filer's means a file the filer puts in this folder that the
+pipeline then refuses to claim — routed correctly and never read. That is what
+`Landing 2026 Resi Budget.xlsx` hit on 2026-09-16, and `test_routing.py`'s
+check 10 is what now fails when the two halves drift apart. It is
 the T12 statement's own layout on the JPM tree, so `parse_budget.py` reuses
 the T12 parser's anchors, COA translation and Align-tree grouping (and its
 to-the-cent tie-out), refusing a file with no `Budget` marker row or a period
