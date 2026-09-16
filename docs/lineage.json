@@ -120,19 +120,6 @@
    "primary": "f-t12",
    "holds": null
   },
-  "cBudgetActual": {
-   "card": "Budget vs Actual",
-   "tab": "Portfolio",
-   "tables": [
-    "t-budget",
-    "t-buckets"
-   ],
-   "flows": [
-    "budget"
-   ],
-   "primary": "t-budget",
-   "holds": "Budget, by month"
-  },
   "cScorecard": {
    "card": "KPI Scorecard \u2014 Budget Variance %",
    "tab": "Scorecard",
@@ -447,7 +434,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-16T16:40:03.736445+00:00",
+  "generated_at": "2026-09-16T19:54:34.500700+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 12,
@@ -667,8 +654,8 @@
    "origin_kind": "drive",
    "source_label": "Budgets",
    "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": "<Property> <year> Resi Budget.xlsx / 12_Month_Budget_Accrual.xlsx",
-   "carries": "The year's plan in the T12 statement's own shape: twelve budgeted months of revenue and expense on the JPM tree. One file per calendar year; the owner groups them by property one level down (Budgets/Landing/), which the fetch's folder pass reads as part of the folder.",
+   "example": "12_Month_Budget_Accrual.xlsx",
+   "carries": "The year's plan in the T12 statement's own shape: twelve budgeted months of revenue and expense on the JPM tree.",
    "filed_by": [
     "budget"
    ],
@@ -684,8 +671,8 @@
     },
     {
      "script": "scripts/build_metrics.py",
-     "does": "Keeps one point per budget YEAR in data/<slug>/budget.json and publishes metrics.json's budget block on explicit YYYY-MM keys, so a T12 window that crosses the calendar boundary has a plan for every month of it.",
-     "checks": "Re-filing a year replaces that year's point rather than the file, so a re-export is idempotent and the year before is not overwritten. Central scrub as everywhere."
+     "does": "Stores the plan per property as data/<slug>/budget.json.",
+     "checks": "Central scrub in store_report, as everywhere."
     },
     {
      "script": "scripts/populate_scorecard.py --from-landing",
@@ -698,25 +685,11 @@
    ],
    "publishes": [
     {
-     "file": "metrics.json",
-     "key": "budget"
-    },
-    {
      "file": "scorecard.json",
      "key": "Budget Variance %"
     }
    ],
    "dashboard": [
-    {
-     "card": "Budget vs Actual",
-     "tab": "Portfolio",
-     "anchor": "cBudgetActual",
-     "primary": "t-budget-*",
-     "tables": [
-      "t-budget-*",
-      "t-buckets-*"
-     ]
-    },
     {
      "card": "KPI Scorecard \u2014 Budget Variance %",
      "tab": "Scorecard",
@@ -736,20 +709,19 @@
     }
    ],
    "tables": [
-    "t-budget-*",
     "t-sc-measured",
     "t-sc-arrivals"
    ],
-   "note": "Actuals come from the same T12 statement the Expense Deep Dive draws; the budget is the comparison, not a new actuals source. That is also why the Budget vs Actual card can stack both sides into the same categories: one basket, grouped once, tied out on each side against its own file.",
+   "note": "Actuals come from the same T12 statement the Expense Deep Dive draws; the budget is the comparison, not a new actuals source.",
    "open_item": null,
    "same_as": null,
    "evidence": [
     {
      "property": "the-landing",
      "file": "data/the-landing/budget.json",
-     "as_of": null,
-     "source_file": null,
-     "landed_at": null,
+     "as_of": "Jan 2026-Dec 2026",
+     "source_file": "12_Month_Budget_Accrual.xlsx",
+     "landed_at": "2026-09-03T19:20:47.634Z",
      "detail": null
     }
    ],
@@ -1906,17 +1878,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-16",
+     "as_of": "2026-09-15",
      "source_file": null,
-     "landed_at": "2026-09-16T15:37:37Z",
-     "detail": "36 day(s) recorded"
+     "landed_at": "2026-09-15T15:37:28Z",
+     "detail": "35 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-16",
+     "as_of": "2026-09-15",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-16T15:37:37Z",
+     "landed_at": "2026-09-15T15:37:28Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2267,7 +2239,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-16T16:32:07.898028+00:00",
+     "landed_at": "2026-09-16T19:54:32.811980+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
