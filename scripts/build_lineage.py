@@ -882,6 +882,25 @@ def _points_evidence(slug, doc):
             "detail": f"{len(pts)} statement period(s) accumulated"}
 
 
+def _years_evidence(slug, doc):
+    """budget.json keeps one point per calendar YEAR rather than per period.
+
+    The newest year is the arrival; the detail names every year held, because
+    a store that accumulates years is answering "is there a plan for the month
+    I am looking at" and one date cannot say that.
+    """
+    yrs = doc.get("years") if isinstance(doc, dict) else None
+    if not yrs:
+        return None
+    last = sorted(yrs, key=lambda y: y.get("year") or 0)[-1]
+    held = ", ".join(str(y.get("year")) for y in sorted(
+        yrs, key=lambda y: y.get("year") or 0))
+    return {"property": slug, "as_of": last.get("as_of"),
+            "source_file": last.get("source_file"),
+            "landed_at": last.get("landed_at"),
+            "detail": f"{len(yrs)} budget year(s) on file ({held})"}
+
+
 def evidence_for_store(store_paths):
     """What the pipeline actually wrote, for the stores a flow declares.
 
@@ -902,8 +921,9 @@ def evidence_for_store(store_paths):
                 "files": [],
             })
             row["files"].append(clean.replace("<slug>", slug))
-            if "points" in doc:
-                ev = _points_evidence(slug, doc)
+            if "points" in doc or "years" in doc:
+                ev = (_points_evidence(slug, doc) if "points" in doc
+                      else _years_evidence(slug, doc))
                 if ev:
                     row["as_of"] = row["as_of"] or ev["as_of"]
                     row["detail"] = row["detail"] or ev["detail"]
