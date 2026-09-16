@@ -199,6 +199,32 @@
      so it reads against the fill in either theme. */
   .ckpreset .box { color: var(--panel); }
 
+  /* The Total view's variance list, in the space the category boxes hold in the
+     Categories view. Two summaries on top, then a month per cell. Coloured by
+     FAVOURABILITY rather than by sign, the way the Operating Summary's variance
+     columns are: less expense than planned is green whatever its sign. */
+  .varlist { margin: 2px 0 10px; }
+  .varlist[hidden] { display: none; }
+  .varlist .sums { display: flex; flex-wrap: wrap; gap: 4px 28px; align-items: baseline;
+    padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px solid var(--line); }
+  .varlist .sum { display: flex; align-items: baseline; gap: 9px; }
+  .varlist .sum .k { font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); }
+  /* nowrap or a narrow card breaks the value after its minus sign, leaving the
+     sign stranded on the line above the number it belongs to */
+  .varlist .sum .v { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums;
+    white-space: nowrap; }
+  .varlist .sum .p { font-size: 10px; letter-spacing: .5px; color: var(--muted); }
+  .varlist .mos { display: grid; gap: 1px 16px;
+    grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+  .varlist .mo { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0;
+    font-size: 10px; letter-spacing: .5px; border-bottom: 1px dotted var(--line); }
+  .varlist .mo .k { color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+  .varlist .mo .v { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .varlist .up { color: var(--red); }       /* over plan */
+  .varlist .dn { color: var(--green); }     /* under plan */
+  .varlist .na { color: var(--muted); }
+
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   /* A grid item's default min-width is its content's size, and a Chart.js
      canvas holds the pixel width it last rendered at -- so without this, every
@@ -661,9 +687,14 @@
             <h2>Budget vs Actual</h2>
             <span class="eyebrow" id="baEyebrow">LOADING…</span>
           </div>
-          <select class="prop-select" id="baSelect" style="display:none;"
-                  aria-label="Property"></select>
+          <div class="togrow" id="baTogs" role="group" aria-label="Budget vs Actual view">
+            <button class="tog" type="button" data-bv="total" aria-pressed="true">Total</button>
+            <button class="tog" type="button" data-bv="cats" aria-pressed="false">Categories</button>
+            <select class="prop-select" id="baSelect" style="display:none;"
+                    aria-label="Property"></select>
+          </div>
         </div>
+        <div class="varlist" id="baVars" hidden></div>
         <div class="ckpreset" id="baPresets" role="group" aria-label="Expense basket"></div>
         <div class="ckgrid" id="baCks" role="group" aria-label="Categories shown"></div>
         <div class="chartwrap" id="baWrap" style="height:330px;"><canvas id="budgetActual"></canvas></div>
@@ -2799,6 +2830,8 @@ async function renderBudgetActual(d) {
   const pre = document.getElementById("baPresets");
   const note = document.getElementById("baNote");
   const sel = document.getElementById("baSelect");
+  const togs = document.getElementById("baTogs");
+  const vars_ = document.getElementById("baVars");
 
   const buds = ((d.budget || {}).properties) || [];
   const acts = ((d.expense_buckets || {}).properties) || [];
@@ -2811,6 +2844,8 @@ async function renderBudgetActual(d) {
   if (!pairs.length) {
     cks.hidden = true;
     pre.hidden = true;
+    vars_.hidden = true;
+    togs.hidden = true;
     sel.style.display = "none";
     wrap.textContent = "";
     const empty = elc("div", "empty");
@@ -2834,6 +2869,11 @@ async function renderBudgetActual(d) {
 
   let chart = null;
   const hidden = new Set();          // survives a property switch, like the deep dive's
+  // Total is the default. The card's first question is "are we over or under",
+  // which two lines and a variance list answer without asking the reader to
+  // read fourteen stacked segments first; Categories is where you go once the
+  // answer is yes and the next question is which category did it.
+  let mode = "total";
 
   function draw(slug) {
     const { a, b } = pairs.find(p => p.b.slug === slug) || pairs[0];
@@ -2888,11 +2928,33 @@ async function renderBudgetActual(d) {
     // whatever is ticked rather than over the whole basket.
     const plannedIdx = keys.map((_, i) => i).filter(i => planned[i]);
 
-    if (chart) { chart.destroy(); chart = null; }
-    wrap.textContent = "";
-    const cv = elc("canvas");
-    cv.id = "budgetActual";
-    wrap.appendChild(cv);
+    // The whole basket, month by month -- what the Total view draws. Always
+    // every category: the basket presets are a Categories-view control, and a
+    // "total" that quietly left four groups out would not be one.
+    const totBudget = keys.map((_, i) =>
+      planned[i] ? sum(series.map(x => x.budget[i])) : null);
+    const totActual = keys.map((_, i) => sum(series.map(x => x.actual[i])));
+    const totVar = keys.map((_, i) => planned[i] ? totActual[i] - totBudget[i] : null);
+
+    // Calendar year to date: January of the window's LAST year through its end.
+    // That is the window the scorecard's Budget Variance % measures over, which
+    // is the whole reason this figure sits beside the T12 one rather than
+    // instead of it.
+    const endYear = keys[keys.length - 1].slice(0, 4);
+    const ytdIdx = plannedIdx.filter(i => keys[i].slice(0, 4) === endYear);
+
+    const freshCanvas = () => {
+      if (chart) { chart.destroy(); chart = null; }
+      wrap.textContent = "";
+      const cv = elc("canvas");
+      cv.id = "budgetActual";
+      wrap.appendChild(cv);
+      return cv;
+    };
+
+  function drawCategories() {
+    const cv = freshCanvas();
+    vars_.hidden = true;
 
     // One bar a month, stacked by category: overspends above the line,
     // underspends below it. Half the bars of a plan-beside-actual pair and the
@@ -3062,8 +3124,114 @@ async function renderBudgetActual(d) {
         });
     }
 
-    eyebrow.textContent = "VARIANCE · ACTUAL LESS PLAN · "
+  }
+
+  // ---- Total: two lines, and the variances listed where the categories go
+  function drawTotal() {
+    const cv = freshCanvas();
+    cks.hidden = true;
+    pre.hidden = true;
+    vars_.hidden = false;
+
+    chart = new Chart(cv, {
+      type: "line",
+      data: { labels: keys.map(shortMo), datasets: [
+        // The plan is the reference and the actual is the thing being judged,
+        // so the actual carries the solid line in the page's own accent and the
+        // plan the dashed muted one -- the same idiom the Categories view's net
+        // line uses for a line that is a yardstick rather than a series.
+        { label: "Budget", data: totBudget, borderColor: C.muted,
+          backgroundColor: C.muted, borderWidth: 1.5, borderDash: [5, 4],
+          pointRadius: 2.5, tension: 0, spanGaps: false },
+        { label: "Actual", data: totActual, borderColor: C.amber,
+          backgroundColor: C.amber, borderWidth: 2, pointRadius: 2.5, tension: 0 },
+      ] },
+      options: {
+        maintainAspectRatio: false, responsive: true,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: legendCfg,
+          tooltip: { callbacks: {
+            title: it => shortMo(keys[it[0].dataIndex]),
+            label: c => c.dataset.label + ": "
+              + (c.parsed.y < 0 ? "\u2212" : "") + fm$(Math.abs(c.parsed.y)),
+            footer: it => {
+              const i = it[0].dataIndex;
+              if (totVar[i] === null) return "No plan on file for this month";
+              return "Variance " + signed$(totVar[i])
+                + (totBudget[i] ? " (" + signed(totVar[i] / totBudget[i]) + ")" : "")
+                + " \u2014 " + (totVar[i] >= 0 ? "over" : "under") + " plan";
+            },
+          } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+          y: { beginAtZero: true, grid: gridCfg,
+               ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
+        },
+      },
+    });
+
+    // The list in the space the category boxes hold in the other view: the two
+    // summaries that get quoted, then every month of the window.
+    vars_.textContent = "";
+    const tone = v => v === null ? "na" : v > 0 ? "up" : v < 0 ? "dn" : "";
+    const sums = elc("div", "sums");
+    const addSum = (label, idx, hint) => {
+      const plan = sum(idx.map(i => totBudget[i]));
+      const v = sum(idx.map(i => totVar[i]));
+      const box = elc("div", "sum");
+      box.appendChild(elc("span", "k", label));
+      box.appendChild(elc("span", "v " + tone(idx.length ? v : null),
+        idx.length ? signed$(v) : "\u2014"));
+      box.appendChild(elc("span", "p", idx.length
+        ? (plan ? signed(v / plan) + " of " + fm$(plan) : "no plan")
+        : "no planned month"));
+      if (hint) box.title = hint;
+      sums.appendChild(box);
+    };
+    addSum("YTD " + (ytdIdx.length
+             ? "(" + shortMo(keys[ytdIdx[0]]) + "\u2013"
+               + shortMo(keys[ytdIdx[ytdIdx.length - 1]]) + ")"
+             : "(" + endYear + ")"), ytdIdx,
+      "Calendar year to date \u2014 January of " + endYear + " through the "
+      + "statement\u2019s newest month. The window the scorecard\u2019s Budget "
+      + "Variance % measures over, though that one takes the controllable basket only.");
+    addSum("T12 (" + shortMo(keys[0]) + "\u2013" + shortMo(keys[keys.length - 1]) + ")",
+      plannedIdx,
+      "The whole window the chart draws \u2014 the statement\u2019s trailing twelve "
+      + "months, which crosses the calendar year and so is not the YTD figure.");
+    vars_.appendChild(sums);
+
+    const mos = elc("div", "mos");
+    keys.forEach((k, i) => {
+      const row = elc("div", "mo");
+      row.appendChild(elc("span", "k", shortMo(k)));
+      row.appendChild(elc("span", "v " + tone(totVar[i]),
+        totVar[i] === null ? "no plan" : signed$(totVar[i])));
+      row.title = totVar[i] === null
+        ? shortMo(k) + ": no budget on file for this month"
+        : shortMo(k) + ": plan " + fm$(totBudget[i]) + ", actual "
+          + (totActual[i] < 0 ? "\u2212" : "") + fm$(Math.abs(totActual[i]))
+          + ", variance " + signed$(totVar[i])
+          + (totBudget[i] ? " (" + signed(totVar[i] / totBudget[i]) + ")" : "");
+      mos.appendChild(row);
+    });
+    vars_.appendChild(mos);
+  }
+
+  function setMode(m) {
+    mode = m;
+    setModeRef = setMode;
+    togs.querySelectorAll(".tog").forEach(t =>
+      t.setAttribute("aria-pressed", String(t.dataset.bv === m)));
+    eyebrow.textContent = (m === "total"
+        ? "PLAN vs ACTUAL · "
+        : "VARIANCE · ACTUAL LESS PLAN · ")
       + shortMo(keys[0]).toUpperCase() + "\u2013" + shortMo(keys[keys.length - 1]).toUpperCase();
+    if (m === "total") drawTotal(); else drawCategories();
+    renderNote();
+  }
 
     const unplanned = keys.filter((_, i) => !planned[i]);
     const years = (b.years || []).map(y => y.year).join(" and ");
@@ -3075,7 +3243,11 @@ async function renderBudgetActual(d) {
     // a headline that stayed on the full basket while the bars showed ten of
     // fourteen categories would be answering a question nobody asked.
     const renderNote = () => {
-      const on = series.filter(s2 => !hidden.has(s2.name));
+      // Total draws every category by construction -- the basket presets are a
+      // Categories-view control -- so it reads as the whole basket whatever
+      // `hidden` holds from a previous visit to the other view.
+      const on = mode === "total"
+        ? series : series.filter(s2 => !hidden.has(s2.name));
       const plan = sum(on.map(s2 => sum(s2.budget)));
       const act = sum(on.map(s2 => sum(plannedIdx.map(i => s2.actual[i]))));
       const vari = act - plan;
@@ -3084,7 +3256,7 @@ async function renderBudgetActual(d) {
         .filter(x => x.v > 0)
         .sort((x, y) => y.v - x.v);
       const credits = keys.filter((_, i) => on.some(s2 => s2.actual[i] < 0));
-      const allOn = on.length === series.length;
+      const allOn = mode === "total" || on.length === series.length;
       // What the figures cover, said in the reader's words rather than a count
       const basket = allOn ? "the whole basket"
         : on.length === names.filter(n => !isNotControllable(n)).length
@@ -3096,14 +3268,24 @@ async function renderBudgetActual(d) {
             : "the " + on.length + " of " + series.length + " categories ticked";
 
       note.textContent =
-        "One bar a month: actual less plan, stacked into the categories the "
+        (mode === "total"
+          ? "Two lines: the dashed one is the plan, the solid one what was "
+            + "actually spent, both the whole expense basket month by month. "
+            + "The list above gives each month\u2019s variance and the two totals "
+            + "that get quoted \u2014 YTD is the calendar year to date, T12 the "
+            + "window the chart draws, and they are different windows rather than "
+            + "two goes at one figure. Over plan is red, under it green, the way "
+            + "the Operating Summary\u2019s variance columns are: on expense, less "
+            + "than planned is the good direction whatever the sign. Switch to "
+            + "Categories for which category moved it. "
+          : "One bar a month: actual less plan, stacked into the categories the "
         + "Expense Deep Dive uses, in the same colours. Above the line is an "
         + "overspend, below it an underspend, and the dashed line is the "
         + "month\u2019s net. The Basket row switches the controllable and "
         + "non-controllable halves, the boxes below it one category at a time, "
         + "and the net and the figures here follow both \u2014 worth doing with "
         + "Taxes, whose one reversal month sets the scale for all twelve and "
-        + "flattens everything else against it. "
+        + "flattens everything else against it. ")
         + (plannedIdx.length === 0
             ? "No month of this window has a budget on file \u2014 the plan"
               + (years ? "s held cover " + years : " on file covers another year")
@@ -3148,14 +3330,27 @@ async function renderBudgetActual(d) {
         // the two answers can still point opposite ways even on this basket.
         + (allOn
             ? " Note this is the whole expense basket; the scorecard\u2019s Budget "
-              + "Variance % is the controllable one \u2014 tick Controllable alone "
-              + "above to put this card on the same basket."
+              + "Variance % is the controllable one"
+              + (mode === "total"
+                  ? " over the calendar year to date \u2014 the YTD figure above is "
+                    + "that window on this wider basket. Switch to Categories and "
+                    + "tick Controllable alone to put the card on its basket too."
+                  : " \u2014 tick Controllable alone above to put this card on the "
+                    + "same basket.")
             : " The scorecard\u2019s Budget Variance % grades this same controllable "
               + "basket, but over the calendar year to date rather than the "
               + "statement\u2019s twelve months, so the two windows still differ.");
     };
-    renderNote();
+
+    setMode(mode);
   }
+
+  // setMode is rebuilt per draw() -- it closes over that property's series --
+  // so the buttons are bound once here and call through this reference. Binding
+  // inside draw() would stack another listener on every property switch.
+  let setModeRef = () => {};
+  togs.querySelectorAll(".tog").forEach(t =>
+    t.addEventListener("click", () => setModeRef(t.dataset.bv)));
 
   if (pairs.length > 1) {
     sel.style.display = "";
