@@ -109,7 +109,7 @@ every figure on it would move on the next pipeline run.
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` — a period select on the left, comparison boxes on the right |
 | Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over today's gap in figures from `rent_roll` |
 | Four KPI tiles | `scorecard.json` — Leased %, Trade-out %, Budget variance, Delinquency, each with its grade |
-| Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
+| Trade-outs | `lease_tradeout` for the new-lease series, `leasing.renewals` for the renewal side |
 | Rollover Schedule | `rent_roll` — lease expirations by month |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
@@ -793,6 +793,37 @@ the same trap the leasing parsers' tests record.
 
 Table: `t-tradeout-<slug>` on the data page, which carries every month, the
 three windows and the weighted-vs-mean note.
+
+**It feeds the Trade-outs card too, not just the tile.** That card's teal series
+was the weekly leasing workbook, which carries **one week per file** — four weeks
+on file meant four leases in two months, two lonely bars against three years of
+renewal offers. It is the tradeout report's 26 months now, and the card fills.
+
+| | Weekly workbook | Tradeout report |
+| --- | --- | --- |
+| New leases on the 24-month axis | 4, in 2 months | **231, in 24 months** |
+| Average new-lease trade-out | 71.1% | **25.5%** |
+
+The two also *measure* slightly differently, which is why the card says so: the
+report works on **effective** rent, net of concessions on both the new lease and
+the one it replaced, where the workbook compares rent to prior rate. A previous
+lease bought down by a concession therefore shows a larger trade-out here.
+
+**Both series moved to rent-weighted**, and the plain mean went to the tooltip —
+the swap of what the card used to do. The report's own percentage is the
+weighted one, so the card and the tile now grade the same statistic; and the mean
+cannot carry this axis, since Nov 2024 reads 550.9% as a mean against 55.7%
+weighted. On the renewal side the two agree to within half a point every month,
+so that series moved in name only.
+
+**Weighting protects a month only when there are enough leases in it.** Sep 2026
+reads **149%** on two leases in a half month — the report's window ends on the
+16th — and one of those two replaced a lease whose $3,678 gross carried a $2,207
+concession, i.e. $1,471 effective. That one lease carries the month. The bar is
+drawn rather than capped or dropped, because it is the report's own arithmetic
+and the tile's T3 window includes it; the footnote names it, computed against the
+series' own median and lease counts so it cannot go stale as months arrive. The
+same note names the part month.
 
 ### The unit directory
 
