@@ -448,7 +448,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-17T16:12:33.978100+00:00",
+  "generated_at": "2026-09-17T16:15:25.820260+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 12,
@@ -1922,17 +1922,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-16",
+     "as_of": "2026-09-17",
      "source_file": null,
-     "landed_at": "2026-09-16T15:37:37Z",
-     "detail": "36 day(s) recorded"
+     "landed_at": "2026-09-17T15:37:39Z",
+     "detail": "37 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-16",
+     "as_of": "2026-09-17",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-16T15:37:37Z",
+     "landed_at": "2026-09-17T15:37:39Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
