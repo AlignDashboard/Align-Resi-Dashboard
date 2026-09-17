@@ -4,13 +4,27 @@
    "card": "Expense Ratio",
    "tab": "Portfolio",
    "tables": [
-    "t-expratio"
+    "t-expratio",
+    "t-monthlypl"
    ],
    "flows": [
     "t12"
    ],
    "primary": "t-expratio",
    "holds": "Expense Ratio"
+  },
+  "cExpTrend": {
+   "card": "Expense Trend",
+   "tab": "Portfolio",
+   "tables": [
+    "t-exptrend",
+    "t-monthlypl"
+   ],
+   "flows": [
+    "t12"
+   ],
+   "primary": "t-exptrend",
+   "holds": "Expense Trend"
   },
   "cOpSummary": {
    "card": "Operating Summary",
@@ -397,30 +411,6 @@
    "primary": "t-l-insights",
    "holds": "Insights scorecard"
   },
-  "cExpTrend": {
-   "card": "Expense Trend",
-   "tab": "Portfolio",
-   "tables": [
-    "t-exptrend"
-   ],
-   "flows": [
-    "handset"
-   ],
-   "primary": "t-exptrend",
-   "holds": "Expense Trend"
-  },
-  "cPsf": {
-   "card": "PSF vs Other Properties",
-   "tab": "Portfolio",
-   "tables": [
-    "t-psf"
-   ],
-   "flows": [
-    "handset"
-   ],
-   "primary": "t-psf",
-   "holds": "PSF vs Other Properties"
-  },
   "cTradeOutsPortfolio": {
    "card": "Trade Outs",
    "tab": "Portfolio",
@@ -447,15 +437,18 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-17T20:17:24.523627+00:00",
+  "generated_at": "2026-09-17T22:47:14.211137+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 12,
    "partial": 3,
+   "waiting": 1,
    "no-parser": 8,
    "manual": 1
   },
-  "warnings": []
+  "warnings": [
+   "Historical Tradeout Reports (lease_tradeout) is active in report_map.json but has no entry in build_lineage.DRIVE_FLOWS \u2014 the page shows it with an unknown downstream"
+  ]
  },
  "stages": [
   {
@@ -546,6 +539,10 @@
     },
     {
      "file": "metrics.json",
+     "key": "expense_trend"
+    },
+    {
+     "file": "metrics.json",
      "key": "rent_capture"
     },
     {
@@ -558,8 +555,20 @@
      "card": "Expense Ratio",
      "tab": "Portfolio",
      "anchor": "cExpRatio",
+     "primary": "t-expratio-*",
      "tables": [
-      "t-expratio-*"
+      "t-expratio-*",
+      "t-monthlypl-*"
+     ]
+    },
+    {
+     "card": "Expense Trend",
+     "tab": "Portfolio",
+     "anchor": "cExpTrend",
+     "primary": "t-exptrend",
+     "tables": [
+      "t-exptrend",
+      "t-monthlypl-*"
      ]
     },
     {
@@ -636,7 +645,8 @@
     }
    ],
    "tables": [
-    "t-expratio-*"
+    "t-expratio-*",
+    "t-exptrend"
    ],
    "note": "The one Drive report that reaches the dashboard as a chart in its own right. Its monthly revenue also becomes the denominator under the delinquency KPI.",
    "open_item": "A10",
@@ -1611,6 +1621,33 @@
    "status": "partial"
   },
   {
+   "id": "historical-tradeout-reports-lease-tradeout",
+   "title": "Historical Tradeout Reports",
+   "origin_kind": "drive",
+   "source_label": "Historical Tradeout Reports",
+   "source_detail": "Drive folder \u00b7 *",
+   "example": null,
+   "carries": "Yardi Lease Tradeout Report: one row per new lease with the lease it replaced beside it, over whatever window the export was run for. The only feed carrying a trade-out with its own history",
+   "filed_by": [
+    "leasetradeout",
+    "tradeout"
+   ],
+   "report_type": "lease_tradeout",
+   "parser": "parse_lease_tradeout",
+   "registered": "active",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "waiting"
+  },
+  {
    "id": "airm-yardi-rev-management-revenue-mgmt",
    "title": "AIRM - Yardi Rev Management",
    "origin_kind": "drive",
@@ -1906,17 +1943,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-16",
+     "as_of": "2026-09-17",
      "source_file": null,
-     "landed_at": "2026-09-16T15:37:37Z",
-     "detail": "36 day(s) recorded"
+     "landed_at": "2026-09-17T15:37:39Z",
+     "detail": "37 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-16",
+     "as_of": "2026-09-17",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-16T15:37:37Z",
+     "landed_at": "2026-09-17T15:37:39Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2189,7 +2226,7 @@
    "origin_kind": "manual",
    "source_label": "docs/metrics.json, edited directly",
    "source_detail": "Blocks the pipeline preserves rather than regenerates.",
-   "carries": "Expense Trend's three series, the PSF comp set, the trade-out placeholder, and the eleven planned-metric cards.",
+   "carries": "The trade-out placeholder and the eleven planned-metric cards. Expense Trend left this list on 2026-09-17: it is derived from the T12 statement now.",
    "steps": [
     {
      "script": "scripts/build_metrics.py",
@@ -2201,14 +2238,6 @@
    "publishes": [
     {
      "file": "metrics.json",
-     "key": "expense_trend"
-    },
-    {
-     "file": "metrics.json",
-     "key": "psf_vs_peers"
-    },
-    {
-     "file": "metrics.json",
      "key": "trade_outs"
     },
     {
@@ -2217,22 +2246,6 @@
     }
    ],
    "dashboard": [
-    {
-     "card": "Expense Trend",
-     "tab": "Portfolio",
-     "anchor": "cExpTrend",
-     "tables": [
-      "t-exptrend"
-     ]
-    },
-    {
-     "card": "PSF vs Other Properties",
-     "tab": "Portfolio",
-     "anchor": "cPsf",
-     "tables": [
-      "t-psf"
-     ]
-    },
     {
      "card": "Trade Outs",
      "tab": "Portfolio",
@@ -2251,13 +2264,11 @@
     }
    ],
    "tables": [
-    "t-exptrend",
-    "t-psf",
     "t-tradeouts",
     "t-placeholders"
    ],
-   "note": "No feed stands behind these. The PSF figures are hand-entered with no known date and say so on the card; Trade Outs is an empty state waiting on AIRM and the weekly leasing report.",
-   "open_item": "A4",
+   "note": "No feed stands behind these. Trade Outs is an empty state waiting on AIRM and the weekly leasing report.",
+   "open_item": "D5",
    "registered": null,
    "parser": null,
    "documented": true,
@@ -2267,7 +2278,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-17T20:17:22.955723+00:00",
+     "landed_at": "2026-09-17T22:46:54.875345+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
