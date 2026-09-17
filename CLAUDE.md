@@ -225,7 +225,7 @@ a footnote. The eight tiles on this tab cover five different windows:
 | `T12 NOI` | `annual` — the trailing twelve, span in the subtitle |
 | Controllable / door | `annualised` — that month ×12, per the band's basis |
 | Leased %, Delinquency | `point in time` — a snapshot, not a period |
-| Trade-out % | `trailing 1 mo` — the export's rate basis (owner, 2026-08-20) |
+| Trade-out % | `trailing 3 mo` — read from `tradeout_months`, the window the band was written for |
 | Budget variance | the real window from `budget_as_of`, e.g. `Jan-Aug 2026` |
 
 The four scorecard tiles state theirs per tile because the window is a property
@@ -262,9 +262,10 @@ Two more details worth knowing:
   underspend are not the same news.
 - **Trade-out % does not jump to the Trade-outs card.** Every tile jumps to the
   card showing the working behind its own number; where no card on this tab
-  draws that feed, the jump goes to `What Feeds This Tab`. The tile's 34.9% is
-  the EliseAI export's trailing month, the card's 82.8% is the weekly leasing
-  workbook and the renewal tracker — two feeds, two windows, two definitions,
+  draws that feed, the jump goes to `What Feeds This Tab`. The tile's 39.8% is
+  the Yardi tradeout report's trailing quarter, the card's 82.8% is the weekly
+  leasing workbook and the renewal tracker — two feeds, two windows, two
+  definitions,
   and landing a reader on one from the other under the same name is the
   disagreement this tab exists to avoid. Leased % is the same case (the tile is
   `100 − exposure` from the export, Unit Inventory is the rent roll's 97.7%),
@@ -651,10 +652,16 @@ count is not the numerator of the rate, `bldg_basis` says so, and the **rate** i
 what the band grades. A property with no renewal tracker (Chorus, Madelon) keeps
 the rate alone — `RENEWAL_COUNT_SOURCE` is the lookup, so adding one is a line.
 
-It fills nine KPIs where the export column means what the KPI means — Leased %
+It fills eight KPIs where the export column means what the KPI means — Leased %
 (from `100 − Exposure Rate`, which matches the KPI's definition better than
-`Occupancy Rate`), Trade-out %, Closing Ratio, # of Renewals, % Increase, Total
-Deliquency, AI Containment Rate, Avg First Response Time, and the T/L/A triple.
+`Occupancy Rate`), Closing Ratio, # of Renewals, % Increase, Total Deliquency,
+AI Containment Rate, Avg First Response Time, and the T/L/A triple.
+
+It filled **Trade-out %** as well until 2026-09-17, when that cell moved to the
+Yardi lease tradeout report — see below. Nothing in this script changed: rule 1
+already refuses a cell another feed owns, and `owned_by_other_feeds()` finds the
+new one by reading every non-`bldg_` `*kpis` key in `measured[slug]`, which is
+what "excluded by default rather than by remembering" buys.
 
 Four rules keep it from overwriting better data or asserting what it cannot:
 
@@ -693,6 +700,99 @@ reports without writing; `--received-at` records a real arrival time. The CSV
 now lands in the Drive `EliseAI Reports` folder and `update.yml` runs this
 script on the newest one automatically, passing Drive's `landed_at` as the
 arrival — the hand-off step only exists for a CSV that never reached Drive.
+
+### The lease tradeout report
+
+`LeaseTradeoutReport-<property>.XLS` in the Drive **`Historical Tradeout
+Reports`** folder is the Yardi lease tradeout report, and since 2026-09-17 it is
+what fills **`Trade-out %`** — the tile on the `Landing (Drive)` tab and the
+scorecard cell behind it. The Landing's first file covers 2024-08-01 to
+2026-09-16: 247 new leases, each with the lease it replaced beside it.
+
+It is the only feed with a trade-out **history**. The weekly leasing workbook
+covers a fortnight, and the EliseAI building-metrics export publishes a rate
+with no rows behind it at all, on a trailing month. This one carries the rows,
+so the window is a choice the pipeline makes rather than whatever an export
+happened to cover:
+
+| Window | The Landing |
+| --- | --- |
+| T3 (**graded**) | **39.8%**, 26 leases, Jul–Sep 2026 |
+| T6 | 32.5%, 68 leases |
+| T12 | 30.7%, 121 leases |
+| The whole file | 23.4%, 247 leases, Aug 2024 – Sep 2026 |
+
+**Trailing three months, because that is the basis the published band was
+written for.** The export this replaced was a trailing *one* — open item B6,
+"a volatile month swings the grade more than the bands assume". B6 is closed for
+this KPI and still open for Closing Ratio and # of Renewals, which the export
+still fills. `TRADEOUT_WINDOW` in `populate_scorecard.py` is the one constant.
+
+**The percentage is rent-weighted, never the mean of the per-lease rates.**
+The report's own figure is total current effective rent over total previous
+effective rent, and that is what is graded. The mean of its own `Trade Out %`
+column is a different number — **70.1% against the weighted 23.4%** over the
+same 247 leases — because a concession drives a *previous* effective rent toward
+zero and the ratio explodes: one lease reads $86 previous against a $62,716
+concession and prints 6,136%. A mean of ratios over a denominator that can
+approach zero is not a rate. Both are published (`mean_pct` beside `pct`, and
+`tradeout_mean` on the scorecard) so the two are on the record rather than
+confused — the Trade-outs card's *other* feed reports a mean, and these are not
+interchangeable.
+
+Four things the parser is careful about, each of which publishes a number
+rather than an error:
+
+- **The header is two rows and half its names appear twice.** `Rate Type`,
+  `Lease Start`, `Term`, `Prem`, `Gross Rent`, `Conc` and `Eff Rent` sit once
+  under `Current Lease` and again under `Previous Lease`; only the merged
+  banner above tells them apart, and only its first cell carries text. So the
+  group row is forward-filled and joined to the column row. Matching the column
+  row alone takes whichever came first and **inverts the sign of the whole
+  report** — and a file read that way still ties out against itself.
+- **Yardi names it `.XLS` and writes an `.xlsx`.** The bytes start `PK\x03\x04`.
+  openpyxl refuses a path ending `.xls` before it looks at the file, so the
+  parser reads the bytes and dispatches on the magic number; a genuine OLE2
+  `.xls` is named as such rather than left to fail further in. The folder's
+  `file_glob` is `*` for the same reason — neither extension describes it.
+- **`(2.5%)` is a negative percentage**, parenthesised with the sign marker
+  *outside* the percent sign, while the dollar column on the same row uses
+  `-$78`. A pattern expecting `)` before `%` drops 42 of the 247 leases to
+  `None` and averages only the positive ones, which is invisible.
+- **Every figure ties out against the file's own `Grand Total:` row** on current
+  effective rent, previous effective rent and trade-out dollars. A file that
+  cannot reproduce its own total is refused — silently dropping a floor-plan
+  section would understate the building. The `Subtotal:`/`Average:`/`Total:`
+  rows are skipped by label first, so a subtotal is never read as a
+  1,458-month lease.
+
+**Leases accumulate; files do not supersede each other.** The window is chosen
+at export time, so the next file's may be narrower, wider or offset, and taking
+the newest whole would throw away every lease outside it. `store_lease_tradeout`
+keys on `(unit, signed date, previous lease start)` — a unit can turn over twice
+inside one window (102 does), so unit and date alone are not unique — and each
+file's own period and tie-out stay in `files`, because a tie-out is a statement
+about one export and stops meaning anything once several are merged.
+
+The cell records under its own **`tradeout_`** family (registered in
+`SC_FEED_PREFIXES`, `data.html`'s matching list and `SCD_DRIVE_FEEDS`), and
+**both fill paths read the same published aggregate**, so like the rent roll's
+loss to lease it has no last-run-wins race. Taking the cell also removes it from
+every other family's `*kpis` list: `bldg_kpis` still *named* Trade-out % from
+before this feed existed, and the page picks a cell's feed by whichever family
+lists it — so the tile went on hovering "EliseAI building-metrics export · as of
+2026-08-31" over a figure from a report of 2026-09-16. That is the over-report
+this file warns about, fixed in the data rather than worked around on the page.
+
+`scripts/test_lease_tradeout.py` holds it down — 38 fixture-free checks against
+workbooks built in a temp dir. The five load-bearing guards (the forward-filled
+header, the parenthesised negative, the magic-number open, the Grand Total
+tie-out and the skipped subtotal rows) were each verified by mutation; removing
+any one of them fails a check. **Clear `__pycache__` between mutation runs** —
+the same trap the leasing parsers' tests record.
+
+Table: `t-tradeout-<slug>` on the data page, which carries every month, the
+three windows and the weighted-vs-mean note.
 
 ### The unit directory
 

@@ -184,6 +184,10 @@ CASES = [
     # filer's /budget/ rule always routed these; it was the PIPELINE that could
     # not claim them -- see the name_patterns check below.
     ("Landing 2026 Resi Budget.xlsx",                               "Budgets"),
+    # Yardi names this one .XLS and writes an .xlsx; the folder entry's
+    # file_glob is "*" so the pipeline claims it whatever it is called.
+    ("LeaseTradeoutReport-Landing.XLS",                             "Historical Tradeout Reports"),
+    ("2026-09-17 LeaseTradeoutReport-Landing.XLS",                  "Historical Tradeout Reports"),
     ("Landing 2025 Resi Budget.xlsx",                               "Budgets"),
     # already filed correctly today -- these must not move
     ("12_Month_Statement_Accrual.xlsx",                             "T12 Expenses"),

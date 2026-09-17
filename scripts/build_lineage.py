@@ -172,6 +172,57 @@ DRIVE_FLOWS = {
                 "denominator under the delinquency KPI.",
         "open_item": "A10",
     },
+    ("Historical Tradeout Reports", "lease_tradeout"): {
+        "id": "lease_tradeout",
+        "example": "LeaseTradeoutReport-<property>.XLS",
+        "title": "Yardi lease tradeout report",
+        "carries": "One row per new lease with the lease it replaced beside "
+                   "it — current and previous effective rent, the concession "
+                   "on each, and the report's own trade-out in dollars and "
+                   "percent — over whatever window the export was run for. The "
+                   "only feed with a trade-out history of its own.",
+        "steps": [
+            {"script": "scripts/parse_lease_tradeout.py",
+             "does": "Reads the two-row header by joining the forward-filled "
+                     "group banner to the column name, so the Current and "
+                     "Previous halves cannot be swapped, and dates each lease "
+                     "by its App/Signed date — the field the report says it "
+                     "selected on.",
+             "checks": "Leases tie out against the file's own Grand Total row "
+                       "on current effective rent, previous effective rent and "
+                       "trade-out dollars; a file that does not reproduce its "
+                       "own total is refused rather than published."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Accumulates leases by (unit, signed date, previous lease "
+                     "start) in data/<slug>/lease_tradeout.json and publishes "
+                     "the monthly series plus the T3/T6/T12 windows.",
+             "checks": "Accumulated rather than replaced, because the window is "
+                       "chosen at export time and the next file's may be "
+                       "narrower. Re-filing a window replaces its leases."},
+            {"script": "scripts/populate_scorecard.py",
+             "does": "Fills Trade-out % from the trailing-3-month window, "
+                     "rent-weighted, on both --from-landing and "
+                     "--from-pipeline.",
+             "checks": "Three months because that is the basis the published "
+                       "band was written for; the EliseAI export it replaced "
+                       "was a trailing one (open item B6). Weighted, never the "
+                       "mean of the per-lease rates."},
+        ],
+        "stores": ["data/<slug>/lease_tradeout.json"],
+        "publishes": [
+            {"file": "metrics.json", "key": "lease_tradeout"},
+            {"file": "scorecard.json", "key": "Trade-out %"},
+        ],
+        "dashboard": [
+            # A tile in a row, like the budget's — no corner to hang a link in.
+            {"card": "Trade-out % tile", "tab": "Landing (Drive)",
+             "anchor": "dkpisSc", "tile": True},
+            {"card": "KPI Scorecard — Trade-out %", "tab": "Scorecard",
+             "anchor": "cScorecard", "primary": "t-sc-matrix",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
+        ],
+        "tables": ["t-tradeout-*", "t-sc-measured", "t-sc-arrivals"],
+    },
     ("Budgets", "budget"): {
         "id": "budget",
         "example": '<Property> <year> Resi Budget.xlsx / 12_Month_Budget_Accrual.xlsx',
