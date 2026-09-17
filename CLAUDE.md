@@ -918,28 +918,45 @@ Switching the select **keeps the comparison where the new set still offers it** 
 Current Month with T12 showing stays on T12 when it becomes T3. Prev Month is
 not in T3's set, so that pair falls to T6.
 
-**Both columns are measured over the comparison's own window** — the period on
-the right. Set against Prev Month the figures are one-month totals, against T3
-three-month totals, against T12 a year. So the right column is simply its own
-total, and the left is its monthly rate over that same span — which the header
-marks, because a figure three times August sitting under a header that reads
-`Current Month (Aug 26)` would be read as August:
+**Every pair is an annual run rate — each period's own total scaled to twelve
+months — except Current Month against Prev Month**, which is left as reported.
+Both headings carry their own multiplier, because either side can be scaled and
+a figure twelve times August under a header reading `Current Month (Aug 26)`
+would be read as August:
 
 | Pair | Left column | Right column |
 | --- | --- | --- |
 | Current Month vs Prev Month | Aug as reported | Jul as reported |
-| Current Month vs T3 | `Current Month (Aug 26) ×3` | Jun–Aug |
-| Current Month vs T12 | `Current Month (Aug 26) ×12` | Sep–Aug |
-| T3 vs T6 | `T3 (Jun 26–Aug 26) ×2` | Mar–Aug |
-| T3 vs T12 | `T3 (Jun 26–Aug 26) ×4` | Sep–Aug |
+| Current Month vs T3 | `Current Month (Aug 26) ×12` | `T3 (Jun 26–Aug 26) ×4` |
+| Current Month vs T12 | `Current Month (Aug 26) ×12` | `T12 (Sep 25–Aug 26)` |
+| T3 vs T6 | `T3 (Jun 26–Aug 26) ×4` | `T6 (Mar 26–Aug 26) ×2` |
+| T3 vs T12 | `T3 (Jun 26–Aug 26) ×4` | `T12 (Sep 25–Aug 26)` |
 
-Both sides were an **annual run rate** until 2026-09-15 — every period scaled to
-twelve months. That did make a month comparable with a quarter, but it also
-scaled the one pair that needs no scaling at all: two consecutive months, printed
-×12, where the actual month-over-month totals are what the card is being read
-for. Measuring in the comparison's window keeps every pair comparable and leaves
-the equal-length pair alone. It is still the frame the variance is taken in, not
-a forecast, and the note still says so.
+Annualizing is what lets windows of different lengths sit side by side: a month
+against a quarter is otherwise three times the period as well as a different
+one, and the variance reads as both at once. The exception is the pair that
+needs none of it — a month against the month before is already like for like,
+and the actual month-over-month totals are what that pair is read for.
+
+**The variance percentages do not depend on this at all.** Scaling both columns
+by the same factor cancels, so only the magnitudes and the `Variance $` column
+move; the shape of the card is unchanged. Two of the five pairs were already
+annualized (both T12 comparisons cover twelve months by definition) and the
+month-against-month pair is untouched, so the owner's 2026-09-17 call moved
+exactly two: Current Month vs T3 and T3 vs T6.
+
+`scaling(base, cmp)` is the one function that decides it, returning the target
+window and a multiplier per column. The table and the note under it both read
+it, so they cannot describe different arithmetic — which they could when each
+recomputed the multiplier for itself.
+
+**One caveat the card cannot fix.** An accrual statement books reversals in the
+month it finds them, and Aug 2026 carries a −$118,781 tax true-up: total
+expenses read $48,572 for that month against $365,241 in July. Annualized that
+is $583k against a T3 of $2.99M — an 80.5% "saving" painted green, which is a
+timing difference and not money unspent. The percentage was the same before
+this change; annualizing only makes the dollar figure larger. Budget vs Actual
+on the Portfolio tab names the reversal months for the same reason.
 
 Four data columns: the two periods, then the variance in **dollars** and in
 **percent**. A percentage alone hides the size of the thing — 15% on the expense
