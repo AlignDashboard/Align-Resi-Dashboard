@@ -125,8 +125,12 @@ DRIVE_FLOWS = {
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
         ],
         "dashboard": [
+            # Its T12 figures are the expense_ratio block's; since 2026-09-17
+            # its line is the monthly ratio off monthly_pl, the same series the
+            # Landing (Drive) tab draws, so both tables belong on it.
             {"card": "Expense Ratio", "tab": "Portfolio", "anchor": "cExpRatio",
-             "tables": ["t-expratio-*"]},
+             "primary": "t-expratio-*",
+             "tables": ["t-expratio-*", "t-monthlypl-*"]},
             # Every property's expense line on one axis, derived from the same
             # stitched series the Operating Summary reads rather than typed in.
             {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",

@@ -224,6 +224,29 @@ def main():
         run4, _ = bm.ratio_trend([pt("Jul 2026", 33.3, "total")], "fixture")
         ok("a single point survives", len(run4) == 1, len(run4))
 
+        # --- the two published ratio series must agree ---
+        #
+        # Since 2026-09-17 the Portfolio tab's Expense Ratio card draws its
+        # line from monthly_pl -- opex over revenue, the series the Landing
+        # (Drive) tab draws -- while the T12 figures beside it are still the
+        # expense_ratio block's own. So the card shows one store's line beside
+        # another store's headline, and if the two ever stopped describing the
+        # same expense row nothing on the page would say so: the line would
+        # simply disagree with the number next to it. They come from one
+        # anchor decision today; this is the check that they still do.
+        rr = store(tmp, [jpm], slug="agree", fn=bm.store_expense_ratio)
+        pp = store(tmp, [jpm], slug="agree")
+        derived = [round(100 * pp["opex"][i] / pp["revenue"][i], 1)
+                   if pp["revenue"][i] else None
+                   for i in range(len(pp["revenue"]))]
+        ok("the card's line reproduces the published monthly ratio",
+           derived == rr["monthly_ratio"], (derived[:3], rr["monthly_ratio"][:3]))
+        ok("both series sit on the same anchor",
+           (rr["expense_scope"], rr["expense_anchor"])
+           == (pp["expense_scope"], pp["expense_anchor"]),
+           ((rr["expense_scope"], rr["expense_anchor"]),
+            (pp["expense_scope"], pp["expense_anchor"])))
+
         # --- the Expense Trend block: several properties on one axis ---
         #
         # The card plots one line per building, so the two ways it can lie are
