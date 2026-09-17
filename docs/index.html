@@ -4797,9 +4797,14 @@ async function loadLandingDrive() {
         datasets: [
           { type: "bar", label: "Units expiring", data: roll.map(b => b.units), yAxisID: "y",
             backgroundColor: roll.map(b => b.month === "Expired" ? C.red : C.amber), order: 2 },
+          // Muted, like the cumulative line on The Landing's own Rollover card:
+          // the two cards draw the same series off two sources and sat in two
+          // colours. backgroundColor goes with it -- it is what fills the
+          // legend swatch and the points, so recolouring the border alone
+          // leaves the key disagreeing with the line it stands for.
           { type: "line", label: "Cumulative % of occupied units",
-            data: roll.map(b => b.cum_pct * 100), yAxisID: "y1", borderColor: C.teal,
-            backgroundColor: C.teal, borderDash: [4, 3], pointRadius: 2, order: 1 },
+            data: roll.map(b => b.cum_pct * 100), yAxisID: "y1", borderColor: C.muted,
+            backgroundColor: C.muted, borderDash: [4, 3], pointRadius: 2, order: 1 },
         ] },
       options: { maintainAspectRatio: false, responsive: true,
         plugins: { legend: legendCfg, tooltip: { callbacks: {
