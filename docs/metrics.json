@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-17T16:04:24.913483+00:00",
+    "generated_at": "2026-09-17T20:17:22.955723+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -14,94 +14,108 @@
   },
   "expense_trend": {
     "available": true,
-    "months": [
-      "2025-07",
-      "2025-08",
-      "2025-09",
-      "2025-10",
-      "2025-11",
-      "2025-12",
-      "2026-01",
-      "2026-02",
-      "2026-03",
-      "2026-04",
-      "2026-05",
-      "2026-06",
-      "2026-07",
-      "2026-08"
-    ],
+    "property": "The Landing (p0005611)",
+    "basis": "Monthly operating expense, top movers by volatility",
+    "period": "Jul 2025 - Jun 2026",
     "labels": [
-      "Jul 25",
-      "Aug 25",
-      "Sep 25",
-      "Oct 25",
-      "Nov 25",
-      "Dec 25",
-      "Jan 26",
-      "Feb 26",
-      "Mar 26",
-      "Apr 26",
-      "May 26",
-      "Jun 26",
-      "Jul 26",
-      "Aug 26"
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun"
     ],
-    "properties": [
+    "series": [
       {
-        "slug": "the-landing",
-        "name": "The Landing",
+        "name": "Marketing",
         "data": [
-          null,
-          371065.03,
-          352141.61,
-          358527.56,
-          337446.2,
-          412660.58,
-          360137.58,
-          407759.46,
-          424590.41,
-          624205.51,
-          377557.48,
-          334088.8,
-          365241.2,
-          48571.94
-        ],
-        "first_month": "2025-08",
-        "last_month": "2026-08",
-        "period_end": "Aug 2026",
-        "expense_scope": "total",
-        "expense_anchor": "549999-9999",
-        "basis": "jpm 549999-9999 total expenses (operating and non-operating)"
+          8294,
+          14067,
+          1503,
+          7053,
+          6486,
+          20362,
+          1996,
+          8576,
+          10484,
+          10984,
+          7990,
+          -1413
+        ]
       },
       {
-        "slug": "palma",
-        "name": "Palma",
+        "name": "Utilities",
         "data": [
-          158188.94,
-          144683.36,
-          144776.06,
-          152340.83,
-          84533.64,
-          161977.14,
-          162068.06,
-          143888.33,
-          161598.64,
-          168827.63,
-          153524.36,
-          -94102.7,
-          null,
-          null
-        ],
-        "first_month": "2025-07",
-        "last_month": "2026-06",
-        "period_end": "Jun 2026",
-        "expense_scope": "operating",
-        "expense_anchor": null,
-        "basis": "align 5999-9998 recoverable opex"
+          39591,
+          9945,
+          13101,
+          9100,
+          9630,
+          10324,
+          19244,
+          21218,
+          25350,
+          11026,
+          15502,
+          11973
+        ]
+      },
+      {
+        "name": "General & Admin",
+        "data": [
+          49883,
+          39075,
+          32454,
+          55218,
+          53491,
+          56912,
+          34976,
+          58538,
+          86617,
+          45521,
+          59164,
+          51952
+        ]
       }
     ],
-    "mixed_scope": true,
-    "basis": "Monthly expenses per property, from each property's own 12-month accrual statement"
+    "footnote": "Real Estate Taxes ($146K/mo) spiked to $419K in Apr 2026 (annual assessment) and Insurance to $37K in Mar; both excluded as one-time items so monthly operating movement stays visible."
+  },
+  "psf_vs_peers": {
+    "available": true,
+    "subject": "335 Third Street",
+    "metric": "Rent Per Sqft, 30-Day Avg",
+    "labels": [
+      "335 Third Street",
+      "Modera Jack London Sq",
+      "Channel House",
+      "5 Embarcadero W.",
+      "200 2nd St",
+      "1 Embarcadero W #252",
+      "Link Apts Four12",
+      "Modern Bldg JLS",
+      "Portobello Condos",
+      "311 2nd St"
+    ],
+    "psf": [
+      4.01,
+      5.13,
+      3.9,
+      3.98,
+      3.15,
+      3.59,
+      4.56,
+      3.73,
+      3.16,
+      3.43
+    ],
+    "comps_avg": 3.85,
+    "caveat": "HAND-ENTERED, DATE UNKNOWN \u2014 LIKELY STALE; AWAITING A MARKET SURVEY FEED"
   },
   "placeholders": [
     {
@@ -2882,8 +2896,8 @@
         "new_leases": {
           "weeks": 4,
           "as_of": "2026-09-20",
-          "landed_at": "2026-09-16T01:28:30.467Z",
-          "source_file": "2026-09-15 Daily Report- Week Ending 9.20.26.xlsx",
+          "landed_at": "2026-09-17T01:28:36.419Z",
+          "source_file": "2026-09-16 Daily Report- Week Ending 9.20.26.xlsx",
           "months": [
             {
               "month": "2026-08",
@@ -3401,20 +3415,20 @@
         "new_leases": {
           "weeks": 4,
           "as_of": "2026-09-20",
-          "landed_at": "2026-09-16T01:28:33.195Z",
-          "source_file": "2026-09-15 09.14.2026- 09.20.2026- Chorus - Daily Report Copy.xlsx",
+          "landed_at": "2026-09-17T01:28:30.591Z",
+          "source_file": "2026-09-16 09.14.2026- 09.20.2026- Chorus - Daily Report (1).xlsx",
           "months": [
             {
               "month": "2026-09",
-              "leases": 5,
-              "lease_rent": 33640.0,
-              "prior_rent": 25632.0,
-              "mean_tradeout": 0.321241,
-              "wtd_tradeout": 0.312422
+              "leases": 8,
+              "lease_rent": 46252.0,
+              "prior_rent": 36585.0,
+              "mean_tradeout": 0.257669,
+              "wtd_tradeout": 0.264234
             }
           ],
-          "leases": 5,
-          "mean_tradeout": 0.321241
+          "leases": 8,
+          "mean_tradeout": 0.257669
         },
         "renewals": {
           "as_of": "2026-11",
@@ -3898,22 +3912,22 @@
         "slug": "madelon",
         "name": "Madelon",
         "new_leases": {
-          "weeks": 16,
-          "as_of": "2026-09-15",
-          "landed_at": "2026-09-16T03:28:39.822Z",
-          "source_file": "2026-09-15 9.15.26 - The Madelon - Daily Report.xlsx",
+          "weeks": 17,
+          "as_of": "2026-09-16",
+          "landed_at": "2026-09-17T06:28:38.186Z",
+          "source_file": "2026-09-16 9.16.26 - The Madelon - Daily Report (1).xlsx",
           "months": [
             {
               "month": "2026-09",
-              "leases": 6,
-              "lease_rent": 29917.0,
-              "prior_rent": 19972.0,
-              "mean_tradeout": 0.498052,
-              "wtd_tradeout": 0.497947
+              "leases": 8,
+              "lease_rent": 40355.0,
+              "prior_rent": 28208.0,
+              "mean_tradeout": 0.451431,
+              "wtd_tradeout": 0.430623
             }
           ],
-          "leases": 6,
-          "mean_tradeout": 0.498052
+          "leases": 8,
+          "mean_tradeout": 0.451431
         }
       }
     ]
@@ -4656,14 +4670,14 @@
           {
             "year": 2025,
             "source_file": "Landing 2025 Resi Budget.xlsx",
-            "landed_at": "2026-09-16T16:07:08.762Z",
+            "landed_at": "2026-09-16T16:22:08.315Z",
             "as_of": "Jan 2025-Dec 2025",
             "tieout_gap": 0.0
           },
           {
             "year": 2026,
             "source_file": "Landing 2026 Resi Budget.xlsx",
-            "landed_at": "2026-09-16T16:06:47.225Z",
+            "landed_at": "2026-09-16T16:22:06.175Z",
             "as_of": "Jan 2026-Dec 2026",
             "tieout_gap": 0.0
           }
