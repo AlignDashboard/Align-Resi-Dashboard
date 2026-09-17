@@ -1044,7 +1044,10 @@ removed (verified by mutation).
 ## Expense Trend (Portfolio tab)
 
 One line per property, over the union of their statement months, each property
-selectable on a checkbox above the chart. Until 2026-09-17 the card was three
+selectable on a checkbox above the chart. Full width since 2026-09-17: it was
+the left half of a row shared with `PSF vs Other Properties`, and removing that
+card left it alone against an empty half. Fourteen monthly ticks were crowded
+at half width anyway. Until 2026-09-17 the card was three
 hand-typed expense categories for **one** building — Marketing, Utilities and
 General & Admin, with taxes and insurance left out so monthly movement stayed
 visible — and it moved only when someone edited `metrics.json`. It is now
@@ -1593,8 +1596,8 @@ so the scorecard's per-cell links from `index.html` are unaffected.
 Each row also links **out**: a card name under "On the dashboard" goes to
 `index.html#<cardId>`, and the dashboard selects the owning tab and flashes the
 card. Every Portfolio card now carries an id for this (`cExpRatio`, `cExpTrend`,
-`cPsf`, `cTradeOutsPortfolio`); the Landing cards already had them, and the
-property tabs' scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
+`cBudgetActual`, `cTradeOutsPortfolio`); the Landing cards already had them, and
+the property tabs' scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
 
 **And every card links back.** Each card on the dashboard carries a small
 `Data ↗` in its **top-right corner** that jumps to where its own numbers live
@@ -1678,7 +1681,7 @@ Five statuses, and they are the page's whole argument:
 | `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
 | `waiting` | Parser written and registered; no file has ever arrived. **No flow is in this state today** — the rent roll was the last one and it landed 2026-09-11, closing C4 |
 | `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
-| `manual` | No feed at all — `psf_vs_peers`, `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run. `expense_trend` left this row on 2026-09-17 |
+| `manual` | No feed at all — `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run. Two blocks left this row on 2026-09-17: `expense_trend`, derived from the T12 statement now, and `psf_vs_peers`, whose card was removed |
 
 So the T12 points can report an arrival and not just a period,
 `store_expense_ratio` / `store_monthly_pl` / `store_expense_buckets` /
