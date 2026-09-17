@@ -1003,8 +1003,13 @@ NOI line and then `6000-0000 OTHER EXPENSES` in sections with no grand total. So
 a statement on that tree publishes no total-expense row and falls back to the
 operating anchor — which means **the ratio is not comparable across account
 trees**: Palma's 56.1% is recoverable opex, The Landing's 33.3% is total
-expenses. That is why the basis is published per property and the card's eyebrow
-reads off the selected one, rather than one basis line printed over both.
+expenses. That is why the basis is published per property, and why the Expense
+Ratio card carries each line's own on its tooltip and in its footnote rather
+than printing one basis over both. Until 2026-09-17 that card showed one
+property at a time and the eyebrow carried the selected one's basis; the
+properties are toggles now, so the eyebrow flags the disagreement
+(`TWO EXPENSE BASES`) and the per-property prose moved down to the lines
+themselves.
 
 Which anchor a point used is recorded on the point:
 
@@ -1040,6 +1045,66 @@ re-lengthen as statements re-arrive on the current anchor.
 statements built in a temp dir by `test_expense_buckets`' own builders, no
 network and no fixtures. Each guard has a check that fails when the guard is
 removed (verified by mutation).
+
+## Expense Ratio (Portfolio tab)
+
+The card reads **the series the `Landing (Drive)` tab draws**: each property's
+monthly ratio off the stitched `monthly_pl` run, opex over revenue, exactly as
+that tab's Expense Load & NOI card computes it. And the property dropdown is a
+row of toggles, so the buildings are read against each other rather than one at
+a time. Both changed 2026-09-17, by request.
+
+**The source change is not a restyle.** The `expense_ratio` block's own
+`trend_values` are one point per *statement*, so The Landing's line was **two
+points** where its P&L carries thirteen months, and it lengthened only when a
+new file landed rather than as the stitch grows. A property with a single
+statement fell back to that statement's twelve months and could never show
+more. Reading `monthly_pl` instead gives every month the pipeline has stitched.
+
+Checked before switching, and this is what makes it a change of *source* rather
+than of measurement: the ratio off `monthly_pl` reproduces the block's
+published `latest_monthly_ratio` **to the tenth on every overlapping month, for
+both properties**. The Landing simply gains the thirteenth month (Aug 25,
+32.6%) that the newest statement alone does not carry.
+
+`test_monthly_pl.py` pins that agreement, because the card now shows one
+store's line beside another store's headline figure: if the two stopped
+describing the same expense row, the line would disagree with the number next
+to it and nothing on the page would say so. Two checks, both verified by
+mutation — the published monthly ratio must equal `monthly_pl`'s own
+opex/revenue, and the two stores must record the same `expense_scope` and
+`expense_anchor`.
+
+**The T12 figures moved to the left column, one per property shown.** They are
+the block's own `ratio_t12` and stay the headline, because a single accrual
+month swings hard: The Landing reads **3.8% for Aug 26** on the tax reversal
+and **52.9% for Apr 26** on the annual assessment, against a T12 of 30.7%. The
+footnote says so and points at the figures rather than at the line. It was a
+single 40px number with a dropdown beside it; with toggles there can be several
+at once, so the figure shrinks and the column grows rather than the card having
+to pick one building to headline.
+
+Everything the **Expense Trend** section above says about the union month axis,
+the `null`-not-zero gaps, `spanGaps`, the mixed-anchor flag and the typographic
+minus applies here for the same reasons — the two cards are twins now. The
+anchor disagreement matters more on this one, though, because a *ratio* invites
+direct comparison in a way two dollar lines do not: The Landing's 30.7% is
+total expenses over total revenue and Palma's 56.1% is recoverable opex over
+operating revenue, which is the `not comparable across account trees` point
+made under **The T12 statement's two expense anchors**. So the eyebrow flags it,
+each tooltip line carries its own basis, and the footnote names both.
+
+**One colour per property across the tab.** `propColor` keys the line colour on
+the slug and is seeded from `monthly_pl` before any card mounts, so a building
+is the same colour on Expense Trend and Expense Ratio. A building that is amber
+on one card and teal on the other is worse than no colour at all, and the two
+cards used to pick their palettes independently.
+
+The card's `Data ↗` keeps `t-expratio-*` as its primary — those are the T12
+figures — and gains `t-monthlypl-*`, where the line's numbers live. The
+`t-expratio-<slug>` table went back to its own job with the change: it used to
+publish whichever of the block's two series the card happened to draw, and now
+publishes **both**, each row saying which it is, since the card draws neither.
 
 ## Expense Trend (Portfolio tab)
 

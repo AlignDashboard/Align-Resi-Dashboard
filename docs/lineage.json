@@ -4,7 +4,8 @@
    "card": "Expense Ratio",
    "tab": "Portfolio",
    "tables": [
-    "t-expratio"
+    "t-expratio",
+    "t-monthlypl"
    ],
    "flows": [
     "t12"
@@ -436,7 +437,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-17T18:38:56.582417+00:00",
+  "generated_at": "2026-09-17T18:46:17.942287+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 12,
@@ -551,8 +552,10 @@
      "card": "Expense Ratio",
      "tab": "Portfolio",
      "anchor": "cExpRatio",
+     "primary": "t-expratio-*",
      "tables": [
-      "t-expratio-*"
+      "t-expratio-*",
+      "t-monthlypl-*"
      ]
     },
     {

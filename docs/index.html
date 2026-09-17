@@ -463,6 +463,17 @@
   .inrow .rst:hover { color: var(--text); border-color: var(--muted); }
   .blu-note { font-size: 9px; letter-spacing: .5px; color: var(--blue); margin-top: 6px; }
 
+  /* The Expense Ratio card's left column: one T12 figure per property shown,
+     in that property's own line colour. It was a single 40px number with a
+     dropdown beside it until 2026-09-17 -- once the properties are toggles
+     there can be several at once, so the figure shrinks and the column grows
+     rather than the card having to pick one building to headline. */
+  .erstats { display: flex; flex-direction: column; gap: 11px;
+    flex: 0 0 auto; padding: 0 10px; }
+  .erstats .st .v { font-size: 26px; font-weight: 700; line-height: 1; }
+  .erstats .st .k { font-size: 9px; letter-spacing: 1px; color: var(--muted);
+    text-transform: uppercase; margin-top: 4px; }
+
   .statrow { display: flex; gap: 20px; flex-wrap: wrap; margin: 12px 0 4px; }
   .statrow .st { min-width: 100px; }
   .statrow .st .v { font-size: 17px; font-weight: 700; color: var(--amber); }
@@ -748,13 +759,10 @@
             <h2>Expense Ratio</h2>
             <span class="eyebrow" id="erEyebrow">LOADING…</span>
           </div>
-          <select class="prop-select" id="erSelect" style="display:none;"></select>
         </div>
+        <div class="ckgrid" id="erCks" role="group" aria-label="Properties shown"></div>
         <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
-          <div style="flex:0 0 auto;text-align:center;padding:0 10px;">
-            <div id="erBig" style="font-size:40px;font-weight:700;color:var(--amber);line-height:1;">—</div>
-            <div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:6px;">T12 Ratio</div>
-          </div>
+          <div class="erstats" id="erStats"></div>
           <div class="chartwrap" style="flex:1 1 340px;height:220px;"><canvas id="expRatio"></canvas></div>
         </div>
         <div id="erFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:10px;"></div>
@@ -1481,6 +1489,11 @@ async function loadDashboard() {
     return;
   }
 
+  // Assign the per-property line colours once, before any card mounts, so the
+  // Portfolio tab's two multi-property charts cannot paint one building two
+  // colours depending on which of them rendered first.
+  seedPropColors(d.monthly_pl);
+
   // meta + footer
   const gen = d.meta?.generated_at ? new Date(d.meta.generated_at).toLocaleString() : "—";
   document.getElementById("metaline").textContent =
@@ -1540,8 +1553,7 @@ async function loadDashboard() {
   const ev = d.expense_trend;
   const evProps = (ev && ev.properties) || [];
   if (ev && ev.available && evProps.length) {
-    const evPal = [C.amber, C.teal, C.red, C.green, C.muted];
-    const evColor = i => evPal[i % evPal.length];
+    const evColor = i => propColor(evProps[i].slug);
     const evHidden = new Set();
     // A reversal month is genuinely negative on this chart, so the minus has
     // to be the page's typographic one in all three places it can appear --
@@ -1665,63 +1677,178 @@ async function loadDashboard() {
       '<div class="empty"><div class="dash"></div><div class="big">No expense data yet</div><div class="dash"></div></div>';
   }
 
-  /* ---- EXPENSE RATIO (per-property, dropdown selector) ----
-     renderRatioCard is reusable: NOI Margin will use the same pattern. */
-  function renderRatioCard(ids, metric, unit) {
-    // ids: {select, big, eyebrow, foot, canvas}
-    const sel = document.getElementById(ids.select);
-    const props = metric.properties;
-    let chart = null;
+  /* ---- EXPENSE RATIO (one line per property, each selectable) ----
+     Still parameterised on ids and a unit, since NOI Margin is meant to use
+     the same pattern. Two things changed on 2026-09-17, by request.
 
-    function draw(slug) {
-      const p = props.find(x => x.slug === slug) || props[0];
-      document.getElementById(ids.big).textContent =
-        (p.ratio_t12 != null ? p.ratio_t12 + unit : "—");
-      const multi = p.trend_labels && p.trend_labels.length > 1;
+     The chart is now **the series the Landing (Drive) tab draws**: each
+     property's monthly ratio off the stitched monthly_pl run, opex over
+     revenue, exactly as that tab's Expense Load & NOI card computes it. That
+     is a change of source, not a restyle. The block's own trend_values are one
+     point per STATEMENT, so The Landing's line was two points where its P&L
+     carries thirteen months, and it only lengthened when a new file landed
+     rather than as the stitch grows. Checked before switching: the ratio off
+     monthly_pl reproduces the block's published latest_monthly_ratio to the
+     tenth on every overlapping month, for both properties, so the measurement
+     itself did not move.
+
+     And the property dropdown is a row of toggles, so the buildings can be
+     read against each other rather than one at a time. Same union month axis
+     as the Expense Trend card and for the same reason -- the statements do not
+     cover the same window, so a series aligned by position would plot one
+     property's July against another's August. propColor keys the line colour
+     on the slug, so a building is the same colour on both cards.
+
+     The T12 figures move to the left column, one per property shown. They are
+     the block's own published ratio_t12 and stay the headline: a single
+     accrual month swings hard (The Landing reads 3.8% for Aug 26 on the tax
+     reversal and 52.9% for Apr 26 on the assessment), which is exactly why the
+     footnote points at them rather than at the line. */
+  function renderRatioCard(ids, metric, unit, plBlock) {
+    // ids: {cks, stats, eyebrow, foot, canvas}
+    const plBySlug = {};
+    ((plBlock && plBlock.properties) || []).forEach(p => { plBySlug[p.slug] = p; });
+
+    const rows = metric.properties.map(p => ({
+      slug: p.slug, name: p.name, t12: p.ratio_t12,
       // Per-property basis, falling back to the block's. Two properties can be
       // on different expense anchors -- The Landing's statement has a TOTAL
       // EXPENSES row and Palma's does not -- so one basis line printed over
       // both would describe only one of them.
-      const basis = p.basis || metric.basis;
-      document.getElementById(ids.eyebrow).textContent = multi
-        ? basis + " · rolling T12 by statement period"
-        : basis + " · monthly (T12 trend builds as more statements arrive)";
-      if (chart) chart.destroy();
-      chart = new Chart(document.getElementById(ids.canvas), {
-        type: multi ? "line" : "bar",
-        data: {
-          labels: multi ? p.trend_labels : p.latest_monthly_labels,
-          datasets: [{
-            label: p.name,
-            data: multi ? p.trend_values : p.latest_monthly_ratio,
-            borderColor: C.amber, backgroundColor: C.amber,
-            tension: .3, borderWidth: 2, pointRadius: 3,
-          }],
-        },
-        options: { maintainAspectRatio: false, responsive: true,
-          plugins: { legend: { display: false },
-            tooltip: { callbacks: { label: c =>
-              `${p.name}: ${c.parsed.y == null ? "n/a" : c.parsed.y + unit}` } } },
-          scales: { y: { grid: gridCfg, ticks: { callback: v => v + unit } },
-            x: { grid: { display: false } } } }
-      });
-    }
+      basis: p.basis || metric.basis,
+      scope: p.expense_scope || "operating",
+      color: propColor(p.slug),
+      pl: plBySlug[p.slug] || null,
+    }));
+    // A property with a published T12 ratio but no P&L series still gets its
+    // figure; it just has no line to draw.
+    const drawable = rows.filter(r => r.pl && (r.pl.months || []).length
+                                   && r.pl.months.length === (r.pl.revenue || []).length);
+    const months = [...new Set(drawable.flatMap(r => r.pl.months))].sort();
+    const labels = months.map(shortMo);
+    const mixed = new Set(rows.map(r => r.scope)).size > 1;
+    const hidden = new Set();
 
-    if (props.length > 1) {
-      sel.style.display = "";
-      sel.innerHTML = props.map(p =>
-        `<option value="${p.slug}">${p.name}</option>`).join("");
-      sel.addEventListener("change", () => draw(sel.value));
+    // A reversal month runs the ratio negative (Palma's Jun 26 reads -36%), and
+    // the minus has to be the page's typographic one in both places it shows --
+    // the y ticks and the tooltip. Chart.js's default prints a hyphen, and the
+    // Expense Trend card directly above this one already uses the minus.
+    const erPct = v => (v < 0 ? "−" : "") + Math.abs(v) + unit;
+    const erPct1 = v => (v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + unit;
+
+    const statsEl = document.getElementById(ids.stats);
+    const footEl = document.getElementById(ids.foot);
+    const shown = () => rows.filter(r => !hidden.has(r.slug));
+
+    document.getElementById(ids.eyebrow).textContent =
+      (labels.length
+        ? "Monthly " + "·" + " " + labels[0] + " " + "–" + " " + labels[labels.length - 1]
+        : "Awaiting the statement") +
+      " " + "·" + " " + rows.length +
+      (rows.length === 1 ? " PROPERTY" : " PROPERTIES") +
+      (mixed ? " " + "·" + " TWO EXPENSE BASES" : "");
+
+    const seriesFor = r => {
+      const by = {};
+      r.pl.months.forEach((k, i) => {
+        const rev = r.pl.revenue[i];
+        by[k] = rev ? (r.pl.opex[i] / rev) * 100 : null;
+      });
+      return months.map(k => (k in by ? by[k] : null));
+    };
+
+    const chart = labels.length ? new Chart(document.getElementById(ids.canvas), {
+      type: "line",
+      data: { labels, datasets: drawable.map(r => ({
+        label: r.name, data: seriesFor(r),
+        borderColor: r.color, backgroundColor: r.color,
+        tension: .3, borderWidth: 2, pointRadius: 2, spanGaps: false })) },
+      options: { maintainAspectRatio: false, responsive: true,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => {
+            const r = drawable[c.datasetIndex];
+            return c.dataset.label + ": " +
+              (c.parsed.y == null ? "n/a" : erPct1(c.parsed.y)) +
+              // The basis rides on the tooltip only where the lines disagree
+              // about it -- the moment a reader is comparing two numbers.
+              (mixed ? " " + "·" + " " + r.basis : "");
+          } } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: erPct } },
+          x: { grid: { display: false },
+               ticks: { maxRotation: 0, autoSkip: true, font: { size: 9 } } } } }
+    }) : null;
+
+    // Built node by node rather than as an HTML string: the names come out of
+    // metrics.json, and pipeline data interpolated into innerHTML is markup
+    // injection waiting for a property with a bracket in its name.
+    const paintStats = () => {
+      statsEl.textContent = "";
+      const list = shown();
+      if (!list.length) {
+        statsEl.appendChild(elc("div", "st", "—"));
+        return;
+      }
+      list.forEach(r => {
+        const st = elc("div", "st");
+        const v = elc("div", "v", r.t12 != null ? erPct(r.t12) : "—");
+        v.style.color = r.color;
+        st.appendChild(v);
+        st.appendChild(elc("div", "k", r.name + " " + "·" + " T12"));
+        statsEl.appendChild(st);
+      });
+    };
+
+    const paintNote = () => {
+      const list = shown();
+      const bits = [];
+      if (mixed && list.length > 1) {
+        bits.push("These lines are not the same expense row, so part of the " +
+                  "distance between them is a difference of basis rather than " +
+                  "of spending.");
+      }
+      bits.push("The lines are each property's monthly ratio off the stitched " +
+                "P&L — the same series the Landing (Drive) tab's Expense " +
+                "Load & NOI card draws — and a line stops where that " +
+                "property's statements do rather than being drawn across the gap.");
+      bits.push("Monthly ratios are volatile on an accrual basis, since a " +
+                "true-up or a reversal is booked in the month it is found; the " +
+                "T12 figures on the left are the reliable reading.");
+      bits.push(list.length
+        ? list.map(r => r.name + ": " + r.basis).join(" " + "·" + " ") + "."
+        : "No property selected — tick one above.");
+      footEl.textContent = bits.join(" ");
+    };
+
+    // One box per property. A control that cannot change anything is worse
+    // than no control, so a single-property portfolio gets no grid.
+    const cksEl = document.getElementById(ids.cks);
+    if (rows.length > 1) {
+      ckGrid(cksEl,
+        rows.map(r => ({ slug: r.slug, label: r.name, color: r.color, title: r.basis })),
+        it => !hidden.has(it.slug),
+        it => {
+          if (hidden.has(it.slug)) hidden.delete(it.slug); else hidden.add(it.slug);
+          const i = drawable.findIndex(r => r.slug === it.slug);
+          if (chart && i >= 0) {
+            chart.setDatasetVisibility(i, !hidden.has(it.slug));
+            chart.update();
+          }
+          paintStats();
+          paintNote();
+        });
+    } else {
+      cksEl.hidden = true;
     }
-    if (metric.footnote) document.getElementById(ids.foot).textContent = metric.footnote;
-    draw(props[0].slug);
+    paintStats();
+    paintNote();
   }
 
   const er = d.expense_ratio;
   if (er && er.available && Array.isArray(er.properties) && er.properties.length) {
     renderRatioCard(
-      { select: "erSelect", big: "erBig", eyebrow: "erEyebrow", foot: "erFoot", canvas: "expRatio" },
-      er, "%"
+      { cks: "erCks", stats: "erStats", eyebrow: "erEyebrow", foot: "erFoot", canvas: "expRatio" },
+      er, "%", d.monthly_pl
     );
   } else if (document.getElementById("erEyebrow")) {
     document.getElementById("erEyebrow").textContent = "AWAITING SOURCE DATA";
@@ -1781,6 +1908,23 @@ const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct",
 // "2026-08" -> "Aug 26". Hoisted out of the property views: three of them
 // label the same month series, and a month key formatted two ways would read
 // as two different periods.
+/* One colour per property across the Portfolio tab. Expense Trend and Expense
+   Ratio draw the same buildings off the same block, and a building that is
+   amber on one card and teal on the other is worse than no colour at all.
+   Keyed on slug and seeded from monthly_pl, so the assignment does not depend
+   on which card happens to mount first. */
+const PROP_PAL = [C.amber, C.teal, C.red, C.green, C.muted];
+const _propColor = new Map();
+function propColor(slug) {
+  if (!_propColor.has(slug)) {
+    _propColor.set(slug, PROP_PAL[_propColor.size % PROP_PAL.length]);
+  }
+  return _propColor.get(slug);
+}
+function seedPropColors(pl) {
+  ((pl && pl.properties) || []).forEach(p => propColor(p.slug));
+}
+
 const shortMo = m => {
   const [y, mm] = String(m).split("-");
   return MONTH_ABBR[+mm - 1] + " " + y.slice(2);

@@ -1161,16 +1161,23 @@ async function loadAll() {
       renderTable(host, {
         id: "t-expratio-" + (pr.slug || i), group: "Portfolio",
         title: "Expense Ratio — " + (pr.name || pr.slug),
-        feeds: "Expense Ratio chart (property selector)",
+        feeds: "Expense Ratio card — the T12 figures beside its chart",
         // pr.basis before er.basis: the anchor is per property, not per block.
         note: [pr.basis || er.basis,
                "T12 ratio " + (pr.ratio_t12 != null ? pr.ratio_t12 + "%" : "—"),
+               "The card's line is the monthly ratio off monthly_pl (see Monthly P&L), "
+                 + "not either series below",
                er.footnote].filter(Boolean).join(" · "),
-        cols: [{ key: "period", label: "Period" }, { key: "value", label: "Ratio %", fmt: "num" }],
-        rows: (pr.trend_labels && pr.trend_labels.length > 1
-          ? pr.trend_labels.map((l, j) => ({ period: l, value: (pr.trend_values || [])[j] }))
-          : (pr.latest_monthly_labels || []).map((l, j) =>
-              ({ period: l, value: (pr.latest_monthly_ratio || [])[j] }))),
+        cols: [{ key: "series", label: "Series" }, { key: "period", label: "Period" },
+               { key: "value", label: "Ratio %", fmt: "num" }],
+        // Both series, not whichever the card happened to draw: the page
+        // claims to hold every number the JSON carries, and this block carries
+        // a rolling T12 per statement AND the newest statement's twelve months.
+        rows: (pr.trend_labels || []).map((l, j) =>
+                ({ series: "Rolling T12", period: l, value: (pr.trend_values || [])[j] }))
+              .concat((pr.latest_monthly_labels || []).map((l, j) =>
+                ({ series: "Newest statement, monthly", period: l,
+                   value: (pr.latest_monthly_ratio || [])[j] }))),
       });
     });
 
