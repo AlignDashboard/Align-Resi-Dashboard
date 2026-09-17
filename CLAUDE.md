@@ -351,11 +351,37 @@ must run **in this order**:
    ranges and the Palma lease-up overrides. **This resets every measured value
    to null**, which is why it goes first.
 `OMITTED_METRICS` in `extract_scorecard.py` is the list of grid columns the
-dashboard does not publish at all — `# of offers that are 30 days` as of
-2026-08-28. They are dropped at extraction rather than hidden on the page, so no
-downstream table carries a KPI with no home, and their published range goes with
-them. The workbook keeps its own column either way, and the extractor warns if a
-name in the list stops matching a column.
+dashboard does not publish at all — `# of offers that are 30 days` (2026-08-28)
+and `# of accepted/pending offers` (2026-09-17, owner's call). They are dropped
+at extraction rather than hidden on the page, so no downstream table carries a
+KPI with no home, and their published range goes with them. The workbook keeps
+its own column either way, and the extractor warns if a name in the list stops
+matching a column.
+
+**`populate_scorecard.prune_omitted` applies the same list on every fill**, so
+the live page does not wait for a workbook refresh. Extraction is the real
+fix, but it needs the `.xlsx` and is run by hand, so a KPI removed today would
+otherwise sit on the page for as long as that takes; the daily cron runs
+`populate_scorecard`, so the page catches up on its own and the next
+re-extraction is a no-op rather than a correction. It removes only the metric —
+the coverage counts and `by_metric` are left to `recompute`, so the grid and
+the figures under it cannot disagree.
+
+It **reads** the list out of `extract_scorecard.py`'s source rather than
+importing it: that file has no `__main__` guard and opens the workbook at
+module level, so importing it would demand the `.xlsx` in CI. One list read
+from the one place it is defined still beats a second copy, and it is the same
+idiom `test_routing.load_rules()` uses on the `.js`. `omitted_metrics()`
+returns **`None`, not an empty set**, when the read fails — mutation shows why
+that matters and how little separates the two: an empty set prunes nothing
+*and says nothing*, so the removal quietly stops working while every count
+still adds up. `scripts/test_scorecard_omissions.py` is the guard — 23
+fixture-free checks.
+
+Removing `# of accepted/pending offers` moved **no graded figure**: it was a
+hand-set symbol no report had ever measured, so `scored` and `at_or_above`
+are untouched at 31 and 64.52%, and only the cell counts fall — 27 KPIs to 26,
+135 cells to 130, the five lost cells all previously `awaiting a feed`.
 
 2. `python scripts/populate_scorecard.py --from-landing` — fills the measured
    numbers a report can actually answer and re-derives those cells' status from

@@ -99,6 +99,7 @@ Usage:
 import argparse
 from datetime import datetime
 import json
+import re
 import os
 import sys
 
@@ -716,6 +717,73 @@ def coverage_of(p, names):
             "total": len(names)}
 
 
+OMITTED_RE = re.compile(r"^OMITTED_METRICS\s*=\s*\{(.*?)\}", re.S | re.M)
+
+
+def omitted_metrics():
+    """OMITTED_METRICS, read out of extract_scorecard.py's source.
+
+    Read rather than imported because that file has no __main__ guard: it opens
+    the workbook at module level, so importing it here would demand the .xlsx
+    the daily cron does not have. Reading the one list out of the one place it
+    is defined still beats a second copy that can disagree with it -- the same
+    reason test_routing.load_rules() parses ROUTING_RULES out of the .js.
+
+    Returns None, not an empty set, when the block cannot be parsed: the caller
+    must be able to tell "nothing is omitted" from "the list could not be read",
+    since the second silently puts a dropped KPI back on the page.
+    """
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "extract_scorecard.py")
+    try:
+        m = OMITTED_RE.search(open(src).read())
+    except OSError:
+        return None
+    if not m:
+        return None
+    return set(re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(1)))
+
+
+def prune_omitted(sc):
+    """Drop OMITTED_METRICS from an already-published scorecard.
+
+    extract_scorecard drops them at extraction, which is the real fix -- but
+    that step needs the workbook and is run by hand, so a KPI removed today
+    would otherwise sit on the live page until someone next re-extracts. This
+    runs on every fill, including the daily cron, so the page catches up on its
+    own. Re-extracting later is then a no-op rather than a correction.
+
+    Everything derived is left to recompute(): this only removes the metric
+    itself, so the coverage counts and by_metric cannot disagree with the grid.
+    """
+    omit = omitted_metrics()
+    if omit is None:
+        print("[warn] could not read OMITTED_METRICS out of extract_scorecard.py "
+              "-- nothing pruned; a metric meant to be dropped may be published")
+        return []
+    present = [m["name"] for m in sc.get("metrics", []) if m["name"] in omit]
+    if not present:
+        return []
+    sc["metrics"] = [m for m in sc["metrics"] if m["name"] not in omit]
+    for g in sc.get("groups", []):
+        g["metrics"] = [n for n in g["metrics"] if n not in omit]
+    sc["groups"] = [g for g in sc.get("groups", []) if g["metrics"]]
+    for key in ("thresholds",):
+        block = sc.get(key) or {}
+        for n in present:
+            block.pop(n, None)
+    sc["unscored"] = [n for n in (sc.get("unscored") or []) if n not in omit]
+    for p in sc["properties"]:
+        for key in ("statuses", "values", "status_source", "status_workbook"):
+            block = p.get(key) or {}
+            for n in present:
+                block.pop(n, None)
+    for slug, m in (sc.get("measured") or {}).items():
+        for key in [k for k in m if k.endswith("kpis")]:
+            m[key] = [n for n in m[key] if n not in omit]
+    return present
+
+
 def recompute(sc):
     """Rebuild every derived figure from the per-property status maps."""
     names = [m["name"] for m in sc["metrics"]]
@@ -872,6 +940,10 @@ def main():
             prop.setdefault("status_source", {})[kpi] = "measured"
             action = "confirms the workbook"
         print(f"{kpi:26} {display:>18}  {str(band):<11} {str(was):<11} {action}")
+
+    dropped = prune_omitted(sc)
+    if dropped:
+        print("omitted from the scorecard (OMITTED_METRICS): " + ", ".join(dropped))
 
     recompute(sc)
 
