@@ -736,6 +736,7 @@
       <div class="card" id="cExpTrend">
         <h2>Expense Trend</h2>
         <span class="eyebrow" id="evEyebrow">LOADING…</span>
+        <div class="ckgrid" id="evCks" role="group" aria-label="Properties shown"></div>
         <div class="chartwrap"><canvas id="expVar"></canvas></div>
         <div id="evFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:8px;"></div>
       </div>
@@ -1520,27 +1521,149 @@ async function loadDashboard() {
       '<div class="why">' + (to?.reason || "No data available.") + '</div><div class="dash"></div></div>';
   }
 
-  /* ---- 2. EXPENSE TREND (multi-line, top movers) ---- */
+  /* ---- 2. EXPENSE TREND (one line per property, each selectable) ----
+     This was three hand-typed expense categories for one building until
+     2026-09-17. It is now every property's own expense line on one axis, off
+     the same statement series the Operating Summary reads, so the buildings
+     are read against each other rather than one at a time.
+
+     Two things it is careful about, and both would be invisible in the
+     numbers:
+
+     * The axis is the UNION of the properties' months and every line is
+       aligned to it by month key, with a null where that property has no
+       statement. The windows differ -- The Landing's runs Aug 25-Aug 26 and
+       Palma's Jul 25-Jun 26 -- so aligning by position would plot Palma's
+       July against The Landing's August. spanGaps stays false, so a line
+       stops where its statements do rather than being drawn across the gap.
+     * The lines are not necessarily the same expense row. The Landing's is
+       total expenses (549999-9999); Palma's is recoverable operating opex,
+       because the Align tree has no counterpart to that row. mixed_scope is
+       the pipeline saying so, and the card puts it in the eyebrow, the
+       tooltip and the footnote rather than printing one basis over two
+       different expense loads. */
   const ev = d.expense_trend;
-  if (ev && ev.available) {
-    document.getElementById("evEyebrow").textContent = ev.property + " · " + ev.period;
-    const palette = [C.amber, C.teal, C.red, C.green, C.muted];
-    new Chart(document.getElementById("expVar"), {
+  const evProps = (ev && ev.properties) || [];
+  if (ev && ev.available && evProps.length) {
+    const evPal = [C.amber, C.teal, C.red, C.green, C.muted];
+    const evColor = i => evPal[i % evPal.length];
+    const evHidden = new Set();
+    // A reversal month is genuinely negative on this chart, so the minus has
+    // to be the page's typographic one in all three places it can appear --
+    // the y ticks, the tooltip and the note. Chart.js's default prints a
+    // hyphen, which would sit beside the note's minus on the same card.
+    const evSign = v => (v < 0 ? "−$" : "$");
+    const evK = v => evSign(v) + Math.abs(Math.round(v / 1000)).toLocaleString() + "k";
+    const evFull = v => evSign(v) + Math.abs(Math.round(v)).toLocaleString();
+    const evFoot = document.getElementById("evFoot");
+    const scopeWord = sc => sc === "total" ? "total expenses" : "operating expenses";
+    // The window labels are the published ones rather than a second date
+    // formatter here, so the footnote and the axis cannot word a month
+    // differently.
+    const evLbl = key => {
+      const i = (ev.months || []).indexOf(key);
+      return i < 0 ? key : ev.labels[i];
+    };
+
+    document.getElementById("evEyebrow").textContent =
+      ev.labels[0] + " – " + ev.labels[ev.labels.length - 1] + " · " +
+      evProps.length + (evProps.length === 1 ? " PROPERTY" : " PROPERTIES") +
+      (ev.mixed_scope ? " · TWO EXPENSE BASES" : "");
+
+    const evChart = new Chart(document.getElementById("expVar"), {
       type: "line",
       data: { labels: ev.labels,
-        datasets: ev.series.map((s, i) => ({
-          label: s.name, data: s.data,
-          borderColor: palette[i % palette.length],
-          backgroundColor: palette[i % palette.length],
-          tension: .3, borderWidth: 2, pointRadius: 2
+        datasets: evProps.map((p, i) => ({
+          label: p.name, data: p.data,
+          borderColor: evColor(i), backgroundColor: evColor(i),
+          tension: .3, borderWidth: 2, pointRadius: 2, spanGaps: false
         })) },
       options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg,
-          tooltip: { callbacks: { label: c => `${c.dataset.label}: $${c.parsed.y.toLocaleString()}` } } },
-        scales: { y: { grid: gridCfg, ticks: { callback: v => "$" + (v/1000) + "k" } },
-          x: { grid: { display: false } } } }
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => {
+            const pr = evProps[c.datasetIndex];
+            // The basis rides on the tooltip only where the lines disagree
+            // about it -- that is the moment a reader is comparing two
+            // numbers, and so the one place the caveat has to be.
+            return c.dataset.label + ": " + evFull(c.parsed.y) +
+              (ev.mixed_scope ? " · " + scopeWord(pr.expense_scope) : "");
+          } } } },
+        scales: { y: { grid: gridCfg, ticks: { callback: evK } },
+          x: { grid: { display: false },
+               ticks: { maxRotation: 0, autoSkip: true, font: { size: 9 } } } } }
     });
-    if (ev.footnote) document.getElementById("evFoot").textContent = ev.footnote;
+
+    // An accrual statement books true-ups and reversals in the month it finds
+    // them, so the biggest features on this chart are usually timing rather
+    // than spending: The Landing reads $49k for Aug 26 against a $365k run
+    // rate because that month carries the tax reversal, and $624k for Apr 26
+    // because the annual assessment lands in one month. Naming them is what
+    // stops the line being read as a collapse and a blowout. Computed off the
+    // series against each line's OWN median -- a shared threshold would flag
+    // every month of the smaller building -- so it cannot go stale as months
+    // arrive, and no cause is asserted that this card has not checked.
+    const evOdd = p => {
+      const vals = p.data.filter(v => v != null);
+      if (vals.length < 4) return [];
+      const sorted = [...vals].sort((a, b) => a - b);
+      const med = sorted[Math.floor(sorted.length / 2)];
+      if (!(med > 0)) return [];
+      return p.data
+        .map((v, i) => (v != null && (v < 0 || Math.abs(v - med) > med * 0.4)
+          ? ev.labels[i] + " (" + evK(v) + ")" : null))
+        .filter(Boolean);
+    };
+
+    const evNote = () => {
+      const shown = evProps.filter(p => !evHidden.has(p.slug));
+      if (!shown.length) {
+        evFoot.textContent = "No property selected — tick one above.";
+        return;
+      }
+      const lines = shown.map(p =>
+        p.name + ": " + scopeWord(p.expense_scope) +
+        (p.expense_anchor ? " (" + p.expense_anchor + ")" : "") + ", " +
+        evLbl(p.first_month) + "–" + evLbl(p.last_month));
+      const odd = shown.map(p => {
+        const ms = evOdd(p);
+        return ms.length ? p.name + " " + ms.join(", ") : null;
+      }).filter(Boolean);
+      evFoot.textContent =
+        (ev.mixed_scope && shown.length > 1
+          ? "These lines are not the same expense row, so part of the distance " +
+            "between them is a difference of basis rather than of spending. "
+          : "") +
+        lines.join(" · ") +
+        ". A line stops where that property's statements do rather than being " +
+        "drawn across the gap." +
+        (odd.length
+          ? " An accrual statement books true-ups and reversals in the month it " +
+            "finds them, so the months furthest from a line's own run rate are " +
+            "timing rather than money spent or saved: " + odd.join("; ") + "."
+          : "");
+    };
+
+    // One box per property. A control that cannot change anything is worse
+    // than no control, so a single-property portfolio gets no grid -- the
+    // same rule the Budget vs Actual basket row follows.
+    const evCks = document.getElementById("evCks");
+    if (evProps.length > 1) {
+      ckGrid(evCks,
+        evProps.map((p, i) => ({ slug: p.slug, label: p.name, color: evColor(i),
+                                 title: p.basis || "" })),
+        it => !evHidden.has(it.slug),
+        it => {
+          if (evHidden.has(it.slug)) evHidden.delete(it.slug); else evHidden.add(it.slug);
+          evChart.setDatasetVisibility(evProps.findIndex(p => p.slug === it.slug),
+                                       !evHidden.has(it.slug));
+          evChart.update();
+          evNote();
+        });
+    } else {
+      evCks.hidden = true;
+    }
+    evNote();
   } else {
     document.getElementById("evEyebrow").textContent = "AWAITING SOURCE DATA";
     document.getElementById("expVar").parentElement.innerHTML =

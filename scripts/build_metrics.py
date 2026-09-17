@@ -1224,6 +1224,74 @@ def stitch_rent_capture(points, label=""):
     return out
 
 
+MONTHS_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def month_label(key):
+    """'2025-08' -> 'Aug 25'.
+
+    The year is not decoration here. monthly_pl's own labels are the bare
+    month, which is unambiguous over one statement's twelve columns; this
+    axis is the union of several properties' windows and already spans
+    fourteen months, so it carries two Julys and a bare label would put them
+    on the same tick in the reader's head.
+    """
+    y, m = key.split("-")
+    return f"{MONTHS_ABBR[int(m) - 1]} {y[2:]}"
+
+
+def expense_trend(pl_props):
+    """metrics.json's expense_trend block -- every property's expense line.
+
+    Two things this has to get right, and both would be invisible in the
+    numbers:
+
+    * **The axis is the union of the properties' months, keyed on YYYY-MM.**
+      The statements do not cover the same window -- The Landing's runs
+      Aug 25-Aug 26 and Palma's Jul 25-Jun 26 -- so lining the series up by
+      position would plot Palma's July against The Landing's August and draw
+      the offset as a swing in spending. A property with no statement for a
+      month gets null, and the card breaks its line there rather than joining
+      across it.
+
+    * **The lines are not all the same expense row.** The Landing's is total
+      expenses (jpm 549999-9999); Palma's is recoverable operating opex,
+      because the Align tree has no counterpart to that row -- see
+      expense_anchor_for(). Two different expense loads on one axis, so each
+      line carries its own scope and anchor and the block flags the
+      disagreement rather than printing one basis over both.
+    """
+    months = sorted({m for p in pl_props for m in p["months"]})
+    out = []
+    for p in pl_props:
+        by_month = dict(zip(p["months"], p["opex"]))
+        out.append({
+            "slug": p["slug"],
+            "name": p["name"],
+            "data": [by_month.get(m) for m in months],
+            "first_month": p["months"][0] if p["months"] else None,
+            "last_month": p["months"][-1] if p["months"] else None,
+            "period_end": p["period_end"],
+            "expense_scope": p["expense_scope"],
+            "expense_anchor": p["expense_anchor"],
+            "basis": p["basis"],
+        })
+    scopes = {p["expense_scope"] for p in out}
+    return {
+        "available": bool(out),
+        "months": months,
+        "labels": [month_label(m) for m in months],
+        "properties": out,
+        # True where the lines are not the same expense row, which the card
+        # has to say out loud: it is the same trap the Expense Ratio card
+        # carries a per-property basis for.
+        "mixed_scope": len(scopes) > 1,
+        "basis": "Monthly expenses per property, from each property's own "
+                 "12-month accrual statement",
+    }
+
+
 def build_metrics_json():
     props, _ = load_properties()
 
@@ -1528,6 +1596,13 @@ def build_metrics_json():
                          "source_codes": latest.get("source_codes"),
                          "basis": series["basis"] or latest.get("basis")})
     metrics["monthly_pl"] = {"available": bool(pl_props), "properties": pl_props}
+
+    # The Portfolio tab's Expense Trend card: one total-expense line per
+    # property on one axis, so the buildings are read against each other
+    # rather than one at a time. Derived from pl_props above rather than
+    # re-read from disk, so a month here and the same month on the Operating
+    # Summary cannot disagree.
+    metrics["expense_trend"] = expense_trend(pl_props)
 
     # Residential rental income, for the Loss to Lease card. Same shape as the
     # analyst workbook's rent_capture block on purpose: the page renders either

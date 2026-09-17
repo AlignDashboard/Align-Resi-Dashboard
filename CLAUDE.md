@@ -1041,6 +1041,71 @@ statements built in a temp dir by `test_expense_buckets`' own builders, no
 network and no fixtures. Each guard has a check that fails when the guard is
 removed (verified by mutation).
 
+## Expense Trend (Portfolio tab)
+
+One line per property, over the union of their statement months, each property
+selectable on a checkbox above the chart. Until 2026-09-17 the card was three
+hand-typed expense categories for **one** building — Marketing, Utilities and
+General & Admin, with taxes and insurance left out so monthly movement stayed
+visible — and it moved only when someone edited `metrics.json`. It is now
+derived, and `expense_trend` came off the `manual` list on the data-flow page
+with it.
+
+The series is `monthly_pl`'s own `opex`, not a second reading of the statement:
+`expense_trend()` in `build_metrics.py` is handed the same `pl_props` the
+Operating Summary is published from, so a month on this card and the same month
+on that one cannot disagree.
+
+Three things it is careful about, and each would be invisible in the numbers:
+
+- **The axis is the union of the properties' months, keyed on `YYYY-MM`.** The
+  statements do not cover the same window — The Landing's runs Aug 25–Aug 26
+  and Palma's Jul 25–Jun 26 — so aligning the series by position would plot
+  Palma's July against The Landing's August and draw the one-month offset as a
+  swing in spending. A property with no statement for a month gets `null`, not
+  zero, and `spanGaps` stays false so the line stops rather than being drawn
+  across the gap.
+- **The labels carry the year.** `monthly_pl`'s own labels are the bare month,
+  which is unambiguous over one statement's twelve columns. This axis is
+  fourteen months across two calendar years and holds two Julys, so it reads
+  `Jul 25` / `Jul 26`. The data page's table publishes the month **key** in its
+  own column for the same reason.
+- **The lines are not all the same expense row.** The Landing's is total
+  expenses (`549999-9999`); Palma's is recoverable operating opex, because the
+  Align tree has no counterpart to that row — see **The T12 statement's two
+  expense anchors** above. `mixed_scope` is the pipeline saying so, and the
+  card puts it in the eyebrow (`TWO EXPENSE BASES`), on every tooltip line and
+  in the footnote, rather than printing one basis over two different expense
+  loads. It is the same trap the Expense Ratio card carries a per-property
+  basis for.
+
+**The card names its own outliers, and they are mostly timing.** An accrual
+statement books true-ups and reversals in the month it finds them, so the
+biggest features on this chart are not spending: The Landing reads **$624k for
+Apr 26** (the annual tax assessment lands in one month) and **$49k for Aug 26**
+(its reversal — the same $48,572 the Budget vs Actual note describes), against
+a $365k run rate; Palma runs **−$94k in Jun 26**. Without a word about them the
+chart reads as a collapse and a blowout. The footnote is computed from the
+series against **each line's own median** — a shared threshold would flag every
+month of the smaller building — so it cannot go stale as months arrive, and it
+names the months without asserting a cause this card has not checked.
+
+Two smaller things:
+
+- **The grid hides itself below two properties.** A control that cannot change
+  anything is worse than no control — the same rule the Budget vs Actual basket
+  row follows. Unticking everything is allowed and the footnote says so rather
+  than leaving an empty chart unexplained.
+- **The minus is the typographic one in all three places it can appear** — the
+  y ticks, the tooltip and the footnote. A reversal month is genuinely negative
+  here, and Chart.js's default tick prints a hyphen, which would sit on the
+  same card as the footnote's minus.
+
+`scripts/test_monthly_pl.py` covers it — the union axis, null-not-zero, the
+per-line scope and the mixed flag. The two load-bearing ones were verified by
+mutation: aligning by position instead of by month key fails the alignment and
+the null checks, and never flagging a mixed anchor fails the flag check.
+
 ## Budget vs Actual (Portfolio tab)
 
 The Portfolio tab's `Budget vs Actual` card has **two views**, on a `Total` /
@@ -1613,7 +1678,7 @@ Five statuses, and they are the page's whole argument:
 | `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
 | `waiting` | Parser written and registered; no file has ever arrived. **No flow is in this state today** — the rent roll was the last one and it landed 2026-09-11, closing C4 |
 | `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
-| `manual` | No feed at all — `expense_trend`, `psf_vs_peers`, `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run |
+| `manual` | No feed at all — `psf_vs_peers`, `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run. `expense_trend` left this row on 2026-09-17 |
 
 So the T12 points can report an arrival and not just a period,
 `store_expense_ratio` / `store_monthly_pl` / `store_expense_buckets` /

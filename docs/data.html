@@ -1130,14 +1130,29 @@ async function loadAll() {
     });
 
     const ev = d.expense_trend || {};
+    const evPr = ev.properties || [];
     renderTable(host, {
       id: "t-exptrend", group: "Portfolio", title: "Expense Trend",
       feeds: "Expense Trend multi-line chart",
-      note: [ev.property, ev.period, ev.footnote].filter(Boolean).join(" · "),
-      cols: [{ key: "month", label: "Month" }].concat(
-        (ev.series || []).map(s => ({ key: s.name, label: s.name, fmt: "money" }))),
-      rows: byMonth(ev.labels || [], Object.fromEntries((ev.series || []).map(s => [s.name, s.data])))
-              .map(r => { r.month = r.month; return r; }),
+      note: [ev.basis,
+             evPr.map(p => p.name + ": " +
+                (p.expense_scope === "total" ? "total expenses" : "operating expenses") +
+                (p.expense_anchor ? " (" + p.expense_anchor + ")" : "")).join("; "),
+             ev.mixed_scope ? "The columns are not the same expense row, so they are "
+                            + "not directly comparable" : null]
+            .filter(Boolean).join(" · "),
+      // The month KEY as well as the label: this axis is the union of the
+      // properties' windows and spans two calendar years, so "Jul" is in it
+      // twice and a bare label cannot say which one a row is.
+      cols: [{ key: "month", label: "Month" }, { key: "key", label: "Month key" }].concat(
+        evPr.map(p => ({ key: p.slug, label: p.name, fmt: "money" }))),
+      rows: (ev.months || []).map((m, i) => {
+        const r = { month: (ev.labels || [])[i], key: m };
+        // An empty cell is a month that property has no statement for, which
+        // is not the same as a month it spent nothing in.
+        evPr.forEach(p => { r[p.slug] = p.data[i]; });
+        return r;
+      }),
       filterable: true,
     });
 
