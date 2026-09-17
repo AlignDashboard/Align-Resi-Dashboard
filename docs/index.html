@@ -2919,26 +2919,39 @@ async function renderOpSummary(slug, ids) {
   const avail = k => PERIODS[k] && startOf(PERIODS[k]) >= 0;
   const sumOf = (P, series) => series.slice(startOf(P), endOf(P) + 1)
     .reduce((x, y) => x + y, 0);
-  // Both columns are expressed over the COMPARISON's own window, which is what
-  // the period on the right is measured in: set against Prev Month the figures
-  // are one-month totals, against T3 they are three-month totals, against T12 a
-  // year. So the right column is simply its own total, and the left is its
-  // monthly rate over that same number of months -- a month set against T3
-  // reads x3, a T3 set against T6 reads x2. Scaling to a fixed year instead
-  // would print an annualised figure where the pair is two actual months, which
-  // is what the card is most often read for.
   const monthsOf = (P, series, months) => sumOf(P, series) * (months / P.k);
+  // Every pair is an ANNUAL RUN RATE -- each period's own total scaled to a
+  // full year -- except two consecutive months, which are left as reported.
+  //
+  // Annualizing is what lets windows of different lengths sit side by side: a
+  // month against a quarter is otherwise three times the period as well as a
+  // different one, and the variance reads as both at once. The exception is
+  // the pair that needs none of that: Current Month against Prev Month is
+  // already like for like, and the actual month-over-month totals are what the
+  // card is most often read for -- printing them x12 scales the one comparison
+  // that was already comparable.
+  //
+  // One function, because the table and the note under it must not describe
+  // different arithmetic.
+  const scaling = (baseKey, cmpKey) => {
+    const bk = PERIODS[baseKey].k, ck = PERIODS[cmpKey].k;
+    const target = (bk === 1 && ck === 1) ? 1 : 12;
+    return { target, multB: target / bk, multC: target / ck };
+  };
   const spanOf = k => {
     const P = PERIODS[k];
     return P.k === 1 ? shortMo(key(endOf(P)))
       : shortMo(key(startOf(P))) + "\u2013" + shortMo(key(endOf(P)));
   };
-  // A column carrying its own total is headed by its own name; one scaled to
-  // the comparison's window says so, because "Current Month (Aug 2026)" over a
-  // figure three times August would be read as August.
+  // A column carrying its own total is headed by its own name; one scaled to a
+  // year says so, because "Current Month (Aug 2026)" over a figure twelve times
+  // August would be read as August. Either side can be scaled -- T3 against T6
+  // is x4 beside x2 -- so both headings take a multiplier.
   const headOf = (k, mult) => PERIODS[k].label + " (" + spanOf(k) + ")"
     + (mult && mult !== 1 ? " \u00d7" + mult : "");
-  const monthsWord = k => k === 1 ? "one month" : k + " months";
+  // How the note names a column's scaling, in the same words as its heading.
+  const scaleWord = (k, mult) => PERIODS[k].label
+    + (mult === 1 ? " as reported" : " \u00d7" + mult);
 
   // Variance is the change between the two columns as a percentage, coloured by
   // favourability rather than by sign: more revenue and more NOI are good, more
@@ -2978,11 +2991,10 @@ async function renderOpSummary(slug, ids) {
     const B = PERIODS[baseKey] ? baseKey : options[0];
     const cmps = comparisonsFor(B);
     const C2 = cmps.indexOf(cmpKey) >= 0 ? cmpKey : cmps[0];
-    const span = PERIODS[C2].k;
-    const mult = span / PERIODS[B].k;
+    const { target, multB, multC } = scaling(B, C2);
     const row = (label, series, goodWhenUp) => {
-      const a = monthsOf(PERIODS[B], series, span);
-      const b = monthsOf(PERIODS[C2], series, span);
+      const a = monthsOf(PERIODS[B], series, target);
+      const b = monthsOf(PERIODS[C2], series, target);
       const diff = a - b;
       const pct = b ? diff / Math.abs(b) : null;
       return [label, fm$(a), fm$(b), dcell(diff, goodWhenUp),
@@ -2990,8 +3002,8 @@ async function renderOpSummary(slug, ids) {
     };
     buildTable(document.getElementById(ids.tbl),
       [{ t: "" },
-       { t: headOf(B, mult), num: true },
-       { t: headOf(C2), num: true },
+       { t: headOf(B, multB), num: true },
+       { t: headOf(C2, multC), num: true },
        { t: "Variance $", num: true },
        { t: "Variance %", num: true }],
       [row("Operating revenue", pt.revenue, true),
@@ -3030,22 +3042,23 @@ async function renderOpSummary(slug, ids) {
     const B = PERIODS[baseKey] ? baseKey : options[0];
     const cmps = comparisonsFor(B);
     const C2 = cmps.indexOf(cmpKey) >= 0 ? cmpKey : cmps[0];
-    const span = PERIODS[C2].k;
-    const mult = span / PERIODS[B].k;
+    const { target, multB, multC } = scaling(B, C2);
     return "The same statement the expense cards read, refreshed on the same daily run \u2014 "
       + "the current month follows the statement, so it moves to the new month when one "
       + "is posted. " + PERIODS[B].label + " (" + spanOf(B) + ") is measured against "
       + PERIODS[C2].label + " (" + spanOf(C2) + "); the buttons offer "
       + cmps.map(k => PERIODS[k].label).join(", ") + ", and which ones they are follows "
-      + "the period on the left. Both columns cover " + monthsWord(span)
-      + " \u2014 the window the comparison on the right is itself measured in \u2014 so "
-      + PERIODS[C2].label + " is its own total"
-      + (mult === 1
-          ? ", and so is " + PERIODS[B].label + ": the two windows are the same length "
-            + "and nothing is scaled. "
-          : ", and " + PERIODS[B].label + " is its monthly rate over that same "
-            + "span (\u00d7" + mult + "), which is what lets the two be set side by "
-            + "side. It is the frame the variance is taken in, not a forecast. ")
+      + "the period on the left. "
+      + (target === 1
+          ? "Both columns are one month as reported: the two windows are the same "
+            + "length, so nothing is scaled and the variance is the actual "
+            + "month-over-month change. "
+          : "Both columns are annual run rates \u2014 each period's own total scaled "
+            + "to a full year, " + scaleWord(B, multB) + " against "
+            + scaleWord(C2, multC) + " \u2014 which is what lets two windows of "
+            + "different lengths be set side by side. It is the frame the variance "
+            + "is taken in, not a forecast: the only pair left unscaled is Current "
+            + "Month against Prev Month, which needs none. ")
       + (totalScope
           ? "The expense row is the statement's own total expenses line ("
             + (pt.basis || "") + ") \u2014 the whole expense load, operating and "
