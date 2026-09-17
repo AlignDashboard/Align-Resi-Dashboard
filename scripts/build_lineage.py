@@ -770,9 +770,9 @@ OTHER_FLOWS = [
         "source_label": "docs/metrics.json, edited directly",
         "source_detail": "Blocks the pipeline preserves rather than "
                          "regenerates.",
-        "carries": "The PSF comp set, the trade-out placeholder, and the "
-                   "eleven planned-metric cards. Expense Trend left this list "
-                   "on 2026-09-17: it is derived from the T12 statement now.",
+        "carries": "The trade-out placeholder and the eleven planned-metric "
+                   "cards. Expense Trend left this list on 2026-09-17: it is "
+                   "derived from the T12 statement now.",
         "steps": [
             {"script": "scripts/build_metrics.py",
              "does": "Loads the existing metrics.json and writes only the "
@@ -782,23 +782,19 @@ OTHER_FLOWS = [
         ],
         "stores": [],
         "publishes": [
-            {"file": "metrics.json", "key": "psf_vs_peers"},
             {"file": "metrics.json", "key": "trade_outs"},
             {"file": "metrics.json", "key": "placeholders"},
         ],
         "dashboard": [
-            {"card": "PSF vs Other Properties", "tab": "Portfolio", "anchor": "cPsf",
-             "tables": ["t-psf"]},
             {"card": "Trade Outs", "tab": "Portfolio", "anchor": "cTradeOutsPortfolio",
              "tables": ["t-tradeouts"]},
             {"card": "Planned Metrics", "tab": "Portfolio", "anchor": "placeholderGrid",
              "tables": ["t-placeholders"]},
         ],
-        "tables": ["t-psf", "t-tradeouts", "t-placeholders"],
-        "note": "No feed stands behind these. The PSF figures are hand-entered "
-                "with no known date and say so on the card; Trade Outs is an "
-                "empty state waiting on AIRM and the weekly leasing report.",
-        "open_item": "A4",
+        "tables": ["t-tradeouts", "t-placeholders"],
+        "note": "No feed stands behind these. Trade Outs is an empty state "
+                "waiting on AIRM and the weekly leasing report.",
+        "open_item": "D5",
         "force_status": MANUAL,
     },
 ]

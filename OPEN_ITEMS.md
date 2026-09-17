@@ -11,7 +11,6 @@ first: everything else is a gap, but these are assertions.
 
 | # | Item | What it blocks | Live and uncertain |
 | --- | --- | --- | --- |
-| A4 | Supply a market-survey export for the PSF chart (subject + comps, 30-day avg rent/sqft — the RealPage market survey or the AIRM feed both carry it). Owner confirmed the $4.01 is old | A live PSF card. The chart now says "hand-entered, date unknown — likely stale" on its face until a feed exists | contained — the staleness is disclosed on the card |
 | A5 | ~~Which copy is authoritative~~ **Answered: the Drive files.** The funnel parser is live for both the `EliseAI Reports` and `Weekly Leasing Reports` folders, so the weeklies parse wherever the gmail-filing fix (C3) lands them. The Aug 18 file parses the day it moves out of `_Unsorted` | C3 only | no |
 | A6 | Which property does the concession burn-off export cover? Settled empirically that the file itself cannot answer: the parser now walks it as sections and the only heading text is "Projection by Unit" — report structure, not a property name. Parses and ties out clean every run (−$54,990 recurring concessions as of 08/10), stored nowhere. Needs your word on what "For Selected Properties" selected, or a per-property re-export; the moment a heading or filename names a property, sections route and store by themselves | The Effective-vs-Gross-Rent card. **No longer blocks Concession Load %** — that cell has been filled from the T12 statement's own rental-income lines since 2026-09-03 (0.37%, exceeding), on the owner's equation | no — nothing publishes from it yet |
 | A8 | ~~Loss to Lease % grades red off a disputed denominator~~ **Denominator settled 2026-09-15: the rent roll.** The cell now reads **37%** — market rent less in-place rent over market rent across the 257 occupied units on the roll of 2026-09-11 — which is what the band's own published `how` always said and what the workbook fill (27%, the T12's monthly revenue lines) never was. Filled from the published aggregate by both `populate_scorecard` paths, so it has no last-run-wins race; its own `rentroll_` feed family carries the roll's arrival. **What is still open is the band, not the source**: 37% grades red against a 10% ceiling, and the roll shows Yardi's market-rent table revised up +17.9% in eight weeks while in-place rent moved +0.07% — the threshold sheet's own basis note warned about exactly that. Re-bracketing the band is the sibling of A9 | Whether a 10% ceiling is the right band for the measurement the cell now makes | **yes** — measured correctly, graded against a band set for something else |
@@ -114,6 +113,19 @@ wrong-looking number on the page.
 | H2 | **The three workbook-fed KPIs cannot follow the statement at all.** Loss to Lease %, NOI Margin % and Concession Load % are read from `docs/landing.json`, which is refreshed by hand in Excel, so they are pinned to the workbook's last extract (Jul 2026) no matter how many statements arrive. The pipeline now carries the same series to the cent — `metrics.json` `rent_capture` is on Aug 2026, thirteen months — so all three could be sourced from it and would then move on their own. That is the rewiring of `facts_from_landing` flagged when the block was built: not hard, but it decides which feed owns those cells, so it wants doing with G3 rather than before it | Three KPIs that move when a report arrives rather than when someone opens Excel | contained — the figures are right for the month they name |
 
 ## Closed
+
+2026-09-17 — **PSF vs Other Properties removed, closing A4.** The card compared
+335 Third's $4.01/sqft against nine named comps averaging $3.85, and every one
+of those figures was typed in by hand with no known date — the card said so on
+its own face (`HAND-ENTERED, DATE UNKNOWN — LIKELY STALE`) and A4 had been open
+since, waiting for a market-survey export that never came. Removed by request
+rather than rebuilt, so the question A4 asked no longer has anything to block:
+the card, its `t-psf` table and the `psf_vs_peers` block are all gone, and
+`build_metrics` only writes the blocks it derives, so the block stays gone
+without anything to remember. If a market survey does arrive later this is a
+new card, not a revived one. The `psf` formatter on the data page stays — the
+rent roll's market and in-place $/sqft, the leasing tables and the workbook's
+own figures all use it, and none of them came from this card.
 
 2026-09-16 — **the daily cron published four-hour-old code over the day's work.**
 The Budget vs Actual card read "no budget has reached the pipeline" with two

@@ -410,18 +410,6 @@
    "primary": "t-l-insights",
    "holds": "Insights scorecard"
   },
-  "cPsf": {
-   "card": "PSF vs Other Properties",
-   "tab": "Portfolio",
-   "tables": [
-    "t-psf"
-   ],
-   "flows": [
-    "handset"
-   ],
-   "primary": "t-psf",
-   "holds": "PSF vs Other Properties"
-  },
   "cTradeOutsPortfolio": {
    "card": "Trade Outs",
    "tab": "Portfolio",
@@ -448,7 +436,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-17T16:15:25.820260+00:00",
+  "generated_at": "2026-09-17T18:38:56.582417+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 12,
@@ -2205,7 +2193,7 @@
    "origin_kind": "manual",
    "source_label": "docs/metrics.json, edited directly",
    "source_detail": "Blocks the pipeline preserves rather than regenerates.",
-   "carries": "The PSF comp set, the trade-out placeholder, and the eleven planned-metric cards. Expense Trend left this list on 2026-09-17: it is derived from the T12 statement now.",
+   "carries": "The trade-out placeholder and the eleven planned-metric cards. Expense Trend left this list on 2026-09-17: it is derived from the T12 statement now.",
    "steps": [
     {
      "script": "scripts/build_metrics.py",
@@ -2217,10 +2205,6 @@
    "publishes": [
     {
      "file": "metrics.json",
-     "key": "psf_vs_peers"
-    },
-    {
-     "file": "metrics.json",
      "key": "trade_outs"
     },
     {
@@ -2229,14 +2213,6 @@
     }
    ],
    "dashboard": [
-    {
-     "card": "PSF vs Other Properties",
-     "tab": "Portfolio",
-     "anchor": "cPsf",
-     "tables": [
-      "t-psf"
-     ]
-    },
     {
      "card": "Trade Outs",
      "tab": "Portfolio",
@@ -2255,12 +2231,11 @@
     }
    ],
    "tables": [
-    "t-psf",
     "t-tradeouts",
     "t-placeholders"
    ],
-   "note": "No feed stands behind these. The PSF figures are hand-entered with no known date and say so on the card; Trade Outs is an empty state waiting on AIRM and the weekly leasing report.",
-   "open_item": "A4",
+   "note": "No feed stands behind these. Trade Outs is an empty state waiting on AIRM and the weekly leasing report.",
+   "open_item": "D5",
    "registered": null,
    "parser": null,
    "documented": true,

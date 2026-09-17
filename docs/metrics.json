@@ -103,37 +103,6 @@
     "mixed_scope": true,
     "basis": "Monthly expenses per property, from each property's own 12-month accrual statement"
   },
-  "psf_vs_peers": {
-    "available": true,
-    "subject": "335 Third Street",
-    "metric": "Rent Per Sqft, 30-Day Avg",
-    "labels": [
-      "335 Third Street",
-      "Modera Jack London Sq",
-      "Channel House",
-      "5 Embarcadero W.",
-      "200 2nd St",
-      "1 Embarcadero W #252",
-      "Link Apts Four12",
-      "Modern Bldg JLS",
-      "Portobello Condos",
-      "311 2nd St"
-    ],
-    "psf": [
-      4.01,
-      5.13,
-      3.9,
-      3.98,
-      3.15,
-      3.59,
-      4.56,
-      3.73,
-      3.16,
-      3.43
-    ],
-    "comps_avg": 3.85,
-    "caveat": "HAND-ENTERED, DATE UNKNOWN \u2014 LIKELY STALE; AWAITING A MARKET SURVEY FEED"
-  },
   "placeholders": [
     {
       "id": "effVsGross",

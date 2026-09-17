@@ -1156,18 +1156,6 @@ async function loadAll() {
       filterable: true,
     });
 
-    const p = d.psf_vs_peers || {};
-    renderTable(host, {
-      id: "t-psf", group: "Portfolio", title: "PSF vs Other Properties",
-      feeds: "PSF vs Other Properties bar chart",
-      note: [p.metric, p.comps_avg != null ? "comps average $" + Number(p.comps_avg).toFixed(2) : null]
-              .filter(Boolean).join(" · "),
-      cols: [{ key: "label", label: "Property" }, { key: "psf", label: "$/sqft", fmt: "psf" },
-             { key: "subject", label: "Subject", fmt: "pill" }],
-      rows: (p.labels || []).map((l, i) => ({ label: l, psf: (p.psf || [])[i],
-        subject: l === p.subject ? "Subject" : "" })),
-    });
-
     const er = d.expense_ratio || {};
     (er.properties || []).forEach((pr, i) => {
       renderTable(host, {

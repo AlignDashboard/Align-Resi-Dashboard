@@ -733,7 +733,7 @@
         <div class="blu-note" id="baNote" style="color:var(--muted);"></div>
       </div>
 
-      <div class="card" id="cExpTrend">
+      <div class="card wide" id="cExpTrend">
         <h2>Expense Trend</h2>
         <span class="eyebrow" id="evEyebrow">LOADING…</span>
         <div class="ckgrid" id="evCks" role="group" aria-label="Properties shown"></div>
@@ -741,11 +741,6 @@
         <div id="evFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:8px;"></div>
       </div>
 
-      <div class="card" id="cPsf">
-        <h2>PSF vs Other Properties</h2>
-        <span class="eyebrow" id="psfEyebrow">LOADING…</span>
-        <div class="chartwrap"><canvas id="psf"></canvas></div>
-      </div>
 
       <div class="card wide" id="cExpRatio">
         <div class="card-head">
@@ -1668,30 +1663,6 @@ async function loadDashboard() {
     document.getElementById("evEyebrow").textContent = "AWAITING SOURCE DATA";
     document.getElementById("expVar").parentElement.innerHTML =
       '<div class="empty"><div class="dash"></div><div class="big">No expense data yet</div><div class="dash"></div></div>';
-  }
-
-  /* ---- 3. PSF vs PEERS (bar, subject highlighted) ---- */
-  const p = d.psf_vs_peers;
-  if (p && p.available) {
-    document.getElementById("psfEyebrow").textContent =
-      p.metric + " · SUBJECT vs " + (p.labels.length - 1) + " COMPS" +
-      (p.caveat ? " · " + p.caveat : "");
-    const colors = p.labels.map(l => l === p.subject ? C.amber : C.muted);
-    new Chart(document.getElementById("psf"), {
-      type: "bar",
-      data: { labels: p.labels,
-        datasets: [{ label: "$/sqft", data: p.psf, backgroundColor: colors }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false },
-          tooltip: { callbacks: { label: c => `$${c.parsed.x.toFixed(2)}/sqft` } },
-          annotation: {} },
-        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + v.toFixed(2) } },
-          y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
-    });
-  } else {
-    document.getElementById("psfEyebrow").textContent = "AWAITING SOURCE DATA";
-    document.getElementById("psf").parentElement.innerHTML =
-      '<div class="empty"><div class="dash"></div><div class="big">No PSF data yet</div><div class="dash"></div></div>';
   }
 
   /* ---- EXPENSE RATIO (per-property, dropdown selector) ----
