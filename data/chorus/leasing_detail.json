@@ -202,24 +202,70 @@
     },
     {
       "week_ending": "2026-09-20",
-      "source_file": "2026-09-15 09.14.2026- 09.20.2026- Chorus - Daily Report Copy.xlsx",
-      "landed_at": "2026-09-16T01:28:33.195Z",
+      "source_file": "2026-09-16 09.14.2026- 09.20.2026- Chorus - Daily Report (1).xlsx",
+      "landed_at": "2026-09-17T01:28:30.591Z",
       "totals": {
-        "leases": 0,
-        "lease_rent": 0,
-        "prior_rent": 0,
-        "tradeout_amount": 0,
-        "tradeout_pct_mean": null,
-        "sqft": 0,
+        "leases": 3,
+        "lease_rent": 12612,
+        "prior_rent": 10953,
+        "tradeout_amount": 1659,
+        "tradeout_pct_mean": 0.151715,
+        "sqft": 1804,
         "concession": 0
       },
-      "leases": [],
+      "leases": [
+        {
+          "unit": " 0937",
+          "unit_type": null,
+          "floor_plan": " chb1A",
+          "beds_baths": "2x1",
+          "sqft": 792,
+          "lease_rent": 4513,
+          "prior_rent": 3925,
+          "tradeout_amount": 588,
+          "tradeout_pct": 0.149809,
+          "concession": 0,
+          "net_rent": 4513,
+          "move_in": "2026-11-02",
+          "term": "16"
+        },
+        {
+          "unit": "2605",
+          "unit_type": null,
+          "floor_plan": "chs1H",
+          "beds_baths": "0x1",
+          "sqft": 449,
+          "lease_rent": 3637,
+          "prior_rent": 3148,
+          "tradeout_amount": 489,
+          "tradeout_pct": 0.155337,
+          "concession": 0,
+          "net_rent": 3637,
+          "move_in": "2026-10-24",
+          "term": "12"
+        },
+        {
+          "unit": "\t 1507",
+          "unit_type": null,
+          "floor_plan": "cha1K",
+          "beds_baths": "1x1",
+          "sqft": 563,
+          "lease_rent": 4462,
+          "prior_rent": 3880,
+          "tradeout_amount": 582,
+          "tradeout_pct": 0.15,
+          "concession": 0,
+          "net_rent": 4462,
+          "move_in": "2026-11-13",
+          "term": "16"
+        }
+      ],
       "checks": [
         {
           "check": "every lease reconciles to its own trade-out",
           "ok": true,
-          "clean": 0,
-          "leases": 0
+          "clean": 3,
+          "leases": 3
         },
         {
           "check": "week-ending date found",

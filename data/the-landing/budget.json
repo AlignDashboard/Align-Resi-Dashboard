@@ -2,7 +2,7 @@
   "years": [
     {
       "report_type": "budget",
-      "property": "Report1 The Landing",
+      "property": "The Landing",
       "property_code": "p0005611",
       "property_codes": [
         "p0005611"
@@ -242,12 +242,12 @@
       "buckets_tieout_gap": 0.0,
       "buckets_error": null,
       "source_file": "Landing 2025 Resi Budget.xlsx",
-      "landed_at": "2026-09-16T16:07:08.762Z",
+      "landed_at": "2026-09-16T16:22:08.315Z",
       "checks": null
     },
     {
       "report_type": "budget",
-      "property": "Report1 The Landing",
+      "property": "The Landing",
       "property_code": "p0005611",
       "property_codes": [
         "p0005611"
@@ -494,7 +494,7 @@
       "buckets_tieout_gap": 0.0,
       "buckets_error": null,
       "source_file": "Landing 2026 Resi Budget.xlsx",
-      "landed_at": "2026-09-16T16:06:47.225Z",
+      "landed_at": "2026-09-16T16:22:06.175Z",
       "checks": null
     }
   ]
