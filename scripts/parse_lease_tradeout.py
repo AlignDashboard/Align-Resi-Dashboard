@@ -397,16 +397,24 @@ def summarise(leases):
     for l in leases:
         m = months.setdefault(l["month"], {"month": l["month"], "leases": 0,
                                            "eff_rent": 0.0, "prev_eff_rent": 0.0,
-                                           "tradeout_amount": 0.0})
+                                           "tradeout_amount": 0.0, "_pcts": []})
         m["leases"] += 1
         m["eff_rent"] += l["eff_rent"] or 0
         m["prev_eff_rent"] += l["prev_eff_rent"] or 0
         m["tradeout_amount"] += l["tradeout_amount"] or 0
+        if l["tradeout_pct"] is not None:
+            m["_pcts"].append(l["tradeout_pct"])
     series = []
     for m in sorted(months.values(), key=lambda x: x["month"]):
         for k in ("eff_rent", "prev_eff_rent", "tradeout_amount"):
             m[k] = round(m[k], 2)
         m["pct"] = round(m["eff_rent"] / m["prev_eff_rent"] - 1, 6) if m["prev_eff_rent"] else None
+        # The month's mean beside its weighted figure, for the same reason the
+        # totals carry both: the Trade-outs card draws one and names the other,
+        # and a month like Nov 2024 reads 550.9% as a mean against 55.7%
+        # weighted, which is the concession effect at monthly resolution.
+        ps = m.pop("_pcts")
+        m["mean_pct"] = round(sum(ps) / len(ps), 6) if ps else None
         series.append(m)
     return {
         "leases": len(leases),

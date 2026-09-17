@@ -4557,6 +4557,7 @@ async function loadLandingDrive() {
   const dir = pick("unit_directory", SCD_SLUG);
   const rr = pick("rent_roll", SCD_SLUG);
   const lease = pick("leasing", SCD_SLUG);
+  const tro = pick("lease_tradeout", SCD_SLUG);
   const prop = SC && (SC.properties || []).find(x => x.slug === SCD_SLUG);
   const meas = ((SC && SC.measured) || {})[SCD_SLUG] || {};
 
@@ -4947,8 +4948,22 @@ async function loadLandingDrive() {
      into the axis. ---- */
   (function tradeOuts() {
     const card = document.getElementById("cdTradeOuts");
-    const nl = (lease && lease.new_leases) || null;
+    const wb = (lease && lease.new_leases) || null;   // the weekly leasing workbook
     const rn = (lease && lease.renewals) || null;
+    // The new-lease side is the Yardi tradeout report where one has arrived.
+    // The weekly workbook carries ONE WEEK each, so its history is only as long
+    // as the weeks on file -- four of them here, two months, four leases, which
+    // drew two lonely bars against three years of renewal offers. The tradeout
+    // report is one row per new lease over whatever window it was run for: 247
+    // leases across 26 months on the first file. Same measurement, two orders
+    // of magnitude more of it.
+    const nl = tro ? {
+      months: tro.months || [],
+      as_of: tro.period_end,
+      leases: (tro.all || {}).leases,
+      src: "tradeout",
+    } : wb ? { months: wb.months || [], as_of: wb.as_of,
+               leases: wb.leases, weeks: wb.weeks, src: "workbook" } : null;
     if (!nl && !rn) { if (card) card.hidden = true; return; }
 
     const WINDOW = 24;
@@ -4957,7 +4972,7 @@ async function loadLandingDrive() {
       return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
     };
     const newRows = (nl && nl.months) || [];
-    const renRows = (rn && rn.months || []).filter(m => m.mean_increase != null);
+    const renRows = (rn && rn.months || []).filter(m => m.wtd_increase != null);
 
     // The axis ends at the newest month either feed reports having HAPPENED.
     // Renewal offers run ahead of that — December's are already out — so a
@@ -4978,9 +4993,21 @@ async function loadLandingDrive() {
       const by = new Map(rows.map(r => [r.month, r]));
       return axis.map(m => (by.get(m) || {}).leases || null);
     };
-    const newPct = pick(newRows, "mean_tradeout");
-    const renPct = pick(renRows, "mean_increase");
-    const wtd = { new: pick(newRows, "wtd_tradeout"), renew: pick(renRows, "wtd_increase") };
+    // RENT-WEIGHTED on the axis, the mean on the tooltip -- the swap of what
+    // this card used to do, and the tradeout report is why. Its own percentage
+    // is weighted (total current effective rent over total previous), which is
+    // what the Trade-out % tile grades, so the card and the tile now agree.
+    // The mean cannot carry this axis: a concession drives a PREVIOUS effective
+    // rent toward zero, so Nov 2024 reads 550.9% as a mean against 55.7%
+    // weighted, on a chart where renewals sit near 6%. On the renewal side the
+    // two are within half a point every month, so that series moves in name
+    // only and both are now the same statistic.
+    const K = nl && nl.src === "tradeout"
+      ? { pct: "pct", other: "mean_pct" }
+      : { pct: "wtd_tradeout", other: "mean_tradeout" };
+    const newPct = pick(newRows, K.pct);
+    const renPct = pick(renRows, "wtd_increase");
+    const other = { new: pick(newRows, K.other), renew: pick(renRows, "mean_increase") };
     const counts = { new: count(newRows), renew: count(renRows) };
     const ahead = renRows.filter(m => m.month > endMo).map(m => m.month);
     const filled = axis.filter((_, i) => newPct[i] !== null || renPct[i] !== null).length;
@@ -4988,9 +5015,9 @@ async function loadLandingDrive() {
     new Chart(document.getElementById("dcTrade"), {
       data: { labels: axis.map(shortMo),
         datasets: [
-          { type: "bar", label: "New lease · avg trade-out %", data: newPct, yAxisID: "y",
+          { type: "bar", label: "New lease · trade-out %", data: newPct, yAxisID: "y",
             backgroundColor: newPct.map(v => v < 0 ? C.red : C.teal), order: 1 },
-          { type: "bar", label: "Renewal · avg increase %", data: renPct, yAxisID: "y",
+          { type: "bar", label: "Renewal · increase %", data: renPct, yAxisID: "y",
             backgroundColor: renPct.map(v => v < 0 ? C.red : C.green), order: 2 },
         ] },
       options: { maintainAspectRatio: false, responsive: true,
@@ -4999,10 +5026,10 @@ async function loadLandingDrive() {
           label: c => {
             const i = c.dataIndex, isNew = c.datasetIndex === 0;
             const n = isNew ? counts.new[i] : counts.renew[i];
-            const w = isNew ? wtd.new[i] : wtd.renew[i];
+            const w = isNew ? other.new[i] : other.renew[i];
             return `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`
                  + (n ? ` (${n} lease${n === 1 ? "" : "s"}` : "")
-                 + (w != null ? `, ${w.toFixed(1)}% rent-weighted)` : n ? ")" : "");
+                 + (w != null ? `, ${w.toFixed(1)}% as a plain mean)` : n ? ")" : "");
           } } } },
         scales: {
           y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
@@ -5023,8 +5050,8 @@ async function loadLandingDrive() {
     const renN = renWin.reduce((t, m) => t + (m.leases || 0), 0);
     const wmean = (rows, key, n) => n
       ? rows.reduce((t, m) => t + m[key] * (m.leases || 0), 0) / n : null;
-    const newMean = wmean(newWin, "mean_tradeout", newN);
-    const renMean = wmean(renWin, "mean_increase", renN);
+    const newMean = wmean(newWin, K.pct, newN);
+    const renMean = wmean(renWin, "wtd_increase", renN);
     const mos = n => n + " month" + (n === 1 ? "" : "s");
     statBlock(document.getElementById("dtoStats"), [
       [newMean != null ? fmPct(newMean, 1) : "—", "avg new-lease trade-out"],
@@ -5034,34 +5061,85 @@ async function loadLandingDrive() {
       [(rn && rn.mtm) ? String(rn.mtm.units) : "—", "on month-to-month now"],
     ]);
 
+    // The newest month is partial whenever the report's window ends mid-month,
+    // which is what an export run on the 16th does. Sep 2026 holds 2 leases for
+    // that reason and not because the building turned over twice, so the bar is
+    // drawn -- it is real -- and named rather than dropped or padded out.
+    // Months whose bar is what sets the y scale: far above the series' own
+    // median and drawn on few leases. Both conditions, because a genuinely
+    // strong month on twelve leases is the card working, not an artifact.
+    const seen = newPct.filter(v => v !== null).sort((a, b) => a - b);
+    const median = seen.length
+      ? seen[Math.floor((seen.length - 1) / 2)] : 0;
+    const spikes = newPct.map((v, i) => (v !== null && median > 0 && v > median * 3
+                                         && (counts.new[i] || 0) <= 3) ? i : -1)
+                         .filter(i => i >= 0);
+    const lastDay = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7), 0))
+                           .toISOString().slice(0, 10);
+    const partial = nl && nl.src === "tradeout" && nl.as_of
+                    && nl.as_of < lastDay(nl.as_of.slice(0, 7)) ? nl.as_of : null;
+
     document.getElementById("dtoEyebrow").textContent =
-      "NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT · "
-      + (nl ? "WEEK ENDING " + nl.as_of : "RENEWAL TRACKER ONLY");
+      "NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT, RENT-WEIGHTED · "
+      + (nl ? (nl.src === "tradeout" ? "TRADEOUT REPORT TO " : "WEEK ENDING ") + nl.as_of
+            : "RENEWAL TRACKER ONLY");
     document.getElementById("dtoFoot").textContent =
-      "Teal is the mean trade-out of the new leases signed that month, from the weekly "
-      + "leasing workbook — " + ((nl && nl.weeks) || 0) + " week(s) on file, the newest ending "
-      + ((nl && nl.as_of) || "—") + ". Green is the mean increase on that month's renewal "
-      + "offers, from the renewal tracker" + (rn && rn.covers
+      (nl && nl.src === "tradeout"
+        ? "Teal is the trade-out on the new leases signed that month, from the Yardi "
+          + "lease tradeout report — " + (nl.leases || 0) + " lease(s) over "
+          + newRows.length + " month(s), to "
+          + nl.as_of + ". It replaced the weekly leasing workbook here on 2026-09-17: "
+          + "that feed carries one week per file, so it could only ever draw the "
+          + ((wb && wb.weeks) || 0) + " week(s) on file — "
+          + ((wb && wb.leases) || 0) + " leases in "
+          + ((wb && wb.months || []).length) + " months — against three years of "
+          + "renewal offers. Note the two measure the gap slightly differently: the "
+          + "report works on EFFECTIVE rent, net of concessions on both the new lease "
+          + "and the one it replaced, so a previous lease bought down by a concession "
+          + "shows a larger trade-out than the workbook's rent-to-rent comparison. "
+        : "Teal is the trade-out of the new leases signed that month, from the weekly "
+          + "leasing workbook — " + ((nl && nl.weeks) || 0) + " week(s) on file, the "
+          + "newest ending " + ((nl && nl.as_of) || "—") + ". ")
+      + "Green is the increase on that month's renewal offers, from the renewal tracker"
+      + (rn && rn.covers
           ? " (" + rn.covers.from + " to " + rn.covers.to + " on the file of "
             + (rn.as_of || "—") + ")" : "")
-      + ". Each stat above is scoped to this chart's window and says over how many "
+      + ". Both series are RENT-WEIGHTED — each month's total new or offered rent over "
+      + "the total it replaced — so a month is not swung by one small lease, and the "
+      + "teal series is the same measurement the Trade-out % tile above grades. The "
+      + "plain mean of the per-lease rates is on the tooltip: on the renewal side the "
+      + "two agree to within half a point every month, and on the new-lease side they "
+      + "do not, because a concession drives a previous effective rent toward zero and "
+      + "one such lease prints in the hundreds of percent. "
+      + "Each stat above is scoped to this chart's window and says over how many "
       + "months, because the feeds do not cover the same ground: the tracker runs back "
-      + "to " + ((rn && rn.covers && rn.covers.from) || "—") + " and the leasing "
-      + "workbooks only as far as the weeks on file. "
-      + "Both series are plain means over the same kind of thing — one lease, one "
-      + "percentage — "
-      + "which The Landing's version of this card cannot do: the analyst workbook carries "
-      + "monthly renewal aggregates and no per-renewal rows, so its renewal side is "
-      + "rent-weighted and its new-lease side is not. The rent-weighted figure is on the "
-      + "tooltip here instead. Axis is the trailing " + WINDOW + " months to " + shortMo(endMo)
+      + "to " + ((rn && rn.covers && rn.covers.from) || "—") + ". "
+      + "Axis is the trailing " + WINDOW + " months to " + shortMo(endMo)
       + "; " + newWin.length + " month(s) report a new lease and " + renWin.length
       + " report renewal offers — a month with neither is left empty rather than "
-      + "drawn as zero. The new-lease history is only as long as the weeks on file, "
-      + "because each workbook carries one week."
+      + "drawn as zero."
+      + (partial ? " " + shortMo(endMo) + " is a part month: the report's window ends "
+                 + partial + ", so it holds only the leases signed up to that date."
+                 : "")
+      // Name the months the axis is set by, against the series' own median, so
+      // the note cannot go stale as months arrive. A thin month is where the
+      // concession effect survives the weighting: with two leases, one whose
+      // previous rent was bought down to $1,471 by a $2,207 concession carries
+      // the month, and the weighted figure protects against that only when
+      // there are enough leases for it to average over.
+      + (spikes.length
+          ? " " + spikes.map(i => shortMo(axis[i]) + " reads " + newPct[i].toFixed(0)
+              + "% on " + counts.new[i] + " lease"
+              + (counts.new[i] === 1 ? "" : "s")).join(" and ")
+            + ", against a median month of " + median.toFixed(0) + "%: a thin month is "
+            + "where a concession still shows through, since a previous rent bought "
+            + "down toward zero lifts the whole month when there is little else in it."
+          : "")
       + (ahead.length ? " Offers already out for " + ahead.map(shortMo).join(", ")
           + " sit past the window: a forward offer is not a trailing month." : "")
-      + " Capture at signing is not shown: the leasing workbook carries no market rent at "
-      + "signing to divide by.";
+      + " Capture at signing is not shown: neither feed carries a market rent at signing "
+      + "to divide by — the tradeout report gives the lease it replaced, not what the "
+      + "unit was asking.";
   })();
 
   /* ---- Loss to lease, rollover and unit gaps — all three from the rent roll.
