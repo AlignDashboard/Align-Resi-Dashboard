@@ -435,6 +435,11 @@
      not a label. */
   .kpi .v.below { color: var(--red); }
   .kpi .k { font-size: 9px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-top: 5px; line-height: 1.5; }
+  /* The window a tile's figure covers, on the label line because it is part of
+     what the number IS -- a month and a year are different measures, not the
+     same measure with a footnote. Amber so it reads as a qualifier rather than
+     as more of the name. */
+  .kpi .k .per { color: var(--amber); }
   .kpi .s { font-size: 9px; color: var(--muted); margin-top: 3px; letter-spacing: .5px; }
   /* jump affordance, only on the tiles that link somewhere */
   .kpi .jump { position: absolute; top: 9px; right: 10px; font-size: 10px; color: var(--muted);
@@ -4628,16 +4633,26 @@ async function loadLandingDrive() {
   function tileRow(hostId, tiles) {
     const host = document.getElementById(hostId);
     host.textContent = "";
-    tiles.forEach(([v, k, s, target, where, title, below]) => {
+    tiles.forEach(([v, k, s, target, where, title, below, period]) => {
       const kp = elc("button", "kpi");
       kp.type = "button";
       kp.appendChild(elc("div", below ? "v below" : "v amber", v));
-      kp.appendChild(elc("div", "k", k));
+      // The label carries the window the figure covers. Every tile on this tab
+      // names one: a reader comparing "operating revenue" against "T12 NOI"
+      // against "controllable / door" is otherwise comparing a month, a year
+      // and an annualised month with nothing on the page saying so.
+      const kEl = elc("div", "k", k);
+      if (period) {
+        kEl.appendChild(document.createTextNode(" · "));
+        kEl.appendChild(elc("span", "per", period));
+      }
+      kp.appendChild(kEl);
       kp.appendChild(elc("div", "s", s));
       const arrow = elc("span", "jump", "↓");
       arrow.setAttribute("aria-hidden", "true");
       kp.appendChild(arrow);
-      kp.setAttribute("aria-label", k + ": " + v + ". Jump to " + where + ".");
+      kp.setAttribute("aria-label", k + (period ? ", " + period : "") + ": " + v
+        + ". Jump to " + where + ".");
       if (title) kp.title = title;
       kp.addEventListener("click", () => jump(target));
       host.appendChild(kp);
@@ -4652,24 +4667,41 @@ async function loadLandingDrive() {
       : [];
     const last = pl ? pl.revenue.length - 1 : -1;
     const sum = a => a.reduce((x, y) => x + y, 0);
+    // The stitched run is NOT twelve months. Successive statements overlap and
+    // the join keeps every month either reports, so The Landing's series is
+    // Aug 25-Aug 26: thirteen. Summing all of it and calling the total "T12"
+    // read $10,694,302 of NOI against a true trailing twelve of $9,928,681 --
+    // 7.7% high, on the one tile a reader is most likely to quote, and
+    // disagreeing with the T12 column of the Operating Summary directly below,
+    // which has always sliced twelve. So the window is taken from the END of
+    // the series, and named for the number of months it actually covers: T12
+    // once there are twelve, T<n> before that, never "T12" over some other n.
+    // Same rule renderRentCapture already applies to its own footnote.
+    const win = pl ? Math.min(12, pl.revenue.length) : 0;
+    const tail = a => sum(a.slice(-win));
+    const tName = "T" + win;
+    const tSpan = pl ? shortMo(plKeys[plKeys.length - win]) + "–" +
+                       shortMo(plKeys[last]) : "";
 
     const tiles = [];
     if (pl) {
+      // Slots are [value, label, sub, target, where, title, below, period].
       tiles.push([fm$(pl.revenue[last]), "Operating revenue",
-                  shortMo(plKeys[last]) + " · T12 " + fm$(sum(pl.revenue)),
-                  "cdOpSummary", "the operating summary"]);
+                  shortMo(plKeys[last]) + " · " + tName + " " + fm$(tail(pl.revenue)),
+                  "cdOpSummary", "the operating summary", "", false, "monthly"]);
       tiles.push([fmPct(pl.noi[last] / pl.revenue[last]), "NOI margin",
-                  shortMo(plKeys[last]) + " · T12 " + fmPct(sum(pl.noi) / sum(pl.revenue)),
-                  "cdNoi", "expense load & NOI"]);
-      tiles.push([fm$(sum(pl.noi)), "T12 NOI",
-                  plKeys.length + " months to " + shortMo(plKeys[last]),
-                  "cdOpSummary", "the operating summary"]);
+                  shortMo(plKeys[last]) + " · " + tName + " " +
+                    fmPct(tail(pl.noi) / tail(pl.revenue)),
+                  "cdNoi", "expense load & NOI", "", false, "monthly"]);
+      tiles.push([fm$(tail(pl.noi)), tName + " NOI", tSpan,
+                  "cdOpSummary", "the operating summary", "", false,
+                  win === 12 ? "annual" : win + " months"]);
     }
     tiles.push(ctrlPerDoorMo
       ? [fm$(ctrlPerDoorMo[ctrlPerDoorMo.length - 1] * 12), "Controllable / door",
-         "per year at " + shortMo(ctrlKeys[ctrlKeys.length - 1]) + " · " + doors + " doors",
-         "cdNoi", "expense load & NOI"]
-      : ["—", "Controllable / door", ctrlWhy, "cdNoi", "expense load & NOI"]);
+         shortMo(ctrlKeys[ctrlKeys.length - 1]) + " ×12 · " + doors + " doors",
+         "cdNoi", "expense load & NOI", "", false, "annualised"]
+      : ["—", "Controllable / door", ctrlWhy, "cdNoi", "expense load & NOI", "", false, ""]);
     // Leased and Delinquency used to finish this row. They are scorecard cells
     // rather than statement figures, so they moved up into the row above when
     // the grid came off, instead of being printed twice on one tab.
@@ -4709,8 +4741,17 @@ async function loadLandingDrive() {
 
     // read() returns [what the tile prints, what sits under it]. It exists
     // because two of these cells publish more than a tile can carry.
+    // `period` is the window each figure covers, and on this row the four are
+    // genuinely different: two snapshots, a trailing month and a year to date.
+    // They are stated per tile rather than derived because the window is a
+    // property of the FEED, not of the cell -- the owner settled the export's
+    // on 2026-08-20 (a snapshot on the filename's date, its rate KPIs trailing
+    // one month) and nothing in scorecard.json records it. Budget variance is
+    // the exception and reads its own: `budget_as_of` is the real window and
+    // moves with the statement, so it is shown rather than a fixed phrase.
     const WANTED = [
       { kpi: "Leased %", label: "Leased %", to: "cdFeeds", where: "what feeds this tab",
+        period: "point in time",
         read: v => [v.display, "100 − exposure"] },
       // 34.9% here is the EliseAI export's trailing month; the Trade-outs card
       // below reads 82.8% from the weekly leasing workbook and the renewal
@@ -4718,6 +4759,7 @@ async function loadLandingDrive() {
       // NOT jump there. One number landing on a card showing another under the
       // same name is the disagreement this tab exists to avoid.
       { kpi: "Trade-out %", label: "Trade-out %", to: "cdFeeds", where: "what feeds this tab",
+        period: "trailing 1 mo",
         read: v => [v.display, "new + renewal blend"] },
       // The published cell is "+$116,402/+12.1%", two figures spliced, and at
       // 20px that is wider than a tile is at phone width. measured[slug]
@@ -4727,11 +4769,17 @@ async function loadLandingDrive() {
       // but an overspend and an underspend are not the same news.
       { kpi: "Budget Variance %", label: "Budget variance", to: "cdFeeds",
         where: "what feeds this tab",
+        // "Jan-Aug 2026" — the calendar year to the statement's newest month,
+        // which lengthens by a month every time a statement lands.
+        period: meas.budget_as_of || "year to date",
         read: () => (meas.budget_variance_pct == null ? null
           : [signed(meas.budget_variance_pct, x => fmPct(x, 1)),
              signed(meas.budget_variance_dollars, fm$) + " on controllable opex"]) },
       { kpi: "Total Deliquency", label: "Delinquency", to: "cdDelq",
         where: "the delinquency card",
+        // The AR balance is a snapshot; the month is the denominator, not the
+        // window, which is why this is not "monthly" like the revenue tiles.
+        period: "point in time",
         read: v => [v.display, "resident AR over one month's rent"] },
     ];
 
@@ -4741,9 +4789,11 @@ async function loadLandingDrive() {
       const v = live ? scValue(prop, t.kpi) : null;
       const shown = v && v.display != null ? t.read(v) : null;
       if (!shown) {
+        // No period on an absent cell: naming the window of a number that is
+        // not there would read as though something had been measured.
         return ["—", t.label,
                 owner ? "not Drive-fed today" : "awaiting the feed",
-                t.to, t.where, ""];
+                t.to, t.where, "", false, ""];
       }
       const st = prop.statuses[t.kpi];
       const src = (prop.status_source || {})[t.kpi];
@@ -4756,8 +4806,10 @@ async function loadLandingDrive() {
               (graded ? graded + " · " : "") + shown[1] + asOf(t.kpi),
               t.to, t.where,
               scCellTitle(t.kpi, st, v, unscored.has(t.kpi), null, src)
-                + "\n\nFeed: " + owner.what,
-              !!graded && st === "below"];
+                + "\n\nFeed: " + owner.what
+                + (t.period ? "\nCovers: " + t.period : ""),
+              !!graded && st === "below",
+              t.period];
     });
     tileRow("dkpisSc", tiles);
   })();

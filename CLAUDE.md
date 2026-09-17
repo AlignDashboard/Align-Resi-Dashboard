@@ -213,7 +213,45 @@ Two things the grid did that a bare number does not, and both are kept:
   Drive-fed today` rather than quietly borrowing a workbook number — and that
   is told apart from `— awaiting the feed`, a cell no report has ever filled.
 
-Two details worth knowing:
+### Every tile names the window it covers
+
+Both tile rows carry the period on the label line, in amber (`.kpi .k .per`),
+because a month and a year are different measures rather than one measure with
+a footnote. The eight tiles on this tab cover five different windows:
+
+| Tile | Window |
+| --- | --- |
+| Operating revenue, NOI margin | `monthly` — the statement's newest month |
+| `T12 NOI` | `annual` — the trailing twelve, span in the subtitle |
+| Controllable / door | `annualised` — that month ×12, per the band's basis |
+| Leased %, Delinquency | `point in time` — a snapshot, not a period |
+| Trade-out % | `trailing 1 mo` — the export's rate basis (owner, 2026-08-20) |
+| Budget variance | the real window from `budget_as_of`, e.g. `Jan-Aug 2026` |
+
+The four scorecard tiles state theirs per tile because the window is a property
+of the **feed**, not of the cell, and `scorecard.json` records it for only one
+of them. Budget variance is that one and reads `budget_as_of`, so it lengthens
+by a month as statements land instead of going stale. A tile with no value gets
+no period: naming the window of a number that is not there would read as though
+something had been measured. The hover adds `Covers: <window>` under the feed.
+
+**Finding the words for this turned up a real error.** `T12 NOI` was summing
+the whole stitched run and calling it T12. The run is not twelve months — the
+join keeps every month any statement reports, so The Landing's is Aug 25–Aug 26,
+**thirteen** — and the tile read **$10,694,302 against a true trailing twelve of
+$9,928,681, 7.7% high**, on the tile most likely to be quoted. Worse, it
+contradicted the T12 column of the Operating Summary directly beneath it, which
+has always sliced twelve. The window is now taken from the **end** of the series
+and named for the months it actually covers (`T12` at twelve, `T<n>` before
+that), which is the rule `renderRentCapture` already applies to its own
+footnote. The two now agree to the cent: $14.33M revenue and $9.93M NOI over
+Sep 25–Aug 26 on both.
+
+Note the monthly tiles swing hard, which is what makes the label load-bearing:
+Aug 2026 books enough reversals (taxes −$118,781, utilities −$31,450) to read a
+**96.2% NOI margin** for the month against 69.3% on the T12 beside it.
+
+Two more details worth knowing:
 
 - **Budget variance prints the percentage, with the dollars beneath it.** The
   published cell is `+$116,402/+12.1%`, two figures spliced, and at 20px that is
