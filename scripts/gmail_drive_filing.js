@@ -123,6 +123,10 @@ const ROUTING_RULES = [
   // and from Weekly Leasing Reports, so either would work; this folder already
   // exists and already holds the EliseAI exports.
   { folder: 'EliseAI Reports',            patterns: [/leasingfunnel/, /funnelreport/, /eliseai/] },
+  // The Yardi Lease Tradeout Report — 'LeaseTradeoutReport-<property>.XLS'.
+  // /tradeout/ is unique across this table; it sits above the leasing rules
+  // anyway so a future /leasereport/ cannot claim it first.
+  { folder: 'Historical Tradeout Reports', patterns: [/tradeout/, /leasetradeout/] },
   { folder: 'Renewal Tracker',            patterns: [/renewaltracker/, /renewalssince/, /renewalworkbook/, /renewal/] },
   { folder: 'Prospect Reports',           patterns: [/prospect/, /applicantreport/] },
   { folder: 'Daily Leasing Reports',      patterns: [/dailyreport/] },

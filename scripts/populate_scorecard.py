@@ -116,6 +116,16 @@ KPI_CTRL = "Controllable OpEx/Unit"
 KPI_MTM = "Month to Month Leases"
 KPI_CONC = "Concession Load %"
 KPI_BV = "Budget Variance %"
+KPI_TO = "Trade-out %"
+
+# Which trailing window of the Lease Tradeout Report answers Trade-out %.
+# THREE, because that is the basis the published band was written for -- the
+# ranges sheet grades a trailing 3 months, and until this feed existed the cell
+# came from the EliseAI export on a trailing ONE month (open item B6: "a
+# volatile month swings the grade more than the bands assume"). The report
+# carries every lease with its signed date, so the window is a choice here
+# rather than whatever an export happened to cover. One constant to change.
+TRADEOUT_WINDOW = 3
 
 # The rent roll's own classification, as the workbook reads it: every unit is in
 # exactly one of these. There is no separate month-to-month state, so a unit the
@@ -306,6 +316,57 @@ def classify(value, t):
 SPLIT_LABELS = ["31-60", "61-90", "90+"]
 
 
+def lease_tradeout(slug, path="docs/metrics.json"):
+    """Trade-out over the trailing TRADEOUT_WINDOW months, or (None, why).
+
+    From the Yardi Lease Tradeout Report — the only feed with a trade-out
+    history of its own, one row per new lease with the lease it replaced
+    beside it. Read from the published aggregate in metrics.json, like the
+    rent roll's loss to lease, so CI and a local run see the same figure.
+
+    **Weighted, never the mean of the per-lease rates.** The report's own
+    percentage is total current effective rent over total previous effective
+    rent, and that is what is graded here. The mean of its per-lease column is
+    a different number entirely -- 70.1% against the weighted 23.4% over The
+    Landing's first file -- because a concession drives a previous effective
+    rent toward zero and the ratio explodes: one lease reads $86 previous
+    against a $62,716 concession and prints 6,136%. A mean of ratios over a
+    denominator that can approach zero is not a rate. It is recorded beside
+    the figure so the two are never mistaken for one another.
+    """
+    if not os.path.exists(path):
+        return None, "no docs/metrics.json to read the trade-out report from"
+    block = (json.load(open(path)) or {}).get("lease_tradeout") or {}
+    pr = next((x for x in (block.get("properties") or [])
+               if x.get("slug") == slug), None)
+    if pr is None:
+        return None, f"no lease tradeout report published for {slug}"
+    win = (pr.get("windows") or {}).get(f"t{TRADEOUT_WINDOW}")
+    if not win or win.get("pct") is None:
+        return None, (f"the trade-out report holds no trailing "
+                      f"{TRADEOUT_WINDOW} months for {slug}")
+    allw = pr.get("all") or {}
+    return {
+        "pct": win["pct"],
+        "leases": win["leases"],
+        "window_start": win.get("window_start"),
+        "window_end": win.get("window_end"),
+        "complete": win.get("complete"),
+        "months": TRADEOUT_WINDOW,
+        "all_pct": allw.get("pct"),
+        "all_leases": allw.get("leases"),
+        "mean_pct": win.get("mean_pct"),
+        "period_start": pr.get("period_start"),
+        "period_end": pr.get("period_end"),
+        "rate_type": pr.get("rate_type"),
+        "tradeout_basis": pr.get("tradeout_basis"),
+        "lease_date_basis": pr.get("lease_date_basis"),
+        "source": pr.get("source_file"),
+        "as_of": pr.get("as_of"),
+        "received_at": pr.get("landed_at"),
+    }, None
+
+
 def rent_roll_ltl(slug, path="docs/metrics.json"):
     """Loss to lease from the rent roll, or (None, why).
 
@@ -364,6 +425,10 @@ def facts_from_landing(path="docs/landing.json"):
     rc = doc.get("rent_capture") or {}
     ltl_series, months = rc.get("ltl_pct") or [], rc.get("months") or []
     rr_ltl, rr_ltl_why = rent_roll_ltl("the-landing")
+    # Trade-out %, from the Drive tradeout report. Like loss to lease it is
+    # filled identically on both paths from one published aggregate, so
+    # whichever run goes last writes the same number.
+    to_win, to_why = lease_tradeout("the-landing")
     # NOI margin, likewise from the monthly series behind the Expense Load & NOI
     # card rather than its TTM column. Note the published band's own basis says
     # T12: a single accrual month swings hard (Apr 2026 reads 47.0% on that
@@ -419,6 +484,7 @@ def facts_from_landing(path="docs/landing.json"):
         # own figure is kept beside it, never published, so the two readings of
         # a similarly named thing are on the record rather than confused.
         "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
+        "tradeout": to_win, "tradeout_why": to_why,
         "ltl_workbook_pct": ltl_series[-1] if ltl_series else None,
         "ltl_workbook_month": months[-1] if months else None,
         "noi_margin": noi_series[-1] if noi_series else None,
@@ -461,6 +527,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
     # published aggregate, so whichever run goes last writes the same number --
     # the mistake G3 records, designed out rather than sequenced around.
     rr_ltl, rr_ltl_why = rent_roll_ltl(slug)
+    to_win, to_why = lease_tradeout(slug)
 
     path = os.path.join("data", slug, "delinquency.json")
     if not os.path.exists(path):
@@ -474,7 +541,8 @@ def facts_from_pipeline(slug, monthly_rent=None):
         # provenance damage G1 and G3 are about.
         return {"no_report": True, "source": None, "as_of": None,
                 "received_at": None, "received_what": None,
-                "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why}
+                "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
+                "tradeout": to_win, "tradeout_why": to_why}
     d = json.load(open(path))
     s = d.get("summary") or {}
     a = s.get("aging") or {}
@@ -511,6 +579,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
                   + (f" ({'+'.join(c for c in d.get('property_codes') or [] if c)})"
                      if d.get("property_codes") else ""),
         "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
+        "tradeout": to_win, "tradeout_why": to_why,
     }
 
 
@@ -553,6 +622,13 @@ def measurements(f):
     else:
         out[KPI_LTL] = (None, None,
                         f.get("rr_ltl_why") or "no rent roll published for this property")
+
+    to = f.get("tradeout")
+    if to:
+        out[KPI_TO] = (to["pct"], pct1(to["pct"]), None)
+    else:
+        out[KPI_TO] = (None, None,
+                       f.get("tradeout_why") or "no trade-out report for this property")
 
     if f.get("noi_margin") is not None:
         out[KPI_NOI] = (f["noi_margin"], pct1(f["noi_margin"]), None)
@@ -859,6 +935,68 @@ def main():
                 f"{facts['ltl_workbook_pct'] * 100:.0f}% for "
                 f"{facts['ltl_workbook_month']} on the T12 statement's monthly "
                 f"revenue lines — a different measurement, not published")
+
+    to = facts.get("tradeout")
+    if to:
+        # Its own feed family, for the same reason the rent roll has one: this
+        # cell is the tradeout report's, not the EliseAI export's, so its
+        # arrival and provenance are recorded apart. "tradeout_" is in
+        # SC_FEED_PREFIXES in index.html and the matching list in data.html,
+        # and in SCD_DRIVE_FEEDS so the Drive tab's tile carries it.
+        meas[slug].update({
+            "tradeout_source": to.get("source"),
+            "tradeout_as_of": to.get("as_of"),
+            "tradeout_received_at": to.get("received_at"),
+            "tradeout_received_what":
+                "lease tradeout report in the Drive Historical Tradeout Reports folder",
+            "tradeout_kpis": [KPI_TO],
+            # The window as a number as well as prose: the tile prints
+            # "trailing 3 mo" from it rather than parsing the sentence, and
+            # rather than repeating the constant in index.html where the two
+            # could drift.
+            "tradeout_months": to["months"],
+            "tradeout_window": (
+                f"{to['window_start']} to {to['window_end']} "
+                f"(trailing {to['months']} months)"),
+            "tradeout_basis": (
+                f"{to['leases']} new lease(s) signed {to['window_start']}.."
+                f"{to['window_end']}, trade-out weighted by rent: total current "
+                f"effective rent over total previous effective rent, on the "
+                f"report's own basis ({to.get('rate_type')} leases, trade-out on "
+                f"{to.get('tradeout_basis')}, dated by "
+                f"{to.get('lease_date_basis')}). Trailing "
+                f"{to['months']} months because that is the window the published "
+                f"band was written for"
+                + ("" if to.get("complete") else
+                   "; the window starts before the report does, so it covers "
+                   "fewer months than it names")),
+            # The whole file and the mean, recorded so neither is mistaken for
+            # the graded figure. The mean is not a rate -- see lease_tradeout().
+            "tradeout_all": (
+                None if to.get("all_pct") is None else
+                f"{to['all_pct'] * 100:.1f}% weighted across all "
+                f"{to['all_leases']} leases in the report "
+                f"({to.get('period_start')}..{to.get('period_end')})"),
+            "tradeout_mean": (
+                None if to.get("mean_pct") is None else
+                f"{to['mean_pct'] * 100:.1f}% as the mean of the per-lease rates "
+                f"over the same window — not published as the figure: a "
+                f"concession drives a previous effective rent toward zero and "
+                f"the ratio explodes"),
+        })
+        # Take the cell off every other family's list. populate_building_metrics
+        # already refuses to WRITE a cell another feed owns, but its bldg_kpis
+        # still NAMED this one from before this feed existed -- and the page
+        # picks a cell's feed by whichever family lists it, so the tile went on
+        # reading "EliseAI building-metrics export · as of 2026-08-31" over a
+        # figure from the tradeout report of 2026-09-16. A list that names a
+        # cell the feed no longer fills is the over-report CLAUDE.md warns
+        # about; this is that list being kept true rather than worked around on
+        # the page.
+        for key, names in list(meas[slug].items()):
+            if (key.endswith("kpis") and key != "tradeout_kpis"
+                    and isinstance(names, list) and KPI_TO in names):
+                meas[slug][key] = [n for n in names if n != KPI_TO]
 
     bv = facts.get("bv") or {}
     if bv.get("pct") is not None:

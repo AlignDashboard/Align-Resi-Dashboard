@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-17T22:46:54.875345+00:00",
+    "generated_at": "2026-09-17T22:56:29.564088+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -4701,6 +4701,454 @@
         ],
         "years_missing": [],
         "basis": "Yardi 12-month budget accrual, grouped on the Align account tree through config/coa_map.json and tied out against each file's own total expenses month by month -- the same basket the actuals' expense buckets carry"
+      }
+    ]
+  },
+  "lease_tradeout": {
+    "available": true,
+    "properties": [
+      {
+        "slug": "the-landing",
+        "name": "The Landing",
+        "as_of": "2026-09-16",
+        "period_start": "2024-08-01",
+        "period_end": "2026-09-16",
+        "rate_type": "NEW",
+        "lease_date_basis": "App Date/Signed Date",
+        "tradeout_basis": "Effective Rent",
+        "source_file": "LeaseTradeoutReport-Landing.XLS",
+        "landed_at": "2026-09-17T22:34:37Z",
+        "files": 1,
+        "all": {
+          "leases": 247,
+          "eff_rent": 1198626.0,
+          "prev_eff_rent": 971592.0,
+          "tradeout_amount": 227034.0,
+          "pct": 0.233672,
+          "mean_pct": 0.701271
+        },
+        "windows": {
+          "t3": {
+            "leases": 26,
+            "eff_rent": 168538.0,
+            "prev_eff_rent": 120521.0,
+            "tradeout_amount": 48017.0,
+            "pct": 0.398412,
+            "mean_pct": 0.495192,
+            "months": [
+              {
+                "month": "2026-07",
+                "leases": 12,
+                "eff_rent": 70449.0,
+                "prev_eff_rent": 53994.0,
+                "tradeout_amount": 16455.0,
+                "pct": 0.304756
+              },
+              {
+                "month": "2026-08",
+                "leases": 12,
+                "eff_rent": 86072.0,
+                "prev_eff_rent": 61705.0,
+                "tradeout_amount": 24367.0,
+                "pct": 0.394895
+              },
+              {
+                "month": "2026-09",
+                "leases": 2,
+                "eff_rent": 12017.0,
+                "prev_eff_rent": 4822.0,
+                "tradeout_amount": 7195.0,
+                "pct": 1.492119
+              }
+            ],
+            "window_months": 3,
+            "window_start": "2026-07",
+            "window_end": "2026-09",
+            "complete": true
+          },
+          "t6": {
+            "leases": 68,
+            "eff_rent": 399055.0,
+            "prev_eff_rent": 301107.0,
+            "tradeout_amount": 97948.0,
+            "pct": 0.325293,
+            "mean_pct": 0.373515,
+            "months": [
+              {
+                "month": "2026-04",
+                "leases": 13,
+                "eff_rent": 64500.0,
+                "prev_eff_rent": 56560.0,
+                "tradeout_amount": 7940.0,
+                "pct": 0.140382
+              },
+              {
+                "month": "2026-05",
+                "leases": 17,
+                "eff_rent": 100451.0,
+                "prev_eff_rent": 72957.0,
+                "tradeout_amount": 27494.0,
+                "pct": 0.376852
+              },
+              {
+                "month": "2026-06",
+                "leases": 12,
+                "eff_rent": 65566.0,
+                "prev_eff_rent": 51069.0,
+                "tradeout_amount": 14497.0,
+                "pct": 0.283871
+              },
+              {
+                "month": "2026-07",
+                "leases": 12,
+                "eff_rent": 70449.0,
+                "prev_eff_rent": 53994.0,
+                "tradeout_amount": 16455.0,
+                "pct": 0.304756
+              },
+              {
+                "month": "2026-08",
+                "leases": 12,
+                "eff_rent": 86072.0,
+                "prev_eff_rent": 61705.0,
+                "tradeout_amount": 24367.0,
+                "pct": 0.394895
+              },
+              {
+                "month": "2026-09",
+                "leases": 2,
+                "eff_rent": 12017.0,
+                "prev_eff_rent": 4822.0,
+                "tradeout_amount": 7195.0,
+                "pct": 1.492119
+              }
+            ],
+            "window_months": 6,
+            "window_start": "2026-04",
+            "window_end": "2026-09",
+            "complete": true
+          },
+          "t12": {
+            "leases": 121,
+            "eff_rent": 662733.0,
+            "prev_eff_rent": 507112.0,
+            "tradeout_amount": 155621.0,
+            "pct": 0.306877,
+            "mean_pct": 0.35338,
+            "months": [
+              {
+                "month": "2025-10",
+                "leases": 5,
+                "eff_rent": 21246.0,
+                "prev_eff_rent": 18141.0,
+                "tradeout_amount": 3105.0,
+                "pct": 0.171159
+              },
+              {
+                "month": "2025-11",
+                "leases": 13,
+                "eff_rent": 58941.0,
+                "prev_eff_rent": 45402.0,
+                "tradeout_amount": 13539.0,
+                "pct": 0.298203
+              },
+              {
+                "month": "2025-12",
+                "leases": 12,
+                "eff_rent": 61435.0,
+                "prev_eff_rent": 49033.0,
+                "tradeout_amount": 12402.0,
+                "pct": 0.252932
+              },
+              {
+                "month": "2026-01",
+                "leases": 2,
+                "eff_rent": 12010.0,
+                "prev_eff_rent": 9187.0,
+                "tradeout_amount": 2823.0,
+                "pct": 0.307282
+              },
+              {
+                "month": "2026-02",
+                "leases": 7,
+                "eff_rent": 41746.0,
+                "prev_eff_rent": 32320.0,
+                "tradeout_amount": 9426.0,
+                "pct": 0.291646
+              },
+              {
+                "month": "2026-03",
+                "leases": 14,
+                "eff_rent": 68300.0,
+                "prev_eff_rent": 51922.0,
+                "tradeout_amount": 16378.0,
+                "pct": 0.315435
+              },
+              {
+                "month": "2026-04",
+                "leases": 13,
+                "eff_rent": 64500.0,
+                "prev_eff_rent": 56560.0,
+                "tradeout_amount": 7940.0,
+                "pct": 0.140382
+              },
+              {
+                "month": "2026-05",
+                "leases": 17,
+                "eff_rent": 100451.0,
+                "prev_eff_rent": 72957.0,
+                "tradeout_amount": 27494.0,
+                "pct": 0.376852
+              },
+              {
+                "month": "2026-06",
+                "leases": 12,
+                "eff_rent": 65566.0,
+                "prev_eff_rent": 51069.0,
+                "tradeout_amount": 14497.0,
+                "pct": 0.283871
+              },
+              {
+                "month": "2026-07",
+                "leases": 12,
+                "eff_rent": 70449.0,
+                "prev_eff_rent": 53994.0,
+                "tradeout_amount": 16455.0,
+                "pct": 0.304756
+              },
+              {
+                "month": "2026-08",
+                "leases": 12,
+                "eff_rent": 86072.0,
+                "prev_eff_rent": 61705.0,
+                "tradeout_amount": 24367.0,
+                "pct": 0.394895
+              },
+              {
+                "month": "2026-09",
+                "leases": 2,
+                "eff_rent": 12017.0,
+                "prev_eff_rent": 4822.0,
+                "tradeout_amount": 7195.0,
+                "pct": 1.492119
+              }
+            ],
+            "window_months": 12,
+            "window_start": "2025-10",
+            "window_end": "2026-09",
+            "complete": true
+          }
+        },
+        "months": [
+          {
+            "month": "2024-08",
+            "leases": 10,
+            "eff_rent": 37478.0,
+            "prev_eff_rent": 37175.0,
+            "tradeout_amount": 303.0,
+            "pct": 0.008151
+          },
+          {
+            "month": "2024-09",
+            "leases": 6,
+            "eff_rent": 24845.0,
+            "prev_eff_rent": 24961.0,
+            "tradeout_amount": -116.0,
+            "pct": -0.004647
+          },
+          {
+            "month": "2024-10",
+            "leases": 1,
+            "eff_rent": 3664.0,
+            "prev_eff_rent": 3344.0,
+            "tradeout_amount": 320.0,
+            "pct": 0.095694
+          },
+          {
+            "month": "2024-11",
+            "leases": 11,
+            "eff_rent": 42493.0,
+            "prev_eff_rent": 27290.0,
+            "tradeout_amount": 15203.0,
+            "pct": 0.557091
+          },
+          {
+            "month": "2024-12",
+            "leases": 17,
+            "eff_rent": 72306.0,
+            "prev_eff_rent": 58481.0,
+            "tradeout_amount": 13825.0,
+            "pct": 0.236402
+          },
+          {
+            "month": "2025-01",
+            "leases": 6,
+            "eff_rent": 22022.0,
+            "prev_eff_rent": 20875.0,
+            "tradeout_amount": 1147.0,
+            "pct": 0.054946
+          },
+          {
+            "month": "2025-02",
+            "leases": 11,
+            "eff_rent": 43908.0,
+            "prev_eff_rent": 42200.0,
+            "tradeout_amount": 1708.0,
+            "pct": 0.040474
+          },
+          {
+            "month": "2025-03",
+            "leases": 7,
+            "eff_rent": 31245.0,
+            "prev_eff_rent": 29198.0,
+            "tradeout_amount": 2047.0,
+            "pct": 0.070108
+          },
+          {
+            "month": "2025-04",
+            "leases": 11,
+            "eff_rent": 43383.0,
+            "prev_eff_rent": 39891.0,
+            "tradeout_amount": 3492.0,
+            "pct": 0.087539
+          },
+          {
+            "month": "2025-05",
+            "leases": 16,
+            "eff_rent": 76027.0,
+            "prev_eff_rent": 64043.0,
+            "tradeout_amount": 11984.0,
+            "pct": 0.187124
+          },
+          {
+            "month": "2025-06",
+            "leases": 13,
+            "eff_rent": 63589.0,
+            "prev_eff_rent": 52491.0,
+            "tradeout_amount": 11098.0,
+            "pct": 0.211427
+          },
+          {
+            "month": "2025-07",
+            "leases": 5,
+            "eff_rent": 24252.0,
+            "prev_eff_rent": 18575.0,
+            "tradeout_amount": 5677.0,
+            "pct": 0.305626
+          },
+          {
+            "month": "2025-08",
+            "leases": 5,
+            "eff_rent": 22701.0,
+            "prev_eff_rent": 20645.0,
+            "tradeout_amount": 2056.0,
+            "pct": 0.099588
+          },
+          {
+            "month": "2025-09",
+            "leases": 7,
+            "eff_rent": 27980.0,
+            "prev_eff_rent": 25311.0,
+            "tradeout_amount": 2669.0,
+            "pct": 0.105448
+          },
+          {
+            "month": "2025-10",
+            "leases": 5,
+            "eff_rent": 21246.0,
+            "prev_eff_rent": 18141.0,
+            "tradeout_amount": 3105.0,
+            "pct": 0.171159
+          },
+          {
+            "month": "2025-11",
+            "leases": 13,
+            "eff_rent": 58941.0,
+            "prev_eff_rent": 45402.0,
+            "tradeout_amount": 13539.0,
+            "pct": 0.298203
+          },
+          {
+            "month": "2025-12",
+            "leases": 12,
+            "eff_rent": 61435.0,
+            "prev_eff_rent": 49033.0,
+            "tradeout_amount": 12402.0,
+            "pct": 0.252932
+          },
+          {
+            "month": "2026-01",
+            "leases": 2,
+            "eff_rent": 12010.0,
+            "prev_eff_rent": 9187.0,
+            "tradeout_amount": 2823.0,
+            "pct": 0.307282
+          },
+          {
+            "month": "2026-02",
+            "leases": 7,
+            "eff_rent": 41746.0,
+            "prev_eff_rent": 32320.0,
+            "tradeout_amount": 9426.0,
+            "pct": 0.291646
+          },
+          {
+            "month": "2026-03",
+            "leases": 14,
+            "eff_rent": 68300.0,
+            "prev_eff_rent": 51922.0,
+            "tradeout_amount": 16378.0,
+            "pct": 0.315435
+          },
+          {
+            "month": "2026-04",
+            "leases": 13,
+            "eff_rent": 64500.0,
+            "prev_eff_rent": 56560.0,
+            "tradeout_amount": 7940.0,
+            "pct": 0.140382
+          },
+          {
+            "month": "2026-05",
+            "leases": 17,
+            "eff_rent": 100451.0,
+            "prev_eff_rent": 72957.0,
+            "tradeout_amount": 27494.0,
+            "pct": 0.376852
+          },
+          {
+            "month": "2026-06",
+            "leases": 12,
+            "eff_rent": 65566.0,
+            "prev_eff_rent": 51069.0,
+            "tradeout_amount": 14497.0,
+            "pct": 0.283871
+          },
+          {
+            "month": "2026-07",
+            "leases": 12,
+            "eff_rent": 70449.0,
+            "prev_eff_rent": 53994.0,
+            "tradeout_amount": 16455.0,
+            "pct": 0.304756
+          },
+          {
+            "month": "2026-08",
+            "leases": 12,
+            "eff_rent": 86072.0,
+            "prev_eff_rent": 61705.0,
+            "tradeout_amount": 24367.0,
+            "pct": 0.394895
+          },
+          {
+            "month": "2026-09",
+            "leases": 2,
+            "eff_rent": 12017.0,
+            "prev_eff_rent": 4822.0,
+            "tradeout_amount": 7195.0,
+            "pct": 1.492119
+          }
+        ]
       }
     ]
   }

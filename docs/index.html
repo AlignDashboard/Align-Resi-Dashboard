@@ -2234,6 +2234,7 @@ const SC_FEED_PREFIXES = [
   { prefix: "bldg_", fallbackWhat: "EliseAI building metrics export" },
   { prefix: "budget_", fallbackWhat: "12-month budget" },
   { prefix: "rentroll_", fallbackWhat: "rent roll" },
+  { prefix: "tradeout_", fallbackWhat: "lease tradeout report" },
 ];
 function scFeeds() {
   const out = [];
@@ -4458,6 +4459,15 @@ const SCD_DRIVE_FEEDS = [
   // predicate: whichever run goes last writes the same number.
   { prefix: "rentroll_", only: null,
     what: "rent roll · Drive “Rent Roll”" },
+  // Trade-out % moved off the EliseAI building-metrics export on 2026-09-17,
+  // onto the Yardi Lease Tradeout Report — the only feed with per-lease rows
+  // behind the rate. Filled from one published aggregate by both
+  // populate_scorecard paths, so like the rent roll it needs no fromDrive
+  // predicate. populate_building_metrics stops taking the cell by itself:
+  // owned_by_other_feeds() reads every non-bldg_ "*kpis" key in measured[slug],
+  // so registering tradeout_kpis is what excludes it.
+  { prefix: "tradeout_", only: null,
+    what: "lease tradeout report · Drive “Historical Tradeout Reports”" },
 ];
 
 // Is a feed family currently a Drive report? Used both by the scorecard filter
@@ -4753,14 +4763,22 @@ async function loadLandingDrive() {
       { kpi: "Leased %", label: "Leased %", to: "cdFeeds", where: "what feeds this tab",
         period: "point in time",
         read: v => [v.display, "100 − exposure"] },
-      // 34.9% here is the EliseAI export's trailing month; the Trade-outs card
-      // below reads 82.8% from the weekly leasing workbook and the renewal
-      // tracker. Two feeds, two windows, two definitions -- so this tile does
-      // NOT jump there. One number landing on a card showing another under the
-      // same name is the disagreement this tab exists to avoid.
+      // 39.8% here is the Yardi Lease Tradeout Report over its trailing three
+      // months, rent-weighted; the Trade-outs card below reads 82.8% from the
+      // weekly leasing workbook and the renewal tracker. Two feeds, two
+      // windows, two definitions -- so this tile still does NOT jump there.
+      // One number landing on a card showing another under the same name is
+      // the disagreement this tab exists to avoid.
+      //
+      // The window is the band's own: the ranges sheet grades a trailing 3
+      // months, and the EliseAI export this replaced was a trailing 1 (open
+      // item B6). It is published as tradeout_window rather than fixed here,
+      // because unlike the export's the window is a choice the pipeline makes
+      // and can change without this line.
       { kpi: "Trade-out %", label: "Trade-out %", to: "cdFeeds", where: "what feeds this tab",
-        period: "trailing 1 mo",
-        read: v => [v.display, "new + renewal blend"] },
+        period: meas.tradeout_months ? "trailing " + meas.tradeout_months + " mo"
+                                     : "trailing 1 mo",
+        read: v => [v.display, "weighted, new leases vs the lease replaced"] },
       // The published cell is "+$116,402/+12.1%", two figures spliced, and at
       // 20px that is wider than a tile is at phone width. measured[slug]
       // publishes the halves separately for exactly this reason, so the tile

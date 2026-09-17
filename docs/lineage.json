@@ -162,6 +162,7 @@
     "budget",
     "delinquency",
     "bldg_metrics",
+    "lease_tradeout",
     "eliseai_daily",
     "kpi_workbook"
    ],
@@ -437,18 +438,15 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-17T22:47:14.211137+00:00",
+  "generated_at": "2026-09-17T22:56:29.702504+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 12,
+   "live": 13,
    "partial": 3,
-   "waiting": 1,
    "no-parser": 8,
    "manual": 1
   },
-  "warnings": [
-   "Historical Tradeout Reports (lease_tradeout) is active in report_map.json but has no entry in build_lineage.DRIVE_FLOWS \u2014 the page shows it with an unknown downstream"
-  ]
+  "warnings": []
  },
  "stages": [
   {
@@ -1106,7 +1104,7 @@
      "as_of": "2026-08-31",
      "source_file": "EliseAI building metrics export (metrics-building-2026-08-31.csv)",
      "landed_at": "2026-08-31T17:55:34.425Z",
-     "detail": "8 KPI cell(s): # of Renewals, # of Tours/Leads/Applications, % Increase, AI Containment Rate, Avg First Response Time, Closing Ratio, Leased %, Trade-out %"
+     "detail": "7 KPI cell(s): # of Renewals, # of Tours/Leads/Applications, % Increase, AI Containment Rate, Avg First Response Time, Closing Ratio, Leased %"
     },
     {
      "property": "335 Third",
@@ -1400,6 +1398,91 @@
    "status": "live"
   },
   {
+   "id": "lease_tradeout",
+   "title": "Yardi lease tradeout report",
+   "origin_kind": "drive",
+   "source_label": "Historical Tradeout Reports",
+   "source_detail": "Drive folder \u00b7 *",
+   "example": "LeaseTradeoutReport-<property>.XLS",
+   "carries": "One row per new lease with the lease it replaced beside it \u2014 current and previous effective rent, the concession on each, and the report's own trade-out in dollars and percent \u2014 over whatever window the export was run for. The only feed with a trade-out history of its own.",
+   "filed_by": [
+    "leasetradeout",
+    "tradeout"
+   ],
+   "report_type": "lease_tradeout",
+   "parser": "parse_lease_tradeout",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_lease_tradeout.py",
+     "does": "Reads the two-row header by joining the forward-filled group banner to the column name, so the Current and Previous halves cannot be swapped, and dates each lease by its App/Signed date \u2014 the field the report says it selected on.",
+     "checks": "Leases tie out against the file's own Grand Total row on current effective rent, previous effective rent and trade-out dollars; a file that does not reproduce its own total is refused rather than published."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Accumulates leases by (unit, signed date, previous lease start) in data/<slug>/lease_tradeout.json and publishes the monthly series plus the T3/T6/T12 windows.",
+     "checks": "Accumulated rather than replaced, because the window is chosen at export time and the next file's may be narrower. Re-filing a window replaces its leases."
+    },
+    {
+     "script": "scripts/populate_scorecard.py",
+     "does": "Fills Trade-out % from the trailing-3-month window, rent-weighted, on both --from-landing and --from-pipeline.",
+     "checks": "Three months because that is the basis the published band was written for; the EliseAI export it replaced was a trailing one (open item B6). Weighted, never the mean of the per-lease rates."
+    }
+   ],
+   "stores": [
+    "data/<slug>/lease_tradeout.json"
+   ],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "lease_tradeout"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Trade-out %"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Trade-out % tile",
+     "tab": "Landing (Drive)",
+     "anchor": "dkpisSc",
+     "tile": true
+    },
+    {
+     "card": "KPI Scorecard \u2014 Trade-out %",
+     "tab": "Scorecard",
+     "anchor": "cScorecard",
+     "primary": "t-sc-matrix",
+     "tables": [
+      "t-sc-measured",
+      "t-sc-arrivals",
+      "t-sc-props"
+     ]
+    }
+   ],
+   "tables": [
+    "t-tradeout-*",
+    "t-sc-measured",
+    "t-sc-arrivals"
+   ],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/lease_tradeout.json",
+     "as_of": "2026-09-16",
+     "source_file": "LeaseTradeoutReport-Landing.XLS",
+     "landed_at": "2026-09-17T22:34:37Z",
+     "detail": null
+    }
+   ],
+   "status": "live"
+  },
+  {
    "id": "unit_directory",
    "title": "Yardi unit directory",
    "origin_kind": "drive",
@@ -1619,33 +1702,6 @@
     }
    ],
    "status": "partial"
-  },
-  {
-   "id": "historical-tradeout-reports-lease-tradeout",
-   "title": "Historical Tradeout Reports",
-   "origin_kind": "drive",
-   "source_label": "Historical Tradeout Reports",
-   "source_detail": "Drive folder \u00b7 *",
-   "example": null,
-   "carries": "Yardi Lease Tradeout Report: one row per new lease with the lease it replaced beside it, over whatever window the export was run for. The only feed carrying a trade-out with its own history",
-   "filed_by": [
-    "leasetradeout",
-    "tradeout"
-   ],
-   "report_type": "lease_tradeout",
-   "parser": "parse_lease_tradeout",
-   "registered": "active",
-   "documented": false,
-   "steps": [],
-   "stores": [],
-   "publishes": [],
-   "dashboard": [],
-   "tables": [],
-   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
-   "open_item": null,
-   "same_as": null,
-   "evidence": [],
-   "status": "waiting"
   },
   {
    "id": "airm-yardi-rev-management-revenue-mgmt",
@@ -2278,7 +2334,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-17T22:46:54.875345+00:00",
+     "landed_at": "2026-09-17T22:56:29.564088+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

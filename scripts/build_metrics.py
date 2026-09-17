@@ -935,6 +935,60 @@ def store_daily_leasing(prop, parsed):
     return fp
 
 
+def store_lease_tradeout(prop, parsed):
+    """data/<slug>/lease_tradeout.json — new-lease trade-outs, accumulated.
+
+    Accumulated by lease rather than overwritten, because the window is chosen
+    at export time: this report is run "From x To y" and the next one may be
+    wider, narrower or offset. Taking the newest file whole would throw away
+    every lease outside whatever range that export happened to ask for.
+
+    The key is (unit, signed date, previous lease start). A unit turns over
+    more than once inside one window -- 102 appears twice in the first file --
+    so unit and date alone are not unique, and the previous lease is what makes
+    a given turnover that turnover. Re-filing a window therefore replaces its
+    leases instead of doubling them.
+
+    Each file's own period and tie-out are kept in `files`, because the tie-out
+    is a statement about that export against its own Grand Total row and stops
+    meaning anything once several are merged.
+
+    No resident, no name — the report has no such column. It still goes through
+    the central scrub, like the unit directory.
+    """
+    fp = DATA / prop["slug"] / "lease_tradeout.json"
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    hist = json.load(open(fp)) if fp.exists() else {"files": [], "leases": []}
+
+    key = lambda l: (l.get("unit"), l.get("signed"), l.get("prev_start"))  # noqa: E731
+    fresh = {key(l): scrub(l) for l in parsed.get("leases") or []}
+    kept = [l for l in hist.get("leases", []) if key(l) not in fresh]
+    hist["leases"] = sorted(kept + list(fresh.values()),
+                            key=lambda l: (l.get("signed") or "", l.get("unit") or ""))
+
+    rec = {k: parsed.get(k) for k in
+           ("source_file", "landed_at", "period_start", "period_end", "rate_type",
+            "lease_date_basis", "tradeout_basis", "checks", "problems")}
+    rec["leases"] = len(fresh)
+    hist["files"] = [f for f in hist.get("files", [])
+                     if f.get("source_file") != rec["source_file"]] + [rec]
+    hist["files"].sort(key=lambda f: f.get("period_end") or "")
+
+    for k in ("report_type", "property", "rate_type", "lease_date_basis",
+              "tradeout_basis"):
+        hist[k] = parsed.get(k)
+    hist["as_of"] = max(f.get("period_end") or "" for f in hist["files"]) or None
+    hist["landed_at"] = parsed.get("landed_at")
+    hist["source_file"] = parsed.get("source_file")
+
+    json.dump(hist, open(fp, "w"), indent=2, default=str)
+    print(f"[ok] stored lease trade-outs for {prop['name']}: "
+          f"{len(fresh)} lease(s) from {parsed.get('source_file')} "
+          f"({parsed.get('period_start')}..{parsed.get('period_end')}), "
+          f"{len(hist['leases'])} on file")
+    return fp
+
+
 def store_renewal_tracker(prop, parsed):
     """data/<slug>/renewal_tracker.json — the whole tracker, overwritten.
 
@@ -960,6 +1014,7 @@ ACCUMULATORS = {
     "budget": store_budget,
     "daily_leasing_report": store_daily_leasing,
     "renewal_tracker": store_renewal_tracker,
+    "lease_tradeout": store_lease_tradeout,
 }
 
 
@@ -1562,6 +1617,55 @@ def build_metrics_json():
                   f"over {len(nl.get('months') or [])} month(s), "
                   f"{len(rn.get('months') or [])} month(s) of renewal offers")
     metrics["leasing"] = {"available": bool(leasing_props), "properties": leasing_props}
+
+    # Lease trade-outs from the Yardi Lease Tradeout Report, which is the only
+    # feed carrying a trade-out with its own history: one row per new lease with
+    # the lease it replaced beside it. Published as the monthly series and a few
+    # trailing windows rather than the rows themselves -- the rows are in
+    # data/<slug>/lease_tradeout.json, and nothing on the page draws them one at
+    # a time.
+    #
+    # `pct` everywhere here is the report's OWN definition: total current
+    # effective rent over total previous effective rent. The mean of the
+    # per-lease percentages is published beside it as `mean_pct` and is not
+    # interchangeable -- concessions push a previous effective rent toward zero
+    # (one lease on The Landing reads $86 against a $62,716 concession and
+    # prints 6,136%), so the mean runs 70.1% where the weighted figure is 23.4%.
+    to_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "lease_tradeout.json"
+        if not fp.exists():
+            continue
+        held = json.load(open(fp))
+        leases = held.get("leases") or []
+        if not leases:
+            continue
+        mod = importlib.import_module("parse_lease_tradeout")
+        files = held.get("files") or []
+        entry = {
+            "slug": p["slug"], "name": p["name"],
+            "as_of": held.get("as_of"),
+            "period_start": min((f.get("period_start") or "") for f in files) or None,
+            "period_end": held.get("as_of"),
+            "rate_type": held.get("rate_type"),
+            "lease_date_basis": held.get("lease_date_basis"),
+            "tradeout_basis": held.get("tradeout_basis"),
+            "source_file": held.get("source_file"),
+            "landed_at": held.get("landed_at"),
+            "files": len(files),
+            "all": mod.summarise(leases),
+            "windows": {f"t{n}": mod.window(leases, n) for n in (3, 6, 12)},
+        }
+        entry["months"] = (entry["all"] or {}).pop("months", [])
+        to_props.append(entry)
+        a, w = entry["all"], entry["windows"].get("t3") or {}
+        print(f"[ok] lease trade-outs for {p['name']}: {a['leases']} lease(s) "
+              f"{entry['period_start']}..{entry['period_end']}, "
+              f"{a['pct']:.1%} weighted over the whole window, "
+              f"{w.get('pct', 0):.1%} over the trailing 3 months")
+    metrics["lease_tradeout"] = {"available": bool(to_props), "properties": to_props}
 
     # Latest monthly P&L point per property, for the operating-summary card.
     pl_props = []
