@@ -120,12 +120,17 @@ DRIVE_FLOWS = {
             {"file": "metrics.json", "key": "expense_ratio"},
             {"file": "metrics.json", "key": "monthly_pl"},
             {"file": "metrics.json", "key": "expense_buckets"},
+            {"file": "metrics.json", "key": "expense_trend"},
             {"file": "metrics.json", "key": "rent_capture"},
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
         ],
         "dashboard": [
             {"card": "Expense Ratio", "tab": "Portfolio", "anchor": "cExpRatio",
              "tables": ["t-expratio-*"]},
+            # Every property's expense line on one axis, derived from the same
+            # stitched series the Operating Summary reads rather than typed in.
+            {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",
+             "primary": "t-exptrend", "tables": ["t-exptrend", "t-monthlypl-*"]},
             {"card": "Operating Summary", "tab": "The Landing", "anchor": "cOpSummary",
              "tables": ["t-monthlypl-*"]},
             {"card": "Expense Deep Dive", "tab": "The Landing", "anchor": "cExpDeep",
@@ -157,7 +162,7 @@ DRIVE_FLOWS = {
             {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
              "anchor": "cdFeeds", "tables": []},
         ],
-        "tables": ["t-expratio-*"],
+        "tables": ["t-expratio-*", "t-exptrend"],
         "note": "The one Drive report that reaches the dashboard as a chart in "
                 "its own right. Its monthly revenue also becomes the "
                 "denominator under the delinquency KPI.",
@@ -765,8 +770,9 @@ OTHER_FLOWS = [
         "source_label": "docs/metrics.json, edited directly",
         "source_detail": "Blocks the pipeline preserves rather than "
                          "regenerates.",
-        "carries": "Expense Trend's three series, the PSF comp set, the trade-"
-                   "out placeholder, and the eleven planned-metric cards.",
+        "carries": "The PSF comp set, the trade-out placeholder, and the "
+                   "eleven planned-metric cards. Expense Trend left this list "
+                   "on 2026-09-17: it is derived from the T12 statement now.",
         "steps": [
             {"script": "scripts/build_metrics.py",
              "does": "Loads the existing metrics.json and writes only the "
@@ -776,14 +782,11 @@ OTHER_FLOWS = [
         ],
         "stores": [],
         "publishes": [
-            {"file": "metrics.json", "key": "expense_trend"},
             {"file": "metrics.json", "key": "psf_vs_peers"},
             {"file": "metrics.json", "key": "trade_outs"},
             {"file": "metrics.json", "key": "placeholders"},
         ],
         "dashboard": [
-            {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",
-             "tables": ["t-exptrend"]},
             {"card": "PSF vs Other Properties", "tab": "Portfolio", "anchor": "cPsf",
              "tables": ["t-psf"]},
             {"card": "Trade Outs", "tab": "Portfolio", "anchor": "cTradeOutsPortfolio",
@@ -791,7 +794,7 @@ OTHER_FLOWS = [
             {"card": "Planned Metrics", "tab": "Portfolio", "anchor": "placeholderGrid",
              "tables": ["t-placeholders"]},
         ],
-        "tables": ["t-exptrend", "t-psf", "t-tradeouts", "t-placeholders"],
+        "tables": ["t-psf", "t-tradeouts", "t-placeholders"],
         "note": "No feed stands behind these. The PSF figures are hand-entered "
                 "with no known date and say so on the card; Trade Outs is an "
                 "empty state waiting on AIRM and the weekly leasing report.",

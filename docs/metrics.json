@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-16T23:03:44.955030+00:00",
+    "generated_at": "2026-09-17T16:04:24.913483+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -14,77 +14,94 @@
   },
   "expense_trend": {
     "available": true,
-    "property": "The Landing (p0005611)",
-    "basis": "Monthly operating expense, top movers by volatility",
-    "period": "Jul 2025 - Jun 2026",
-    "labels": [
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun"
+    "months": [
+      "2025-07",
+      "2025-08",
+      "2025-09",
+      "2025-10",
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08"
     ],
-    "series": [
+    "labels": [
+      "Jul 25",
+      "Aug 25",
+      "Sep 25",
+      "Oct 25",
+      "Nov 25",
+      "Dec 25",
+      "Jan 26",
+      "Feb 26",
+      "Mar 26",
+      "Apr 26",
+      "May 26",
+      "Jun 26",
+      "Jul 26",
+      "Aug 26"
+    ],
+    "properties": [
       {
-        "name": "Marketing",
+        "slug": "the-landing",
+        "name": "The Landing",
         "data": [
-          8294,
-          14067,
-          1503,
-          7053,
-          6486,
-          20362,
-          1996,
-          8576,
-          10484,
-          10984,
-          7990,
-          -1413
-        ]
+          null,
+          371065.03,
+          352141.61,
+          358527.56,
+          337446.2,
+          412660.58,
+          360137.58,
+          407759.46,
+          424590.41,
+          624205.51,
+          377557.48,
+          334088.8,
+          365241.2,
+          48571.94
+        ],
+        "first_month": "2025-08",
+        "last_month": "2026-08",
+        "period_end": "Aug 2026",
+        "expense_scope": "total",
+        "expense_anchor": "549999-9999",
+        "basis": "jpm 549999-9999 total expenses (operating and non-operating)"
       },
       {
-        "name": "Utilities",
+        "slug": "palma",
+        "name": "Palma",
         "data": [
-          39591,
-          9945,
-          13101,
-          9100,
-          9630,
-          10324,
-          19244,
-          21218,
-          25350,
-          11026,
-          15502,
-          11973
-        ]
-      },
-      {
-        "name": "General & Admin",
-        "data": [
-          49883,
-          39075,
-          32454,
-          55218,
-          53491,
-          56912,
-          34976,
-          58538,
-          86617,
-          45521,
-          59164,
-          51952
-        ]
+          158188.94,
+          144683.36,
+          144776.06,
+          152340.83,
+          84533.64,
+          161977.14,
+          162068.06,
+          143888.33,
+          161598.64,
+          168827.63,
+          153524.36,
+          -94102.7,
+          null,
+          null
+        ],
+        "first_month": "2025-07",
+        "last_month": "2026-06",
+        "period_end": "Jun 2026",
+        "expense_scope": "operating",
+        "expense_anchor": null,
+        "basis": "align 5999-9998 recoverable opex"
       }
     ],
-    "footnote": "Real Estate Taxes ($146K/mo) spiked to $419K in Apr 2026 (annual assessment) and Insurance to $37K in Mar; both excluded as one-time items so monthly operating movement stays visible."
+    "mixed_scope": true,
+    "basis": "Monthly expenses per property, from each property's own 12-month accrual statement"
   },
   "psf_vs_peers": {
     "available": true,
