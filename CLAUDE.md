@@ -2208,18 +2208,30 @@ dropped a hand-added EliseAI day with the scorecard cells behind it — four
 commits undone.
 
 So `update.yml` re-syncs **once, immediately after the fetch**:
-`git fetch origin main` and, if it moved, `git reset --hard` onto it. Two
-things make that the right place rather than at commit time:
+`git fetch origin main` and, if it moved, `git reset --hard` onto it.
+`_downloads/` is gitignored, so the reports this run just fetched survive the
+reset and nothing is downloaded twice.
 
-- **Everything below it is minutes, not hours**, so one sync closes almost the
-  whole window. A check at commit time could only refuse the day's data.
-- **`_downloads/` is gitignored**, so the reports this run just fetched survive
-  the reset and nothing is downloaded twice.
+**That placement rests on a premise that is false, and open item A15 is the
+evidence.** The premise was that everything below the re-sync is minutes rather
+than hours, so one sync closes almost the whole window. Run #88 on 2026-09-18
+fetched Drive in **2m26s** and then spent **4h54m in `build_metrics.py`**: the
+re-sync fired at 14:50:56 and correctly found main unmoved, the Market Comps
+work merged at 17:08, and at 19:44 the retry loop below replayed the run's
+stale `metrics.json` and `lineage.json` over it — blanking a live tab. The long
+pole is the build, not the fetch, and the guard covers the wrong one. Do not
+read this section as saying the window is closed; it is open for hours a day
+until A15 is taken.
 
 It takes the newer **data** as well as the newer code, which is the half that
 saves a hand-added feed: the build then accumulates onto the current stores
-rather than the run-start ones. The residual minutes between building and
-pushing are what the retry loop's replay already covers.
+rather than the run-start ones.
+
+**The retry loop's replay is a clobber, not a merge.** When the push is
+rejected it resets to `origin/main`, copies this run's own output back over the
+top and commits — so anything newer in those paths is overwritten by a build
+that never saw it. It warns and names each file first, which is how run #88 was
+diagnosed, but a warning inside a green run is not a signal anyone receives.
 
 ### Keeping data out of git history (migration, not yet active)
 
