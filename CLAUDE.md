@@ -341,6 +341,179 @@ the list: it wanted the statement's revenue detail lines, and the parser now
 reads them — see the rent-capture section below. The rent roll's arrival the
 same day had already closed three rows before that.
 
+## The Market Comps Tab
+
+`Market Comps` sits beside `Landing (Drive)` and is the only tab drawing a
+report about **the market** rather than about an Align building. It exists for
+one reason: the Yardi **market rent** column is set by the property team, it is
+the denominator of loss to lease on both Landing tabs and of the whole Rent
+Capture block, and until 2026-09-18 nothing in the pipeline could tell whether
+it was right.
+
+It can now. The Landing's rent roll of 2026-09-11 carries a market rent table
+**9.7% above what the submarket supports** — $176,953 a month, $2.12M a year —
+and the same file dates the change to between 2026-08-25 and 2026-09-11.
+
+### Four readings of one number
+
+The verdict card is deliberately four figures for one number, and three of them
+are the building's own:
+
+| Reading | The Landing | vs comp-implied |
+| --- | --- | --- |
+| Rent roll 2026-09-11 — the market rent column, unit by unit | $2,004,929 | **+9.7%** |
+| Unit directory 2026-08-25 — each plan's published range, midpoint | $1,805,509 | −1.2% |
+| T12 statement Aug 2026 — gross market rent potential, the same table booked as revenue | $1,804,359 | −1.3% |
+| Comp-implied — comp median by bedroom × this building's own premium | $1,827,976 | — |
+
+A single comparison against the comps could only say a number looks high. Three
+internal copies that agree with the market and disagree with the fourth **date
+the change**, which is what makes it actionable rather than arguable: the
+directory and the GL agree to 0.06% with each other and sit inside 1.5% of the
+comps, so whatever moved, moved after 2026-08-25.
+
+The statement's own gross potential says the same thing over thirteen months:
+$5,164/unit in Aug 2025, $5,768 by Jun 2026 — then **+12.1% in Jul, +6.1% in
+Aug, and +11.1% again by the roll**. +32.2% in three months, against a comp set
+that moved 2–6% over the same stretch.
+
+### How the comp-implied figure is built
+
+Per bedroom, because that is the unit the market quotes in and the only one
+size-match can be checked on:
+
+| | Units | Building | Comp median (n) | Market rent | Yardi's own |
+| --- | --- | --- | --- | --- | --- |
+| 1 bed | 137 | 639 sf | $5,646 at 627 sf (60) | $5,992 | $5,738 |
+| 2 bed | 110 | 981 sf | $7,475 at 982 sf (48) | $7,932 | $8,044 |
+| 3 bed | 16 | 1250 sf | 2 listings — not priced | $8,410 (Yardi's) | $8,410 |
+
+The size match is near exact on the two bedrooms that matter (+1.9% and 0.0%),
+which is what lets a median rent be compared without adjusting it. Three things
+the build-up is careful about:
+
+- **The premium is the subject's own, and it is bed-weighted.** A comp median is
+  the middle of the submarket; a building that has asked 6% over that middle for
+  three years is worth 6% over it today. The figure is the median of the
+  quarterly premium across the whole file (+6.1% over 13 quarters), taken **per
+  bedroom** and weighted back together by the subject's own listing counts — a
+  pooled ratio moves with the unit MIX as much as with price, and 2025Q1 reads
+  −16.0% pooled against −3.6% bed-weighted purely because of what happened to be
+  vacant. A median rather than a mean, so the quarter being measured can sit
+  inside the baseline without moving it.
+- **A bedroom the ring cannot price keeps the building's own rent.** The
+  submarket has two 3-bed listings; two asking prices is not a market
+  (`MIN_BED_FOR_IMPLIED`). Those 16 units stay in the total at Yardi's own
+  figure, so the gap the tab reports is the one that survives leaving them
+  alone.
+- **The answer carries its own sensitivity.** The same build-up at every ring
+  the export is cut into: **+12.9%** against the nine buildings inside 0.75 mi,
+  **+9.7%** against the seventeen inside 1.35 mi, **+19.0%** against all 33 in
+  the file. A gap that survives three comp sets is a finding; one that does not
+  is a choice of radius.
+
+Restated on a comp-supported market rent, the published **loss to lease falls
+from 36.5% to 30.4%** — still far above the band's 10% ceiling, so this does not
+answer A8's band question, but it moves the number A8 is arguing about.
+
+### The market's own answer, which agrees
+
+Two figures on the same export, neither of them a rent:
+
+- **Days on market: 44 against the ring's 26** (91 closed listings against
+  1,056, trailing twelve months). The building takes 69% longer to let a unit.
+- **Concessions: none advertised, against 22% of the ring.** So the gap on an
+  effective-rent basis is wider than the asking figures show.
+
+One unit has been listed at $6,323 since 2026-04-15 — 153 days.
+
+### What the tab cannot say, and says so
+
+`cmcMethod` is the honesty block, and every line of it is read from the file
+rather than typed: asking rents are not signed rents; the 3-bed units are
+unverified and named; floor, view and finish are not controlled (the premium is
+the stand-in for whatever this building is actually worth over its neighbours);
+it is a single vintage until a second export lands; and **only aggregates are
+published** — the listing rows are a licensed vendor dataset, and everything
+`docs/` holds is downloadable by anyone who can open the page, which is the same
+reasoning that keeps resident names out of `data/`.
+
+### The feed
+
+`HelloData - Simple - <market> Comps.xlsx` in the Drive **`Comps`** folder, two
+flat tables: `Property Data` (one row per building) and `Availability` (one row
+per listing, three years deep). `parse_comps.py` cuts it from each Align
+building's point of view — every property in `config/properties.json` that
+appears in the file gets its own section and its own comp set, so Chorus and
+Madelon are on the tab's property select already.
+
+**The export arrives as a pair**, and the second file is `HelloData - Full -
+…xlsx`: the same market as a twenty-sheet formatted workbook with no parseable
+table in it. The entry's `file_glob` is `*` so it claims **both** — a narrower
+pattern is how `Landing 2026 Resi Budget.xlsx` went unread for weeks — and the
+parser then *skips* the formatted one with a line saying which file it is and
+that nothing is missing. A skip with a reason, not an error, because both files
+belong in that folder.
+
+**There is no total row to tie out against.** Every other parser here checks
+itself against the report's own arithmetic; a comp export has none, so two
+structural reconciliations stand in and both refuse the file:
+
+- **Every building in `Availability` must be described in `Property Data`.** The
+  rings are built by distance and the coordinates live only in that table, so a
+  listing whose building is missing drops silently out of every ring and the
+  comp set quietly becomes whatever happened to be described.
+- **`Days on Market` must reconcile to the listing's own dates** — `(removed −
+  first listed) + 1`, which holds on all 6,096 closed listings in the first
+  file. If the column stops meaning that, half the evidence that an asking rent
+  is too high is measuring nothing.
+
+Four more things it is careful about:
+
+- **Align's own buildings are not comps.** Three of the 36 buildings in the file
+  are Align's. They are excluded by resolving each building against
+  `config/properties.json` — the property master, not the export's own
+  `Management Company` string, which is free text — so a property added there
+  leaves the comp sets without anyone remembering this file exists.
+- **A floorplan row is not a unit** (`Is Floorplan`), and counting them weights a
+  building by how many plans it publishes.
+- **A listing is current only on the file's own as-of date.** Every row carries
+  the snapshot that observed it, three years deep, and the market in this file
+  moved +64% across that span.
+- **The ring is cut on every bedroom the MARKET has**, not only the ones the
+  subject has listed. A building can go three years without listing one of its
+  bedroom types, and falling back to Yardi's rent because nobody collected the
+  market is a different thing from falling back because the market is too thin
+  to read. Only the second is a finding.
+
+**A building is not a person.** The parser publishes building names under
+`building`, not `name`: `name` is in `build_metrics.PII_FIELDS` and the central
+scrub drops it from everything on its way to `data/`, which emptied the comp
+table on the first run. Weakening a scrub that exists to keep residents out of a
+public file, in order to publish a comp table, would be the wrong way round.
+
+`scripts/test_comps.py` holds it down — 46 fixture-free checks against exports
+built in a temp dir. The eight load-bearing guards were each verified by
+mutation (the two reconciliations, the floorplan skip, the as-of cut, the Align
+exclusion, the bed-weighted premium, the thin-bedroom fallback and the
+market-wide ring). **Clear `__pycache__` between mutation runs** — the same trap
+the leasing parsers' tests record.
+
+Tables: `t-comps-<slug>`, `t-compstrend-<slug>` and `t-compscheck-<slug>` on the
+data page, under a `Market Comps` group.
+
+### A property with no rent roll still gets a check
+
+The headline is the newest Yardi reading of the table, which is normally the
+rent roll — per-unit, current, and the denominator loss to lease actually uses.
+Where no roll has reached the pipeline the **unit directory stands in** and the
+card names which reading it measured rather than going blank: Chorus reads
+**−4.3%**, i.e. its published table sits *under* the market, which is the
+opposite finding and worth having. The loss-to-lease restatement needs the roll
+and is left out there. A property with no directory at all gets the market side
+of the tab and a card saying why the check cannot be made — that is Madelon
+today.
+
 ## Refreshing The KPI Scorecard
 
 `docs/scorecard.json` comes from the KPI scorecard workbook, in two steps that
@@ -446,6 +619,14 @@ is 10% — and the roll shows that table revised up **+17.9% in eight weeks**
 while in-place rent moved +0.07%. The cell now measures what the band says it
 measures; whether the band's 10% ceiling is right for that measurement is still
 open (A9 is its sibling for the controllable basket).
+
+**The comp export answers the first half of that warning.** `Market rent
+potential` is not merely aspirational — as of the 2026-09-11 roll it is **9.7%
+above what the submarket supports**, and the same three feeds that carry the
+table date the change to after 2026-08-25. So the cell's 37% is measured
+correctly against a denominator that is itself too high: restated on a
+comp-supported market rent it reads **30.4%**. See **The Market Comps Tab**.
+That narrows A8 without closing it: 30% is still three times the ceiling.
 
 `--from-landing` also fills **`NOI Margin %`** the same way — the current
 month's NOI over revenue from the Expense & NOI series behind that card, to one
@@ -1944,6 +2125,14 @@ reports what that run actually produced.
   which per-property files exist, the newest source filename, when it landed,
   which scorecard cells each feed ended up owning. A declared flow with no
   evidence is reported as waiting, not as working.
+- **A store this checkout cannot read falls back to what it published.**
+  `data/<slug>/rent_roll.json` and `delinquency.json` are gitignored (per-unit,
+  they arrive with names), so they exist only during a pipeline run — and
+  reading the stores alone reported the rent roll, live since 2026-09-11, as
+  `waiting` in every fresh clone. Every field the evidence needs is already in
+  the published aggregate, which IS committed, so `evidence_from_published`
+  reads it from there and the row says where it was read from. Closes open item
+  G4; a lineage page regenerated outside CI is now the same page CI writes.
 
 The script **refuses to write** on a card anchor `index.html` does not define, a
 table id `data.html` does not build, or a parser module named in the report map

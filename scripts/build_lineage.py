@@ -280,6 +280,77 @@ DRIVE_FLOWS = {
                 "both sides into the same categories: one basket, grouped "
                 "once, tied out on each side against its own file.",
     },
+    ("Comps", "market_comps"): {
+        "id": "market_comps",
+        "example": 'HelloData - Simple - <market> Comps.xlsx',
+        "title": "Market comp export (HelloData)",
+        "carries": "Every building in the submarket and every unit it has "
+                   "listed for three years: bedrooms, size, asking and "
+                   "effective rent, first listed, removed, days on market.",
+        "steps": [
+            {"script": "scripts/parse_comps.py",
+             "does": "Cuts the market from each Align building's point of "
+                     "view: comp rings by distance, median asking rent by "
+                     "bedroom, the quarterly asking-$/sqft series against the "
+                     "ring, days on market and concession share. Publishes "
+                     "aggregates only \u2014 the listing rows are a licensed "
+                     "vendor dataset and everything in docs/ is downloadable.",
+             "checks": "A comp export has no total row, so two structural "
+                       "reconciliations stand in: every listed building must "
+                       "be described in the Property Data table (the rings are "
+                       "built from its coordinates), and Days on Market must "
+                       "reconcile to each listing's own dates. Align's own "
+                       "buildings are excluded from every comp set by "
+                       "resolving them against config/properties.json."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Joins the market to the building: applies the comp "
+                     "median for each bedroom, plus the subject's own "
+                     "long-run premium to its ring, to the unit directory's "
+                     "bedroom mix, and sets that against the three copies of "
+                     "the Yardi market rent table the pipeline already holds "
+                     "\u2014 the rent roll's column, the directory's plan "
+                     "table and the statement's gross market rent potential.",
+             "checks": "A bedroom the ring has fewer than five listings for "
+                       "keeps the building's own figure and is named as "
+                       "unverified, rather than being priced off a handful of "
+                       "asking rents. The formatted twin of the export is "
+                       "skipped by name of its own layout, with a reason, "
+                       "rather than half-read."},
+        ],
+        "stores": ["data/<slug>/comps.json"],
+        "publishes": [
+            {"file": "metrics.json", "key": "comps"},
+        ],
+        "dashboard": [
+            {"card": "Market Rent Check", "tab": "Market Comps",
+             "anchor": "cmcVerdict", "primary": "t-compscheck-*",
+             "tables": ["t-compscheck-*", "t-comps-*"]},
+            {"card": "Asking Rent vs The Submarket", "tab": "Market Comps",
+             "anchor": "cmcDivergence", "primary": "t-compstrend-*",
+             "tables": ["t-compstrend-*"]},
+            {"card": "What The Market Would Pay", "tab": "Market Comps",
+             "anchor": "cmcBuildUp", "primary": "t-compscheck-*",
+             "tables": ["t-compscheck-*", "t-unitdir-*"]},
+            {"card": "How It Is Actually Leasing", "tab": "Market Comps",
+             "anchor": "cmcEvidence", "primary": "t-comps-*",
+             "tables": ["t-comps-*"]},
+            {"card": "The Comp Set", "tab": "Market Comps",
+             "anchor": "cmcSet", "primary": "t-comps-*",
+             "tables": ["t-comps-*"]},
+            {"card": "What This Tab Cannot Say", "tab": "Market Comps",
+             "anchor": "cmcMethod", "primary": "t-comps-*",
+             "tables": ["t-comps-*", "t-compstrend-*"]},
+        ],
+        "tables": ["t-comps-*", "t-compstrend-*", "t-compscheck-*"],
+        "note": "The only feed here about the MARKET rather than about an "
+                "Align building, and the only thing the Yardi market rent "
+                "column can be checked against \u2014 that column is set by "
+                "the property team, and it is the denominator of loss to "
+                "lease on both Landing tabs and of the rent-capture series. "
+                "The export arrives as a pair of near-identical names; the "
+                "entry claims both on purpose, so a renamed export cannot go "
+                "unread, and the formatted one is skipped with a reason.",
+    },
     ("Rent Roll", "rent_roll"): {
         "id": "rent_roll",
         "example": '<date> RentRoll<MM_DD_YYYY>.xlsx',
@@ -955,7 +1026,43 @@ def _years_evidence(slug, doc):
             "detail": f"{len(yrs)} budget year(s) on file ({held})"}
 
 
-def evidence_for_store(store_paths):
+def evidence_from_published(publishes, have):
+    """Arrivals for a store this checkout cannot read, from what it published.
+
+    `data/<slug>/rent_roll.json` and `delinquency.json` are gitignored -- they
+    are per-unit and arrive with resident names -- so they exist only during a
+    pipeline run. Reading the stores alone therefore reports a live feed as
+    having never arrived in any fresh clone, and publishes a map saying so:
+    the rent roll landed 2026-09-11 and would read `waiting` here. Every field
+    the evidence needs (as_of, source_file, landed_at) is already in the
+    published aggregate, which IS committed, so fall back to it and say where
+    it was read from rather than leaving the row out. `have` is the set of
+    slugs the stores themselves answered for, so this never overrides a real
+    file. Closes open item G4.
+    """
+    m = _load_json("docs/metrics.json") or {}
+    rows = []
+    for pub in publishes or []:
+        if pub.get("file") != "metrics.json":
+            continue
+        block = m.get(pub.get("key")) or {}
+        for pr in (block.get("properties") or []):
+            slug = pr.get("slug")
+            if not slug or slug in have or not pr.get("as_of"):
+                continue
+            have.add(slug)
+            rows.append({"property": slug,
+                         "file": "metrics.json " + pub["key"],
+                         "as_of": pr.get("as_of"),
+                         "source_file": pr.get("source_file"),
+                         "landed_at": pr.get("landed_at"),
+                         "detail": "read from the published aggregate — this "
+                                   "store is gitignored (per-unit) and exists "
+                                   "only during a pipeline run"})
+    return rows
+
+
+def evidence_for_store(store_paths, publishes=None):
     """What the pipeline actually wrote, for the stores a flow declares.
 
     One row per property, not per file: a T12 statement writes four files for
@@ -991,7 +1098,8 @@ def evidence_for_store(store_paths):
     for slug, row in sorted(by_prop.items()):
         row["file"] = ", ".join(row.pop("files"))
         rows.append(row)
-    return rows
+    rows += evidence_from_published(publishes, set(by_prop))
+    return sorted(rows, key=lambda r: r["property"])
 
 
 def evidence_from_scorecard(prefix, want=None):
@@ -1068,7 +1176,7 @@ def gather_evidence(flow):
         return [{"property": "portfolio", "file": "docs/metrics.json",
                  "as_of": None, "source_file": None, "landed_at": gen,
                  "detail": "carried through the last pipeline run untouched"}]
-    return evidence_for_store(flow.get("stores") or [])
+    return evidence_for_store(flow.get("stores") or [], flow.get("publishes"))
 
 
 def derive_status(flow, evidence, registered_active):

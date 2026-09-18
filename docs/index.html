@@ -700,6 +700,7 @@
         <button class="tab" role="tab" id="tabScorecard" aria-controls="viewScorecard" aria-selected="false" tabindex="-1">Scorecard</button>
         <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
         <button class="tab" role="tab" id="tabView2d" aria-controls="view2d" aria-selected="false" tabindex="-1">Landing (Drive)</button>
+        <button class="tab" role="tab" id="tabComps" aria-controls="viewComps" aria-selected="false" tabindex="-1">Market Comps</button>
       </div>
       <!-- not a .tab: the tab machinery selects on that class -->
       <a class="datalink" href="data.html">Data flow &amp; tables ↗</a>
@@ -1062,6 +1063,81 @@
     <div class="blu-note" id="dMeta" style="color:var(--muted);margin-top:14px;"></div>
     </div><!-- /view2d -->
 
+    <!-- ============================================================
+         MARKET COMPS
+         The only tab that draws a report about the MARKET rather than
+         about an Align building, and the only one that can therefore
+         answer whether a number the property team sets by hand is right.
+         Everything here comes from the HelloData export in Drive `Comps`
+         (parse_comps -> metrics.json `comps`), joined to three feeds that
+         already publish their own copy of the Yardi market rent table.
+         ============================================================ -->
+    <div class="view" id="viewComps" role="tabpanel" aria-labelledby="tabComps" tabindex="0" hidden>
+    <div class="blu-note" id="mcIntro" style="color:var(--muted);margin-bottom:14px;"></div>
+    <div class="grid">
+
+      <div class="card wide" id="cmcVerdict">
+        <div class="card-head">
+          <div>
+            <h2>Market Rent Check</h2>
+            <span class="eyebrow" id="mcvEyebrow">LOADING…</span>
+          </div>
+          <div class="opsel">
+            <label for="mcSelect">Property:</label>
+            <select class="prop-select" id="mcSelect"></select>
+          </div>
+        </div>
+        <div class="statrow" id="mcvStats"></div>
+        <div class="sc-scroll"><div id="mcvTbl"></div></div>
+        <div class="blu-note" id="mcvNote" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cmcDivergence">
+        <div class="card-head">
+          <div>
+            <h2>Asking Rent vs The Submarket</h2>
+            <span class="eyebrow" id="mcdEyebrow">LOADING…</span>
+          </div>
+          <div class="togrow" id="mcdTogs" role="group" aria-label="Period">
+            <button class="tog" type="button" data-mcp="q" aria-pressed="true">Quarterly</button>
+            <button class="tog" type="button" data-mcp="m" aria-pressed="false">Monthly</button>
+          </div>
+        </div>
+        <div class="chartwrap"><canvas id="mcChart"></canvas></div>
+        <div class="blu-note" id="mcdFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cmcBuildUp">
+        <h2>What The Market Would Pay</h2>
+        <span class="eyebrow" id="mcbEyebrow">LOADING…</span>
+        <div class="sc-scroll"><div id="mcbTbl"></div></div>
+        <div class="blu-note" id="mcbFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card" id="cmcEvidence">
+        <h2>How It Is Actually Leasing</h2>
+        <span class="eyebrow" id="mceEyebrow">LOADING…</span>
+        <div class="statrow" id="mceStats"></div>
+        <div class="blu-note" id="mceFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card" id="cmcMethod">
+        <h2>What This Tab Cannot Say</h2>
+        <span class="eyebrow">THE LIMITS OF A COMP SET · EACH ONE READ FROM THE FILE RATHER THAN TYPED</span>
+        <div id="mcmList"></div>
+      </div>
+
+      <div class="card wide" id="cmcSet">
+        <h2>The Comp Set</h2>
+        <span class="eyebrow" id="mcsEyebrow">LOADING…</span>
+        <div class="sc-scroll"><div id="mcsTbl"></div></div>
+        <div class="blu-note" id="mcsFoot" style="color:var(--muted);"></div>
+      </div>
+
+    </div>
+    <div class="blu-note" id="mcMeta" style="color:var(--muted);margin-top:14px;"></div>
+    </div><!-- /viewComps -->
+
     <div id="propPanels"></div>
 
     <footer id="footer"></footer>
@@ -1287,13 +1363,14 @@ window.addEventListener("hashchange", focusCardFromHash);
 
 // The two Landing views load their data lazily on first activation, which also
 // guarantees their canvases are visible (and therefore sized) when built.
-let landingStarted = false, landingDriveStarted = false;
+let landingStarted = false, landingDriveStarted = false, compsStarted = false;
 function maybeLoadLanding(tab) {
   if (tab.id === "tabView2" && !landingStarted) { landingStarted = true; loadLanding(); }
   if (tab.id === "tabView2d" && !landingDriveStarted) {
     landingDriveStarted = true;
     loadLandingDrive();
   }
+  if (tab.id === "tabComps" && !compsStarted) { compsStarted = true; loadComps(); }
 }
 
 // Left/Right arrows move between tabs, per the tablist keyboard convention.
@@ -5701,6 +5778,489 @@ async function loadLandingDrive() {
     + "sources: " + SCD_FEED_ROWS.length + " Google Drive reports, no analyst workbook. "
     + "Refreshed by scripts/fetch_drive.py and scripts/build_metrics.py on the daily "
     + "cron — drop a fresh export in Drive and the next run picks it up.";
+}
+
+
+/* ============================================================
+   MARKET COMPS  (data: metrics.json `comps`)
+
+   Every other tab draws Align's own buildings. This one draws the
+   market around one of them, which is the only thing a Yardi market
+   rent can be checked against: that column is set by the property
+   team, it is the denominator of loss to lease and of the rent-capture
+   series, and until this feed existed nothing in the pipeline could
+   say whether it was right.
+
+   The verdict card is deliberately FOUR figures for one number. Three
+   of them are the building's own -- the rent roll's market rent
+   column, the unit directory's plan table, and the statement's gross
+   market rent potential, which is that same table booked as revenue --
+   and one is the market's. A single comparison against the comps could
+   only say that a number looks high; three internal copies that
+   disagree with each other date the change, which is what makes it
+   actionable rather than arguable.
+   ============================================================ */
+const MC = { block: null, slug: null, period: "q", chart: null };
+
+// The sign goes BEFORE the dollar, and it is the typographic minus the rest of
+// the page uses: a building whose table sits under the market is a real case
+// (Chorus reads −4.3%) and "$-107,433" is not how money is written.
+const mcUsd = v => (v < 0 ? "−" : "") + "$" + Math.round(Math.abs(v)).toLocaleString("en-US");
+const mcM = v => (v < 0 ? "−" : "") + "$" + (Math.abs(v) / 1e6).toFixed(2) + "M";
+// Signed, with the typographic minus the rest of the page uses: these sit in
+// table columns beside one another at 10.5px, where a hyphen reads as a dash.
+const mcSign = (v, d) => {
+  const dp = d === undefined ? 1 : d;
+  const pct = Math.abs(v * 100);
+  // A gap that rounds to nothing is nothing: "−0.0%" reads as a real
+  // shortfall at a glance, and the 2-bed size match is exactly that case.
+  if (pct < 0.5 / Math.pow(10, dp)) return pct.toFixed(dp) + "%";
+  return (v < 0 ? "−" : "+") + pct.toFixed(dp) + "%";
+};
+const mcPsf = v => "$" + v.toFixed(2);
+const mcDays = n => n + (n === 1 ? " day" : " days");
+
+function mcProp() {
+  return ((MC.block || {}).properties || []).find(x => x.slug === MC.slug) || null;
+}
+
+function mcRing(p) {
+  return (p.rings || []).find(r => r.primary) || null;
+}
+
+/* ---- 1. the verdict ---- */
+function mcVerdict(p) {
+  const v = p.verification, ring = mcRing(p) || {};
+  document.getElementById("mcvEyebrow").textContent =
+    "THE MARKET RENT COLUMN · AGAINST " + (ring.properties || 0) + " COMPS WITHIN "
+    + p.primary_radius_mi + " MI · " + (p.vendor || "COMP EXPORT") + " AS OF " + p.as_of;
+
+  const stats = document.getElementById("mcvStats");
+  const tbl = document.getElementById("mcvTbl");
+  const note = document.getElementById("mcvNote");
+  stats.textContent = ""; tbl.textContent = "";
+
+  if (!v) {
+    note.textContent =
+      "The market side of this property is on the cards below, but its market rent "
+      + "cannot be checked yet: that needs a unit directory for the bedroom mix and "
+      + "a rent roll to compare against, and " + p.name + " has neither in the "
+      + "pipeline. Nothing here is missing from the comp export — it is the "
+      + "building's own feeds that have not arrived.";
+    return;
+  }
+
+  const h = v.headline || {};
+  const row = [];
+  if (h.gap !== undefined) {
+    row.push([mcSign(h.gap), (h.label || "YARDI").toUpperCase()
+                             + (h.gap < 0 ? " UNDER" : " OVER") + " COMP-IMPLIED"]);
+  }
+  if (h.dollars) row.push([mcUsd(h.dollars), "PER MONTH"]);
+  if (h.annual) row.push([mcM(h.annual), "PER YEAR"]);
+  if (h.ltl_restated !== undefined) {
+    row.push([(h.ltl_restated * 100).toFixed(1) + "%",
+              "LOSS TO LEASE RESTATED · PUBLISHED " + (h.ltl_published * 100).toFixed(1) + "%"]);
+  }
+  statBlock(stats, row);
+
+  buildTable(tbl,
+    [{ t: "Source" }, { t: "What it is" }, { t: "As of" },
+     { t: "Market rent / mo", num: true }, { t: "vs comp-implied", num: true }],
+    (v.sources || []).map(s => [
+      s.label + (s.exact === false ? " †" : ""),
+      s.detail,
+      s.as_of || s.month || "—",
+      mcUsd(s.market_rent),
+      s.key === "comp_implied" ? "—" : mcSign(s.gap),
+    ]));
+
+  // The sensitivity is the answer's own robustness, and it belongs in the
+  // sentence rather than in a footnote nobody reads: a gap that survives three
+  // comp sets is a finding, one that does not is a choice of radius.
+  const sens = (v.sensitivity || []).filter(s => s.gap !== null && s.gap !== undefined);
+  const spread = sens.map(s => (s.radius_mi ? s.radius_mi + " mi" : "every building in the file")
+                               + " " + mcSign(s.gap)).join(", ");
+  // The baseline cannot corroborate itself, and the rent roll is what is being
+  // measured: what matters is the OTHER copies of the same Yardi table.
+  const agree = (v.sources || []).filter(
+    s => s.key !== "rent_roll" && s.key !== "comp_implied"
+         && s.gap !== null && s.gap !== undefined && Math.abs(s.gap) <= 0.03);
+  note.textContent =
+    v.basis + ". "
+    + (h.source && h.source !== "rent_roll"
+        ? "No rent roll has reached the pipeline for " + p.name + ", so the "
+          + "figure measured here is the " + (h.label || "").toLowerCase()
+          + "'s \u2014 the same Yardi table, one feed further from today. "
+        : "")
+    + (agree.length
+        ? "Note which figures agree: the " + agree.map(s => s.label).join(" and the ")
+          + " sit within 3% of what the comps support, so it is the rent roll alone "
+          + "that is out — and they are dated "
+          + agree.map(s => s.as_of || s.month).join(" and ")
+          + ", which puts the change after them rather than anywhere in the past year. "
+        : "")
+    + (spread ? "The same build-up at every ring the export was cut into: " + spread
+              + ". " : "")
+    + "† an estimate rather than a tied-out total: the directory figure is the "
+    + "midpoint of each plan's published range, and the comp-implied figure is a "
+    + "median times a premium. The rent roll and the statement are exact."
+    + ((v.unpriced_plans || []).length
+        ? " " + v.unpriced_plans.length + " floorplan(s) carry no market rent in the "
+          + "directory and are left out of its total: " + v.unpriced_plans.join(", ") + "."
+        : "");
+}
+
+/* ---- 2. the divergence chart ---- */
+function mcChartDraw(p) {
+  const pts = (MC.period === "q" ? p.quarters : p.months) || [];
+  const prem = p.premium || {};
+  const ring = mcRing(p) || {};
+  document.getElementById("mcdEyebrow").textContent =
+    "MEDIAN ASKING $/SQFT ON NEW LISTINGS · " + p.name.toUpperCase() + " vs "
+    + (ring.properties || 0) + " COMPS WITHIN " + p.primary_radius_mi + " MI";
+
+  if (MC.chart) { MC.chart.destroy(); MC.chart = null; }
+  const cv = document.getElementById("mcChart");
+  MC.chart = new Chart(cv, {
+    type: "line",
+    data: {
+      labels: pts.map(x => x.key),
+      datasets: [
+        { label: p.name, data: pts.map(x => x.subject_psf),
+          borderColor: C.amber, backgroundColor: C.amber, tension: .25,
+          borderWidth: 2, pointRadius: 3, spanGaps: false },
+        { label: "Comp ring (median)", data: pts.map(x => x.comp_psf),
+          borderColor: C.teal, backgroundColor: C.teal, tension: .25,
+          borderWidth: 2, pointRadius: 2, spanGaps: false },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false, responsive: true,
+      plugins: {
+        legend: legendCfg,
+        tooltip: { callbacks: { label: c => {
+          const x = pts[c.dataIndex];
+          const n = c.datasetIndex === 0 ? x.subject_n : x.comp_n;
+          return c.dataset.label + ": " + mcPsf(c.parsed.y) + "/sqft on "
+                 + n + " listing" + (n === 1 ? "" : "s");
+        } } },
+      },
+      scales: {
+        y: { grid: gridCfg, ticks: { callback: v => "$" + v.toFixed(2) } },
+        x: { grid: { display: false } },
+      },
+    },
+  });
+
+  // The footnote is computed from the series against the baseline, so it
+  // cannot go stale as quarters arrive and it cannot overstate a normal one.
+  const base = prem.median;
+  const graded = pts.filter(x => x.premium !== null && x.premium !== undefined);
+  const newest = graded.length ? graded[graded.length - 1] : null;
+  let run = [];
+  for (let i = graded.length - 1; i >= 0; i--) {
+    if (base !== null && base !== undefined && graded[i].premium > base + 0.10) run.unshift(graded[i]);
+    else break;
+  }
+  // Measured from the period BEFORE the run began: a run of one quarter has no
+  // span of its own, and "moved from $7.53 to $7.53" is what that reads as.
+  const startIdx = graded.length - run.length - 1;
+  const ringFrom = graded[Math.max(0, startIdx)] || (run[0] || {});
+  const last = run.length ? run[run.length - 1] : null;
+  const ringMove = (last && ringFrom.comp_psf) ? last.comp_psf / ringFrom.comp_psf - 1 : null;
+  const subjMove = (last && ringFrom.subject_psf) ? last.subject_psf / ringFrom.subject_psf - 1 : null;
+  const label = MC.period === "q" ? "quarter" : "month";
+  document.getElementById("mcdFoot").textContent =
+    "Each point is the median asking $/sqft of the units FIRST LISTED in that "
+    + label + ", so a unit that sits unlet reports its price once rather than in "
+    + "every " + label + " until it goes. "
+    + (base !== null && base !== undefined
+        ? p.name + " has asked a median " + mcSign(base) + " over this ring across "
+          + prem.quarters + " quarters (" + prem.first + "–" + prem.last
+          + "), taken per bedroom and weighted by its own listing counts so the "
+          + "figure follows price rather than which unit types happened to be "
+          + "vacant. "
+        : "")
+    + (run.length
+        ? "The last " + (run.length === 1 ? label : run.length + " " + label + "s")
+          + (run.length === 1 ? " sits" : " sit") + " more than ten points above "
+          + "that: " + run.map(x => x.key + " " + mcSign(x.premium)).join(", ")
+          + ". The ring moved " + mcSign(ringMove) + " over the same stretch, from "
+          + mcPsf(ringFrom.comp_psf) + " to " + mcPsf(run[run.length - 1].comp_psf)
+          + "/sqft, while this building moved " + mcSign(subjMove) + "."
+        : newest
+          ? "The newest " + label + " reads " + mcSign(newest.premium)
+            + ", inside the long-run range."
+          : "");
+}
+
+/* ---- 3. the build-up ---- */
+function mcBuildUp(p) {
+  const v = p.verification;
+  const eyebrow = document.getElementById("mcbEyebrow");
+  const tbl = document.getElementById("mcbTbl");
+  const foot = document.getElementById("mcbFoot");
+  tbl.textContent = "";
+  if (!v) {
+    eyebrow.textContent = "AWAITING THIS PROPERTY'S OWN FEEDS";
+    foot.textContent = "This card multiplies the comp set's rents by the building's "
+      + "bedroom mix, which comes from the Yardi unit directory. " + p.name
+      + " has none in the pipeline.";
+    return;
+  }
+  const im = v.implied || {};
+  eyebrow.textContent = "COMP MEDIAN BY BEDROOM · PLUS THIS BUILDING'S OWN "
+    + mcSign(im.premium) + " PREMIUM · APPLIED TO ITS UNIT MIX";
+
+  const rows = (im.rows || []).map(r => [
+    r.bed + " bed" + (r.source === "yardi" ? " †" : ""),
+    String(r.units),
+    r.subject_sqft ? Math.round(r.subject_sqft) + " sf" : "—",
+    r.comp_sqft ? Math.round(r.comp_sqft) + " sf (" + r.comp_n + ")" : "—",
+    (r.comp_median_rent && r.source === "comps") ? mcUsd(r.comp_median_rent) : "—",
+    mcUsd(r.rent),
+    r.yardi_rent ? mcUsd(r.yardi_rent) : "—",
+    (r.yardi_rent && r.source === "comps") ? mcSign(r.yardi_rent / r.rent - 1) : "—",
+  ]);
+  rows.push(["All " + (im.rows || []).reduce((a, r) => a + r.units, 0) + " units", "", "", "", "",
+             mcUsd(im.total), "", ""]);
+  buildTable(tbl,
+    [{ t: "Bedrooms" }, { t: "Units", num: true }, { t: "Avg size", num: true },
+     { t: "Comp size (n)", num: true }, { t: "Comp median", num: true },
+     { t: "Market rent", num: true }, { t: "Yardi's own", num: true },
+     { t: "Yardi vs market", num: true }],
+    rows);
+
+  const bad = Object.keys(p.size_match || {}).filter(b => !p.size_match[b].like_for_like);
+  foot.textContent =
+    "A comp median is only like-for-like while the two sides are the same size, "
+    + "which is what the size columns are for: "
+    + (im.rows || []).filter(r => r.source === "comps" && r.size_gap !== null
+                                  && r.size_gap !== undefined)
+        .map(r => r.bed + " bed " + mcSign(r.size_gap)).join(", ")
+    + ". "
+    + ((im.unverified_beds || []).length
+        ? "† " + im.unverified_beds.map(b => b + " bed").join(" and ")
+          + " keeps the building's own figure: the submarket has fewer than five "
+          + "comparable units listed, and a handful of asking prices is not a "
+          + "market. Those units are in the total at Yardi's rent, so the gap this "
+          + "tab reports is the one that survives leaving them alone. "
+        : "")
+    + (bad.length
+        ? "Note the CURRENTLY LISTED units differ in size from the ring on "
+          + bad.map(b => b + " bed").join(", ")
+          + ", which is why the build-up above uses the whole building's mix "
+          + "rather than whatever is vacant today."
+        : "");
+}
+
+/* ---- 4. how it is leasing ---- */
+function mcEvidence(p) {
+  const d = p.days_on_market || {}, c = p.concessions || {}, sl = p.subject_listings || {};
+  document.getElementById("mceEyebrow").textContent =
+    "THE MARKET'S OWN ANSWER · LISTINGS SINCE " + (d.since || "").slice(0, 7);
+  const stats = [];
+  if (d.subject_median !== null && d.subject_median !== undefined) {
+    stats.push([mcDays(d.subject_median),
+                "MEDIAN DAYS ON MARKET · COMPS " + mcDays(d.comp_median)]);
+  }
+  if (c.subject_share !== null && c.subject_share !== undefined) {
+    stats.push([(c.subject_share * 100).toFixed(0) + "%",
+                "LISTINGS WITH A CONCESSION · COMPS "
+                + (c.comp_share * 100).toFixed(0) + "%"]);
+  }
+  if (sl.current) stats.push([String(sl.current), "UNITS LISTED TODAY"]);
+  if (sl.oldest_days) stats.push([mcDays(sl.oldest_days), "OLDEST ONE, STILL UNLET"]);
+  statBlock(document.getElementById("mceStats"), stats);
+
+  const slower = (d.subject_median && d.comp_median)
+    ? d.subject_median / d.comp_median - 1 : null;
+  document.getElementById("mceFoot").textContent =
+    "Days on market is read from each listing's own dates, which the parser "
+    + "reconciles against the column rather than trusting it. "
+    + (slower !== null
+        ? p.name + "'s units take " + mcSign(slower, 0) + " as long to go as the "
+          + "ring's (" + d.subject_n + " closed listings against " + d.comp_n + "). "
+        : "")
+    + ((c.subject_share === 0 && c.comp_share)
+        ? "It is also advertising no concession where "
+          + (c.comp_share * 100).toFixed(0) + "% of the ring is, so the gap on an "
+          + "effective-rent basis is wider than the asking figures show. "
+        : "")
+    + "Neither figure is a verdict on its own — a building can lease slowly for "
+    + "a dozen reasons — but both point the same way as the rents above.";
+}
+
+/* ---- 5. the limits ---- */
+function mcMethod(p) {
+  const v = p.verification, im = (v || {}).implied || {}, ring = mcRing(p) || {};
+  const items = [
+    ["Asking rents, not signed rents",
+     "Every comp figure here is what a building is advertising, which is the right "
+     + "basis for “what could this unit get today” and is not a "
+     + "transaction record. The subject's own signed leases are on the Trade-outs "
+     + "card of the Landing (Drive) tab."],
+  ];
+  if ((im.unverified_beds || []).length) {
+    items.push([im.unverified_beds.map(b => b + "-bed units are not verified").join(", "),
+                "Fewer than five are listed anywhere in the ring. They keep the "
+                + "building's own market rent in the build-up above rather than "
+                + "being extrapolated from a pair of listings."]);
+  }
+  items.push(
+    ["Floor, view and finish are not controlled",
+     "The export describes a building, not a unit's outlook. The premium this tab "
+     + "applies — " + (p.premium && p.premium.median !== null
+                        ? mcSign(p.premium.median) : "the subject's own") + " over "
+     + (ring.properties || 0) + " comps, across " + ((p.premium || {}).quarters || 0)
+     + " quarters — is the stand-in: it is whatever this building has actually "
+     + "commanded over its neighbours, rather than a judgement about why."],
+    ["One vintage",
+     "This is a single extract, as of " + p.as_of + ". It cannot be checked against "
+     + "a second one until the next export lands in Drive, at which point the trend "
+     + "above lengthens by itself."],
+    ["Aggregates only",
+     "The listing rows behind these medians are a licensed vendor dataset, and "
+     + "everything this page fetches is downloadable by anyone who can open it. "
+     + (p.listings_in_file ? p.listings_in_file.toLocaleString("en-US") + " listings across "
+        + p.properties_in_file + " buildings went into " : "The export went into ")
+     + "the medians; none of them is published."]);
+
+  const host = document.getElementById("mcmList");
+  host.textContent = "";
+  items.forEach(([head, body]) => {
+    const wrap = elc("div");
+    wrap.style.cssText = "margin:0 0 12px;";
+    const h = elc("div", null, head);
+    h.style.cssText = "font-size:10px;letter-spacing:.5px;color:var(--text);margin-bottom:3px;";
+    const b = elc("div", null, body);
+    b.style.cssText = "font-size:9px;letter-spacing:.3px;color:var(--muted);line-height:1.6;";
+    wrap.append(h, b);
+    host.appendChild(wrap);
+  });
+}
+
+/* ---- 6. the comp set ---- */
+function mcSet(p) {
+  const ring = mcRing(p) || {};
+  // The ring is cut on every bedroom the MARKET has, which is what the
+  // build-up needs; this table is a reader comparing their own building, so it
+  // shows the bedrooms the building has. A studio median is market data, and
+  // it is on the data page, but it is noise in a column here.
+  const own = (((p.verification || {}).implied || {}).rows || []).map(r => String(r.bed));
+  const beds = (own.length ? own : Object.keys(p.subject_by_bed || {}))
+    .filter(b => (ring.by_bed || {})[b]).sort();
+  document.getElementById("mcsEyebrow").textContent =
+    "EVERY BUILDING WITHIN " + p.primary_radius_mi + " MI · "
+    + (ring.listings || 0) + " UNITS LISTED ON " + p.as_of;
+
+  const heads = [{ t: "Property" }, { t: "Miles", num: true }, { t: "Built", num: true },
+                 { t: "Units", num: true }, { t: "Listed", num: true }]
+    .concat(beds.map(b => ({ t: b + " bed (median)", num: true })));
+  const rows = (p.comps || []).map(c => [
+    c.building, c.miles.toFixed(2), c.year_built ? String(c.year_built) : "—",
+    c.units ? String(c.units) : "—", String(c.listings),
+  ].concat(beds.map(b => {
+    const v = (c.by_bed || {})[b];
+    return v ? mcUsd(v.median_rent) : "—";
+  })));
+  // The subject sits in the same table, last and labelled, because a comp table
+  // that does not show what it is comparing to makes the reader hold the number
+  // in their head.
+  rows.push([p.name + " — subject", "0.00",
+             String((p.subject || {}).year_built || "—"),
+             String((p.subject || {}).units || "—"),
+             String((p.subject_listings || {}).current || 0)]
+    .concat(beds.map(b => {
+      const v = (p.subject_by_bed || {})[b];
+      return v ? mcUsd(v.median_rent) : "—";
+    })));
+  buildTable(document.getElementById("mcsTbl"), heads, rows);
+
+  document.getElementById("mcsFoot").textContent =
+    "Ranked by distance. A building with no listing today is still in the ring — "
+    + "it is a comp whether or not it happens to have a vacancy this week — and "
+    + "the medians above it are taken across listings, not across buildings, so a "
+    + "large building with fourteen vacancies counts fourteen times and a small one "
+    + "with none counts nought. "
+    + ((p.excluded_related || []).length
+        ? "Align's own " + p.excluded_related.join(" and ") + " sit inside this "
+          + "radius and are deliberately OUT of the set: letting one Align "
+          + "building price another is not an independent check. They are in the "
+          + "export, and each gets its own comp set on this tab."
+        : "");
+}
+
+function mcRenderAll() {
+  const p = mcProp();
+  if (!p) return;
+  mcVerdict(p);
+  mcChartDraw(p);
+  mcBuildUp(p);
+  mcEvidence(p);
+  mcMethod(p);
+  mcSet(p);
+  document.getElementById("mcMeta").textContent =
+    p.name + " · " + (p.vendor || "comp export") + " "
+    + (p.market ? "(" + p.market + ") " : "")
+    + "as of " + p.as_of + " · " + (p.properties_in_file || 0) + " buildings, "
+    + (p.listings_in_file || 0).toLocaleString("en-US") + " listings read · "
+    + "source: " + (p.source_file || "—")
+    + (p.landed_at ? ", landed in Drive " + p.landed_at.slice(0, 10) : "")
+    + ". Drop a fresh export in the Drive Comps folder and the next pipeline run "
+    + "refreshes every figure on this tab.";
+}
+
+async function loadComps() {
+  const m = await metricsJson();
+  MC.block = (m || {}).comps || null;
+  const intro = document.getElementById("mcIntro");
+  const list = ((MC.block || {}).properties) || [];
+
+  if (!list.length) {
+    intro.textContent =
+      "No comp export has reached the pipeline yet. Drop a HelloData export into "
+      + "the Drive Comps folder and this tab fills itself on the next run: the "
+      + "market rent check, the asking-rent trend and the comp set all come from "
+      + "that one file.";
+    document.querySelectorAll("#viewComps .grid > .card").forEach(c => { c.hidden = true; });
+    return;
+  }
+
+  intro.textContent =
+    "The only tab here that draws the MARKET rather than the buildings. Everything "
+    + "on it comes from one comp export in Drive, and it exists to answer a "
+    + "question no other feed can: the market rent column in the rent roll is set "
+    + "by the property team, it is the denominator of loss to lease and of the "
+    + "rent-capture series on the two Landing tabs, and nothing else in the "
+    + "pipeline can tell whether it is right. Align's own buildings are excluded "
+    + "from every comp set.";
+
+  const sel = document.getElementById("mcSelect");
+  sel.textContent = "";
+  list.forEach(p => {
+    const o = elc("option", null, p.name);
+    o.value = p.slug;
+    sel.appendChild(o);
+  });
+  // The property with a verification leads: it is the one this tab can answer for.
+  const first = list.find(p => p.verification) || list[0];
+  MC.slug = first.slug;
+  sel.value = MC.slug;
+  sel.addEventListener("change", () => { MC.slug = sel.value; mcRenderAll(); });
+
+  document.querySelectorAll("#mcdTogs .tog").forEach(b => {
+    b.addEventListener("click", () => {
+      MC.period = b.getAttribute("data-mcp");
+      document.querySelectorAll("#mcdTogs .tog").forEach(x =>
+        x.setAttribute("aria-pressed", String(x === b)));
+      mcChartDraw(mcProp());
+    });
+  });
+
+  mcRenderAll();
+  mountCardLinks();
 }
 
 /* ============================================================
