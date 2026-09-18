@@ -1359,6 +1359,134 @@ async function loadAll() {
       });
     });
 
+
+    // ---- Market comps. Three shapes, so three tables: what the ring is
+    // asking today, how that has moved against the subject, and the four
+    // readings of the subject's own market rent that the check turns on.
+    ((d.comps || {}).properties || []).forEach((pr, i) => {
+      const ring = (pr.rings || []).find(r => r.primary) || {};
+      const beds = Object.keys(ring.by_bed || {}).sort();
+      const src = (pr.vendor || "comp export") + " " + (pr.source_file || "—")
+                + (pr.landed_at ? ", landed " + pr.landed_at : "")
+                + ", as of " + (pr.as_of || "—");
+
+      renderTable(host, {
+        id: "t-comps-" + (pr.slug || i), group: "Market Comps",
+        title: "Comp set — " + (pr.name || pr.slug),
+        feeds: "The Comp Set card, and every comp median the Market Rent Check "
+             + "and the build-up above it use",
+        note: src + ". Every building within " + pr.primary_radius_mi + " mi of "
+            + (pr.name || "the subject") + ", ranked by distance; "
+            + (ring.listings || 0) + " unit listings were live on that date "
+            + "across " + (ring.properties || 0) + " of them. Rents are the "
+            + "MEDIAN asking rent of the units each building had listed — "
+            + "advertised, not signed. Align's own "
+            + ((pr.excluded_related || []).join(" and ") || "buildings")
+            + " sit inside this radius and are excluded from every median: "
+            + "letting one Align building price another is not an independent "
+            + "check. The subject's own row is last. The bedroom columns are "
+            + "every bedroom the MARKET has, which is not always the same set "
+            + "the building has \u2014 the comp card shows the building's own.",
+        cols: [{ key: "building", label: "Property" },
+               { key: "miles", label: "Miles", fmt: "num" },
+               { key: "year_built", label: "Built", fmt: "int" },
+               { key: "units", label: "Units", fmt: "int" },
+               { key: "listings", label: "Listed", fmt: "int" }]
+          .concat(beds.map(b => ({ key: "b" + b, label: b + " bed median", fmt: "money0" })))
+          .concat(beds.map(b => ({ key: "s" + b, label: b + " bed sq ft", fmt: "int" }))),
+        rows: (pr.comps || []).map(c => {
+          const row = { building: c.building, miles: c.miles, year_built: c.year_built,
+                        units: c.units, listings: c.listings };
+          beds.forEach(b => {
+            const v = (c.by_bed || {})[b];
+            row["b" + b] = v ? v.median_rent : null;
+            row["s" + b] = v ? v.median_sqft : null;
+          });
+          return row;
+        }).concat([(function () {
+          const row = { building: (pr.name || "subject") + " — subject", miles: 0,
+                        year_built: (pr.subject || {}).year_built,
+                        units: (pr.subject || {}).units,
+                        listings: (pr.subject_listings || {}).current };
+          beds.forEach(b => {
+            const v = (pr.subject_by_bed || {})[b];
+            row["b" + b] = v ? v.median_rent : null;
+            row["s" + b] = v ? v.median_sqft : null;
+          });
+          return row;
+        })()]),
+        filterable: true,
+      });
+
+      const prem = pr.premium || {};
+      renderTable(host, {
+        id: "t-compstrend-" + (pr.slug || i), group: "Market Comps",
+        title: "Asking $/sqft against the ring, by quarter — " + (pr.name || pr.slug),
+        feeds: "The Asking Rent vs The Submarket chart",
+        note: src + ". Each row is the median asking $/sqft of the units FIRST "
+            + "LISTED in that quarter, so a unit that sits unlet is counted "
+            + "once rather than in every quarter until it goes. The $/sqft "
+            + "columns pool the bedroom types; the PREMIUM column does not — "
+            + "it is taken per bedroom and weighted back together by the "
+            + "subject's own listing counts, because a pooled ratio moves with "
+            + "the unit mix as much as with price. "
+            + (prem.median == null ? "" :
+                "The baseline this tab applies is the median of that column, "
+                + (prem.median * 100).toFixed(1) + "% over " + prem.quarters
+                + " quarter(s) with at least five listings on each side.")
+            + " A quarter with too few listings on either side shows no premium.",
+        cols: [{ key: "key", label: "Quarter" },
+               { key: "subject_psf", label: "Subject $/sqft", fmt: "psf" },
+               { key: "subject_n", label: "Subject listings", fmt: "int" },
+               { key: "comp_psf", label: "Ring $/sqft", fmt: "psf" },
+               { key: "comp_n", label: "Ring listings", fmt: "int" },
+               { key: "premium", label: "Premium", fmt: "pct1" },
+               { key: "premium_beds", label: "Bedrooms in it", fmt: "int" }],
+        rows: (pr.quarters || []).map(q => ({ ...q })),
+        filterable: true,
+      });
+
+      const v = pr.verification;
+      if (!v) return;
+      renderTable(host, {
+        id: "t-compscheck-" + (pr.slug || i), group: "Market Comps",
+        title: "Market rent, four readings — " + (pr.name || pr.slug),
+        feeds: "The Market Rent Check card, and the build-up under it",
+        note: v.basis + ". Three of these are the building's own copies of one "
+            + "Yardi table — the rent roll's market rent column, the unit "
+            + "directory's plan table, and the statement's gross market rent "
+            + "potential, which is that same table booked as revenue — and one "
+            + "is the market's. The directory and comp-implied figures are "
+            + "estimates (a midpoint of published ranges, and a median times a "
+            + "premium); the rent roll and the statement are exact."
+            + (((v.implied || {}).unverified_beds || []).length
+                ? " Bedrooms the ring cannot price keep the building's own figure."
+                : ""),
+        cols: [{ key: "label", label: "Source" },
+               { key: "detail", label: "What it is" },
+               { key: "as_of", label: "As of" },
+               { key: "market_rent", label: "Market rent / mo", fmt: "money0" },
+               { key: "gap", label: "vs comp-implied", fmt: "pct1" },
+               { key: "exact", label: "Tied out" }],
+        rows: (v.sources || []).map(s => ({
+          label: s.label, detail: s.detail, as_of: s.as_of || s.month,
+          market_rent: s.market_rent, gap: s.key === "comp_implied" ? null : s.gap,
+          exact: s.exact ? "yes" : "estimate",
+        })).concat((v.implied || {}).rows ? (v.implied.rows).map(r => ({
+          label: r.bed + " bed (" + r.units + " units)",
+          detail: r.source === "comps"
+            ? "comp median " + (r.comp_median_rent == null ? "—" : "$" + r.comp_median_rent)
+              + " across " + r.comp_n + " listing(s) at " + r.comp_sqft + " sq ft, "
+              + "against this building's " + r.subject_sqft + " sq ft"
+            : "fewer than five comparable listings in the ring — the building's "
+              + "own market rent is kept",
+          as_of: pr.as_of, market_rent: r.total,
+          gap: (r.yardi_rent && r.source === "comps") ? r.yardi_rent / r.rent - 1 : null,
+          exact: r.source === "comps" ? "estimate" : "building's own",
+        })) : []),
+      });
+    });
+
     const ud = d.unit_directory || {};
     (ud.properties || []).forEach((pr, i) => {
       const plans = pr.plans || {};

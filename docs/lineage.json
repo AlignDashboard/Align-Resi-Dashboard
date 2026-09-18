@@ -254,6 +254,81 @@
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
   },
+  "cmcVerdict": {
+   "card": "Market Rent Check",
+   "tab": "Market Comps",
+   "tables": [
+    "t-compscheck",
+    "t-comps"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-compscheck",
+   "holds": "Market rent, four readings"
+  },
+  "cmcDivergence": {
+   "card": "Asking Rent vs The Submarket",
+   "tab": "Market Comps",
+   "tables": [
+    "t-compstrend"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-compstrend",
+   "holds": "Asking $/sqft against the ring, by quarter"
+  },
+  "cmcBuildUp": {
+   "card": "What The Market Would Pay",
+   "tab": "Market Comps",
+   "tables": [
+    "t-compscheck",
+    "t-unitdir"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-compscheck",
+   "holds": "Market rent, four readings"
+  },
+  "cmcEvidence": {
+   "card": "How It Is Actually Leasing",
+   "tab": "Market Comps",
+   "tables": [
+    "t-comps"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-comps",
+   "holds": "Comp set"
+  },
+  "cmcSet": {
+   "card": "The Comp Set",
+   "tab": "Market Comps",
+   "tables": [
+    "t-comps"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-comps",
+   "holds": "Comp set"
+  },
+  "cmcMethod": {
+   "card": "What This Tab Cannot Say",
+   "tab": "Market Comps",
+   "tables": [
+    "t-comps",
+    "t-compstrend"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-comps",
+   "holds": "Comp set"
+  },
   "cdTradeOuts": {
    "card": "Trade-outs",
    "tab": "Landing (Drive)",
@@ -438,10 +513,10 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-17T23:26:58.985182+00:00",
+  "generated_at": "2026-09-18T01:19:26.339030+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 13,
+   "live": 14,
    "partial": 3,
    "no-parser": 8,
    "manual": 1
@@ -866,14 +941,6 @@
    "same_as": null,
    "evidence": [
     {
-     "property": "Landing",
-     "file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
-     "as_of": "2026-09-08",
-     "source_file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
-     "landed_at": "2026-09-08T23:28:43.225Z",
-     "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
-    },
-    {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
      "as_of": "2026-08-10",
@@ -933,14 +1000,6 @@
    "open_item": null,
    "same_as": "delinquency",
    "evidence": [
-    {
-     "property": "Landing",
-     "file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
-     "as_of": "2026-09-08",
-     "source_file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
-     "landed_at": "2026-09-08T23:28:43.225Z",
-     "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
-    },
     {
      "property": "Palma",
      "file": "Delinquency_8_1_2026.xls.xlsx",
@@ -1134,6 +1193,140 @@
    "status": "live"
   },
   {
+   "id": "market_comps",
+   "title": "Market comp export (HelloData)",
+   "origin_kind": "drive",
+   "source_label": "Comps",
+   "source_detail": "Drive folder \u00b7 *",
+   "example": "HelloData - Simple - <market> Comps.xlsx",
+   "carries": "Every building in the submarket and every unit it has listed for three years: bedrooms, size, asking and effective rent, first listed, removed, days on market.",
+   "filed_by": [
+    "comps",
+    "hellodata",
+    "marketsurvey",
+    "rentcomp"
+   ],
+   "report_type": "market_comps",
+   "parser": "parse_comps",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_comps.py",
+     "does": "Cuts the market from each Align building's point of view: comp rings by distance, median asking rent by bedroom, the quarterly asking-$/sqft series against the ring, days on market and concession share. Publishes aggregates only \u2014 the listing rows are a licensed vendor dataset and everything in docs/ is downloadable.",
+     "checks": "A comp export has no total row, so two structural reconciliations stand in: every listed building must be described in the Property Data table (the rings are built from its coordinates), and Days on Market must reconcile to each listing's own dates. Align's own buildings are excluded from every comp set by resolving them against config/properties.json."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Joins the market to the building: applies the comp median for each bedroom, plus the subject's own long-run premium to its ring, to the unit directory's bedroom mix, and sets that against the three copies of the Yardi market rent table the pipeline already holds \u2014 the rent roll's column, the directory's plan table and the statement's gross market rent potential.",
+     "checks": "A bedroom the ring has fewer than five listings for keeps the building's own figure and is named as unverified, rather than being priced off a handful of asking rents. The formatted twin of the export is skipped by name of its own layout, with a reason, rather than half-read."
+    }
+   ],
+   "stores": [
+    "data/<slug>/comps.json"
+   ],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "comps"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Market Rent Check",
+     "tab": "Market Comps",
+     "anchor": "cmcVerdict",
+     "primary": "t-compscheck-*",
+     "tables": [
+      "t-compscheck-*",
+      "t-comps-*"
+     ]
+    },
+    {
+     "card": "Asking Rent vs The Submarket",
+     "tab": "Market Comps",
+     "anchor": "cmcDivergence",
+     "primary": "t-compstrend-*",
+     "tables": [
+      "t-compstrend-*"
+     ]
+    },
+    {
+     "card": "What The Market Would Pay",
+     "tab": "Market Comps",
+     "anchor": "cmcBuildUp",
+     "primary": "t-compscheck-*",
+     "tables": [
+      "t-compscheck-*",
+      "t-unitdir-*"
+     ]
+    },
+    {
+     "card": "How It Is Actually Leasing",
+     "tab": "Market Comps",
+     "anchor": "cmcEvidence",
+     "primary": "t-comps-*",
+     "tables": [
+      "t-comps-*"
+     ]
+    },
+    {
+     "card": "The Comp Set",
+     "tab": "Market Comps",
+     "anchor": "cmcSet",
+     "primary": "t-comps-*",
+     "tables": [
+      "t-comps-*"
+     ]
+    },
+    {
+     "card": "What This Tab Cannot Say",
+     "tab": "Market Comps",
+     "anchor": "cmcMethod",
+     "primary": "t-comps-*",
+     "tables": [
+      "t-comps-*",
+      "t-compstrend-*"
+     ]
+    }
+   ],
+   "tables": [
+    "t-comps-*",
+    "t-compstrend-*",
+    "t-compscheck-*"
+   ],
+   "note": "The only feed here about the MARKET rather than about an Align building, and the only thing the Yardi market rent column can be checked against \u2014 that column is set by the property team, and it is the denominator of loss to lease on both Landing tabs and of the rent-capture series. The export arrives as a pair of near-identical names; the entry claims both on purpose, so a renamed export cannot go unread, and the formatted one is skipped with a reason.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "chorus",
+     "file": "data/chorus/comps.json",
+     "as_of": "2026-09-15",
+     "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:41Z",
+     "detail": null
+    },
+    {
+     "property": "madelon",
+     "file": "data/madelon/comps.json",
+     "as_of": "2026-09-15",
+     "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:41Z",
+     "detail": null
+    },
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/comps.json",
+     "as_of": "2026-09-15",
+     "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:41Z",
+     "detail": null
+    }
+   ],
+   "status": "live"
+  },
+  {
    "id": "renewal_tracker",
    "title": "Renewal tracker",
    "origin_kind": "drive",
@@ -1305,11 +1498,11 @@
    "evidence": [
     {
      "property": "the-landing",
-     "file": "data/the-landing/rent_roll.json",
+     "file": "metrics.json rent_roll",
      "as_of": "2026-09-11",
      "source_file": "RentRoll09_11_2026.xlsx",
      "landed_at": "2026-09-11T18:33:04.600Z",
-     "detail": null
+     "detail": "read from the published aggregate \u2014 this store is gitignored (per-unit) and exists only during a pipeline run"
     }
    ],
    "status": "live"
@@ -2271,6 +2464,14 @@
      "source_file": "102ebfe0-The_Landing_Dashboard_V37.xlsx",
      "landed_at": "2026-08-03T21:15:23.385441+00:00",
      "detail": "extract run; the workbook has no arrival time of its own, so this is when it was extracted"
+    },
+    {
+     "property": "Landing",
+     "file": "workbook Source Delinquency tab, via docs/landing.json",
+     "as_of": "2026-07-20",
+     "source_file": "workbook Source Delinquency tab, via docs/landing.json",
+     "landed_at": "2026-08-03T21:15:23.385441+00:00",
+     "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
     }
    ],
    "status": "live"
@@ -2334,7 +2535,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-17T23:23:45.115512+00:00",
+     "landed_at": "2026-09-18T01:19:26.205093+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

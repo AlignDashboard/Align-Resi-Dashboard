@@ -189,6 +189,12 @@ CASES = [
     ("LeaseTradeoutReport-Landing.XLS",                             "Historical Tradeout Reports"),
     ("2026-09-17 LeaseTradeoutReport-Landing.XLS",                  "Historical Tradeout Reports"),
     ("Landing 2025 Resi Budget.xlsx",                               "Budgets"),
+    # The HelloData comp export arrives as a pair. Both belong in Comps and
+    # both must be CLAIMABLE by its entry (check 10) -- the pipeline reads the
+    # Simple one and skips the Full one by name of its own layout, which is a
+    # parser decision rather than a routing one.
+    ("2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx", "Comps"),
+    ("2026-09-18 HelloData - Full - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",   "Comps"),
     # already filed correctly today -- these must not move
     ("12_Month_Statement_Accrual.xlsx",                             "T12 Expenses"),
     ("2026-07-16 12_Month_Statement_rs335_accrual.xlsx",            "T12 Expenses"),
