@@ -3,7 +3,7 @@ parse_lease_tradeout.py
 -----------------------
 Parses the Yardi **Lease Tradeout Report** (`LeaseTradeoutReport-<property>.XLS`,
 Drive `Historical Tradeout Reports`) into the per-lease trade-out history behind
-the Trade-out % tile on the `Landing (Drive)` tab.
+the Trade-out % tile on the `Landing` tab.
 
 This is the only feed that carries a trade-out with *its own* history. The
 weekly leasing workbook covers a fortnight and the EliseAI export publishes a

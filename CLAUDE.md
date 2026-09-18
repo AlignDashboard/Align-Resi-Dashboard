@@ -6,8 +6,8 @@ Static dashboard published with GitHub Pages, fed by a daily metrics pipeline.
 each one is waiting on. Read it after this file when picking up work — it is
 where state that used to arrive as a pasted handoff note now lives.
 
-`LANDING_DRIVE_PACKET.md` is the working document for the `Landing (Drive)`
-tab: which export feeds which card, where in Drive it goes, and what has
+`LANDING_DRIVE_PACKET.md` is the working document for the `Landing`
+tab (the filename predates the rename): which export feeds which card, where in Drive it goes, and what has
 actually arrived. Its current-state section is generated — refresh it with
 `python scripts/landing_drive_status.py --write` rather than editing it.
 
@@ -35,7 +35,16 @@ ask for the PR; do not open one preemptively.
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
 
-## Refreshing The Landing
+## Refreshing the analyst workbook extract
+
+**`landing.json` no longer feeds a tab.** A workbook-fed `The Landing` tab sat
+beside the Drive-fed one until 2026-09-18, when the owner removed it and the
+survivor took the plain name `Landing`. Everything below still runs, and is
+still worth running, because the extract fills **four scorecard cells no Drive
+report answers yet** — `Concession Load %`, `NOI Margin %`, `Controllable
+OpEx/Unit` and `Month to Month Leases` — through `populate_scorecard.py
+--from-landing`. The rest of what it extracts is written, published and on the
+data page as the `t-l-*` tables; no card draws it.
 
 `docs/landing.json` is generated from the analyst workbook, not by the daily
 cron. To refresh with new reports:
@@ -79,7 +88,7 @@ file used to say:
   a sheet per month from January 2024 forward plus the `MTM` roster, so one file
   is the whole history rather than a weekly increment.
 
-Both now feed the **Trade-outs card on the `Landing (Drive)` tab**, which is the
+Both now feed the **Trade-outs card on the `Landing` tab**, which is the
 first card on that tab drawing two Drive reports at once. See **The two leasing
 parsers** below.
 
@@ -91,15 +100,43 @@ landing page's Insights card) and `Source Renewal Tracker` are new. The
 renewal/holdover scenario models charge a recurring incremental-vacancy haircut
 on the new run-rate instead of one-time make-ready/downtime costs.
 
-## The Drive-Only Landing Tab
+## The Landing Tab
 
-`Landing (Drive)` sits beside `The Landing` and shows the same building with the
-V37 workbook taken out of it: every number on it comes from a report the Gmail
-filer drops into Drive and the pipeline parses, so **dropping a fresh direct
-export in Drive is the whole refresh**. `LANDING_DRIVE_PACKET.md` is the
-list of those exports and where each one goes. The Landing tab is still the fuller
-view — it just cannot move on its own, because refreshing it means pasting into
-grey tabs, recalculating in Excel and re-running `extract_landing.py`.
+Every number on it comes from a report the Gmail filer drops into Drive and the
+pipeline parses, so **dropping a fresh direct export in Drive is the whole
+refresh**. `LANDING_DRIVE_PACKET.md` is the list of those exports and where each
+one goes.
+
+It was `Landing (Drive)`, beside a workbook-fed `The Landing` that showed the
+same building with the V37 workbook still in it. That tab came off on
+2026-09-18 and this one took the plain name. What went with it: eleven cards
+(Operating Summary, KPI Scorecard — The Landing, the Leased tile row, Loss to
+Lease, Trade-outs, Rollover Schedule, Expense Load & NOI, Expense Deep Dive,
+Largest Unit Gaps, Delinquency, Insights Scorecard), `loadLanding()` and the
+scenario-input helpers only it used.
+
+Three things the removal is careful about:
+
+- **The ids keep their `d-` prefix.** `cdOpSummary`, `dopTbl`, `dkpisSc` and the
+  rest are named for a split that no longer exists, and renaming them would
+  touch `lineage.json`'s card index, `data.html`'s deep links and every anchor
+  in between for no change a reader sees.
+- **CSS written for the removed tab was retargeted, not deleted, where the
+  surviving card has the same shape.** `#cNoi` → `#cdNoi` and the deep dive's
+  toggle geometry (`#cExpDeep` → `#cdExpDeep`, `#lcExpMonth` → `#dexpMonth`)
+  were written against the workbook tab's ids and so **never matched the Drive
+  card at all** — the Expense Deep Dive's period toggle had the jumping-button
+  bug that rule exists to prevent, and now does not. The compound selectors the
+  two tabs shared (`#lopTbl table.dt, #dopTbl table.dt`, `:is(#lgTbl, #dgTbl)`)
+  were narrowed by hand: a regex over a comma-separated selector list splits it
+  in the wrong places, which is how the tables' text-align was broken once
+  before.
+- **`renderExpenseDeep`'s `wb` branch is kept.** The removed tab was its only
+  caller, so every live mount passes `null` — but it is the renderer's only
+  no-statement fallback and the shape a second source would mount through.
+
+The rule is applied **per number, not per card**. A card is on the tab only if
+every figure on it would move on the next pipeline run.
 
 The rule is applied **per number, not per card**. A card is on the tab only if
 every figure on it would move on the next pipeline run.
@@ -187,7 +224,7 @@ currently owned, laid out in the workbook's own groups with its bands. It is
 four tiles now, in the same row shape as the statement's tiles below them —
 **Leased %, Trade-out %, Budget variance, Delinquency**. Nothing changed in
 `scorecard.json`, in `populate_scorecard.py` or on any other tab; the other
-cells are on The Landing's own card and the portfolio scorecard as before.
+cells are on the Scorecard tab as before.
 
 Two things the grid did that a bare number does not, and both are kept:
 
@@ -343,10 +380,10 @@ same day had already closed three rows before that.
 
 ## The Market Comps Tab
 
-`Market Comps` sits beside `Landing (Drive)` and is the only tab drawing a
+`Market Comps` sits beside `Landing` and is the only tab drawing a
 report about **the market** rather than about an Align building. It exists for
 one reason: the Yardi **market rent** column is set by the property team, it is
-the denominator of loss to lease on both Landing tabs and of the whole Rent
+the denominator of loss to lease on the Landing tab and of the whole Rent
 Capture block, and until 2026-09-18 nothing in the pipeline could tell whether
 it was right.
 
@@ -695,7 +732,7 @@ both sides are Drive reports — so its provenance is recorded under its own
 **`budget_`** family rather than the unprefixed one, and `budget_` is
 registered in `SC_FEED_PREFIXES` (and `data.html`'s matching list) so the
 budget's own Drive arrival shows on the page, and in `SCD_DRIVE_FEEDS` so the
-`Landing (Drive)` tab carries the cell. It needs no `fromDrive` predicate:
+`Landing` tab carries the cell. It needs no `fromDrive` predicate:
 unlike the delinquency pair, nothing else writes this KPI.
 
 `data/<slug>/budget.json` now holds **one point per budget year** rather than a
@@ -936,7 +973,7 @@ arrival — the hand-off step only exists for a CSV that never reached Drive.
 
 `LeaseTradeoutReport-<property>.XLS` in the Drive **`Historical Tradeout
 Reports`** folder is the Yardi lease tradeout report, and since 2026-09-17 it is
-what fills **`Trade-out %`** — the tile on the `Landing (Drive)` tab and the
+what fills **`Trade-out %`** — the tile on the `Landing` tab and the
 scorecard cell behind it. The Landing's first file covers 2024-08-01 to
 2026-09-16: 247 new leases, each with the lease it replaced beside it.
 
@@ -1165,7 +1202,7 @@ and a roll naming its property below the unit rows must still route.
 
 `parse_daily_leasing.py` and `parse_renewal_tracker.py` were written against
 real exports on 2026-09-11, and both publish to the **Trade-outs card** on the
-`Landing (Drive)` tab through the `leasing` block in `metrics.json`.
+`Landing` tab through the `leasing` block in `metrics.json`.
 
 **`parse_daily_leasing`** reads the NEW LEASES block on the `Weekly_Leases`
 sheet into per-lease trade-outs, and `store_daily_leasing` accumulates one entry
@@ -1217,9 +1254,9 @@ The monthly offer counts tie out against the 2026-09-08 weekly email's own
 renewal table — 18 / 7 / 13 / 6 for September through December — which is an
 independent check on the whole chain.
 
-**The card averages both sides the same way, which the workbook-fed one cannot.**
-The Landing's Trade-outs card draws its new-lease side as a plain mean and its
-renewal side rent-weighted — its own footnote says the workbook's offer data
+**The card averages both sides the same way, which the workbook-fed one could
+not.** The removed tab's Trade-outs card drew its new-lease side as a plain mean
+and its renewal side rent-weighted — its own footnote said the workbook's offer data
 "carry no per-renewal rows to average". `parse_renewal_tracker` reads those rows,
 so `mean_increase` sits beside `wtd_increase` on every month and the Drive card
 plots one mean against another, with the weighted figure on the tooltip. Two
@@ -1371,8 +1408,9 @@ the boxes as well as the select. Clamping would print "T12" over eight months of
 data, which is the kind of label that gets quoted. Twelve months today, so both
 choices and every box are live; a shorter run simply offers fewer.
 
-`renderOpSummary` is shared with The Landing tab, so both cards changed
-together. That is the point of it being shared — see the Drive-only tab section.
+`renderOpSummary` was shared with the workbook-fed Landing tab until that came
+off on 2026-09-18, so both cards always changed together. It is still written to
+serve any mount rather than one card.
 
 ## The T12 statement's two expense anchors
 
@@ -1385,7 +1423,7 @@ one a published figure used has to be recorded rather than inferred:
 | `549999-9999` (jpm) | TOTAL EXPENSES — operating plus the non-operating 52xxxx region |
 
 **Everything the pipeline publishes now reads the outer one**: the Operating
-Summary card (the top box on The Landing tab, moved 2026-09-03), the Expense
+Summary card (the top box on the Landing tab, moved 2026-09-03), the Expense
 Ratio card (moved the same day), and the expense buckets behind the Expense Deep
 Dive, which had tied out against `549999-9999` all along. So the three cards
 drawing this statement cover the same expense load, which they did not before.
@@ -1465,7 +1503,7 @@ removed (verified by mutation).
 
 ## Expense Ratio (Portfolio tab)
 
-The card reads **the series the `Landing (Drive)` tab draws**: each property's
+The card reads **the series the `Landing` tab draws**: each property's
 monthly ratio off the stitched `monthly_pl` run, opex over revenue, exactly as
 that tab's Expense Load & NOI card computes it. And the property dropdown is a
 row of toggles, so the buildings are read against each other rather than one at

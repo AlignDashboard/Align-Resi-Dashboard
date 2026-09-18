@@ -35,7 +35,6 @@
     --red:        #d9694f;
     --green:      #6bbf8a;
     --blue:       #6aa9e9;
-    --blue-soft:  rgba(106,169,233,.13);
     --gate-glow:  #171d26;
     --on-amber:   #10130f;
     --grid:       #2a323d;
@@ -63,7 +62,6 @@
     --red:        #b23f28;
     --green:      #2d7549;
     --blue:       #1f6fb8;
-    --blue-soft:  rgba(31,111,184,.09);
     --gate-glow:  #ffffff;
     --on-amber:   #ffffff;
     --grid:       #dfe3e9;
@@ -278,8 +276,8 @@
      out to be, keeping the 300px floor when the grid goes single-column and
      there is no taller neighbour to match. Chart.js already draws this one with
      maintainAspectRatio:false, so it redraws to the height it is handed. */
-  #cNoi { display: flex; flex-direction: column; }
-  #cNoi .chartwrap { flex: 1 1 auto; height: auto; min-height: 300px; }
+  #cdNoi { display: flex; flex-direction: column; }
+  #cdNoi .chartwrap { flex: 1 1 auto; height: auto; min-height: 300px; }
 
   footer { margin-top: 30px; color: var(--muted); font-size: 10px; letter-spacing: 1px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
   .loaderr { color: var(--red); font-size: 12px; padding: 40px; text-align:center; }
@@ -455,17 +453,6 @@
   .card.flash { animation: cardflash 1.5s ease-out; }
   @media (prefers-reduced-motion: reduce) { .card.flash { animation-duration: .01s; } }
 
-  .inrow { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 10px 0 4px; }
-  .inrow label { display: flex; flex-direction: column; gap: 4px; font-size: 9px;
-    letter-spacing: 1px; color: var(--blue); text-transform: uppercase; }
-  input.blu { background: var(--blue-soft); border: 1px solid var(--blue); color: var(--text);
-    font-family: inherit; font-size: 12px; padding: 5px 8px; width: 86px; outline: none; }
-  input.blu:focus { box-shadow: 0 0 0 1px var(--blue); }
-  input.blu::placeholder { color: var(--muted); }
-  .inrow .rst { background: none; border: 1px solid var(--line); color: var(--muted);
-    font-family: inherit; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-    padding: 6px 10px; cursor: pointer; }
-  .inrow .rst:hover { color: var(--text); border-color: var(--muted); }
   .blu-note { font-size: 9px; letter-spacing: .5px; color: var(--blue); margin-top: 6px; }
 
   /* The Expense Ratio card's left column: one T12 figure per property shown,
@@ -527,22 +514,20 @@
      pin them, so pressing a toggle changes the numbers and nothing else. The
      header height is reserved for two lines for the same reason: a heading that
      wraps at one width and not another would otherwise nudge the rows down.
-     Both Landing tabs carry this card and it is one renderer, so it is one set
-     of rules rather than a copy that drifts. */
-  #lopTbl table.dt, #dopTbl table.dt { table-layout: fixed; }
+     renderOpSummary is still written to serve any mount, so a second Landing
+     tab would share these rules rather than copying them; only #lopTbl went,
+     with the workbook-fed tab on 2026-09-18. */
+  #dopTbl table.dt { table-layout: fixed; }
   /* Five columns now -- the row label, the selected period, and three
      comparisons -- so the four data columns split what the label leaves. */
-  #lopTbl table.dt th, #lopTbl table.dt td,
   #dopTbl table.dt th, #dopTbl table.dt td { width: 19.5%; }
-  #lopTbl table.dt th:first-child, #lopTbl table.dt td:first-child,
   #dopTbl table.dt th:first-child, #dopTbl table.dt td:first-child { width: 22%; }
-  #lopTbl table.dt th, #dopTbl table.dt th { vertical-align: bottom; height: 52px; }
+  #dopTbl table.dt th { vertical-align: bottom; height: 52px; }
   /* It is the board's header table -- three rows above everything else -- so it
      is set larger than the data tables further down the page. */
-  #lopTbl table.dt, #dopTbl table.dt { font-size: 15px; margin-top: 14px; }
-  #lopTbl table.dt th, #dopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
-  #lopTbl table.dt td, #dopTbl table.dt td { padding: 13px 10px 13px 0; }
-  #lopTbl table.dt td:first-child,
+  #dopTbl table.dt { font-size: 15px; margin-top: 14px; }
+  #dopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
+  #dopTbl table.dt td { padding: 13px 10px 13px 0; }
   #dopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
   /* This card is far wider than its eight columns need -- about 350px of text in
      a 1100px table -- and an auto-layout table gives the surplus to whichever
@@ -562,34 +547,33 @@
      The widths are content-derived and sum to 100. nowrap is set only on the two
      columns that must not break, so anything longer than expected wraps inside
      its own column instead of colliding with the next. */
-  /* Shared with the Landing (Drive) tab's Largest Unit Gaps table (#dgTbl),
-     which has the identical eight columns — one rule rather than a second copy
-     that drifts. Without table-layout:fixed the table's 620px natural width
-     scrolls the whole page at 390px.
+  /* Without table-layout:fixed the table's 620px natural width scrolls the
+     whole page at 390px. This was an #dgTbl rule covering the
+     workbook tab's identical table until that tab came off on 2026-09-18.
 
      The widths are content-derived and sum to 100. nowrap is set only on the two
      columns that must not break, so anything longer than expected wraps inside
      its own column instead of colliding with the next. */
-  :is(#lgTbl, #dgTbl) table.dt { table-layout: fixed; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(n+3),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(n+3) { text-align: right; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(1),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(1) { width: 12%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(2),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(2) { width: 7.5%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(3),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(3) { width: 8%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(4),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(4) { width: 14.3%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(5),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(5) { width: 13.2%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(6),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(6) { width: 13.2%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(7),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(7) {
+  #dgTbl table.dt { table-layout: fixed; }
+  #dgTbl table.dt th:nth-child(n+3),
+  #dgTbl table.dt td:nth-child(n+3) { text-align: right; }
+  #dgTbl table.dt th:nth-child(1),
+  #dgTbl table.dt td:nth-child(1) { width: 12%; }
+  #dgTbl table.dt th:nth-child(2),
+  #dgTbl table.dt td:nth-child(2) { width: 7.5%; }
+  #dgTbl table.dt th:nth-child(3),
+  #dgTbl table.dt td:nth-child(3) { width: 8%; }
+  #dgTbl table.dt th:nth-child(4),
+  #dgTbl table.dt td:nth-child(4) { width: 14.3%; }
+  #dgTbl table.dt th:nth-child(5),
+  #dgTbl table.dt td:nth-child(5) { width: 13.2%; }
+  #dgTbl table.dt th:nth-child(6),
+  #dgTbl table.dt td:nth-child(6) { width: 13.2%; }
+  #dgTbl table.dt th:nth-child(7),
+  #dgTbl table.dt td:nth-child(7) {
     width: 16.4%; padding-left: 0; white-space: nowrap; }
-  :is(#lgTbl, #dgTbl) table.dt th:last-child,
-  :is(#lgTbl, #dgTbl) table.dt td:last-child {
+  #dgTbl table.dt th:last-child,
+  #dgTbl table.dt td:last-child {
     width: 15.4%; padding-right: 0; white-space: nowrap; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
@@ -624,9 +608,9 @@
      The eyebrow rewraps instead, which it already did whenever the text changed.
      flex-start pins the row to the top of the head, so a rewrap underneath it
      cannot nudge it either. */
-  #cExpDeep .card-head > :first-child { flex: 1 1 0; min-width: 0; }
-  #cExpDeep .togrow { align-self: flex-start; }
-  #lcExpMonth[hidden] { display: block; visibility: hidden; }
+  #cdExpDeep .card-head > :first-child { flex: 1 1 0; min-width: 0; }
+  #cdExpDeep .togrow { align-self: flex-start; }
+  #dexpMonth[hidden] { display: block; visibility: hidden; }
 
   @media (max-width: 760px) {
     .grid { grid-template-columns: 1fr; }
@@ -635,9 +619,8 @@
        operating summary they also keep the fixed column geometry its toggle
        relies on, since the percentages resolve against the table, not the
        card. Tables narrower than their card are unaffected. */
-    #lopTbl, #lgTbl, #ldTbl, #lcExpTbl,
-    #dopTbl, #dexpTbl, #diTbl, #dfTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #lopTbl table.dt, #dopTbl table.dt { min-width: 620px; }
+    #dopTbl, #dexpTbl, #dgTbl, #diTbl, #dfTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #dopTbl table.dt { min-width: 620px; }
     /* The unit directory's six columns and the feed table's five hold short
        values, so they need far less room than the operating summary -- but more
        than 390px. dfMissing is deliberately not a scroller: it is three columns
@@ -650,8 +633,8 @@
        or T12 and the whole page under this card moved as the toggle was pressed.
        48px covers the tallest of the three, and the table's fixed width means
        that figure is the same at every phone width rather than one per size. */
-    #lopTbl table.dt th, #dopTbl table.dt th { height: 48px; }
-    #lgTbl table.dt { min-width: 680px; }
+    #dopTbl table.dt th { height: 48px; }
+    #dgTbl table.dt { min-width: 680px; }
     /* 16px of gutter is more than the prose tables can give up here: liTbl's
        four columns pushed 13px past their card at 400px, and it is deliberately
        not one of the scrollers above -- prose wraps rather than scrolling
@@ -698,8 +681,7 @@
       <div class="tabs" role="tablist" aria-label="Dashboard views">
         <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">Portfolio</button>
         <button class="tab" role="tab" id="tabScorecard" aria-controls="viewScorecard" aria-selected="false" tabindex="-1">Scorecard</button>
-        <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
-        <button class="tab" role="tab" id="tabView2d" aria-controls="view2d" aria-selected="false" tabindex="-1">Landing (Drive)</button>
+        <button class="tab" role="tab" id="tabView2d" aria-controls="view2d" aria-selected="false" tabindex="-1">Landing</button>
         <button class="tab" role="tab" id="tabComps" aria-controls="viewComps" aria-selected="false" tabindex="-1">Market Comps</button>
       </div>
       <!-- not a .tab: the tab machinery selects on that class -->
@@ -812,124 +794,17 @@
     </div>
     </div><!-- /viewScorecard -->
 
-    <div class="view" id="view2" role="tabpanel" aria-labelledby="tabView2" tabindex="0" hidden>
-    <div class="grid">
-
-      <div class="card wide" id="cOpSummary">
-        <div class="card-head">
-          <div>
-            <h2>Operating Summary</h2>
-            <div class="opsel">
-              <label for="lopSelect">Comparison:</label>
-              <select class="prop-select" id="lopSelect"></select>
-            </div>
-          </div>
-          <!-- Filled by renderOpSummary: which buttons exist depends on what
-               the select is reading the card from. -->
-          <div class="togrow" id="lopTogs" role="group" aria-label="Measured against"></div>
-        </div>
-        <div id="lopTbl"></div>
-        <div class="blu-note" id="lopNote" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cLandingScorecard">
-        <div class="card-head">
-          <div>
-            <h2>KPI Scorecard — The Landing</h2>
-          </div>
-          <div class="sc-health" id="lscHealth"></div>
-        </div>
-        <div class="sc-strip" id="lscStrip"></div>
-        <div class="sc-legend" id="lscLegend"></div>
-        <div class="sc-note" id="lscNote"></div>
-      </div>
-
-      <div class="kpis" id="lkpis"></div>
-
-      <div class="card wide" id="cRentCapture">
-        <h2>Loss to Lease</h2>
-        <div class="chartwrap"><canvas id="lcCapture"></canvas></div>
-        <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cTradeOuts">
-        <h2>Trade-outs</h2>
-        <span class="eyebrow">NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT</span>
-        <div class="statrow" id="ltStats"></div>
-        <div class="chartwrap"><canvas id="lcTrade"></canvas></div>
-        <div class="blu-note" id="ltFoot" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cRollover">
-        <h2>Rollover Schedule</h2>
-        <span class="eyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
-        <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
-      </div>
-
-      <div class="card" id="cNoi">
-        <h2>Expense Load &amp; NOI</h2>
-        <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR</span>
-        <div class="ckgrid" id="lcNoiCks" role="group" aria-label="Series shown"></div>
-        <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
-        <div class="blu-note" id="lcNoiFoot" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card" id="cExpDeep">
-        <div class="card-head">
-          <div>
-            <h2>Expense Deep Dive</h2>
-            <span class="eyebrow" id="lcExpEyebrow">AUG 25–JUL 26</span>
-          </div>
-          <div class="togrow" role="group" aria-label="Deep dive period">
-            <button class="tog" type="button" data-ep="t12" aria-pressed="true">T12</button>
-            <button class="tog" type="button" data-ep="month" aria-pressed="false">Month</button>
-            <select id="lcExpMonth" class="prop-select" hidden aria-label="Statement month"></select>
-          </div>
-        </div>
-        <div class="ckgrid" id="lcExpCks" role="group" aria-label="Categories shown"></div>
-        <div class="chartwrap" id="lcExpWrap" style="height:250px;"><canvas id="lcExp"></canvas></div>
-        <div class="blu-note" id="lcExpNote" style="color:var(--muted);"></div>
-        <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
-      </div>
-
-      <div class="card wide" id="cGaps">
-        <h2>Largest Unit Gaps</h2>
-        <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
-        <div id="lgTbl"></div>
-        <div class="blu-note" id="lgNote" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cDelinquency">
-        <h2>Delinquency</h2>
-        <span class="eyebrow" id="ldEyebrow">RESIDENT BALANCES · AGING</span>
-        <div style="display:flex;gap:22px;flex-wrap:wrap;">
-          <div style="flex:0 0 auto;min-width:170px;" id="ldStats"></div>
-          <div class="chartwrap" style="flex:1 1 260px;height:200px;"><canvas id="lcDelq"></canvas></div>
-          <div style="flex:1 1 300px;" id="ldTbl"></div>
-        </div>
-        <div class="blu-note" id="ldNote" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cInsights">
-        <h2>Insights Scorecard</h2>
-        <span class="eyebrow">WHAT THE DATA SAYS, SCORED · RED FLAGS &amp; OPEN QUESTIONS FOR THE PM</span>
-        <div style="display:flex;gap:22px;flex-wrap:wrap;">
-          <div style="flex:1 1 400px;" id="liTbl"></div>
-          <div style="flex:1 1 400px;" id="liFlags"></div>
-        </div>
-      </div>
-
-    </div>
-    <div class="blu-note" id="lMeta" style="color:var(--muted);margin-top:14px;"></div>
-    </div><!-- /view2 -->
-
     <!-- =========================================================
-         LANDING (DRIVE) — the same building, built only from what
-         Google Drive delivers. Nothing on this tab comes from the
-         analyst workbook: every number moves when a fresh export
-         lands in Drive and the pipeline runs. The workbook-fed
-         Landing tab is the fuller view; this is the one that cannot
-         quietly go stale, because everything on it has a feed.
+         LANDING — built only from what Google Drive delivers.
+         Nothing on this tab comes from the analyst workbook: every
+         number moves when a fresh export lands in Drive and the
+         pipeline runs, which is why it cannot quietly go stale.
+
+         It was "Landing (Drive)" beside a workbook-fed "The Landing"
+         until 2026-09-18. The ids keep the d- prefix from that
+         split; renaming them would touch lineage.json's card index,
+         data.html's deep links and every anchor in between for no
+         change a reader sees.
          ========================================================= -->
     <div class="view" id="view2d" role="tabpanel" aria-labelledby="tabView2d" tabindex="0" hidden>
     <div class="blu-note" id="dIntro" style="color:var(--muted);margin-bottom:14px;"></div>
@@ -1361,11 +1236,10 @@ function focusCardFromHash() {
 }
 window.addEventListener("hashchange", focusCardFromHash);
 
-// The two Landing views load their data lazily on first activation, which also
+// These views load their data lazily on first activation, which also
 // guarantees their canvases are visible (and therefore sized) when built.
-let landingStarted = false, landingDriveStarted = false, compsStarted = false;
+let landingDriveStarted = false, compsStarted = false;
 function maybeLoadLanding(tab) {
-  if (tab.id === "tabView2" && !landingStarted) { landingStarted = true; loadLanding(); }
   if (tab.id === "tabView2d" && !landingDriveStarted) {
     landingDriveStarted = true;
     loadLandingDrive();
@@ -1514,9 +1388,11 @@ const legendCfg = { labels: { boxWidth: 10, boxHeight: 10, padding: 16,
 // Sync the button and chart chrome with whatever the inline head script applied.
 applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
 
-// One fetch of metrics.json for the cards that need it after the first render.
-// The Landing's view is built from landing.json; the few cards that also read
-// the pipeline's own output share this rather than each fetching again.
+// One fetch of metrics.json for the cards that need it after the first render,
+// shared rather than each card fetching again. landing.json is no longer read
+// by this page at all — the tab that drew it came off on 2026-09-18; it is
+// still generated, still published, and still fills four scorecard cells
+// through populate_scorecard --from-landing.
 let _metricsPromise = null;
 const metricsJson = () => (_metricsPromise = _metricsPromise
   || fetch("metrics.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
@@ -1763,7 +1639,7 @@ async function loadDashboard() {
      Still parameterised on ids and a unit, since NOI Margin is meant to use
      the same pattern. Two things changed on 2026-09-17, by request.
 
-     The chart is now **the series the Landing (Drive) tab draws**: each
+     The chart is now **the series the Landing tab draws**: each
      property's monthly ratio off the stitched monthly_pl run, opex over
      revenue, exactly as that tab's Expense Load & NOI card computes it. That
      is a change of source, not a restyle. The block's own trend_values are one
@@ -1890,7 +1766,7 @@ async function loadDashboard() {
                   "of spending.");
       }
       bits.push("The lines are each property's monthly ratio off the stitched " +
-                "P&L — the same series the Landing (Drive) tab's Expense " +
+                "P&L — the same series the Landing tab's Expense " +
                 "Load & NOI card draws — and a line stops where that " +
                 "property's statements do rather than being drawn across the gap.");
       bits.push("Monthly ratios are volatile on an accrual basis, since a " +
@@ -2132,33 +2008,6 @@ function statBlock(host, stats) {                        // [[value, label], ...
     host.appendChild(st);
   });
 }
-function inputRow(host, defs, onChange) {                // defs: {key,label,val,ph,step,width}
-  host.textContent = "";
-  const fields = {};
-  defs.forEach(d => {
-    const lab = elc("label", null, d.label);
-    const inp = elc("input", "blu");
-    inp.type = "number"; inp.step = d.step || "any";
-    if (d.val !== null && d.val !== undefined) inp.value = d.val;
-    if (d.ph) inp.placeholder = d.ph;
-    if (d.width) inp.style.width = d.width;
-    inp.addEventListener("input", onChange);
-    lab.prepend(); lab.appendChild(inp);
-    host.appendChild(lab);
-    fields[d.key] = inp;
-  });
-  const rst = elc("button", "rst", "reset");
-  rst.addEventListener("click", () => {
-    defs.forEach(d => { fields[d.key].value = (d.val !== null && d.val !== undefined) ? d.val : ""; });
-    onChange();
-  });
-  host.appendChild(rst);
-  return fields;
-}
-const numOr = (inp, fallback) => {
-  const v = parseFloat(inp.value);
-  return Number.isFinite(v) ? v : fallback;
-};
 
 /* ============================================================
    KPI SCORECARD (data: scorecard.json)
@@ -2632,8 +2481,9 @@ async function renderScorecard(ids, chosen) {
       ? "below target: " + p.below_metrics.join(", ")
       : "nothing below target");
     // Link the label when that property has a tab, built-out or placeholder.
+    // The Landing's own tab is the Drive one, which is not named tabProp-*.
     const tab = p.slug && (document.getElementById("tabProp-" + p.slug) ||
-      (p.slug === "the-landing" ? document.getElementById("tabView2") : null));
+      (p.slug === "the-landing" ? document.getElementById("tabView2d") : null));
     if (tab) {
       const b = elc("button", null, p.label);
       b.type = "button";
@@ -2883,14 +2733,14 @@ function renderPropertyScorecard(slug, ids) {
 }
 
 /* ---- Operating summary (a trailing window vs the window before it) ----
-   Shared by the workbook-fed Landing tab and the Drive-only one, because it
-   never read the workbook: the pipeline parses each T12 from Drive, stitches
+   Written to serve any mount rather than one card, because it never read the
+   workbook: the pipeline parses each T12 from Drive, stitches
    successive statements into one continuous month series and publishes it
    through metrics.json, so this card refreshes when they do and lengthens as
    more statements arrive. Two copies of it would drift the moment one was
    edited. */
 /* Loss to lease — shared by The Landing (the analyst workbook's Rent Capture
-   block) and Landing (Drive) (the T12 statement's RESIDENTIAL RENTAL INCOME
+   block) and Landing (the T12 statement's RESIDENTIAL RENTAL INCOME
    section, metrics.json `rent_capture`). The workbook's block turned out to be
    that section retyped — all six series tie to the cent across the twelve
    overlapping months — so both sources publish the same shape and one renderer
@@ -3736,14 +3586,17 @@ async function renderBudgetActual(d) {
 }
 
 /* ---- Expense deep dive ----
-   Shared by both Landing tabs. Both views draw from the property's own T12
-   statement, translated to the Align account tree through the COA mapping and
-   published via metrics.json: T12 sums the twelve months per group, Month shows
-   one at a time. `wb` is the analyst workbook's own read of the same expense,
-   passed only by the workbook-fed tab -- it supplies the fallback chart for a
-   property with no statement yet, the tie-out figures and the opportunities
-   table. The Drive-only tab passes null, and ties the statement out against its
-   own P&L line instead. */
+   Draws from the property's own T12 statement, translated to the Align account
+   tree through the COA mapping and published via metrics.json: T12 sums the
+   twelve months per group, Month shows one at a time.
+
+   `wb` is the analyst workbook's own read of the same expense -- the fallback
+   chart for a property with no statement yet, the tie-out figures and the
+   opportunities table. The workbook-fed Landing tab was its only caller and
+   came off on 2026-09-18, so every live mount passes null and ties the
+   statement out against its own P&L line instead. The branch is kept rather
+   than torn out: it is what a second source would mount through, and it is the
+   only no-statement fallback the renderer has. */
 async function renderExpenseDeep(slug, ids, wb) {
   const wrap = document.getElementById(ids.wrap);
   const note = document.getElementById(ids.note);
@@ -4009,487 +3862,15 @@ async function renderExpenseDeep(slug, ids, wb) {
 }
 
 /* ============================================================
-   THE LANDING — property deep-dive view (data: landing.json)
-   Blue-bordered inputs mirror the workbook's blue "changeable"
-   cells; scenario cards recompute live from unit-level data.
-   ============================================================ */
-async function loadLanding() {
-  let L;
-  try {
-    const res = await fetch("landing.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    L = await res.json();
-  } catch (e) {
-    document.getElementById("view2").textContent = "";
-    document.getElementById("view2").appendChild(
-      elc("div", "loaderr", "Could not load landing.json — run scripts/extract_landing.py."));
-    return;
-  }
-  // This property's slice of the KPI scorecard, at the top of its view.
-  await scPromise;
-  renderPropertyScorecard("the-landing", {
-    health: "lscHealth", strip: "lscStrip",
-    legend: "lscLegend", note: "lscNote",
-  });
+   LANDING — built only from what Google Drive delivers.
 
-  const units = L.units;
-
-  /* ---- KPI strip ---- */
-  // Each tile jumps to the card that shows the working behind its number.
-  function jumpToCard(id) {
-    const card = document.getElementById(id);
-    if (!card) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    card.classList.remove("flash");
-    void card.offsetWidth;                    // restart the animation on repeat clicks
-    card.classList.add("flash");
-    card.addEventListener("animationend", () => card.classList.remove("flash"), { once: true });
-  }
-  (function kpis() {
-    const host = document.getElementById("lkpis");
-    const ltlCeiling = (L.expense_overview.revenue_compare[0] || {}).saving;
-    // One occupancy figure on this page. The board carried two: this tile's TTM
-    // economic occupancy from the workbook -- a dollar measure, 1 - vacancy loss
-    // over market potential -- beside the scorecard's Leased %, a unit measure
-    // snapshotted on the export date. Two definitions, two feeds and two dates
-    // read as one number disagreeing with itself, so the tile now mirrors the
-    // scorecard cell: occupancy has a single definition, source and as-of date
-    // wherever the page states it. Economic occupancy is still what the rent
-    // capture card is built from, under its own name, where the distinction
-    // between dollars and units is the point.
-    const scProp = SC && (SC.properties || []).find(x => x.slug === "the-landing");
-    const leased = scProp ? scValue(scProp, "Leased %") : null;
-    const leasedOn = scKpiAsOf("the-landing", "Leased %");
-    const occTile = leased && leased.display
-      ? [leased.display, "Leased",
-         "100 \u2212 exposure" + (leasedOn ? " \u00b7 as of " + leasedOn : ""),
-         "cLandingScorecard", "the KPI scorecard"]
-      : ["\u2014", "Leased", "awaiting the leasing feed",
-         "cLandingScorecard", "the KPI scorecard"];
-    const tiles = [
-      [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf", "cGaps", "largest unit gaps — gap to market by unit"],
-      [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "loss to lease by month"],
-      [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
-      occTile,
-      [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cGaps", "largest unit gaps"],
-      [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
-    ];
-    tiles.forEach(([v, k, s, target, where]) => {
-      const kp = elc("button", "kpi");
-      kp.type = "button";
-      kp.appendChild(elc("div", "v amber", v));
-      kp.appendChild(elc("div", "k", k));
-      kp.appendChild(elc("div", "s", s));
-      const jump = elc("span", "jump", "↓");
-      jump.setAttribute("aria-hidden", "true");
-      kp.appendChild(jump);
-      kp.setAttribute("aria-label", k + ": " + v + ". Jump to " + where + ".");
-      kp.addEventListener("click", () => jumpToCard(target));
-      host.appendChild(kp);
-    });
-  })();
-
-  /* ---- Loss to lease ---- */
-  renderRentCapture(L.rent_capture, { canvas: "lcCapture", foot: "lcCaptureFoot" });
-
-  /* ---- Operating summary ---- */
-  // Shared with the Drive-only tab; see renderOpSummary. It never read the
-  // workbook -- it draws the pipeline's own T12 series -- which is why both
-  // tabs can show the same card.
-  renderOpSummary("the-landing",
-    { card: "cOpSummary", tbl: "lopTbl", note: "lopNote", sel: "lopSelect",
-      togs: "lopTogs" });
-
-  /* ---- Expense & NOI ---- */
-  (async function noi() {
-    const en = L.expense_noi;
-    // Controllable expense per door: the month's operating expense less taxes,
-    // insurance, utilities and the management fee, over the property's unit
-    // count. The exclusions are what management cannot move in a month, so what
-    // is left is the part a PM is actually answerable for. It needs the expense
-    // split by category, which the workbook's Expense & NOI tab does not carry
-    // -- only a total and its own controllable cut, on a different basket. So
-    // the numerator comes from the T12 statement's own account groups, the same
-    // source the Expense Deep Dive draws.
-    //
-    // That statement spans twelve months where this chart spans nineteen, so the
-    // line starts where the statement does rather than being padded out.
-    const doors = L.meta.units;
-    const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const m = await metricsJson();
-    const eb = (((m || {}).expense_buckets || {}).properties || [])
-      .find(x => x.slug === "the-landing") || null;
-
-    // See controllableMissing: every exclusion has to be found by name, or the
-    // line is withheld rather than drawn with taxes counted as controllable.
-    let ctrl = {}, ctrlNote = "";
-    if (eb) {
-      if (!controllableMissing(Object.keys(eb.buckets)).length) {
-        const [em, ey] = eb.period_end.split(" ");
-        const end = (+ey) * 12 + MO.indexOf(em);
-        eb.labels.forEach((_, i) => {
-          const t = end - (eb.labels.length - 1 - i);
-          const key = Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
-          let total = 0, excluded = 0;
-          Object.keys(eb.buckets).forEach(n => {
-            const v = eb.buckets[n][i] || 0;
-            total += v;
-            if (isNotControllable(n)) excluded += v;
-          });
-          ctrl[key] = total - excluded;
-        });
-      } else {
-        ctrlNote = "Controllable expense/door is not drawn: the statement's account "
-                 + "groups no longer name taxes, insurance, utilities and the management "
-                 + "fee the way this chart excludes them, and guessing which is which "
-                 + "would overstate it.";
-      }
-    } else {
-      ctrlNote = "Controllable expense/door is not drawn: no T12 statement has reached "
-               + "the pipeline, and the workbook alone does not split expense by category.";
-    }
-    const perDoor = en.months.map(k =>
-      (doors && ctrl[k] != null) ? ctrl[k] / doors : null);
-    const ctrlMonths = en.months.filter(k => ctrl[k] != null);
-    const ctrlTtm = ctrlMonths.length
-      ? ctrlMonths.reduce((t, k) => t + ctrl[k], 0) / ctrlMonths.length : null;
-    const chart = new Chart(document.getElementById("lcNoi"), {
-      type: "line",
-      data: { labels: en.months.map(shortMo),
-        datasets: [
-          { label: "NOI margin", data: en.noi_margin.map(v => v * 100), yAxisID: "y", borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
-          { label: "Expense ratio", data: en.opex_ratio.map(v => v * 100), yAxisID: "y", borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
-          { label: "Controllable expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
-        ] },
-      options: { maintainAspectRatio: false, responsive: true,
-        // the checkbox grid above the chart is both the legend and the switch,
-        // so the chart's own legend would only restate it
-        plugins: { legend: { display: false },
-          tooltip: { callbacks: { label: c => c.dataset.yAxisID === "y2"
-            ? `${c.dataset.label}: ${fm$(c.parsed.y)}/mo`
-            : `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
-        scales: { y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
-          y2: { position: "right", grid: { display: false }, beginAtZero: true,
-                ticks: { callback: v => "$" + (v / 1e3).toFixed(1) + "k" } },
-          x: { grid: { display: false } } } }
-    });
-    ckGrid(document.getElementById("lcNoiCks"),
-      chart.data.datasets.map((d, i) => ({ label: d.label, color: d.borderColor, i })),
-      it => chart.isDatasetVisible(it.i),
-      it => {
-        chart.setDatasetVisibility(it.i, !chart.isDatasetVisible(it.i));
-        // the dollar axis has one tenant; an axis for nothing keeps claiming
-        // the right margin, so it leaves with its series
-        chart.options.scales.y2.display = chart.isDatasetVisible(2);
-        chart.update();
-      });
-    document.getElementById("lcNoiFoot").textContent =
-      "TTM NOI " + fm$(en.ttm.noi) + " (" + fmPct(en.ttm.noi_margin) + " margin) on revenue " +
-      fm$(en.ttm.revenue) + ". "
-      + (ctrlNote || ("Controllable expense/door is the month's operating expense less "
-          + "taxes, insurance, utilities and the management fee, over the property's "
-          + doors + " units, on "
-          + "the right axis \u2014 " + fm$(ctrlTtm / doors) + "/mo averaged across the "
-          + ctrlMonths.length + " months the T12 statement covers, against "
-          + fm$(en.ttm.opex_per_unit / 12) + "/mo for total expense. It starts at "
-          + shortMo(ctrlMonths[0]) + " because the statement does; the two ratio lines run "
-          + "the full range. "))
-      + en.tax_note;
-  })();
-
-  /* ---- Expense deep dive ---- */
-  // Shared with the Drive-only tab; see renderExpenseDeep. The workbook side
-  // of the card -- the no-statement fallback, the tie-out figures and the
-  // opportunities table -- is passed in, so the Drive-only tab gets the same
-  // chart with none of it.
-  renderExpenseDeep("the-landing",
-    { card: "cExpDeep", eyebrow: "lcExpEyebrow", cks: "lcExpCks", wrap: "lcExpWrap",
-      canvas: "lcExp", note: "lcExpNote", sel: "lcExpMonth", tbl: "lcExpTbl" },
-    { buckets: L.expense_overview.buckets, ttmOpex: L.expense_noi.ttm.opex,
-      months: L.expense_noi.months, opex: L.expense_noi.opex,
-      opportunities: L.expense_overview.opportunities });
-
-
-  /* ---- Trade-outs ---- */
-  (function trades() {
-    // Both sides of the roll on one axis. They are both "percent over the rent
-    // that was there before", which is what makes the overlay fair -- and the
-    // gap between them is the whole story: a vacated unit re-leases at four to
-    // five times the increase a sitting resident is offered.
-    //
-    // They are NOT computed the same way, and the footnote says so rather than
-    // letting a shared axis imply it:
-    //   new leases -- every executed lease carries its own trade-out, so a month
-    //     is the plain mean of the leases signed in it.
-    //   renewals   -- the workbook publishes no per-renewal record, only monthly
-    //     offer aggregates, so the only figure available is its rent-weighted
-    //     increase. Averaging it further would be inventing precision.
-    //
-    // Both sit on a trailing 24-month axis anchored to the latest month the data
-    // reports as having happened, not to the browser's clock -- this page is
-    // static and its workbook is refreshed by hand, so a clock anchor would grow
-    // an empty column every month while the data stood still.
-    const s = L.leasing.summary, ra = L.leasing.renewal_activity || {};
-    const WINDOW = 24;
-    const addMonths = (k, n) => {                 // "2026-07", -3 -> "2026-04"
-      const [y, m] = k.split("-").map(Number), t = y * 12 + (m - 1) + n;
-      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
-    };
-
-    const byMonth = new Map();
-    L.leasing.leases.filter(l => l.status === "Executed").forEach(l => {
-      const k = l.date.slice(0, 7);
-      if (!byMonth.has(k)) byMonth.set(k, []);
-      byMonth.get(k).push(l);
-    });
-    const mean = (a, f) => a.reduce((t, x) => t + f(x), 0) / a.length;
-    const newMonths = [...byMonth.keys()].sort().map(k => {
-      const ls = byMonth.get(k);
-      return { month: k, n: ls.length, pct: mean(ls, l => l.tradeout) * 100 };
-    });
-
-    const renewRaw = (((L.renewal || {}).offers || {}).months || []).map(m => ({
-      month: m.month, n: m.leases, pct: m.wtd_increase * 100,
-    }));
-
-    // Renewal offers run past the tracker date for upcoming expirations, so they
-    // cannot set the anchor: a forward offer is not a trailing month.
-    const trackMo = (ra.tracker_date || "").slice(0, 7);
-    const actual = [...newMonths.map(m => m.month),
-                    ...renewRaw.filter(m => !trackMo || m.month <= trackMo).map(m => m.month)];
-    const endMo = actual.sort().slice(-1)[0] || trackMo;
-    const axis = Array.from({ length: WINDOW },
-                            (_, i) => addMonths(addMonths(endMo, -(WINDOW - 1)), i));
-
-    // Months with no lease are gaps, never zeros: a zero bar would assert a 0%
-    // trade-out in a month that simply reported nothing.
-    const pick = (rows, k) => {
-      const by = new Map(rows.map(r => [r.month, r]));
-      return axis.map(m => { const r = by.get(m); return r ? r[k] : null; });
-    };
-    const newPct = pick(newMonths, "pct");
-    const renPct = pick(renewRaw, "pct");
-    const counts = { new: pick(newMonths, "n"), renew: pick(renewRaw, "n") };
-    const dropped = renewRaw.filter(m => m.month > endMo).map(m => m.month);
-    const filled = axis.filter((_, i) => newPct[i] !== null || renPct[i] !== null).length;
-
-    new Chart(document.getElementById("lcTrade"), {
-      data: { labels: axis.map(shortMo),
-        datasets: [
-          // order drives draw order and the legend alike: new lease, then renewal
-          { type: "bar", label: "New lease · avg trade-out %", data: newPct, yAxisID: "y",
-            backgroundColor: newPct.map(v => v < 0 ? C.red : C.teal), order: 1 },
-          { type: "bar", label: "Renewal · wtd increase %", data: renPct, yAxisID: "y",
-            backgroundColor: renPct.map(v => v < 0 ? C.red : C.green), order: 2 },
-        ] },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: {
-          title: c => shortMo(axis[c[0].dataIndex]),
-          label: c => {
-            const i = c.dataIndex;
-            const n = c.datasetIndex === 0 ? counts.new[i] : counts.renew[i];
-            return `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`
-                 + (n ? ` (${n} lease${n === 1 ? "" : "s"})` : "");
-          } } } },
-        scales: {
-          y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
-          x: { grid: { display: false },
-            // 24 labels will not sit side by side on this card, and autoSkip
-            // would hide the very months whose emptiness is the point.
-            ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false } } } }
-    });
-
-    statBlock(document.getElementById("ltStats"), [
-      [fmPct(s.avg_tradeout_exec), "avg new-lease trade-out"],
-      ["+" + fmPct(ra.avg_increase, 0), "avg renewal increase"],
-      [fmPct(s.capture_at_signing), "capture at signing"],
-      [String(s.executed), "new leases"],
-      [String(ra.renewals_signed || 0), "renewals signed"],
-    ]);
-
-    document.getElementById("ltFoot").textContent =
-      "Teal is the unweighted mean of the trade-outs executed that month; green is that "
-      + "month's rent-weighted renewal increase, which is the only form the offer "
-      + "aggregates support — they carry no per-renewal rows to average. Both are percent "
-      + "over the prior rent, so they share one axis. Axis is the trailing " + WINDOW + " months to "
-      + shortMo(endMo) + "; " + filled + " of " + WINDOW + " report data — months with no "
-      + "lease are left empty rather than drawn as zero, and the workbook's Lease Detail tab "
-      + "is hand-typed from the RealPage rate tracker, which is why the history is short."
-      + (dropped.length ? " Offers already extended for " + dropped.map(shortMo).join(", ")
-          + " sit past the window: a forward offer is not a trailing month." : "");
-  })();
-
-  /* ---- Rollover schedule ---- */
-  (function rollover() {
-    const r = L.rollover.filter(x => x.units > 0);
-    const labels = r.map(x => x.month.startsWith("Expired") ? "Holdover" : shortMo(x.month));
-    new Chart(document.getElementById("lcRoll"), {
-      data: { labels,
-        datasets: [
-          { type: "bar", label: "Units expiring", data: r.map(x => x.units),
-            backgroundColor: r.map(x => x.month.startsWith("Expired") ? C.red : C.amber) },
-          { type: "line", label: "Cumulative %", data: r.map(x => x.cum_pct * 100), yAxisID: "y2",
-            borderColor: C.muted, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0 },
-        ] },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: {
-          label: c => c.dataset.yAxisID === "y2" ? `Cumulative: ${c.parsed.y.toFixed(0)}%`
-            : `${c.parsed.y} units · ${fm$(r[c.dataIndex].uncaptured)}/mo uncaptured` } } },
-        scales: { y: { grid: gridCfg }, y2: { position: "right", grid: { display: false }, min: 0, max: 100, ticks: { callback: v => v + "%" } },
-          x: { grid: { display: false } } } }
-    });
-  })();
-
-  /* ---- Largest unit gaps ---- */
-  (async function gaps() {
-    const top = units.filter(u => u.gap > 0)
-      .sort((a, b) => b.gap - a.gap).slice(0, 12);
-
-    // Bedrooms belong to the floorplan, not the unit, and neither the rent roll
-    // nor the workbook says how many a plan has -- both only name the code
-    // ("lab19"). The Yardi Unit Directory does, so the plan code is joined to
-    // it here and shown as bedrooms instead. A plan the directory does not
-    // carry prints as a dash naming the code rather than guessing from it.
-    const m = await metricsJson();
-    const dir = (((m || {}).unit_directory || {}).properties || [])
-      .find(x => x.slug === "the-landing") || null;
-    const plan = t => ((dir || {}).plans || {})[t] || null;
-
-    const bedsCell = u => {
-      const p = plan(u.type);
-      const b = p ? p.bedrooms : null;
-      const e = elc("span", null, b == null ? "\u2014" : b === 0 ? "Studio" : b + " BR");
-      e.title = p
-        ? "Plan " + u.type + " \u00b7 " + b + " bed / " + p.baths + " bath \u00b7 "
-          + p.units + " units of this plan \u00b7 " + p.sqft_min + "\u2013" + p.sqft_max + " sqft"
-        : "Plan " + u.type + " is not in the unit directory";
-      return e;
-    };
-
-    // Expiry: the month the lease runs to, unless it has already run out. A
-    // holdover is the month-to-month case -- the workbook's MTM tab is the same
-    // roster -- and carries the exact date it expired, so that goes on hover.
-    // "Expired" without MTM is a lease past its date that the workbook has not
-    // put in that roster, which is worth telling apart rather than merging.
-    const ho = {};
-    (L.holdovers.units || []).forEach(h => { ho[h.unit] = h; });
-    const rrKey = +((L.meta.rent_roll_as_of || "").slice(0, 4)
-                    + (L.meta.rent_roll_as_of || "").slice(5, 7)) || 0;
-    const moOf = k => shortMo(String(k).slice(0, 4) + "-" + String(k).slice(4, 6));
-    const expiryCell = u => {
-      let text, title;
-      const h = ho[u.unit];
-      if (u.status === "Vacant" || !u.expiry_key || u.expiry_key <= 190001) {
-        text = "\u2014"; title = "No lease on the rent roll";
-      } else if (h) {
-        text = "MTM \u00b7 " + moOf(u.expiry_key);
-        title = "Lease expired " + h.expired + " and has run month to month since \u2014 "
-                + h.months_expired + " months";
-      } else if (u.expiry_key < rrKey) {
-        text = "Expired " + moOf(u.expiry_key);
-        title = "Ran out before the rent roll's own date (" + L.meta.rent_roll_as_of
-                + ") but is not on the workbook's month-to-month roster";
-      } else {
-        text = moOf(u.expiry_key);
-        title = "Lease runs to " + moOf(u.expiry_key);
-      }
-      const e = elc("span", null, text);
-      e.title = title;
-      return e;
-    };
-
-    buildTable(document.getElementById("lgTbl"),
-      [{ t: "Unit" }, { t: "Beds" }, { t: "SF", num: true },
-       { t: "In-place", num: true }, { t: "Market", num: true },
-       { t: "Gap/yr", num: true }, { t: "Expiry" }, { t: "Status" }],
-      top.map(u => ["#" + u.unit, bedsCell(u), u.sqft.toLocaleString(),
-        fm$(u.inplace), fm$(u.market), fm$(u.gap * 12),
-        expiryCell(u), statusPill(u.status === "Holdover" ? "FLAG" : "CURRENT")]));
-    const t = document.getElementById("lgTbl").querySelectorAll(".pill");
-    t.forEach((p, i) => { p.textContent = top[i].status; });
-
-    document.getElementById("lgNote").textContent =
-      "Rents, square footage and lease dates are the workbook's, from the rent roll of "
-      + L.meta.rent_roll_as_of + ". Bedrooms come from the Yardi Unit Directory"
-      + (dir ? " of " + dir.as_of + " (" + dir.residential_units + " apartments across "
-               + Object.keys(dir.plans).length + " floorplans)" : ", which has not been fetched yet")
-      + ", joined on the plan code. Expiry is the month the lease runs to; \u201cMTM\u201d is a "
-      + "lease already run out and continuing month to month, with the date it expired on hover.";
-  })();
-
-  /* ---- Delinquency ---- */
-  (function delq() {
-    const dq = L.delinquency;
-    document.getElementById("ldEyebrow").textContent =
-      "RESIDENT BALANCES AS OF " + dq.as_of + " · NET " + fm$(dq.net) + " AFTER CREDITS";
-    const host = document.getElementById("ldStats");
-    statBlock(host, [
-      [fm$(dq.gross_owed), "gross owed"],
-      [String(dq.units_with_balance) + " / " + String(dq.occupied_units), "units w/ balance"],
-      [fmPct(dq.pct_month_rent), "of monthly rent"],
-      [fm$(dq.retail_balance), "retail balance"],
-    ]);
-    host.querySelectorAll(".st").forEach(st => { st.style.marginBottom = "10px"; });
-    const ag = dq.aging;
-    new Chart(document.getElementById("lcDelq"), {
-      type: "bar",
-      data: { labels: ag.map(a => a.bucket),
-        datasets: [{ label: "Amount", data: ag.map(a => a.amount),
-          backgroundColor: [C.green, C.amber, C.amber, C.red] }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => `${fm$(c.parsed.x)} · ${fmPct(ag[c.dataIndex].pct_owed)} of total · ${ag[c.dataIndex].status}` } } },
-        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
-          y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
-    });
-    buildTable(document.getElementById("ldTbl"),
-      // no resident name: a surname beside an amount past due is personal data,
-      // and the unit number is enough to act on
-      [{ t: "Unit" }, { t: "Owed", num: true }, { t: "Over 90d", num: true }],
-      dq.top.slice(0, 8).map(x => ["#" + x.unit, fm$(x.owed), x.over90 ? fm$(x.over90) : "—"]));
-    const u5 = dq.unit_531;
-    if (u5) {
-      document.getElementById("ldNote").textContent =
-        "Unit 531 (also the rent-override unit on Inputs) is tracked separately: " +
-        (u5.balance_latest.label || "latest balance") + " " + fm$(u5.balance_latest.amount) +
-        " (" + fm$(u5.new_charges_week) + " new charges, " + fm$(u5.paid_week) +
-        " paid in the week), " + fm$(u5.aged_over_30) + " aged past 30 days · status " +
-        u5.status + " · PM memo: " + u5.memo + ".";
-    }
-  })();
-
-  /* ---- Insights scorecard (the workbook's own scored read) ---- */
-  (function insights() {
-    const ins = L.insights || {};
-    const fmVal = v => typeof v !== "number" ? String(v)
-      : (Math.abs(v) >= 20 ? String(Math.round(v)) : fmPct(v, Math.abs(v) < 0.02 && v !== 0 ? 2 : 1));
-    buildTable(document.getElementById("liTbl"),
-      [{ t: "Metric" }, { t: "Value", num: true }, { t: "Status" }, { t: "What it means", mut: true }],
-      (ins.metrics || []).map(m => [m.name, fmVal(m.value), statusPill(m.status), m.meaning]));
-    buildTable(document.getElementById("liFlags"),
-      [{ t: "Open question" }, { t: "Status" }, { t: "What would settle it", mut: true }],
-      (ins.flags || []).map(f => [f.item, statusPill(f.status), f.settle]));
-  })();
-
-  /* ---- meta line ---- */
-  document.getElementById("lMeta").textContent =
-    L.meta.property + " · " + L.meta.units + " units · " + L.meta.rentable_sqft.toLocaleString() +
-    " sq ft · rent roll as of " + L.meta.rent_roll_as_of + " · source: " + L.meta.source_workbook +
-    " (rent roll, GL/T12, delinquency — same report types as the Drive pipeline; refresh on command)";
-}
-
-/* ============================================================
-   LANDING (DRIVE) — the same building as The Landing, built only
-   from what Google Drive delivers.
-
-   The Landing tab is fed by the analyst workbook (V37), which is
-   refreshed by pasting reports into grey tabs, recalculating in
-   Excel and re-running scripts/extract_landing.py. Everything it
-   shows is real; none of it moves on its own. This tab is the
-   subset that does: every number below comes from a report the
-   Gmail filer drops into Drive and the daily pipeline parses, so
-   dropping a fresh export in Drive is the whole refresh.
+   A second tab drew this same building from the analyst workbook
+   (V37) until 2026-09-18 — refreshed by pasting reports into grey
+   tabs, recalculating in Excel and re-running extract_landing.py.
+   Everything it showed was real; none of it moved on its own, and
+   that is why this one outlived it: every number below comes from a
+   report the Gmail filer drops into Drive and the daily pipeline
+   parses, so dropping a fresh export in Drive is the whole refresh.
 
    The rule, applied per number rather than per card: if a fresh
    direct export cannot update it today, with the parsers that
@@ -4596,9 +3977,12 @@ const SCD_FEED_ROWS = [
 ];
 const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).blocked || "";
 
-// What the workbook-fed Landing tab shows that this one cannot, and what would
-// put it here. Written down rather than inferred: a card that is absent for a
-// good reason and a card that is absent by accident look identical.
+// What this building's picture is still missing, and what would put it here.
+// Written down rather than inferred: a card that is absent for a good reason and
+// a card that is absent by accident look identical. The list was framed against
+// the workbook-fed Landing tab until that tab came off on 2026-09-18 -- three of
+// the four were cards it carried, so they are now absent from the dashboard
+// outright rather than merely from this view.
 const SCD_MISSING = [
   // Both sides of this arrived on 2026-09-11. What is left is not a report.
   { what: "Holdovers reconciled unit by unit",
@@ -4642,10 +4026,10 @@ async function loadLandingDrive() {
     "The Landing, built only from Google Drive. Every number on this tab comes from a "
     + "report the pipeline fetches and parses, so a fresh direct export dropped in Drive "
     + "is the whole refresh — nothing here is typed in, pasted into a grey tab or carried "
-    + "over from the analyst workbook. The Landing tab beside it is the fuller view and "
-    + "the two will disagree where the workbook is more recent, or where it measures "
-    + "something on a basis no report publishes. What this tab cannot show, and why, is "
-    + "on the last card.";
+    + "over from the analyst workbook. A second tab drew the same building from that "
+    + "workbook until 2026-09-18; the workbook still fills several scorecard cells "
+    + "through populate_scorecard --from-landing, but nothing on this page reads it "
+    + "directly. What this tab cannot show, and why, is on the last card.";
 
   /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
   renderOpSummary(SCD_SLUG,
@@ -4798,8 +4182,8 @@ async function loadLandingDrive() {
 
   /* ---- The scorecard cells this tab keeps, as tiles ----
      A twelve-cell KPI grid stood here until 2026-09-15. Four cells are worth a
-     tile; the rest are on The Landing's own card and the portfolio scorecard,
-     unchanged, and scorecard.json still carries every one of them.
+     tile; the rest are on the Scorecard tab, unchanged, and scorecard.json
+     still carries every one of them.
 
      Two things the grid did that a bare number does not, and both are kept:
 
@@ -5016,9 +4400,9 @@ async function loadLandingDrive() {
 
   /* ---- Trade-outs, from the two leasing feeds.
 
-     The workbook-fed card on The Landing draws its new-lease side as a plain
+     The workbook-fed card this replaced drew its new-lease side as a plain
      mean and its renewal side rent-weighted, because the analyst workbook only
-     ever carried monthly renewal AGGREGATES — its own footnote says the offer
+     ever carried monthly renewal AGGREGATES — its own footnote said the offer
      data "carry no per-renewal rows to average". parse_renewal_tracker reads
      those rows, so both series here are the same average over the same kind of
      thing, and the weighted figure is kept on the tooltip rather than mixed
@@ -5462,8 +4846,7 @@ async function loadLandingDrive() {
           : "")
       + "The 0–30 bucket, the balance per unit and the largest balances are parsed and "
       + "tied out but stop in data/: they are unit level and the report arrives with "
-      + "resident names, so nothing publishes them. The Landing tab shows them from the "
-      + "workbook's own scrubbed copy instead.";
+      + "resident names, so nothing publishes them.";
   })();
 
   /* ---- Unit inventory, from the Yardi unit directory ---- */
@@ -6100,7 +5483,7 @@ function mcMethod(p) {
      "Every comp figure here is what a building is advertising, which is the right "
      + "basis for “what could this unit get today” and is not a "
      + "transaction record. The subject's own signed leases are on the Trade-outs "
-     + "card of the Landing (Drive) tab."],
+     + "card of the Landing tab."],
   ];
   if ((im.unverified_beds || []).length) {
     items.push([im.unverified_beds.map(b => b + "-bed units are not verified").join(", "),

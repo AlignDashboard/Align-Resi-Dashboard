@@ -1194,7 +1194,7 @@ async function loadAll() {
       renderTable(host, {
         id: "t-monthlypl-" + (pr.slug || i), group: "Portfolio",
         title: "Monthly P&L — " + (pr.name || pr.slug),
-        feeds: "Operating Summary card (The Landing tab)",
+        feeds: "Operating Summary card (Landing tab)",
         note: [pr.basis, "statement period ending " + (pr.period_end || "—"),
                "codes " + ((pr.source_codes || []).join("+") || "—"),
                "Successive T12 statements stitched into one continuous series; "
@@ -1226,7 +1226,7 @@ async function loadAll() {
       renderTable(host, {
         id: "t-rentcap-" + (pr.slug || i), group: "Portfolio",
         title: "Rent capture — " + (pr.name || pr.slug),
-        feeds: "Loss to Lease card (The Landing and Landing (Drive) tabs)",
+        feeds: "Loss to Lease card (Landing tab)",
         note: [pr.basis, "statement period ending " + (pr.period_end || "—"),
                "codes " + ((pr.source_codes || []).join("+") || "—"),
                pr.tieout_max_gap != null
@@ -1265,7 +1265,7 @@ async function loadAll() {
       renderTable(host, {
         id: "t-buckets-" + (pr.slug || i), group: "Portfolio",
         title: "Expense buckets, by month — " + (pr.name || pr.slug),
-        feeds: "Expense Deep Dive card, Month view (The Landing tab)",
+        feeds: "Expense Deep Dive card, Month view (Landing tab)",
         note: [pr.basis, "statement period ending " + (pr.period_end || "—")]
                 .filter(Boolean).join(" · "),
         cols: [{ key: "month", label: "Month" }].concat(
@@ -1323,9 +1323,9 @@ async function loadAll() {
       const a = pr.all || {};
       const w = pr.windows || {};
       renderTable(host, {
-        id: "t-tradeout-" + (pr.slug || i), group: "Landing (Drive)",
+        id: "t-tradeout-" + (pr.slug || i), group: "Landing",
         title: "Lease trade-outs, by month — " + (pr.name || pr.slug),
-        feeds: "Trade-out % tile (Landing (Drive) tab) and the Trade-out % cell "
+        feeds: "Trade-out % tile (Landing tab) and the Trade-out % cell "
              + "on the scorecard, both on the trailing-3-month window",
         note: ["Yardi Lease Tradeout Report " + (pr.source_file || "—")
                  + (pr.landed_at ? ", landed " + pr.landed_at : ""),
@@ -1536,7 +1536,7 @@ async function loadAll() {
       renderTable(host, {
         id: "t-rentroll-" + (pr.slug || i), group: "Portfolio",
         title: "Rent roll — summary — " + (pr.name || pr.slug),
-        feeds: "Loss to Lease card (Landing (Drive) tab)",
+        feeds: "Loss to Lease card (Landing tab)",
         note: src + pr.basis,
         cols: [{ key: "k", label: "Measure" }, { key: "v", label: "Value" }],
         rows: [
@@ -1563,7 +1563,7 @@ async function loadAll() {
       renderTable(host, {
         id: "t-occupancy-" + (pr.slug || i), group: "Portfolio",
         title: "Occupancy by floorplan — " + (pr.name || pr.slug),
-        feeds: "Unit Inventory card (Landing (Drive) tab) — the leased/vacant bars",
+        feeds: "Unit Inventory card (Landing tab) — the leased/vacant bars",
         note: src + "Counts per plan, which is the grain the Unit Inventory card "
             + "splits its bars on: the roll names the plan and the unit directory "
             + "says how many bedrooms a plan has, so neither report can draw that "
@@ -1585,7 +1585,7 @@ async function loadAll() {
       renderTable(host, {
         id: "t-rollover-" + (pr.slug || i), group: "Portfolio",
         title: "Rollover schedule — " + (pr.name || pr.slug),
-        feeds: "Rollover Schedule card (Landing (Drive) tab)",
+        feeds: "Rollover Schedule card (Landing tab)",
         note: src + "“Expired” is a lease already run out and continuing month to "
             + "month; the rent roll has no month-to-month column of its own.",
         cols: [{ key: "month", label: "Expiry month" },
@@ -1601,7 +1601,7 @@ async function loadAll() {
       renderTable(host, {
         id: "t-gaps-" + (pr.slug || i), group: "Portfolio",
         title: "Largest unit gaps — " + (pr.name || pr.slug),
-        feeds: "Largest Unit Gaps card (Landing (Drive) tab)",
+        feeds: "Largest Unit Gaps card (Landing tab)",
         note: src + "Occupied units only, the 40 largest by annual gap. A vacant unit's "
             + "gap is its whole asking rent and would head the table on every roll.",
         cols: [{ key: "rank", label: "#", fmt: "int" },
@@ -1619,7 +1619,7 @@ async function loadAll() {
       });
     });
 
-    // The two leasing feeds behind the Trade-outs card on the Landing (Drive)
+    // The two leasing feeds behind the Trade-outs card on the Landing
     // tab. Two tables because they are two reports on two different clocks: the
     // weekly workbook accumulates a week at a time, the renewal tracker arrives
     // whole and runs back to January 2024.
@@ -1630,7 +1630,7 @@ async function loadAll() {
         renderTable(host, {
           id: "t-tradeouts-" + (pr.slug || i), group: "Portfolio",
           title: "New-lease trade-outs, by month — " + (pr.name || pr.slug),
-          feeds: "Trade-outs card (Landing (Drive) tab)",
+          feeds: "Trade-outs card (Landing tab)",
           note: "From " + (nl.source_file || "the weekly leasing workbook") + " and "
               + (nl.weeks || 0) + " week(s) on file, newest ending " + (nl.as_of || "—")
               + ". A lease sits in the month of the WEEK it was signed, not its "
@@ -1651,7 +1651,7 @@ async function loadAll() {
         renderTable(host, {
           id: "t-renewals-" + (pr.slug || i), group: "Portfolio",
           title: "Renewal offers, by month — " + (pr.name || pr.slug),
-          feeds: "Trade-outs card (Landing (Drive) tab) — the renewal series",
+          feeds: "Trade-outs card (Landing tab) — the renewal series",
           note: "From " + (rn.source_file || "the renewal tracker") + ", covering "
               + ((rn.covers || {}).from || "—") + " to " + ((rn.covers || {}).to || "—")
               + ". Months past today are offers already issued for leases that have "
