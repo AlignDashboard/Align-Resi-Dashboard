@@ -700,6 +700,7 @@
         <button class="tab" role="tab" id="tabScorecard" aria-controls="viewScorecard" aria-selected="false" tabindex="-1">Scorecard</button>
         <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
         <button class="tab" role="tab" id="tabView2d" aria-controls="view2d" aria-selected="false" tabindex="-1">Landing (Drive)</button>
+        <button class="tab" role="tab" id="tabRates" aria-controls="viewRates" aria-selected="false" tabindex="-1">Rental Rates</button>
       </div>
       <!-- not a .tab: the tab machinery selects on that class -->
       <a class="datalink" href="data.html">Data flow &amp; tables ↗</a>
@@ -1062,6 +1063,29 @@
     <div class="blu-note" id="dMeta" style="color:var(--muted);margin-top:14px;"></div>
     </div><!-- /view2d -->
 
+    <div class="view" id="viewRates" role="tabpanel" aria-labelledby="tabRates" tabindex="0" hidden>
+    <div class="blu-note" id="rtIntro" style="color:var(--muted);margin-bottom:16px;"></div>
+    <div class="grid">
+
+      <div class="card wide" id="cRateTrend">
+        <h2>Rental Rate Trend</h2>
+        <span class="eyebrow" id="rtEyebrow">ACHIEVED NEW-LEASE RENT vs THE RENT IT REPLACED &middot; $ PER UNIT PER MONTH</span>
+        <div class="statrow" id="rtStats"></div>
+        <div class="chartwrap"><canvas id="rcTrend"></canvas></div>
+        <div class="blu-note" id="rtFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cRateByBed">
+        <h2>Asking Rate by Bedroom</h2>
+        <span class="eyebrow" id="rbEyebrow">ASKING RENT RANGE PER UNIT &middot; FROM THE UNIT DIRECTORY</span>
+        <div class="statrow" id="rbStats"></div>
+        <div class="chartwrap" style="height:250px;"><canvas id="rcBed"></canvas></div>
+        <div class="blu-note" id="rbFoot" style="color:var(--muted);"></div>
+      </div>
+
+    </div>
+    </div><!-- /viewRates -->
+
     <div id="propPanels"></div>
 
     <footer id="footer"></footer>
@@ -1294,6 +1318,228 @@ function maybeLoadLanding(tab) {
     landingDriveStarted = true;
     loadLandingDrive();
   }
+  if (tab.id === "tabRates" && !ratesStarted) { ratesStarted = true; loadRates(); }
+}
+
+/* ---- Rental Rates ------------------------------------------------------
+
+   A rate tracker asks what a unit RENTS FOR, so every number on this tab is
+   dollars per unit per month. That is the one thing the Trade-outs card on the
+   Drive tab cannot show: it draws this same lease_tradeout feed as a PERCENTAGE
+   over the rent each lease replaced, which grades the move and hides the level.
+   39.8% over a $4,635 prior rent and 39.8% over a $6,000 one are the same bar
+   there and $1,800 apart here.
+
+   Three feeds, and they do not all describe the same instant:
+     lease_tradeout   monthly — 26 months of achieved new-lease rent
+     rent_roll        ONE SNAPSHOT — asking and in-place as of its own date
+     unit_directory   the buildings' fixed description — asking by floorplan
+   The snapshot pair is drawn as flat reference lines rather than as series,
+   because a rent roll is one point in time, and the note says so rather than
+   letting two flat lines read as "rates held still for two years".
+   ---- */
+let ratesStarted = false;
+
+async function loadRates() {
+  const m = await metricsJson();
+  const pickProp = (block, slug) => (((m || {})[block] || {}).properties || [])
+    .find(x => x.slug === slug) || null;
+  const SLUG = "the-landing";
+  const rr  = pickProp("rent_roll", SLUG);
+  const dir = pickProp("unit_directory", SLUG);
+  const tro = pickProp("lease_tradeout", SLUG);
+
+  const usd  = v => "$" + Math.round(v).toLocaleString();
+  const usd0 = v => v == null ? "—" : usd(v);
+
+  document.getElementById("rtIntro").textContent =
+    "Rental rates for The Landing, in dollars per unit per month. This is the "
+    + "rate-tracker format fitted to data already in the pipeline: the achieved "
+    + "new-lease series is the Yardi lease tradeout report, the asking and in-place "
+    + "levels are the Drive rent roll, and the per-bedroom asking is the unit "
+    + "directory. Nothing here is hand-entered. The other four properties join as "
+    + "their own exports arrive.";
+
+  /* ---- the rate trend ---- */
+  (function rateTrend() {
+    const card = document.getElementById("cRateTrend");
+    const rows = (tro && tro.months) || [];
+    if (!rows.length) { card.hidden = true; return; }
+
+    const WINDOW = 24;
+    const addMonths = (k, n) => {
+      const [y, mo] = k.split("-").map(Number), t = y * 12 + (mo - 1) + n;
+      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
+    };
+    const endMo = rows.map(r => r.month).sort().slice(-1)[0];
+    const axis = Array.from({ length: WINDOW },
+                            (_, i) => addMonths(addMonths(endMo, -(WINDOW - 1)), i));
+    const by = new Map(rows.map(r => [r.month, r]));
+    // eff_rent is the SUM over that month's leases, so the rate is per lease.
+    // A month with no new lease is a gap and stays null -- a zero would assert
+    // the building signed at $0 rather than signed nothing -- and spanGaps
+    // stays false so the line stops there instead of being drawn across it.
+    const perUnit = key => axis.map(mo => {
+      const r = by.get(mo);
+      return r && r.leases ? r[key] / r.leases : null;
+    });
+    const achieved = perUnit("eff_rent");
+    const prior    = perUnit("prev_eff_rent");
+    const counts   = axis.map(mo => (by.get(mo) || {}).leases || null);
+
+    const askNow     = rr && rr.occupied ? rr.market_rent_occupied / rr.occupied : null;
+    const inplaceNow = rr && rr.occupied ? rr.actual_rent_occupied / rr.occupied : null;
+    const flat = v => axis.map(() => v);
+
+    const ds = [
+      { label: "Achieved · new lease", data: achieved, borderColor: C.teal,
+        backgroundColor: C.teal, borderWidth: 2, pointRadius: 2, tension: 0.25,
+        spanGaps: false, order: 1 },
+      { label: "The rent it replaced", data: prior, borderColor: C.red,
+        backgroundColor: C.red, borderWidth: 1.5, pointRadius: 2, borderDash: [4, 3],
+        tension: 0.25, spanGaps: false, order: 2 },
+    ];
+    if (askNow != null) ds.push(
+      { label: "Asking now · snapshot", data: flat(askNow), borderColor: C.amber,
+        borderWidth: 1, borderDash: [2, 4], pointRadius: 0, order: 3 });
+    if (inplaceNow != null) ds.push(
+      { label: "In-place book now · snapshot", data: flat(inplaceNow),
+        borderColor: C.green, borderWidth: 1, borderDash: [2, 4], pointRadius: 0,
+        order: 4 });
+
+    new Chart(document.getElementById("rcTrend"), {
+      type: "line",
+      data: { labels: axis.map(shortMo), datasets: ds },
+      options: { maintainAspectRatio: false, responsive: true,
+        plugins: { legend: legendCfg, tooltip: { callbacks: {
+          title: c => shortMo(axis[c[0].dataIndex]),
+          label: c => {
+            const n = counts[c.dataIndex];
+            const base = c.dataset.label + ": " + usd(c.parsed.y);
+            // Only the two lease series are per-month; the flat pair is a
+            // snapshot and a lease count against it would be meaningless.
+            return c.datasetIndex <= 1 && n
+              ? base + " (" + n + " lease" + (n === 1 ? "" : "s") + ")" : base;
+          } } } },
+        scales: {
+          y: { grid: gridCfg, ticks: { callback: v => usd(v) } },
+          x: { grid: { display: false },
+               ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90,
+                        autoSkip: false } } } }
+    });
+
+    // Every stat is scoped to the chart's own window and says over how many
+    // months, the way the Trade-outs card does: the feed runs 26 months and
+    // the axis draws 24, so an unscoped count would not match the picture.
+    const win  = rows.filter(r => axis.indexOf(r.month) >= 0);
+    const nWin = win.reduce((t, r) => t + (r.leases || 0), 0);
+    const wtd  = key => nWin ? win.reduce((t, r) => t + r[key], 0) / nWin : null;
+    const t3   = (tro.windows || {}).t3 || null;
+    statBlock(document.getElementById("rtStats"), [
+      [usd0(askNow), "asking / unit now"],
+      [usd0(inplaceNow), "in-place / unit now"],
+      [t3 && t3.leases ? usd(t3.eff_rent / t3.leases) : "—", "achieved / unit, T3"],
+      [usd0(wtd("eff_rent")), "achieved / unit, " + win.length + " mo"],
+      [String(nWin), "new leases in window"],
+    ]);
+
+    // The newest month is partial whenever the export's window ends mid-month,
+    // which is what a report run on the 16th does. And a month carried by one
+    // or two leases is one signature, not a market -- both are named, because
+    // the line is drawn through them either way.
+    const lastDay = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7), 0))
+                           .toISOString().slice(0, 10);
+    const pe = tro.period_end || "";
+    const partial = pe && pe < lastDay(pe.slice(0, 7)) ? pe : null;
+    const thin = counts.map((n, i) => (n != null && n <= 2) ? shortMo(axis[i]) : null)
+                       .filter(Boolean);
+    document.getElementById("rtFoot").textContent =
+      "Achieved rent is the tradeout report's own effective rent — net of concessions "
+      + "on both the new lease and the one it replaced — over that month's lease count, "
+      + "so it is an average per unit and never a total. " + nWin + " new leases across "
+      + win.length + " months to " + (pe || "the newest file") + ". "
+      + (partial ? "The newest month is a part month: the export's window ends "
+                 + partial + ", so it holds only what signed by then. " : "")
+      + (thin.length ? "Months carried by one or two leases, where a single signature "
+                     + "sets the whole point: " + thin.join(", ") + ". " : "")
+      + "The two flat lines are a snapshot and not a series — the rent roll of "
+      + (rr && rr.as_of ? rr.as_of : "—") + " — so they say where the book sits today, "
+      + "not where it sat in each month behind them.";
+  })();
+
+  /* ---- asking rate by bedroom ---- */
+  (function byBedroom() {
+    const card = document.getElementById("cRateByBed");
+    const plans = (dir && dir.plans) || null;
+    if (!plans) { card.hidden = true; return; }
+
+    // Bedrooms belong to the PLAN, not the unit, so the roll-up is over plans
+    // weighted by how many units each holds. The directory carries a rent RANGE
+    // per plan and no rent total, so the bar IS that range -- min to max -- and
+    // not a mean the data cannot support; the units-weighted midpoint goes on
+    // the tooltip as the one figure to quote.
+    const g = new Map();
+    Object.values(plans).forEach(p => {
+      const b = p.bedrooms, lo = p.rent_min, hi = p.rent_max;
+      if (b == null || lo == null || hi == null) return;
+      const e = g.get(b) || { units: 0, plans: 0, lo: Infinity, hi: 0, midTot: 0 };
+      e.units += p.units || 0;
+      e.plans += 1;
+      e.lo = Math.min(e.lo, lo);
+      e.hi = Math.max(e.hi, hi);
+      e.midTot += ((lo + hi) / 2) * (p.units || 0);
+      g.set(b, e);
+    });
+    const beds = [...g.keys()].sort((a, b) => a - b);
+    if (!beds.length) { card.hidden = true; return; }
+
+    const mid = b => { const e = g.get(b); return e.units ? e.midTot / e.units : null; };
+    new Chart(document.getElementById("rcBed"), {
+      type: "bar",
+      data: { labels: beds.map(b => b + " bed"),
+        datasets: [{ label: "Asking range", data: beds.map(b => [g.get(b).lo, g.get(b).hi]),
+          backgroundColor: C.teal, borderColor: C.teal, borderWidth: 1,
+          borderSkipped: false, borderRadius: 2 }] },
+      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+        plugins: { legend: { display: false }, tooltip: { callbacks: {
+          label: c => {
+            const b = beds[c.dataIndex], e = g.get(b);
+            return usd(e.lo) + "–" + usd(e.hi) + " · " + usd(mid(b)) + " weighted midpoint"
+                 + " · " + e.units + " unit" + (e.units === 1 ? "" : "s")
+                 + " across " + e.plans + " plan" + (e.plans === 1 ? "" : "s");
+          } } } },
+        scales: {
+          x: { grid: gridCfg, ticks: { callback: v => usd(v) } },
+          y: { grid: { display: false } } } }
+    });
+
+    const totUnits = beds.reduce((t, b) => t + g.get(b).units, 0);
+    const dirWtd = totUnits
+      ? beds.reduce((t, b) => t + g.get(b).midTot, 0) / totUnits : null;
+    const rollAsk = rr && rr.units ? rr.market_rent_total / rr.units : null;
+    statBlock(document.getElementById("rbStats"),
+      beds.map(b => [usd0(mid(b)), b + " bed · " + g.get(b).units + " units"]));
+
+    // The directory's asking and the rent roll's market rent are two different
+    // tables, not one number read twice, and they disagree -- the roll's own
+    // market-rent column was revised up sharply between exports. Printing both
+    // bases beats picking one and calling it the asking rent.
+    const gap = (dirWtd && rollAsk) ? (rollAsk - dirWtd) / dirWtd : null;
+    document.getElementById("rbFoot").textContent =
+      "Bedrooms come from the unit directory, which describes the floorplan rather than "
+      + "the lease: " + totUnits + " units across " + beds.length + " bedroom types. The "
+      + "bar is each type's asking RANGE across its plans, because the directory carries "
+      + "a min and a max per plan and no total — a single mean would be invented. "
+      + (gap != null
+          ? "Two asking bases, and they do not agree: the directory reads "
+            + usd(dirWtd) + " per unit weighted across all " + totUnits + " units, the "
+            + "rent roll's market-rent column " + usd(rollAsk) + " — "
+            + (gap >= 0 ? "" : "−") + Math.abs(gap * 100).toFixed(1) + "% apart. The roll "
+            + "is the newer table and the one loss to lease is measured on; the "
+            + "directory is the building's fixed description. Neither is wrong, and "
+            + "this card draws the directory."
+          : "");
+  })();
 }
 
 // Left/Right arrows move between tabs, per the tablist keyboard convention.
