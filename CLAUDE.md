@@ -6,6 +6,18 @@ Static dashboard published with GitHub Pages, fed by a daily metrics pipeline.
 each one is waiting on. Read it after this file when picking up work — it is
 where state that used to arrive as a pasted handoff note now lives.
 
+`scripts/open_items_digest.py` turns that file into a PDF of what is still
+open, owner-blocked items first and the live-and-uncertain ones above those. It
+decides nothing itself — a row is closed when its Item cell is struck through,
+which is the file's own way of recording a close without renumbering, and the
+`Live and uncertain` column is read as written. `open_items_state.json` is the
+previous run, committed so a scheduled run in a fresh checkout can still say
+what moved; the PDF is gitignored and rebuilt every run.
+`scripts/test_open_items_digest.py` is the guard — 31 fixture-free checks, the
+load-bearing three (the positional item column, the close convention, escaping
+before formatting) verified by mutation. **Clear `__pycache__` between mutation
+runs**, the same trap the parser tests record.
+
 `LANDING_DRIVE_PACKET.md` is the working document for the `Landing (Drive)`
 tab: which export feeds which card, where in Drive it goes, and what has
 actually arrived. Its current-state section is generated — refresh it with
