@@ -451,7 +451,12 @@ def _cut(subject, buildings, listings, as_of, related):
                   for b in market_beds
                   if brief([x for x in prim_now if x["building"] == k], b)}}
              for k in primary),
-            key=lambda c: c["miles"]),
+            # Sorted on the NAME as well as the distance: `primary` is a set,
+            # so ties broke in whatever order it happened to iterate and two
+            # comps at the same distance swapped places between runs. That is a
+            # spurious diff in data/<slug>/comps.json on every pipeline run,
+            # which makes "did the comp set change?" unanswerable from a diff.
+            key=lambda c: (c["miles"], c["building"])),
         "subject_listings": {
             "current": len(sub_now),
             "oldest_days": max((_days(x["first_listed"], as_of)
