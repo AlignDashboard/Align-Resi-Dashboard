@@ -220,48 +220,130 @@ def md_to_html(s):
     return s
 
 
+# One stylesheet serves the PDF and the web page. The tokens below are the
+# light palette, which is what Chromium prints; the dark blocks only matter on
+# screen. Amber is the dashboard's own signal colour, kept here so a reader
+# moving between the two pages does not have to relearn what it means -- and
+# spent on one thing, the live-and-uncertain block.
+FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
+         "family=Archivo:wght@500;600;700&family=Source+Sans+3:wght@400;600&"
+         'family=JetBrains+Mono:wght@500;700&display=swap">')
+
 CSS = """
-@page { size: Letter; margin: 14mm 13mm 16mm 13mm; }
+:root {
+  --ground: #fbfbfc;      /* a neutral pulled a touch warm, toward the amber */
+  --panel:  #ffffff;
+  --ink:    #16181d;
+  --muted:  #62656f;
+  --rule:   #dcdde3;
+  --accent: #8a5d00;      /* amber, darkened until it reads on white */
+  --soft:   #fff7e8;      /* the live block's ground */
+  --softrule: #d9a72e;
+  --chip:   #f1f1f4;      /* inline code */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #15171b; --panel: #1c1f25; --ink: #e9eaee; --muted: #979ba6;
+    --rule: #2c3038; --accent: #e3a933; --soft: #241d10; --softrule: #8a6412;
+    --chip: #262a31;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #15171b; --panel: #1c1f25; --ink: #e9eaee; --muted: #979ba6;
+  --rule: #2c3038; --accent: #e3a933; --soft: #241d10; --softrule: #8a6412;
+  --chip: #262a31;
+}
+
 * { box-sizing: border-box; }
-body { font: 10.5pt/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif;
-       color: #1b1b1f; margin: 0; }
-h1 { font-size: 19pt; margin: 0 0 2px; letter-spacing: -.2px; }
-.sub { color: #6b6b76; font-size: 9pt; margin-bottom: 14px; }
-.sub b { color: #1b1b1f; }
-h2 { font-size: 12pt; margin: 20px 0 3px; padding-bottom: 3px;
-     border-bottom: 1.5px solid #1b1b1f; }
-h2 .n { color: #6b6b76; font-weight: normal; font-size: 9.5pt;
-        float: right; padding-top: 2px; }
-.blurb { color: #6b6b76; font-size: 8.5pt; margin: 0 0 8px; }
-.it { margin: 0 0 9px; padding-left: 46px; position: relative;
-      page-break-inside: avoid; }
-.id { position: absolute; left: 0; top: 0; font-weight: 700; font-size: 9pt;
-      letter-spacing: .3px; color: #8a6a00; }
-.it p { margin: 0 0 3px; }
-.meta { color: #6b6b76; font-size: 8.5pt; margin: 2px 0 0; }
-.meta b { color: #1b1b1f; font-weight: 600; }
-code { font: 8.8pt "SF Mono", Menlo, Consolas, monospace;
-       background: #f3f3f5; padding: 0 3px; border-radius: 2px; }
-del { color: #8c8c96; }
-.live { background: #fff8e6; border-left: 3px solid #c79000;
-        padding: 9px 11px 6px; margin: 0 0 14px; }
-.live .hd { font-weight: 700; font-size: 9.5pt; margin: 0 0 7px;
-            color: #8a6a00; text-transform: uppercase; letter-spacing: .5px; }
-.live .it { padding-left: 46px; }
-.moved { border: 1px solid #dcdce2; padding: 9px 11px; margin: 0 0 6px;
-         font-size: 9pt; }
-.moved .hd { font-weight: 700; margin-bottom: 4px; }
-.moved .row { color: #3d3d46; margin: 2px 0; }
-.moved .row b { font-weight: 700; }
-.none { color: #6b6b76; font-style: italic; }
-.foot { margin-top: 22px; padding-top: 7px; border-top: 1px solid #dcdce2;
-        color: #6b6b76; font-size: 8pt; }
-.cols { column-count: 2; column-gap: 16px; }
+body {
+  margin: 0; padding-block: 28px; padding-left: 16px; padding-right: 16px;
+  background: var(--ground); color: var(--ink);
+  font: 400 15px/1.5 "Source Sans 3", ui-sans-serif, system-ui, -apple-system,
+        "Segoe UI", Helvetica, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.wrap { max-width: 760px; margin: 0 auto; }
+
+h1 {
+  font: 700 26px/1.15 Archivo, ui-sans-serif, system-ui, Helvetica, Arial,
+        sans-serif;
+  margin: 0 0 6px; letter-spacing: -.4px; text-wrap: balance;
+}
+.sub { color: var(--muted); font-size: 13px; margin: 0 0 22px; }
+.sub b { color: var(--ink); font-weight: 600; }
+
+h2 {
+  font: 600 15px/1.2 Archivo, ui-sans-serif, system-ui, Helvetica, Arial,
+        sans-serif;
+  margin: 28px 0 4px; padding-bottom: 5px;
+  border-bottom: 1.5px solid var(--ink);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+}
+h2 .n { color: var(--muted); font-weight: 500; font-size: 12px;
+        white-space: nowrap; }
+
+/* An eyebrow, not a heading: it names which section of OPEN_ITEMS.md the rows
+   under it came from, which is the file's own answer to who is blocked. */
+.blurb {
+  color: var(--muted); font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; margin: 14px 0 7px;
+  font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-weight: 600;
+}
+
+/* The ID is an identifier, so it is set as one, in its own column. */
+.it { display: grid; grid-template-columns: 44px 1fr; gap: 0 12px;
+      margin: 0 0 11px; break-inside: avoid; }
+.id { font: 700 12px/1.7 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+      Consolas, monospace; color: var(--accent); letter-spacing: .02em; }
+.it p { margin: 0 0 4px; }
+.meta { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.meta b { color: var(--ink); font-weight: 600; }
+
+code { font: 500 12.5px/1 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+       Consolas, monospace; background: var(--chip); color: var(--ink);
+       padding: 1px 4px; border-radius: 3px; }
+del { color: var(--muted); }
+
+/* The one place colour is spent: the file's own flag for an item the page is
+   publishing against today. */
+.live { background: var(--soft); border-left: 3px solid var(--softrule);
+        padding: 14px 16px 6px; margin: 0 0 18px; }
+.live .hd {
+  font: 700 11px/1.3 Archivo, ui-sans-serif, system-ui, sans-serif;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--accent);
+  margin: 0 0 12px;
+}
+
+.moved { border: 1px solid var(--rule); background: var(--panel);
+         border-radius: 4px; padding: 12px 14px; margin: 0 0 18px;
+         font-size: 13.5px; }
+.moved .hd { font: 600 11px/1.3 Archivo, ui-sans-serif, system-ui, sans-serif;
+             text-transform: uppercase; letter-spacing: .08em;
+             color: var(--muted); margin: 0 0 6px; }
+.moved .row { margin: 3px 0; }
+.moved .row b { font-weight: 600; }
+
+.none { color: var(--muted); font-style: italic; }
+.foot { margin-top: 30px; padding-top: 10px; border-top: 1px solid var(--rule);
+        color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+
+@media print {
+  /* Chromium prints the light tokens above; this block is only page setup. */
+  @page { size: Letter; margin: 15mm 14mm 16mm; }
+  body { padding: 0; background: #fff; font-size: 10.5pt; }
+  .wrap { max-width: none; }
+  h1 { font-size: 19pt; }
+  h2 { margin-top: 20px; }
+  .live, .moved { break-inside: avoid; }
+}
 """
 
 
 def render_item(it, show_meta=True):
-    out = [f'<div class="it"><span class="id">{it["id"]}</span>',
+    # Two cells exactly: the id, then everything else. The meta line is a
+    # sibling of the item text inside the body cell -- as a direct child of
+    # the grid it lands in the 44px id column and wraps a word per line.
+    out = [f'<div class="it"><span class="id">{it["id"]}</span><div>',
            f'<p>{md_to_html(it["item"])}</p>']
     if show_meta:
         bits = []
@@ -271,11 +353,17 @@ def render_item(it, show_meta=True):
             bits.append(md_to_html(it["detail"]))
         if bits:
             out.append('<p class="meta">' + " &nbsp;·&nbsp; ".join(bits) + "</p>")
-    out.append("</div>")
+    out.append("</div></div>")
     return "".join(out)
 
 
-def build_html(items, prev):
+def build_html(items, prev, standalone=True):
+    """The digest as one HTML document.
+
+    `standalone` wraps it as a whole file, which is what Chromium prints. The
+    Artifact tool supplies its own doctype and head, so the web copy passes
+    False and the two stay one document rather than two that must agree.
+    """
     now = datetime.now().astimezone()
     open_items = [it for it in items if not it["closed"]]
     live = [it for it in open_items if is_live(it)]
@@ -283,8 +371,9 @@ def build_html(items, prev):
     rest = [it for it in open_items if not is_owner(it) and not is_live(it)]
     new, gone, first = changes(items, prev)
 
-    h = ['<!doctype html><meta charset="utf-8">',
-         f"<style>{CSS}</style>",
+    h = (['<!doctype html><meta charset="utf-8">'] if standalone else [])
+    h += ["<title>Align Open Items</title>", FONTS,
+         f"<style>{CSS}</style>", '<div class="wrap">',
          "<h1>Align Resi Dashboard — open items</h1>",
          # The two counts are not nested: an item can be live and still be
          # ours to fix (G3 is), so adding them would claim work is waiting on
@@ -360,6 +449,7 @@ def build_html(items, prev):
              "are answered or closed and are left out. &quot;Waiting on you&quot; "
              "is sections " + ", ".join(sorted(OWNER_SECTIONS)) +
              " plus " + ", ".join(sorted(OWNER_ITEMS)) + ".</div>")
+    h.append("</div>")
     return "".join(h)
 
 
@@ -388,6 +478,9 @@ def main():
     ap.add_argument("--out", default=OUT)
     ap.add_argument("--print", dest="stdout", action="store_true",
                     help="summarise to stdout and write no PDF")
+    ap.add_argument("--html", metavar="PATH",
+                    help="also write the page as HTML (the web copy; same "
+                         "document, minus the file wrapper)")
     ap.add_argument("--no-state", action="store_true",
                     help="do not record this run (so the next digest still "
                          "compares against the previous real one)")
@@ -418,6 +511,10 @@ def main():
         return
     path = to_pdf(build_html(items, prev), a.out)
     print(f"\nwrote {path} ({os.path.getsize(path):,} bytes)")
+    if a.html:
+        with open(a.html, "w", encoding="utf-8") as f:
+            f.write(build_html(items, prev, standalone=False))
+        print(f"wrote {a.html}")
     if not a.no_state:
         st = write_state(items)
         print(f"wrote {STATE}: {len(st['open'])} open, {len(st['closed'])} closed")
