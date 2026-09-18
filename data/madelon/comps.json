@@ -1084,15 +1084,6 @@
       }
     },
     {
-      "building": "The Oak",
-      "address": "55 Oak Street",
-      "year_built": 2021,
-      "units": 109,
-      "miles": 1.08,
-      "listings": 0,
-      "by_bed": {}
-    },
-    {
       "building": "NEMA",
       "address": "8 10th Street",
       "year_built": 2014,
@@ -1116,6 +1107,15 @@
           "median_sqft": 1376.0
         }
       }
+    },
+    {
+      "building": "The Oak",
+      "address": "55 Oak Street",
+      "year_built": 2021,
+      "units": 109,
+      "miles": 1.08,
+      "listings": 0,
+      "by_bed": {}
     },
     {
       "building": "100 Van Ness",
