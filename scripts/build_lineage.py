@@ -127,7 +127,7 @@ DRIVE_FLOWS = {
         "dashboard": [
             # Its T12 figures are the expense_ratio block's; since 2026-09-17
             # its line is the monthly ratio off monthly_pl, the same series the
-            # Landing (Drive) tab draws, so both tables belong on it.
+            # Landing tab draws, so both tables belong on it.
             {"card": "Expense Ratio", "tab": "Portfolio", "anchor": "cExpRatio",
              "primary": "t-expratio-*",
              "tables": ["t-expratio-*", "t-monthlypl-*"]},
@@ -135,23 +135,16 @@ DRIVE_FLOWS = {
             # stitched series the Operating Summary reads rather than typed in.
             {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",
              "primary": "t-exptrend", "tables": ["t-exptrend", "t-monthlypl-*"]},
-            {"card": "Operating Summary", "tab": "The Landing", "anchor": "cOpSummary",
-             "tables": ["t-monthlypl-*"]},
-            {"card": "Expense Deep Dive", "tab": "The Landing", "anchor": "cExpDeep",
-             "primary": "t-l-buckets",
-             "tables": ["t-buckets-*", "t-l-opps"]},
-            {"card": "Expense Load & NOI — controllable/door", "tab": "The Landing",
-             "anchor": "cNoi", "primary": "t-l-noi", "tables": ["t-buckets-*"]},
-            # The Drive-only tab. Same statement, same three cards, none of the
-            # workbook: the Landing tab overlays the analyst numbers on these,
-            # this one shows the statement on its own.
-            {"card": "Operating Summary", "tab": "Landing (Drive)",
+            # The Landing tab. A second, workbook-fed tab carried the same
+            # three cards with the analyst numbers overlaid until 2026-09-18;
+            # these show the statement on its own.
+            {"card": "Operating Summary", "tab": "Landing",
              "anchor": "cdOpSummary", "primary": "t-monthlypl-*",
              "tables": ["t-monthlypl-*"]},
-            {"card": "Expense Load & NOI", "tab": "Landing (Drive)",
+            {"card": "Expense Load & NOI", "tab": "Landing",
              "anchor": "cdNoi", "primary": "t-monthlypl-*",
              "tables": ["t-monthlypl-*", "t-buckets-*", "t-unitdir-*"]},
-            {"card": "Expense Deep Dive", "tab": "Landing (Drive)",
+            {"card": "Expense Deep Dive", "tab": "Landing",
              "anchor": "cdExpDeep", "primary": "t-buckets-*",
              "tables": ["t-buckets-*", "t-monthlypl-*"]},
             # The statement's own rental-income section. The analyst workbook's
@@ -160,10 +153,10 @@ DRIVE_FLOWS = {
             # so the card needs no rent roll and belongs on this tab. The
             # Landing tab's copy of the card still draws the workbook, and is
             # declared under analyst_workbook rather than here.
-            {"card": "Loss to Lease", "tab": "Landing (Drive)",
+            {"card": "Loss to Lease", "tab": "Landing",
              "anchor": "cdRentCapture", "primary": "t-rentcap-*",
              "tables": ["t-rentcap-*"]},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-expratio-*", "t-exptrend"],
@@ -215,7 +208,7 @@ DRIVE_FLOWS = {
         ],
         "dashboard": [
             # A tile in a row, like the budget's — no corner to hang a link in.
-            {"card": "Trade-out % tile", "tab": "Landing (Drive)",
+            {"card": "Trade-out % tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
             {"card": "KPI Scorecard — Trade-out %", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
@@ -270,7 +263,7 @@ DRIVE_FLOWS = {
             # The one cell this flow fills is a tile on the Drive-only tab: the
             # percentage, with the nominal dollars under it, since the published
             # cell splices the two and a tile cannot carry both at 20px.
-            {"card": "Budget variance tile", "tab": "Landing (Drive)",
+            {"card": "Budget variance tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
         ],
         "tables": ["t-budget-*", "t-sc-measured", "t-sc-arrivals"],
@@ -374,16 +367,16 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/rent_roll.json  (gitignored — unit level)"],
         "publishes": [{"file": "metrics.json", "key": "rent_roll"}],
         "dashboard": [
-            {"card": "Loss to Lease", "tab": "Landing (Drive)", "anchor": "cdRentCapture",
+            {"card": "Loss to Lease", "tab": "Landing", "anchor": "cdRentCapture",
              "primary": "t-rentroll-*", "tables": ["t-rentroll-*", "t-rollover-*"],
              "holds": "Loss to lease, occupancy and the rollover cohorts"},
-            {"card": "Rollover Schedule", "tab": "Landing (Drive)", "anchor": "cdRollover",
+            {"card": "Rollover Schedule", "tab": "Landing", "anchor": "cdRollover",
              "primary": "t-rollover-*", "tables": ["t-rollover-*"],
              "holds": "Lease expirations by month"},
-            {"card": "Largest Unit Gaps", "tab": "Landing (Drive)", "anchor": "cdGaps",
+            {"card": "Largest Unit Gaps", "tab": "Landing", "anchor": "cdGaps",
              "primary": "t-gaps-*", "tables": ["t-gaps-*", "t-unitdir-*"],
              "holds": "Top units by annual gap to market"},
-            {"card": "Unit Inventory", "tab": "Landing (Drive)", "anchor": "cdInventory",
+            {"card": "Unit Inventory", "tab": "Landing", "anchor": "cdInventory",
              "primary": "t-occupancy-*", "tables": ["t-occupancy-*", "t-unitdir-*"],
              "holds": "The leased/vacant split on the bedroom bars"},
         ],
@@ -433,14 +426,14 @@ DRIVE_FLOWS = {
             # The Drive-only tab shows the rate and the 30/60/90 split -- the
             # two cells this report fills. The per-unit aging behind them stops
             # in data/, so that tab has no aging chart of its own.
-            {"card": "Delinquency", "tab": "Landing (Drive)",
+            {"card": "Delinquency", "tab": "Landing",
              "anchor": "cdDelq", "primary": "t-sc-measured",
              "tables": ["t-sc-measured", "t-sc-arrivals"]},
             # The Drive-only tab's KPI grid came off 2026-09-15; Total
             # Deliquency is a tile there now, beside the card above it.
-            {"card": "Delinquency tile", "tab": "Landing (Drive)",
+            {"card": "Delinquency tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
@@ -506,16 +499,13 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard (all properties)", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
-            {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
-             "anchor": "cLandingScorecard", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
             # The Drive-only tab carried eight of this export's cells on a KPI
             # grid until 2026-09-15. Two of them are tiles there now -- Leased %
             # and Trade-out % -- and the other six are on the cards above,
             # unchanged.
-            {"card": "Leased % and Trade-out % tiles", "tab": "Landing (Drive)",
+            {"card": "Leased % and Trade-out % tiles", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
             {"card": "KPI Scorecard — Chorus", "tab": "Chorus",
              "anchor": "psc-chorus", "primary": "t-sc-measured",
@@ -526,10 +516,6 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard — 335 Third St", "tab": "335 Third St",
              "anchor": "psc-335-third-street", "primary": "t-sc-measured",
              "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
-            # A tile in a row, not a card: it has no corner to hang a link in,
-            # so it belongs on the flow page and not in the card index.
-            {"card": "Leased tile", "tab": "The Landing", "anchor": "lkpis",
-             "tile": True},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The widest feed on the page: it is the only one that says "
@@ -603,16 +589,13 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/unit_directory.json"],
         "publishes": [{"file": "metrics.json", "key": "unit_directory"}],
         "dashboard": [
-            {"card": "Largest Unit Gaps — beds and plan sq ft",
-             "tab": "The Landing", "anchor": "cGaps", "primary": "t-l-units",
-             "tables": ["t-unitdir-*"]},
             # On the Drive-only tab the directory is the whole card rather than
             # one join onto the workbook's unit list: floorplans, bedrooms,
             # square footage and the door count under controllable/door.
-            {"card": "Unit Inventory", "tab": "Landing (Drive)",
+            {"card": "Unit Inventory", "tab": "Landing",
              "anchor": "cdInventory", "primary": "t-unitdir-*",
              "tables": ["t-unitdir-*"]},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-l-units"],
@@ -672,7 +655,7 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/leasing_detail.json"],
         "publishes": [{"file": "metrics.json", "key": "leasing"}],
         "dashboard": [
-            {"card": "Trade-outs", "tab": "Landing (Drive)", "anchor": "cdTradeOuts",
+            {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
              "primary": "t-tradeouts-*", "tables": ["t-tradeouts-*", "t-renewals-*"],
              "holds": "New-lease trade-outs by month"},
         ],
@@ -710,7 +693,7 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/renewal_tracker.json"],
         "publishes": [{"file": "metrics.json", "key": "leasing"}],
         "dashboard": [
-            {"card": "Trade-outs", "tab": "Landing (Drive)", "anchor": "cdTradeOuts",
+            {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
              "primary": "t-renewals-*", "tables": ["t-renewals-*", "t-tradeouts-*"],
              "holds": "Renewal offers by month, and the month-to-month roster"},
         ],
@@ -798,7 +781,10 @@ OTHER_FLOWS = [
         ],
         "stores": [],
         "publishes": [
-            {"file": "landing.json", "key": "the whole Landing view"},
+            # Still written by extract_landing.py, still published, still on
+            # the data page as the t-l-* tables -- but no card has drawn it
+            # since the workbook-fed Landing tab came off on 2026-09-18.
+            {"file": "landing.json", "key": "the whole workbook extract (no card draws it)"},
             {"file": "scorecard.json", "key": "Loss to Lease %"},
             {"file": "scorecard.json", "key": "NOI Margin %"},
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
@@ -807,33 +793,22 @@ OTHER_FLOWS = [
             {"file": "scorecard.json", "key": "Split Between 30/60/90 (The Landing)"},
         ],
         "dashboard": [
-            {"card": "Loss to Lease", "tab": "The Landing", "anchor": "cRentCapture",
-             "tables": ["t-l-capture", "t-l-capture-ttm", "t-l-revcompare"]},
-            {"card": "Trade-outs", "tab": "The Landing", "anchor": "cTradeOuts",
-             "tables": ["t-l-leases", "t-l-offers", "t-l-lease-summary",
-                        "t-l-renewact", "t-l-bands"]},
-            {"card": "Rollover Schedule", "tab": "The Landing", "anchor": "cRollover",
-             "tables": ["t-l-rollover"]},
-            {"card": "Expense Load & NOI", "tab": "The Landing", "anchor": "cNoi",
-             "tables": ["t-l-noi", "t-l-noi-ttm", "t-l-tax"]},
-            {"card": "Largest Unit Gaps", "tab": "The Landing", "anchor": "cGaps",
-             "tables": ["t-l-units", "t-l-hold-units", "t-l-hold-summary",
-                        "t-l-inputs", "t-l-meta"]},
-            {"card": "Delinquency", "tab": "The Landing", "anchor": "cDelinquency",
-             "tables": ["t-l-delq-aging", "t-l-delq-top", "t-l-delq-summary",
-                        "t-l-delq-531"]},
-            {"card": "Insights Scorecard", "tab": "The Landing", "anchor": "cInsights",
-             "tables": ["t-l-insights", "t-l-flags"]},
-            {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
-             "anchor": "cLandingScorecard", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix"]},
+            # Eight cards on a workbook-fed Landing tab until 2026-09-18.
+            # What the workbook still puts on the dashboard is the scorecard
+            # cells it fills through populate_scorecard --from-landing; the
+            # rest of landing.json is written, published and on the data page,
+            # but nothing draws it.
+            {"card": "KPI Scorecard — four measured cells", "tab": "Scorecard",
+             "anchor": "cScorecard", "primary": "t-sc-measured",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-matrix"]},
         ],
         "tables": ["t-l-capture", "t-l-noi", "t-l-renewal", "t-l-units",
                    "t-l-delq-aging", "t-l-rollover", "t-l-insights", "t-l-meta"],
         "note": "The workbook is fed by the same Yardi reports the Drive "
-                "pipeline collects — pasted in rather than fetched. It is why "
-                "The Landing has a full view while the rent roll has never "
-                "reached the pipeline.",
+                "pipeline collects — pasted in rather than fetched. It carried "
+                "the whole Landing view until the pipeline could draw the "
+                "building on its own; what is left is the four scorecard cells "
+                "no Drive report answers yet.",
         "evidence_kind": "landing",
         "sub_sources": [
             {"tab": "Source CY25 / Source Aug25-Jul26", "report": "12-month accrual statement",
