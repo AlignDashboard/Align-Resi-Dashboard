@@ -352,7 +352,29 @@ it was right.
 
 It can now. The Landing's rent roll of 2026-09-11 carries a market rent table
 **9.7% above what the submarket supports** — $176,953 a month, $2.12M a year —
-and the same file dates the change to between 2026-08-25 and 2026-09-11.
+and the same file dates the step to between 2026-08-25 and 2026-09-11.
+
+**That step was intended** (owner, 2026-09-18), and more like it are expected
+over the following months. So the tab is not an audit finding, and its prose
+does not read as one: it measures how far ahead of its submarket a deliberately
+aggressive table sits, and — through days on market and concessions — whether
+the market is paying it. Two consequences are worth holding on to:
+
+- **A moving table needs a moving reference.** The comp file is one vintage. A
+  table that steps again while the comp set stays at 2026-09-15 reports a gap
+  that is partly just a stale reference, so this feed wants a regular export
+  cadence rather than the single drop it has. Nothing in the pipeline can tell
+  the two apart, which is why the `One vintage` line in the tab's own limits
+  block matters more than it reads.
+- **The premium baseline will eventually absorb the policy.** `premium.median`
+  is taken across every quarter in the file, and a building that now runs
+  20–30% over its ring by design will, given enough quarters, pull that median
+  up — and the comp-implied figure with it, shrinking the reported gap while
+  the building moves *further* above the market. A median over fourteen
+  quarters takes years to flip, so this is a slow drift rather than a live
+  problem, but it is the one way this tab could quietly stop reporting the
+  thing it was built to report. The footnote's own trailing-run detector is
+  what would show it first.
 
 ### Four readings of one number
 
@@ -414,7 +436,9 @@ the build-up is careful about:
 
 Restated on a comp-supported market rent, the published **loss to lease falls
 from 36.5% to 30.4%** — still far above the band's 10% ceiling, so this does not
-answer A8's band question, but it moves the number A8 is arguing about.
+answer A8's band question, but it moves the number A8 is arguing about. And with
+further steps expected, that KPI climbs with each one: its denominator is now a
+pricing position rather than a measurement, which is the live half of A14.
 
 ### The market's own answer, which agrees
 
