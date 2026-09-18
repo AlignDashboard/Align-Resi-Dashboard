@@ -5895,8 +5895,8 @@ function mcVerdict(p) {
         : "")
     + (agree.length
         ? "Note which figures agree: the " + agree.map(s => s.label).join(" and the ")
-          + " sit within 3% of what the comps support, so it is the rent roll alone "
-          + "that is out — and they are dated "
+          + " sit within 3% of what the comps support, so the step sits in the "
+          + "rent roll alone — and they are dated "
           + agree.map(s => s.as_of || s.month).join(" and ")
           + ", which puts the change after them rather than anywhere in the past year. "
         : "")
@@ -6234,8 +6234,12 @@ async function loadComps() {
     + "question no other feed can: the market rent column in the rent roll is set "
     + "by the property team, it is the denominator of loss to lease and of the "
     + "rent-capture series on the two Landing tabs, and nothing else in the "
-    + "pipeline can tell whether it is right. Align's own buildings are excluded "
-    + "from every comp set.";
+    + "pipeline can measure it against the market it names. The Landing's table "
+    + "is deliberately ahead of that market \u2014 the step this tab first "
+    + "measured was confirmed as intended on 2026-09-18, with more expected \u2014 "
+    + "so what is reported here is how far ahead it sits and whether the market "
+    + "is paying it, not whether someone made a mistake. Align's own buildings "
+    + "are excluded from every comp set.";
 
   const sel = document.getElementById("mcSelect");
   sel.textContent = "";
