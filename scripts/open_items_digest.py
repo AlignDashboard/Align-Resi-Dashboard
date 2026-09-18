@@ -21,12 +21,19 @@ Nothing here decides what is open. The file's own conventions do:
 
 Usage:
     python scripts/open_items_digest.py                  # write the PDF
+    python scripts/open_items_digest.py --html /tmp/d.html   # and the web copy
     python scripts/open_items_digest.py --print          # to stdout, no PDF
     python scripts/open_items_digest.py --no-state       # don't record the run
 
 The state file is what lets tomorrow's digest say what changed. It is committed
 for that reason: a scheduled run gets a fresh checkout, so an uncommitted state
 file would make every morning look like the first one.
+
+A 6am routine runs this daily, sends the PDF and republishes the web copy to
+one fixed URL -- https://claude.ai/artifact/DMKnbsK1C4uPGijQaZV1VK -- so the
+link keeps working while the contents move. That republish must always pass
+that url; publishing without it makes a second artifact and the constant link
+is the whole point of it.
 """
 
 import argparse

@@ -13,7 +13,10 @@ which is the file's own way of recording a close without renumbering, and the
 `Live and uncertain` column is read as written. `open_items_state.json` is the
 previous run, committed so a scheduled run in a fresh checkout can still say
 what moved; the PDF is gitignored and rebuilt every run.
-`scripts/test_open_items_digest.py` is the guard — 31 fixture-free checks, the
+`--html` writes the same document without the file wrapper, for the web copy;
+a 6am routine republishes that to one fixed URL so the link survives while the
+contents move, and it must always publish with that url rather than creating a
+second artifact. `scripts/test_open_items_digest.py` is the guard — 31 fixture-free checks, the
 load-bearing three (the positional item column, the close convention, escaping
 before formatting) verified by mutation. **Clear `__pycache__` between mutation
 runs**, the same trap the parser tests record.
