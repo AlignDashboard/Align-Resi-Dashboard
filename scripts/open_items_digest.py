@@ -364,12 +364,17 @@ def render_item(it, show_meta=True):
     return "".join(out)
 
 
-def build_html(items, prev, standalone=True):
+def build_html(items, prev, standalone=True, source_as_of=None):
     """The digest as one HTML document.
 
     `standalone` wraps it as a whole file, which is what Chromium prints. The
     Artifact tool supplies its own doctype and head, so the web copy passes
     False and the two stay one document rather than two that must agree.
+
+    `source_as_of` is the date the parsed file claims, passed in rather than
+    re-read here: reading it again would take it from OPEN_ITEMS.md whatever
+    items were handed over, so the header could date a page from a file it did
+    not render. That was live and invisible until the two dates diverged.
     """
     now = datetime.now().astimezone()
     open_items = [it for it in items if not it["closed"]]
@@ -389,7 +394,8 @@ def build_html(items, prev, standalone=True):
          f"<b>{len(open_items)}</b> open &nbsp;·&nbsp; "
          f"<b>{sum(1 for it in open_items if is_owner(it))}</b> waiting on you "
          f"&nbsp;·&nbsp; <b>{len(live)}</b> live and uncertain "
-         f"&nbsp;·&nbsp; OPEN_ITEMS.md as of {as_of() or 'unknown'}</div>"]
+         f"&nbsp;·&nbsp; OPEN_ITEMS.md as of "
+         f"{source_as_of or 'unknown'}</div>"]
 
     # What moved. First on the page after the header, because on a digest read
     # every morning the delta is the part that is not yesterday's.
@@ -516,11 +522,11 @@ def main():
 
     if a.stdout:
         return
-    path = to_pdf(build_html(items, prev), a.out)
+    path = to_pdf(build_html(items, prev, source_as_of=as_of()), a.out)
     print(f"\nwrote {path} ({os.path.getsize(path):,} bytes)")
     if a.html:
         with open(a.html, "w", encoding="utf-8") as f:
-            f.write(build_html(items, prev, standalone=False))
+            f.write(build_html(items, prev, standalone=False, source_as_of=as_of()))
         print(f"wrote {a.html}")
     if not a.no_state:
         st = write_state(items)

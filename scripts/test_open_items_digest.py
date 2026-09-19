@@ -135,7 +135,7 @@ def main():
     check("bold, code and strike still render",
           D.md_to_html("**b** `c` ~~d~~")
           == "<strong>b</strong> <code>c</code> <del>d</del>")
-    html = D.build_html(items, prev)
+    html = D.build_html(items, prev, source_as_of=D.as_of(path))
     check("a live item is rendered", "A2" in html)
     check("a closed item is not rendered", "Old question" not in html)
     check("the live block leads the page",
@@ -143,8 +143,14 @@ def main():
     check("the two counts are not added together",
           "5</b> waiting on you" not in html and "4</b> waiting on you" in html,
           "owner=4 (A2,A3,E1,G6) and live=1 (A2) overlap")
-    check("the source's own as-of date is quoted, not today's",
-          "2026-09-16" in D.build_html(D.parse(path), prev))
+    # The date must come from the file that was PARSED, not from whichever
+    # file as_of() would find. These two differ now -- the real OPEN_ITEMS.md
+    # has moved past the fixture's 2026-09-16 -- which is what caught the
+    # header dating a page from a file it had not rendered.
+    check("the as-of date is the parsed file's, not the real file's",
+          "2026-09-16" in D.build_html(D.parse(path), prev,
+                                       source_as_of=D.as_of(path))
+          and D.as_of() != "2026-09-16")
 
     print("\nthe real file")
     real = D.parse()
