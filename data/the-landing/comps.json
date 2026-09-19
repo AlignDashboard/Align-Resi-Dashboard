@@ -1186,8 +1186,8 @@
   "market": "San Francisco-Oakland-Hayward, CA",
   "properties_in_file": 36,
   "listings_in_file": 6538,
-  "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-  "landed_at": "2026-09-18T00:29:41Z",
+  "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+  "landed_at": "2026-09-18T00:29:40.857Z",
   "checks": [
     {
       "check": "every listed building is described in 'Property Data'",
