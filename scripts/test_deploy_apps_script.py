@@ -76,6 +76,23 @@ def run_deploy(files, *, argv=("deploy",), source=None):
     return calls, code
 
 
+def raise_http(code, body):
+    """Drive the REAL _request against a urlopen that fails with `body`."""
+    import io
+    import urllib.error
+
+    def boom(req):
+        raise urllib.error.HTTPError(dep.TOKEN_URL, code, "err", {},
+                                     io.BytesIO(body.encode()))
+
+    real_urlopen = dep.urllib.request.urlopen
+    dep.urllib.request.urlopen = boom
+    try:
+        dep._request(dep.TOKEN_URL, method="POST", form={"grant_type": "refresh_token"})
+    finally:
+        dep.urllib.request.urlopen = real_urlopen
+
+
 def main():
     import os
     os.chdir(ROOT)
@@ -144,6 +161,22 @@ def main():
     put = next((c for c in calls if c["method"] == "PUT"), None)
     names = {f["name"] for f in (put or {"data": {"files": []}})["data"]["files"]}
     check("a project with no Code file gets one added", code == 0 and names == {"appsscript", "Code"})
+
+    print("\n5. a dead refresh token is explained, not just reported")
+    for label, body, wanted in [
+        ("invalid_rapt (a Workspace reauth policy)",
+         '{"error": "invalid_grant", "error_subtype": "invalid_rapt"}', True),
+        ("a revoked or rotated token",
+         '{"error": "invalid_grant", "error_description": "Token has been expired or revoked."}', True),
+        ("an unrelated API error", '{"error": {"message": "API not enabled"}}', False),
+    ]:
+        try:
+            raise_http(400 if wanted else 403, body)
+            check(f"{label}: raised", False)
+        except SystemExit as exc:
+            said = "clasp login" in str(exc)
+            check(f"{label}: {'says how to fix it' if wanted else 'left alone'}",
+                  said is wanted and body[:20] in str(exc))
 
     failed = [label for label, ok in CHECKS if not ok]
     print()

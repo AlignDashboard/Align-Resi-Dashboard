@@ -202,15 +202,15 @@
     },
     {
       "week_ending": "2026-09-20",
-      "source_file": "2026-09-16 09.14.2026- 09.20.2026- Chorus - Daily Report (1).xlsx",
-      "landed_at": "2026-09-17T01:28:30.591Z",
+      "source_file": "2026-09-17 09.14.2026- 09.20.2026- Chorus - Daily Report (2).xlsx",
+      "landed_at": "2026-09-18T02:28:30.617Z",
       "totals": {
-        "leases": 3,
-        "lease_rent": 12612,
-        "prior_rent": 10953,
-        "tradeout_amount": 1659,
-        "tradeout_pct_mean": 0.151715,
-        "sqft": 1804,
+        "leases": 4,
+        "lease_rent": 17167,
+        "prior_rent": 14898,
+        "tradeout_amount": 2269,
+        "tradeout_pct_mean": 0.152443,
+        "sqft": 2314,
         "concession": 0
       },
       "leases": [
@@ -258,14 +258,29 @@
           "net_rent": 4462,
           "move_in": "2026-11-13",
           "term": "16"
+        },
+        {
+          "unit": "1611",
+          "unit_type": null,
+          "floor_plan": "chs1G",
+          "beds_baths": "0x1",
+          "sqft": 510,
+          "lease_rent": 4555,
+          "prior_rent": 3945,
+          "tradeout_amount": 610,
+          "tradeout_pct": 0.154626,
+          "concession": 0,
+          "net_rent": 4555,
+          "move_in": "2026-11-10",
+          "term": "12"
         }
       ],
       "checks": [
         {
           "check": "every lease reconciles to its own trade-out",
           "ok": true,
-          "clean": 3,
-          "leases": 3
+          "clean": 4,
+          "leases": 4
         },
         {
           "check": "week-ending date found",
