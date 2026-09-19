@@ -132,7 +132,7 @@ em { color: #555; }
 
 html = f"""<!doctype html>
 <html><head><meta charset="utf-8">
-<title>The Landing (Drive) — report packet</title>
+<title>The Landing — report packet</title>
 <style>{STYLE}</style></head>
 <body>
 <div class="stamp">Generated {generated} from LANDING_DRIVE_PACKET.md ·

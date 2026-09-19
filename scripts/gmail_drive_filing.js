@@ -127,6 +127,13 @@ const ROUTING_RULES = [
   // /tradeout/ is unique across this table; it sits above the leasing rules
   // anyway so a future /leasereport/ cannot claim it first.
   { folder: 'Historical Tradeout Reports', patterns: [/tradeout/, /leasetradeout/] },
+  // The HelloData market-comp export — the only report here about the market
+  // rather than about an Align building. It arrives as a PAIR ('… - Simple - …'
+  // and '… - Full - …'), and both belong in this folder: the pipeline reads the
+  // first and says in the log why it does not read the second. Above the
+  // leasing rules because a comp file's name carries a submarket list that can
+  // mention anything.
+  { folder: 'Comps',                      patterns: [/hellodata/, /rentcomp/, /marketsurvey/, /comps/] },
   { folder: 'Renewal Tracker',            patterns: [/renewaltracker/, /renewalssince/, /renewalworkbook/, /renewal/] },
   { folder: 'Prospect Reports',           patterns: [/prospect/, /applicantreport/] },
   { folder: 'Daily Leasing Reports',      patterns: [/dailyreport/] },

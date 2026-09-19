@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report the freshness of every feed behind the `Landing (Drive)` tab.
+"""Report the freshness of every feed behind the `Landing` tab.
 
 LANDING_DRIVE_PACKET.md carries the standing pull list — which export, which
 Drive folder, what the filer matches on. This script answers the other half:
@@ -205,7 +205,7 @@ if args.write:
 elif args.markdown:
     print(table())
 else:
-    where = "Landing (Drive)" if args.slug == SLUG else args.slug
+    where = "Landing" if args.slug == SLUG else args.slug
     print(f"{where} feed state — {today.isoformat()}\n")
     w = max(len(r[0]) for r in rows)
     for label, cover, landed, days, cadence, source, v in rows:
