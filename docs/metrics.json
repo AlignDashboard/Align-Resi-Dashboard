@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-18T22:55:54.758893+00:00",
+    "generated_at": "2026-09-19T19:41:18.838109+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -2913,8 +2913,8 @@
         "new_leases": {
           "weeks": 4,
           "as_of": "2026-09-20",
-          "landed_at": "2026-09-18T01:33:08.921Z",
-          "source_file": "2026-09-17 Daily Report- Week Ending 9.20.26.xlsx",
+          "landed_at": "2026-09-19T01:28:30.722Z",
+          "source_file": "2026-09-18 Daily Report- Week Ending 9.20.26.xlsx",
           "months": [
             {
               "month": "2026-08",
@@ -3432,20 +3432,20 @@
         "new_leases": {
           "weeks": 4,
           "as_of": "2026-09-20",
-          "landed_at": "2026-09-18T02:28:30.617Z",
-          "source_file": "2026-09-17 09.14.2026- 09.20.2026- Chorus - Daily Report (2).xlsx",
+          "landed_at": "2026-09-19T01:28:33.171Z",
+          "source_file": "2026-09-18 09.14.2026- 09.20.2026- Chorus - Daily Report (3).xlsx",
           "months": [
             {
               "month": "2026-09",
-              "leases": 9,
-              "lease_rent": 50807.0,
-              "prior_rent": 40530.0,
-              "mean_tradeout": 0.24622,
-              "wtd_tradeout": 0.253565
+              "leases": 10,
+              "lease_rent": 59379.0,
+              "prior_rent": 47746.0,
+              "mean_tradeout": 0.240389,
+              "wtd_tradeout": 0.243643
             }
           ],
-          "leases": 9,
-          "mean_tradeout": 0.24622
+          "leases": 10,
+          "mean_tradeout": 0.240389
         },
         "renewals": {
           "as_of": "2026-11",
@@ -5049,7 +5049,7 @@
             "prev_eff_rent": 64043.0,
             "tradeout_amount": 11984.0,
             "pct": 0.187124,
-            "mean_pct": 0.206062
+            "mean_pct": 0.206063
           },
           {
             "month": "2025-06",
@@ -6390,8 +6390,8 @@
         "market": "San Francisco-Oakland-Hayward, CA",
         "properties_in_file": 36,
         "listings_in_file": 6538,
-        "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": "2026-09-18T00:29:41Z",
+        "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+        "landed_at": "2026-09-18T00:29:40.857Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -7884,8 +7884,8 @@
         "market": "San Francisco-Oakland-Hayward, CA",
         "properties_in_file": 36,
         "listings_in_file": 6538,
-        "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": "2026-09-18T00:29:41Z",
+        "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+        "landed_at": "2026-09-18T00:29:40.857Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -9417,8 +9417,8 @@
         "market": "San Francisco-Oakland-Hayward, CA",
         "properties_in_file": 36,
         "listings_in_file": 6538,
-        "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": "2026-09-18T00:29:41Z",
+        "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+        "landed_at": "2026-09-18T00:29:40.857Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",

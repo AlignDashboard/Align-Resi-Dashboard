@@ -371,7 +371,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-18T23:11:35.871638+00:00",
+  "generated_at": "2026-09-19T19:41:19.121468+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1133,24 +1133,24 @@
      "property": "chorus",
      "file": "data/chorus/comps.json",
      "as_of": "2026-09-15",
-     "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-09-18T00:29:41Z",
+     "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:40.857Z",
      "detail": null
     },
     {
      "property": "madelon",
      "file": "data/madelon/comps.json",
      "as_of": "2026-09-15",
-     "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-09-18T00:29:41Z",
+     "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:40.857Z",
      "detail": null
     },
     {
      "property": "the-landing",
      "file": "data/the-landing/comps.json",
      "as_of": "2026-09-15",
-     "source_file": "2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-09-18T00:29:41Z",
+     "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:40.857Z",
      "detail": null
     }
    ],
@@ -2277,7 +2277,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-18T22:55:54.758893+00:00",
+     "landed_at": "2026-09-19T19:41:18.838109+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
