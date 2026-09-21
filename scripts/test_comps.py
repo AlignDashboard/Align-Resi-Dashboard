@@ -41,7 +41,9 @@ export is a licensed vendor dataset and is gitignored along with every other
 
 Run: python scripts/test_comps.py
 """
+import json
 import os
+import pathlib
 import shutil
 import sys
 import tempfile
@@ -390,6 +392,48 @@ def main():
            (no_roll or {}).get("label") == "Unit directory", no_roll)
         ok("...with no restated loss to lease, which needs the roll",
            "ltl_restated" not in (no_roll or {}), no_roll)
+
+        print("\nthe store keeps the newest VINTAGE, not the newest arrival")
+        # These two are not the same thing in this folder and the gap is not
+        # small: a copy that landed 2026-09-21 carries an as-of of 2026-08-05,
+        # six weeks behind one that landed three days earlier. Every vintage on
+        # file parses on every run, in whatever order the fetch wrote them, so
+        # "whichever ran last" would publish a different month of the market
+        # depending on nothing at all.
+        was, bm.DATA = bm.DATA, pathlib.Path(tmp) / "data"
+        try:
+            prop = {"slug": "subject", "name": "The Landing"}
+            newer = {"sections": [dict(sec, as_of="2026-09-20")],
+                     "source_file": "landed-18th.xlsx"}
+            older = {"sections": [dict(sec, as_of="2026-08-05")],
+                     "source_file": "landed-21st.xlsx"}
+
+            fp = bm.store_comps(prop, newer)
+            bm.store_comps(prop, older)
+            kept = json.load(open(fp))
+            ok("a later arrival carrying an older vintage does not displace it",
+               (kept["as_of"], kept["source_file"]) == ("2026-09-20",
+                                                        "landed-18th.xlsx"),
+               (kept["as_of"], kept["source_file"]))
+            ok("...and the rejected vintage is still recorded",
+               kept["vintages"] == ["2026-08-05", "2026-09-20"], kept["vintages"])
+
+            shutil.rmtree(bm.DATA, ignore_errors=True)
+            bm.store_comps(prop, older)
+            bm.store_comps(prop, newer)
+            kept = json.load(open(fp))
+            ok("a genuinely newer vintage does displace the older one",
+               (kept["as_of"], kept["source_file"]) == ("2026-09-20",
+                                                        "landed-18th.xlsx"),
+               (kept["as_of"], kept["source_file"]))
+
+            bm.store_comps(prop, newer)
+            bm.store_comps(prop, older)
+            ok("re-reading the same folder every run adds no vintages",
+               json.load(open(fp))["vintages"] == ["2026-08-05", "2026-09-20"],
+               json.load(open(fp))["vintages"])
+        finally:
+            bm.DATA = was
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
