@@ -1061,7 +1061,13 @@ def process_manifest():
         print("[info] no manifest; rebuilding metrics from existing data/ only")
         return
     manifest = json.load(open(mpath))
-    _, code_to_prop = load_properties()
+    all_props, code_to_prop = load_properties()
+    props_by_slug = {p["slug"]: p for p in all_props}
+    # report_map entries by report_type, for the per-report settings the
+    # manifest does not carry (today: which property an export that names none
+    # belongs to -- see the unattributed branch below).
+    rmap_by_type = {e.get("report_type"): e
+                    for e in json.load(open("config/report_map.json"))["subfolders"]}
 
     # Deterministic order: sort by filename so date-prefixed files process
     # oldest-to-newest and the newest file wins any same-period collision.
@@ -1122,14 +1128,30 @@ def process_manifest():
                 prop = code_to_prop.get(code.lower()) if code else None
                 if not prop:
                     if parsed.get("unattributed"):
-                        # the file itself names no property (the concession
-                        # burn-off says only "For Selected Properties"), so
-                        # this is an export-settings problem, not a config one
-                        print(f"[warn] {item['name']} names no property "
-                              f"({parsed.get('coverage')!r}) -- parsed and tied "
-                              f"out, but stored nowhere until the owner settles "
-                              f"which property the export covers")
-                        continue
+                        # The file names no property ("For Selected Properties"
+                        # and nothing else), so the report map may name the
+                        # owner instead -- the concession burn-off is Palma's,
+                        # settled by the owner 2026-09-21 (A6).
+                        #
+                        # Only ever reached when the file itself is silent: a
+                        # section that names its building routes by that name
+                        # above, so this cannot overrule an export that says
+                        # who it is about. That distinction is the whole reason
+                        # attribution was refused rather than guessed for six
+                        # weeks -- filing one building's concessions under
+                        # another is not a thing a log line makes safe.
+                        fallback = (rmap_by_type.get(item["report_type"])
+                                    or {}).get("unattributed_property")
+                        prop = props_by_slug.get(fallback) if fallback else None
+                        if not prop:
+                            print(f"[warn] {item['name']} names no property "
+                                  f"({parsed.get('coverage')!r}) -- parsed and tied "
+                                  f"out, but stored nowhere until the owner settles "
+                                  f"which property the export covers")
+                            continue
+                        print(f"[attributed] {item['name']} names no property "
+                              f"({parsed.get('coverage')!r}); report_map assigns it "
+                              f"to {prop['name']}")
                     print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                           f"add it to config/properties.json; skipping")
                     continue

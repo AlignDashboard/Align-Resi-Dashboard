@@ -3964,17 +3964,21 @@ const SCD_FEED_ROWS = [
   { flow: "daily_leasing", fills: "Trade-outs — the new-lease series" },
   { flow: "renewal_tracker", fills: "Trade-outs — the renewal series and the MTM count" },
   { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door",
-    // The one feed on this tab whose refresh route is not open today. Building
-    // Info sits in the Drive library rather than the drop tree, on purpose, and
-    // fetch_drive only scans that tree when GDRIVE_REFERENCE_FOLDER_ID is set --
-    // it is not, so the entry is skipped with a log line every run
-    // (fetch_drive.py:142, 232). The numbers below are real and Drive-derived;
-    // they just cannot move yet, which on a tab that promises only refreshable
-    // figures has to be said out loud rather than left to the arrival date.
-    blocked: "its Drive folder is in the reference library, which the pipeline is not "
-           + "scanning yet — GDRIVE_REFERENCE_FOLDER_ID is unset, so a fresh export "
-           + "dropped there is skipped with a log line and these figures stay on the "
-           + "file named above (open item C5)" },
+    // The one feed on this tab that does not refresh -- and, since the owner
+    // settled C5 on 2026-09-21, not because anything is blocking it. The unit
+    // directory is a legacy export that will never change: it is the buildings'
+    // fixed description (floorplan, square footage, bedrooms, baths), and
+    // those do not move. So GDRIVE_REFERENCE_FOLDER_ID being unset costs
+    // nothing here; there is no fresher file waiting to be scanned.
+    //
+    // Still said out loud, because this tab promises figures that would move
+    // on the next pipeline run and these would not. The difference between "is
+    // stale" and "is final" is the whole content of the sentence: a reader who
+    // sees an old date and no explanation assumes the first.
+    blocked: "it is a legacy export — the buildings' fixed description, which "
+           + "will not be re-issued (owner, 2026-09-21). The date below is the "
+           + "file's, not a sign of a feed that has stopped: these figures are "
+           + "final rather than stale" },
 ];
 const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).blocked || "";
 
@@ -5146,12 +5150,10 @@ async function loadLandingDrive() {
       + " things The Landing shows that no Drive export can refresh today. "
       + oneReport.charAt(0).toUpperCase() + oneReport.slice(1)
       + (blocked.length
-          ? " One caveat on the left-hand table, and it is the sharpest thing on this "
-            + "page: " + spell(blocked.length) + " of these "
-            + spell(SCD_FEED_ROWS.length) + " feeds cannot actually be refreshed right "
-            + "now — " + blocked.join("; ") + ". Everything it fills is genuinely "
-            + "Drive-derived and ties out, so it belongs here, but it is frozen until "
-            + "that is fixed, and a stale arrival date is the only sign."
+          ? " One note on the left-hand table: " + spell(blocked.length) + " of these "
+            + spell(SCD_FEED_ROWS.length) + " feeds will not refresh — "
+            + blocked.join("; ") + ". Everything it fills is genuinely Drive-derived "
+            + "and ties out, so it belongs here."
           : "");
   })();
 

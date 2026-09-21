@@ -56,7 +56,9 @@
         "*concessionburnoff*",
         "*concession_burnoff*"
       ],
-      "status": "active"
+      "status": "active",
+      "unattributed_property": "palma",
+      "_comment": "The export says only 'For Selected Properties' and names no building in any heading. Owner settled 2026-09-21 that it covers Palma (A6). A file that DOES name its properties still routes by those names -- this is the fallback for one that names none, not an override."
     },
     {
       "drive_folder": "AIRM - Yardi Rev Management",
