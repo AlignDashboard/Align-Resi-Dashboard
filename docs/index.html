@@ -3933,6 +3933,12 @@ const SCD_DRIVE_FEEDS = [
 // and by the delinquency card, which has to tell "no report has ever arrived"
 // apart from "one has, and something else owns the cell today".
 function scdFeedIsDrive(feed, meas) {
+  // A caller naming a family this list no longer carries gets `false`, not a
+  // crash. On 2026-09-21 the delinquency cells moved from the unprefixed family
+  // to delq_ and two lookups here still asked for "", so this read .prefix off
+  // undefined and threw -- taking out the Delinquency card and both cards after
+  // it. A renamed family is a card with nothing to say, not a broken page.
+  if (!feed) return false;
   const listed = meas[feed.prefix + "kpis"];
   if (!listed || !listed.length) return false;
   return feed.fromDrive ? !!feed.fromDrive(prefixed(meas, feed.prefix)) : true;
@@ -3958,7 +3964,8 @@ const SCD_FEED_ROWS = [
   // What this one fills depends on which populate_scorecard run wrote last, so
   // it is asked rather than asserted.
   { flow: "delinquency", fills: "Delinquency card and tile",
-    fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
+    fillsIf: { prefix: "delq_",
+               idle: "nothing yet — no AR report has filled its two cells" } },
   { flow: "budget", fills: "The Budget variance tile" },
   { flow: "rent_roll", fills: "Loss to Lease · Rollover Schedule · Largest Unit Gaps" },
   { flow: "daily_leasing", fills: "Trade-outs — the new-lease series" },
@@ -4027,6 +4034,60 @@ async function loadLandingDrive() {
   const prop = SC && (SC.properties || []).find(x => x.slug === SCD_SLUG);
   const meas = ((SC && SC.measured) || {})[SCD_SLUG] || {};
 
+  /* ---- Each card is drawn inside this ----
+     A throw in one section used to take out every card below it. On 2026-09-21
+     the delinquency card looked up a scorecard family that had been renamed
+     (the AR cells moved to delq_ when G3 closed), read `.prefix` off undefined,
+     and Delinquency, Unit Inventory and What Feeds This Tab simply stopped
+     appearing — three cards gone, one console line, nothing on the page saying
+     so. A card with nothing to say must say nothing, not vanish.
+
+     So each section runs in isolation: one that throws is contained to its own
+     card, which falls back to the page's own no-data mark, and the sections
+     after it still run. The error still reaches the console — this hides
+     nothing, it just stops one missing feed reading as a redesign. */
+  function section(id, fn) {
+    try {
+      const r = fn();
+      // An async section (the feeds card reads lineage.json) settles later, so
+      // its rejection is caught there rather than here -- without this, a throw
+      // inside one is an unhandled rejection and the card stays blank.
+      if (r && typeof r.catch === "function") r.catch(e => sectionFailed(id, e));
+    } catch (e) { sectionFailed(id, e); }
+  }
+  function sectionFailed(id, err) {
+    console.error("Landing tab: " + id + " could not be drawn", err);
+    const host = document.getElementById(id);
+    if (!host) return;
+    if (!host.classList.contains("card")) {
+      // A tile row, not a card: one tile carrying the dash keeps the row's
+      // shape rather than leaving a gap where tiles were.
+      host.textContent = "";
+      const kp = elc("div", "kpi");
+      kp.appendChild(elc("div", "v", "\u2014"));
+      kp.appendChild(elc("div", "k", "Not available"));
+      kp.appendChild(elc("div", "s", "this row could not be drawn"));
+      host.appendChild(kp);
+      return;
+    }
+    // Keep the card's heading, eyebrow and corner link; replace whatever the
+    // section had managed to build.
+    [...host.children].forEach(el => {
+      const keep = el.tagName === "H2" || el.classList.contains("card-head")
+        || el.classList.contains("eyebrow") || el.classList.contains("cardsrc");
+      if (!keep) el.remove();
+    });
+    const empty = elc("div", "empty");
+    empty.style.minHeight = "120px";
+    empty.appendChild(elc("div", "dash"));
+    empty.appendChild(elc("div", "big", "\u2014 not available"));
+    empty.appendChild(elc("div", "why",
+      "This card's data is missing or has moved, so it has nothing to show. "
+      + "Nothing else on this tab is affected; the browser console carries the "
+      + "error."));
+    host.appendChild(empty);
+  }
+
   document.getElementById("dIntro").textContent =
     "The Landing, built only from Google Drive. Every number on this tab comes from a "
     + "report the pipeline fetches and parses, so a fresh direct export dropped in Drive "
@@ -4037,12 +4098,12 @@ async function loadLandingDrive() {
     + "directly. What this tab cannot show, and why, is on the last card.";
 
   /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
-  renderOpSummary(SCD_SLUG,
+  section("cdOpSummary", () => renderOpSummary(SCD_SLUG,
     { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote", sel: "dopSelect",
-      togs: "dopTogs" });
+      togs: "dopTogs" }));
 
   /* ---- Loss to lease — the statement's own rental-income section ---- */
-  (function rentCaptureDrive() {
+  section("cdRentCapture", function rentCaptureDrive() {
     const rc = pick("rent_capture", SCD_SLUG);
     const card = document.getElementById("cdRentCapture");
     const ok = renderRentCapture(rc, { canvas: "dcCapture", foot: "dcCaptureFoot" },
@@ -4059,7 +4120,7 @@ async function loadLandingDrive() {
         + "draws metrics.json rent_capture, written by build_metrics from the "
         + "T12 statement; nothing has been stored for " + SCD_SLUG + ".";
     }
-  })();
+  });
 
   /* ---- The doors, and the controllable series both the NOI card and the
           tiles need. Unit count comes from the Yardi unit directory rather
@@ -4137,7 +4198,7 @@ async function loadLandingDrive() {
   }
 
   /* ---- KPI strip — what the statement itself reports ---- */
-  (function kpis() {
+  section("dkpis", function kpis() {
     const plKeys = pl
       ? ((pl.months && pl.months.length === pl.revenue.length)
           ? pl.months : monthKeysBack(pl.period_end, pl.revenue.length))
@@ -4183,7 +4244,7 @@ async function loadLandingDrive() {
     // rather than statement figures, so they moved up into the row above when
     // the grid came off, instead of being printed twice on one tab.
     tileRow("dkpis", tiles);
-  })();
+  });
 
   /* ---- The scorecard cells this tab keeps, as tiles ----
      A twelve-cell KPI grid stood here until 2026-09-15. Four cells are worth a
@@ -4204,7 +4265,7 @@ async function loadLandingDrive() {
        cell shows as absent with the reason rather than borrowed. */
   const SCD_GRADE = { exceeding: "exceeding target", in_range: "in target range",
                       below: "below target" };
-  (function scTiles() {
+  section("dkpisSc", function scTiles() {
     if (!SC || !prop) { tileRow("dkpisSc", []); return; }
     const unscored = scUnscoredSet();
     // The family that lists a cell, whether or not it owns it today -- which is
@@ -4297,10 +4358,10 @@ async function loadLandingDrive() {
               t.period];
     });
     tileRow("dkpisSc", tiles);
-  })();
+  });
 
   /* ---- Expense load & NOI, entirely from the statement ---- */
-  (function noi() {
+  section("cdNoi", function noi() {
     const foot = document.getElementById("dnoiFoot");
     if (!pl) {
       document.getElementById("dnoiEyebrow").textContent = "AWAITING THE STATEMENT";
@@ -4396,12 +4457,12 @@ async function loadLandingDrive() {
             + fm$(ttmOpex / 12 / doors) + "/mo for total expense. The door count is the "
             + "unit directory's residential_units, not the workbook's."
           : "Controllable expense/door is not drawn: " + ctrlWhy + ".");
-  })();
+  });
 
   /* ---- Expense deep dive — the same card as The Landing, with no workbook ---- */
-  renderExpenseDeep(SCD_SLUG,
+  section("cdExpDeep", () => renderExpenseDeep(SCD_SLUG,
     { card: "cdExpDeep", eyebrow: "dexpEyebrow", cks: "dexpCks", wrap: "dexpWrap",
-      canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null);
+      canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null));
 
   /* ---- Trade-outs, from the two leasing feeds.
 
@@ -4412,7 +4473,7 @@ async function loadLandingDrive() {
      those rows, so both series here are the same average over the same kind of
      thing, and the weighted figure is kept on the tooltip rather than mixed
      into the axis. ---- */
-  (function tradeOuts() {
+  section("cdTradeOuts", function tradeOuts() {
     const card = document.getElementById("cdTradeOuts");
     const wb = (lease && lease.new_leases) || null;   // the weekly leasing workbook
     const rn = (lease && lease.renewals) || null;
@@ -4606,7 +4667,7 @@ async function loadLandingDrive() {
       + " Capture at signing is not shown: neither feed carries a market rent at signing "
       + "to divide by — the tradeout report gives the lease it replaced, not what the "
       + "unit was asking.";
-  })();
+  });
 
   /* ---- Loss to lease, rollover and unit gaps — all three from the rent roll.
      The Landing draws its loss-to-lease as a 19-month series off the workbook's
@@ -4616,7 +4677,7 @@ async function loadLandingDrive() {
      (gross potential, loss to lease, vacancy, concessions), which the parser
      does not read yet — the footnote says so rather than leaving the shape
      difference unexplained. ---- */
-  (function rentRoll() {
+  section("cdRollover", function rentRoll() {
     // cdRentCapture is not in this list: its monthly chart is the T12
     // statement's and renders without a roll. Only the roll's half of that
     // card goes away.
@@ -4731,16 +4792,16 @@ async function loadLandingDrive() {
       + ". Occupied units only — a vacant unit's gap is its whole asking rent and would head "
       + "this table on every roll. No resident field reaches this page: the parse is scrubbed "
       + "before it is written to disk.";
-  })();
+  });
 
   /* ---- Delinquency, from what the Drive AR report actually publishes ---- */
-  (function delq() {
+  section("cdDelq", function delq() {
     const eyebrow = document.getElementById("ddEyebrow");
     const note = document.getElementById("ddNote");
     // Only if a Drive report owns these cells right now. The workbook fills the
     // same two through --from-landing and the last run wins, so "there is a
     // value" is not the same question as "Drive put it there".
-    const feed = SCD_DRIVE_FEEDS.find(f => f.prefix === "");
+    const feed = SCD_DRIVE_FEEDS.find(f => f.prefix === "delq_");
     const driveOwns = scdFeedIsDrive(feed, meas);
     const rate = driveOwns && prop && scValue(prop, "Total Deliquency");
     const split = driveOwns && prop && scValue(prop, "Split Between 30/60/90");
@@ -4852,10 +4913,10 @@ async function loadLandingDrive() {
       + "The 0–30 bucket, the balance per unit and the largest balances are parsed and "
       + "tied out but stop in data/: they are unit level and the report arrives with "
       + "resident names, so nothing publishes them.";
-  })();
+  });
 
   /* ---- Unit inventory, from the Yardi unit directory ---- */
-  (function inventory() {
+  section("cdInventory", function inventory() {
     const note = document.getElementById("diNote");
     if (!dir) {
       document.getElementById("diEyebrow").textContent = "AWAITING THE UNIT DIRECTORY";
@@ -5070,10 +5131,10 @@ async function loadLandingDrive() {
             + "out against the export's own totals, but they are as of that export and "
             + "will stay there."
           : "");
-  })();
+  });
 
   /* ---- What feeds this tab, and what it cannot show ---- */
-  (async function feeds() {
+  section("cdFeeds", async function feeds() {
     const ln = await lineageJson();
     const flows = ((ln || {}).flows || []);
     const isLanding = s => String(s || "").toLowerCase().indexOf("landing") >= 0;
@@ -5155,7 +5216,7 @@ async function loadLandingDrive() {
             + blocked.join("; ") + ". Everything it fills is genuinely Drive-derived "
             + "and ties out, so it belongs here."
           : "");
-  })();
+  });
 
   document.getElementById("dMeta").textContent =
     (dir ? dir.name : "The Landing") + " · "
