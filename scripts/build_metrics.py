@@ -1003,13 +1003,41 @@ def store_renewal_tracker(prop, parsed):
                          "mtm", "unread_sheets", "problems"])
 
 
+def _vintage(value):
+    """A comp export's own as-of date as a comparable `YYYY-MM-DD`, or None."""
+    return str(value)[:10] if value else None
+
+
 def store_comps(prop, parsed):
     """data/<slug>/comps.json — this property's view of its own submarket.
 
-    Overwritten rather than accumulated, like the renewal tracker and unlike
-    the trade-out report: one comp export carries three years of listings, so
-    the newest file is a superset of the last rather than the next slice of a
-    window. Nothing is lost by taking it whole.
+    Kept whole rather than accumulated, unlike the trade-out report: one comp
+    export carries three years of listings, so a later file restates the same
+    history rather than adding the next slice of a window.
+
+    But which file is "later" is the file's own `as_of`, never the newest
+    arrival and never whichever parsed last. Those come apart badly here: the
+    Drive folders hold ~90 exports whose arrival order does not track their
+    vintage at all — a copy that landed 2026-09-21 carries an as-of of
+    2026-08-05, six weeks behind one that landed three days earlier. Taking
+    whatever parsed last would move the Market Comps tab back to an August
+    reading of the market with nothing on the page to say so, which is the one
+    failure a tab built to check someone else's number cannot afford.
+
+    Nor is a later vintage a strict superset of an earlier one, which this
+    function used to assume. HelloData revises its own history: of 739 listings
+    in the 2026-08-11 Oakland file, 43 are absent from the 2026-09-20 one — and
+    every one of those is a unit still in the newer file under a revised
+    `First Listed` date, not a building or a unit that went away. So the newest
+    vintage is the right single answer, and the older files are the vendor's
+    revision history rather than copies of it.
+
+    They stay live in `Comps/<market>/Simple/` and are read on every run, which
+    is what makes this a choice rather than an accident: the folder is the whole
+    cadence, the store picks the best of it, and `vintages` records what it was
+    offered. Only the `Full` twins are archived, and only because no parser
+    reads them — a twenty-sheet formatted workbook with no parseable table in
+    it costs 2-4 MB a file to fetch and answers nothing.
 
     The section is already aggregates — medians, counts and shares. The listing
     rows behind them are a licensed vendor dataset and stay out of `data/` for
@@ -1031,11 +1059,41 @@ def store_comps(prop, parsed):
     })
     fp = DATA / prop["slug"] / "comps.json"
     fp.parent.mkdir(parents=True, exist_ok=True)
+
+    have = {}
+    if fp.exists():
+        try:
+            have = json.load(open(fp)) or {}
+        except (json.JSONDecodeError, OSError):
+            have = {}
+
+    mine, theirs = _vintage(out.get("as_of")), _vintage(have.get("as_of"))
+
+    # Every vintage this store has been offered, whether or not it won. It is
+    # what lets the tab stop calling itself single-vintage the day it is not,
+    # and it is the only record of the export cadence — the files themselves
+    # are archived. Dates only, and a set, so re-reading the folder every run
+    # adds nothing.
+    seen = sorted(set(have.get("vintages") or []) | ({mine} if mine else set()))
+
+    if theirs and (not mine or mine < theirs):
+        # An older reading of the same market. Keep the newer one and say so:
+        # a file silently ignored and a file silently applied look identical in
+        # a green run, and this folder holds ninety of them.
+        print(f"[skip] {parsed.get('source_file')}: comps as of "
+              f"{mine or 'unknown'}, older than the {theirs} already stored "
+              f"for {prop['name']}")
+        have["vintages"] = seen
+        json.dump(scrub(have), open(fp, "w"), indent=2, default=str)
+        return fp
+
+    out["vintages"] = seen
     json.dump(scrub(out), open(fp, "w"), indent=2, default=str)
     ring = next((r for r in section.get("rings") or [] if r.get("primary")), {})
     print(f"[ok] stored market comps for {prop['name']}: {ring.get('properties', 0)} "
           f"comp propert(ies) within {section.get('primary_radius_mi')} mi, "
-          f"{ring.get('listings', 0)} listing(s) as of {section.get('as_of')}")
+          f"{ring.get('listings', 0)} listing(s) as of {section.get('as_of')} "
+          f"({len(seen)} vintage(s) on file)")
     return fp
 
 

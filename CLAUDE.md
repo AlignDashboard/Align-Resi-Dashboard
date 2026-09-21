@@ -565,6 +565,51 @@ parser then *skips* the formatted one with a line saying which file it is and
 that nothing is missing. A skip with a reason, not an error, because both files
 belong in that folder.
 
+#### Two markets, and ninety extracts of them
+
+The folder is organised by **market, then by which of the paired exports it
+is**, because those are the two things a reader picks between and neither is a
+property of the other:
+
+    Comps/
+      San Francisco/ Simple/   Full/
+      Oakland/       Simple/   Full/
+      Archive/       San Francisco - Full/   Oakland - Full/
+
+San Francisco is the Mid Market / Mission / Dogpatch–Mission Bay set that
+covers The Landing, Chorus and Madelon; Oakland is **335 Third Street**, whose
+ring is Jack London Square. `fetch_drive`'s folder pass descends **two** levels
+for exactly this shape — see *Folders organise; filenames route*.
+
+`Simple/` holds **every extract**, not the newest one: 46 for Oakland and 45
+for San Francisco as of 2026-09-21, and more arrive hourly. They are not copies
+of each other and they are not successive slices of a window either — each is
+the same three-year history as the vendor understood it on its own as-of date.
+Three things follow, and the first two were found the hard way:
+
+- **A later extract is not a superset of an earlier one.** HelloData revises
+  its own history. Of the 739 listings in the 2026-08-11 Oakland file, 43 are
+  absent from the 2026-09-20 one — and every one of those 43 is a unit still in
+  the newer file under a revised `First Listed` date. No building and no unit
+  went away; the dates moved.
+- **Arrival order does not track vintage, and not by a little.** A copy that
+  landed 2026-09-21 carries an as-of of **2026-08-05**, six weeks behind one
+  that landed three days earlier. So `store_comps` keeps the newest **`as_of`**
+  and refuses to go backwards, and says so in the log when it refuses. Reading
+  "whichever parsed last" would have moved the Market Comps tab to an August
+  reading of the market with nothing on the page to say so — on the one tab
+  built to check somebody else's number.
+- **The ledger is published.** `vintages` on each `comps.json` is every as-of
+  the store has been offered, so the tab's own limits block counts the extracts
+  rather than claiming one. That is the `One vintage` caveat A14 asked about,
+  answered from the data instead of retyped.
+
+Only the `Full` twins are archived, in `Comps/Archive/` — `Archive` is in
+`NEVER_SWEEP`, so neither pass reads it. Nothing is deleted; they are simply
+2–4 MB apiece, no parser reads them, and fetching ninety of them daily is the
+kind of cost open item A15 is about. The newest of each stays live under
+`<market>/Full/` for anyone who wants to open one.
+
 **There is no total row to tie out against.** Every other parser here checks
 itself against the report's own arithmetic; a comp export has none, so two
 structural reconciliations stand in and both refuse the file:
@@ -2003,7 +2048,7 @@ Set `AUTO_FOLDER.ENABLED = false` to go back to everything unmatched landing in
 
 `fetch_drive.py` runs **two passes**, and the difference matters:
 
-1. **The folder pass** — every active entry's own folder, **and one level of
+1. **The folder pass** — every active entry's own folder, **and two levels of
    subfolders inside it**. This is what the Gmail filer's organisation is for.
    Drive stays browsable, one folder per report type, for pulling source data
    by hand.
@@ -2020,27 +2065,35 @@ report still reaches its parser, and the log says where it was found
 `name_patterns` is opt-in per entry, matched case-insensitively, and only
 `active` entries take part. An entry without it stays strictly folder-bound.
 
-**A registered folder's own subfolders are read as part of it**, one level
-deep. The sweep is no backstop for a file one level down, because it walks the
-drop tree's top level too — so before the descent existed such a file was
+**A registered folder's own subfolders are read as part of it**, two levels
+deep. The sweep is no backstop for a file below the top level, because it walks
+the drop tree's top level too — so before the descent existed such a file was
 invisible to *both* passes and the folder simply reported empty, with nothing
 in the log to say otherwise. That is what `Budgets/Landing/` did on
 2026-09-16: two budgets sat in a per-property subfolder the owner had made,
 and neither pass could see them. Those two were moved back up into `Budgets`
 by hand, so the descent is not what is carrying them today — it is what stops
 the next such grouping from stranding a report, the same way the rescue sweep
-stopped a misfiled name from stranding one. One level, not a recursion, and
-never into a `NEVER_SWEEP` name: an archive nested inside a live folder is
-still an archive, and walking arbitrarily deep would eventually find one under
-a name the list does not know. `test_fetch_sweep.py` covers all three, each
-verified by mutation.
+stopped a misfiled name from stranding one.
+
+**Two levels, because that is what the groupings are.** Budgets is grouped once,
+by property. The comp exports are grouped twice — by market and then by which of
+the paired exports it is (`Comps/Oakland/Simple/`) — so a one-level walk would
+report `Comps` as holding nothing while ninety files sat under it. A fixed
+depth, not a recursion, and never into a `NEVER_SWEEP` name: an archive nested
+inside a live folder is still an archive, and walking arbitrarily deep would
+eventually find one under a name the list does not know. `MAX_SUBFOLDER_DEPTH`
+is the one constant, and a folder deeper than it gets a `[warn]` line rather
+than silence — an unread folder that says nothing is exactly how
+`Budgets/Landing/` stranded two budgets. `test_fetch_sweep.py` covers all of
+it, each guard verified by mutation.
 
 The sweep is scoped, and each limit exists for a reason:
 
 | Limit | Why |
 | --- | --- |
 | Never the `reference` tree | The library holds superseded copies on purpose. `Archive Reports` has a July rent roll beside four other July exports; sweeping it would publish a seven-week-old rent roll as current |
-| Never a folder in `NEVER_SWEEP` | Belt to the tree's braces — an archive stays safe even if it is moved into the drop tree |
+| Never a folder in `NEVER_SWEEP` (`Archive Reports`, `Archive`) | Belt to the tree's braces — an archive stays safe even if it is moved into the drop tree, which `Comps/Archive/` is. The folder pass checks the same list at every level, so an archive nested inside a live folder is skipped rather than descended into |
 | Never a file the folder pass took | `claimed` tracks Drive ids, so nothing is counted twice |
 | Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
 | Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |

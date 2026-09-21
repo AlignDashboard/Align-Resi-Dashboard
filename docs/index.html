@@ -5549,6 +5549,7 @@ function mcMethod(p) {
      + "transaction record. The subject's own signed leases are on the Trade-outs "
      + "card of the Landing tab."],
   ];
+  const vintages = p.vintages || [];
   if ((im.unverified_beds || []).length) {
     items.push([im.unverified_beds.map(b => b + "-bed units are not verified").join(", "),
                 "Fewer than five are listed anywhere in the ring. They keep the "
@@ -5563,10 +5564,21 @@ function mcMethod(p) {
      + (ring.properties || 0) + " comps, across " + ((p.premium || {}).quarters || 0)
      + " quarters — is the stand-in: it is whatever this building has actually "
      + "commanded over its neighbours, rather than a judgement about why."],
-    ["One vintage",
-     "This is a single extract, as of " + p.as_of + ". It cannot be checked against "
-     + "a second one until the next export lands in Drive, at which point the trend "
-     + "above lengthens by itself."],
+    [(vintages.length > 1
+       ? "Read from the newest of " + vintages.length + " extracts"
+       : "One vintage"),
+     (vintages.length > 1
+       ? "The feed has " + vintages.length + " extracts on file, " + vintages[0]
+         + " to " + vintages[vintages.length - 1] + ", and every figure here is "
+         + "read from the newest of them — " + p.as_of + ". They are the vendor's "
+         + "own revisions of the same three-year history rather than successive "
+         + "slices of it, so they are not stitched: a later extract restates the "
+         + "earlier one, down to moving a listing's first-listed date. The "
+         + "pipeline picks by the extract's own as-of date, never by which file "
+         + "arrived last, because in this folder those disagree by weeks."
+       : "This is a single extract, as of " + p.as_of + ". It cannot be checked "
+         + "against a second one until the next export lands in Drive, at which "
+         + "point the trend above lengthens by itself.")],
     ["Aggregates only",
      "The listing rows behind these medians are a licensed vendor dataset, and "
      + "everything this page fetches is downloadable by anyone who can open it. "
