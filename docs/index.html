@@ -2161,6 +2161,7 @@ const SC_FEED_PREFIXES = [
   { prefix: "budget_", fallbackWhat: "12-month budget" },
   { prefix: "rentroll_", fallbackWhat: "rent roll" },
   { prefix: "tradeout_", fallbackWhat: "lease tradeout report" },
+  { prefix: "delq_", fallbackWhat: "delinquency summary" },
 ];
 function scFeeds() {
   const out = [];
@@ -3892,18 +3893,18 @@ const SCD_SLUG = "the-landing";
 const SCD_DRIVE_FEEDS = [
   { prefix: "bldg_", only: null,
     what: "EliseAI building-metrics export · Drive “EliseAI Reports”" },
-  // The unprefixed family is whichever populate_scorecard run wrote last, and
-  // that is either the Drive AR report (--from-pipeline) or the analyst
-  // workbook (--from-landing) -- they own the same cells and overwrite each
-  // other. Only the first belongs here, so the feed is taken only when the
-  // recorded source is not the workbook. Naming the two KPIs is not enough on
-  // its own: on 2026-09-03 a --from-landing run for Concession Load % put the
-  // workbook back in front of a same-week Drive report, and a filter that read
-  // the KPI list alone would have published a workbook number on this tab.
-  { prefix: "", only: ["Total Deliquency", "Split Between 30/60/90"],
-    what: "delinquency summary · Drive “Residential AR Analytics”",
-    fromDrive: m => !/workbook|landing\.json|analyst/i.test(
-      String(m.source || "") + " " + String(m.received_what || "")) },
+  // The two AR cells are the Drive report's outright (owner, 2026-09-21,
+  // closing G3): --from-landing no longer fills them at all, and the report
+  // records them under its own delq_ family. So this needs no fromDrive
+  // predicate any more -- the family IS the answer to "is this Drive-fed".
+  //
+  // It used to sit on the unprefixed family with a predicate reading the
+  // recorded source, because both runs wrote the same two cells and the last
+  // one won. That guard is what kept a workbook number off this tab on
+  // 2026-09-03; it is unnecessary now only because the race it guarded against
+  // cannot happen. Do not read its removal as the race having been benign.
+  { prefix: "delq_", only: null,
+    what: "delinquency summary · Drive “Residential AR Analytics”" },
   // Budget Variance % is filled by the --from-landing run but owes the
   // workbook nothing: both sides are Drive reports (the budget export and the
   // T12 statement), which is why populate_scorecard records it under its own
