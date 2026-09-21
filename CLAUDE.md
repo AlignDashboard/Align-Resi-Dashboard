@@ -2071,6 +2071,38 @@ Two traps worth knowing:
   `report_map.json` and the `.js` rule all change together; `test_routing.py`
   fails if only one moves.
 
+### The leasing families share one folder, split by property
+
+Since 2026-09-21 (A11, owner's call) `Renewal Tracker`, `Prospect Reports`,
+`Daily Tracker` and `Daily Leasing Reports` are **one Drive folder** —
+`Daily Leasing Reports` — with a **subfolder per property inside it**.
+`Demographics` stays separate: it is a resident-profile export, not a leasing
+report.
+
+Four routing rules still point there, not one. The pipeline picks a parser by
+`name_patterns`, never by folder, so collapsing the four patterns into a single
+rule would file the families together and leave nothing able to tell a renewal
+tracker from a daily report.
+
+**The split happens at filing time, from the attachment's own name**
+(`SPLIT_BY_PROPERTY`, `PROPERTY_FOLDERS` and `propertyFolderFor_` in the `.js`),
+because that is the only place the property is knowable. It is for a human
+browsing Drive: `fetch_drive` already reads one level of subfolders inside a
+registered folder, and attribution comes from the filename and the file's
+contents as it always has. A file whose name carries no property lands at the
+**top** of the folder with a log line rather than in a guessed building.
+
+`PROPERTY_FOLDERS` is generated from `config/properties.json` and has the same
+contract `PROPERTY_WORDS` does — `test_routing.py` check 7b fails if a property
+is added to one and not the other, and check 7c fails if the four families stop
+sharing the folder. A building missing from the list files at the top for ever,
+which looks exactly like a report that has no property in its name.
+
+Deploying it needs the `.js` pushed and `resortExistingFiles` run; **files
+already in the three old folders have to be moved by hand**, since that function
+only sees files loose in Report Lander or in `_Unsorted`. Nothing stops parsing
+meanwhile — the rescue sweep finds them by `name_patterns` wherever they sit.
+
 To deploy a routing change: edit the `.js`, run `test_routing.py`, commit, and
 get the code into the project — either by pasting it into `script.google.com` →
 "file downloader", or automatically via `.github/workflows/deploy_filing_script.yml`

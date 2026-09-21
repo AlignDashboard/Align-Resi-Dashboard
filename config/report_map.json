@@ -163,7 +163,7 @@
       "_comment": "The HelloData market-comp export -- the only feed here that describes the market rather than Align's own buildings, and so the only thing the Yardi market rent column can be checked against. It arrives as a PAIR with near-identical names: 'HelloData - Simple - ....xlsx' is two flat tables and is what parse_comps reads, and 'HelloData - Full - ....xlsx' is the same market as a formatted workbook with no parseable table in it. The glob is '*' so the entry claims both, deliberately: a narrower pattern would mean a renamed export silently stops being read, which is the failure 'Landing 2026 Resi Budget.xlsx' hit in the Budgets folder. The formatted one is then SKIPPED by the parser with a line saying why, rather than erroring -- see parse_comps._pick_tables."
     },
     {
-      "drive_folder": "Renewal Tracker",
+      "drive_folder": "Daily Leasing Reports",
       "report_type": "renewal_tracker",
       "parser": "parse_renewal_tracker",
       "file_glob": "*.xlsx",
@@ -175,7 +175,7 @@
       ]
     },
     {
-      "drive_folder": "Prospect Reports",
+      "drive_folder": "Daily Leasing Reports",
       "report_type": "prospect_report",
       "parser": null,
       "file_glob": "*.xlsx",
@@ -195,7 +195,7 @@
       ]
     },
     {
-      "drive_folder": "Daily Tracker",
+      "drive_folder": "Daily Leasing Reports",
       "report_type": "daily_tracker",
       "parser": null,
       "file_glob": "*.xlsx",
