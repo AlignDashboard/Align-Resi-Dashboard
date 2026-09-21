@@ -153,8 +153,42 @@ Three things the removal is careful about:
 The rule is applied **per number, not per card**. A card is on the tab only if
 every figure on it would move on the next pipeline run.
 
-The rule is applied **per number, not per card**. A card is on the tab only if
-every figure on it would move on the next pipeline run.
+### A card that cannot be drawn says so
+
+**Every section on this tab renders inside `section(id, fn)`.** A throw in one
+used to take out every card below it, because the tab is one long function of
+sequential IIFEs and an exception unwinds the lot.
+
+That is not hypothetical. On 2026-09-21 the delinquency card looked up
+`SCD_DRIVE_FEEDS.find(f => f.prefix === "")` — the family the AR cells had
+lived in until G3 closed the same week and moved them to `delq_`. The lookup
+returned `undefined`, `scdFeedIsDrive` read `.prefix` off it, and
+**Delinquency, Unit Inventory and What Feeds This Tab all stopped appearing**.
+Three cards gone, one line in the console, nothing on the page to say why —
+and it read as though the cards had been deliberately removed.
+
+Two things now stand between a renamed field and a page that looks redesigned:
+
+- **`scdFeedIsDrive` returns `false` for a family the list no longer carries**
+  rather than throwing. A feed that does not exist cannot be Drive-fed, which
+  is an answer, not an error.
+- **`section()` contains a throw to its own card**, which falls back to the
+  page's own no-data mark — a rule, `— NOT AVAILABLE`, and a line saying the
+  data is missing or has moved and that nothing else on the tab is affected. A
+  tile row gets a single `—` tile instead, so the row keeps its shape. The
+  error still goes to the console: this hides nothing, it just stops one
+  missing feed reading as ten missing cards. An `async` section (the feeds
+  card awaits `lineage.json`) has its rejection caught too, since a `try` around
+  a promise-returning call catches nothing.
+
+Verified by putting the original bug back: the blast radius is one card, the
+other nine draw in full, and the console still carries the TypeError.
+
+**`--check` would not have caught this**, and it is worth being clear why:
+`build_lineage` verifies that a card anchor *exists in the markup*, which
+`cdDelq` always did. Nothing checks that the code filling it still runs. The
+browser check that opens every tab and asserts no page errors is what catches
+this class, which is why it is worth keeping in the loop.
 
 | Card | Drive source |
 | --- | --- |
