@@ -37,3 +37,6 @@ build/
 # puts it wherever it was run -- docs/node_modules, which Pages would then
 # publish. Test dependency, never project code.
 node_modules/
+
+# Rebuilt from OPEN_ITEMS.md on every run; the state file beside it is tracked
+open_items_digest.pdf

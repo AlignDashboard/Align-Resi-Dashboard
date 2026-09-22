@@ -146,6 +146,32 @@ NOT_CONTROLLABLE = ("tax", "insurance", "utilit", "management fee")
 # fill restates "how" from what it actually excluded and keeps the sheet's own
 # wording beside it, rather than publishing a definition the number does not
 # follow.
+# A9, owner 2026-09-21: "Rebracket". The published cutoffs ($7,200 / $8,600)
+# were bracketed around the OLD basket's $7,784/unit T12 actual -- a basket that
+# counted utilities as controllable. The basket has excluded utilities and the
+# management fee since 2026-08-28, under which the same twelve months read
+# $6,939/unit, so the band was grading a smaller basket against a bigger
+# basket's yardstick and "exceeding" meant the basket had shrunk.
+#
+# The band is SHIFTED, not rescaled: both cutoffs move down by the same $845
+# the basket itself moved ($7,784 - $6,939), keeping the band's $1,400 width.
+# Width is a tolerance in dollars per unit per year, and taking a cost category
+# out of the basket is not a statement about how much variance is acceptable.
+# Rescaling by the ratio instead would give $6,419 / $7,666 and a $1,247 width;
+# the two agree to within $70 on the green cutoff, so nothing here turns on the
+# choice, but it is a choice and it is the owner's to overrule.
+#
+# Rounded to the nearest $100, as the workbook's own cutoffs are. The new actual
+# sits in range exactly as the old actual did against the old band, which is the
+# point: this restates the yardstick, it does not re-grade the building.
+CONTROLLABLE_CUTOFFS = {"green": 6400, "red": 7800}
+CONTROLLABLE_BAND_NOTE = (
+    "Rebracketed 2026-09-21 (A9) to the basket the cell actually grades: the "
+    "workbook's $7,200/$8,600 bracketed a $7,784/unit actual on a basket that "
+    "counted utilities as controllable. Both cutoffs shift down by the $845 the "
+    "basket moved, keeping the $1,400 width; The Landing's T12 on the live "
+    "basket is $6,939/unit.")
+
 CONTROLLABLE_HOW = ("Operating expense less taxes, insurance, utilities and the "
                     "management fee, per unit, current month x12")
 # The owner's equation (2026-09-03): concessions over the T12 statement's rent
@@ -294,6 +320,34 @@ def pct0(v):
     """Loss to lease as a whole number of percent: a gap this wide is not a
     figure a tenth of a point changes the reading of."""
     return f"{v * 100:.0f}%"
+
+
+def restate_controllable_band(thresholds):
+    """Put the rebracketed cutoffs (A9) on the threshold, keeping the sheet's.
+
+    Restated here rather than edited into scorecard.json because
+    extract_scorecard resets every band from the ranges sheet on each
+    re-extraction, so a hand-edited band would silently revert -- the same
+    reason the `how` is restated.
+
+    MUST run before the classify loop. It did not, once: the band was rewritten
+    in the post-fill block and the cells were still graded against the sheet's
+    old cutoffs, so one run published $6,757 as "exceeding" beside a band whose
+    own ceiling for exceeding was $6,400. A file that disagrees with itself is
+    worse than either band alone.
+    """
+    t = (thresholds or {}).get(KPI_CTRL)
+    if not t or t.get("green_cutoff") == CONTROLLABLE_CUTOFFS["green"]:
+        return None
+    for key in ("green_cutoff", "red_cutoff", "exceeding", "in_range", "below",
+                "basis"):
+        t.setdefault(key + "_workbook", t.get(key))
+    g, r = CONTROLLABLE_CUTOFFS["green"], CONTROLLABLE_CUTOFFS["red"]
+    t["green_cutoff"], t["red_cutoff"] = g, r
+    t["exceeding"], t["in_range"], t["below"] = (
+        f"\u2264 ${g:,}", f"${g:,} \u2013 ${r:,}", f"> ${r:,}")
+    t["basis"] = CONTROLLABLE_BAND_NOTE
+    return (t["green_cutoff_workbook"], t["red_cutoff_workbook"], g, r)
 
 
 def classify(value, t):
@@ -479,7 +533,23 @@ def facts_from_landing(path="docs/landing.json"):
                    f"delinquency block's {stated}")
         occupied = None
     return {
-        "as_of": d.get("as_of"),
+        # The AR cells are the Drive pipeline's, always (owner, 2026-09-21,
+        # closing G3): "there shouldn't be anything pulling from a 6 week old
+        # workbook". So this path publishes NEITHER of them -- no
+        # total_delinq_pct and no split -- and `measurements` therefore leaves
+        # both cells exactly as --from-pipeline last wrote them.
+        #
+        # Not filled-then-skipped but never read: a value this path must not
+        # publish should not be in the facts at all, or the next person to add
+        # a caller has to know not to trust it. The workbook's own figures stay
+        # available in landing.json for anyone who wants to compare.
+        #
+        # This is also why as_of is the workbook's own extract date now rather
+        # than the delinquency tab's: nothing this path publishes comes from
+        # that tab any more, so dating the family by it would name a source
+        # that no longer feeds a single cell here.
+        "as_of": (doc.get("meta") or {}).get("as_of")
+                 or (doc.get("meta") or {}).get("generated_at", "")[:10] or None,
         "gross_owed": d.get("gross_owed"),
         # The rent roll owns this cell (A8, owner 2026-09-15). The workbook's
         # own figure is kept beside it, never published, so the two readings of
@@ -504,12 +574,17 @@ def facts_from_landing(path="docs/landing.json"):
         "mtm_units": mtm,
         "mtm_occupied": occupied,
         "mtm_why": mtm_why,
-        "split": [bucket("31 - 60", "31-60"), bucket("61 - 90", "61-90"),
-                  bucket("over 90")],
-        # the workbook computes this ratio itself, so use it rather than
-        # re-deriving the denominator
-        "total_delinq_pct": d.get("pct_month_rent"),
-        "source": "workbook Source Delinquency tab, via docs/landing.json",
+        # "split" and "total_delinq_pct" are deliberately absent -- see the
+        # note at the top of this return. The workbook's readings are recorded
+        # below as a note, never as the cell.
+        "delq_why": ("the Drive AR report owns this cell; the workbook no "
+                     "longer fills it (G3, owner 2026-09-21)"),
+        "delq_workbook": (
+            None if d.get("pct_month_rent") is None else
+            f"the workbook's Source Delinquency tab read "
+            f"{d['pct_month_rent'] * 100:.1f}% as of {d.get('as_of')} "
+            f"— not published; the Drive AR report owns this cell"),
+        "source": "analyst workbook extract, via docs/landing.json",
         # the workbook is refreshed by hand, so its "arrival" is when the
         # analyst last extracted it — landing.json's own generated_at
         "received_at": (doc.get("meta") or {}).get("generated_at"),
@@ -566,6 +641,13 @@ def facts_from_pipeline(slug, monthly_rent=None):
                               f"{'/'.join(m for m in months if m)}; {mr.get('basis')})")
 
     return {
+        # This feed owns the two AR cells outright (owner, 2026-09-21, G3), so
+        # it records them under its own "delq_" family rather than the
+        # unprefixed one. Without that the two cells' provenance is whatever
+        # ran LAST -- and since --from-landing still writes four workbook cells
+        # into the unprefixed family, the page would hover the workbook's date
+        # over this report's figures. Same over-report the tradeout cell hit.
+        "delq_family": True,
         "as_of": d.get("as_of"),
         # when the report landed in Drive, recorded by build_metrics from the
         # fetch manifest. None for data/ written before that was captured.
@@ -600,6 +682,7 @@ def facts_from_report(path, monthly_rent):
         # there is no arrival time to record unless --received-at supplies one
         "received_at": None,
         "received_what": "report supplied by hand",
+        "delq_family": True,
     }
 
 
@@ -615,7 +698,8 @@ def measurements(f):
         out[KPI_TOTAL] = (v, pct1(v), None)
     else:
         out[KPI_TOTAL] = (None, None,
-                          "needs one month's billed rent — pass --monthly-rent")
+                          f.get("delq_why")
+                          or "needs one month's billed rent — pass --monthly-rent")
 
     rr = f.get("rr_ltl")
     if rr:
@@ -682,7 +766,9 @@ def measurements(f):
         # xx/yy/zz in whole dollars, the report's own figures
         out[KPI_SPLIT] = (None, "/".join(f"{p:,.0f}" for p in parts), None)
     else:
-        out[KPI_SPLIT] = (None, None, "report has no 30/60/90 aging buckets")
+        out[KPI_SPLIT] = (None, None,
+                          f.get("delq_why")
+                          or "report has no 30/60/90 aging buckets")
     return out
 
 
@@ -900,6 +986,12 @@ def main():
     print(f"{'KPI':26} {'measured':>18}  {'band says':<11} {'workbook had':<11} action")
     print("-" * 86)
 
+    rebracket = restate_controllable_band(thresholds)
+    if rebracket:
+        og, orr, g, r = rebracket
+        print(f"rebracketed {KPI_CTRL}: ${og:,}/${orr:,} -> ${g:,}/${r:,} "
+              f"(A9; the sheet's own cutoffs are kept in *_workbook)")
+
     unscored = set(sc.get("unscored") or [])
     changed, filled = [], 0
     for kpi, (value, display, why) in measurements(facts).items():
@@ -960,10 +1052,39 @@ def main():
                  # "data last updated". None when the source carries none.
                  "received_at": facts.get("received_at"),
                  "received_what": facts.get("received_what"),
-                 # keyed on display, not raw: an unscored KPI has figures to
-                 # show but no single number to classify
-                 "kpis": sorted(k for k in measurements(facts)
-                                if prop["values"].get(k, {}).get("display") is not None)})
+                 # The cells THIS run filled, keyed on display (an unscored
+                 # KPI has figures to show but no single number to classify).
+                 #
+                 # It used to test prop["values"], which earlier runs also
+                 # wrote, so the list named every cell any run had ever filled
+                 # and the page dated a cell by whichever feed ran last. That
+                 # is open item G1, and with the AR cells moving to their own
+                 # family (G3) it stopped being cosmetic: a --from-landing run
+                 # would re-claim two Drive cells by naming them here.
+                 "kpis": sorted(k for k, (_v, disp, _w) in measurements(facts).items()
+                                if disp is not None)})
+    if facts.get("delq_family") and not facts.get("no_report"):
+        # The AR report's own family. Registered in SC_FEED_PREFIXES in
+        # index.html and the matching list in data.html, and in
+        # SCD_DRIVE_FEEDS so the Landing tab's Delinquency tile carries it.
+        filled_here = sorted(k for k in (KPI_TOTAL, KPI_SPLIT)
+                             if prop["values"].get(k, {}).get("display") is not None)
+        meas[slug].update({
+            "delq_source": facts["source"],
+            "delq_as_of": facts["as_of"],
+            "delq_received_at": facts.get("received_at"),
+            "delq_received_what": facts.get("received_what"),
+            "delq_kpis": filled_here,
+        })
+        # Take both cells off every other family's list, exactly as the
+        # tradeout cell is taken off bldg_kpis: the page picks a cell's feed by
+        # whichever family names it, so a stale mention is a wrong date on a
+        # right number rather than a missing one.
+        for key, names in list(meas[slug].items()):
+            if (key.endswith("kpis") and key != "delq_kpis"
+                    and isinstance(names, list)):
+                meas[slug][key] = [n for n in names
+                                   if n not in (KPI_TOTAL, KPI_SPLIT)]
     if facts.get("denominator_note"):
         meas[slug]["denominator"] = facts["denominator_note"]
     if facts.get("ltl_month"):
@@ -980,6 +1101,7 @@ def main():
         if t and t.get("how") != CONTROLLABLE_HOW:
             t.setdefault("how_workbook", t.get("how"))
             t["how"] = CONTROLLABLE_HOW
+
     rr = facts.get("rr_ltl")
     if rr:
         # Its own feed family: this cell is the rent roll's, not the workbook's
@@ -1105,6 +1227,8 @@ def main():
         if t and t.get("how") != CONCESSION_HOW:
             t.setdefault("how_workbook", t.get("how"))
             t["how"] = CONCESSION_HOW
+    if facts.get("delq_workbook"):
+        meas[slug]["delq_workbook"] = facts["delq_workbook"]
     if facts.get("noi_margin_month"):
         meas[slug]["noi_margin_month"] = facts["noi_margin_month"]
         # the T12 figure the band's own basis names, kept beside the month that

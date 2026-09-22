@@ -127,10 +127,27 @@ const ROUTING_RULES = [
   // /tradeout/ is unique across this table; it sits above the leasing rules
   // anyway so a future /leasereport/ cannot claim it first.
   { folder: 'Historical Tradeout Reports', patterns: [/tradeout/, /leasetradeout/] },
-  { folder: 'Renewal Tracker',            patterns: [/renewaltracker/, /renewalssince/, /renewalworkbook/, /renewal/] },
-  { folder: 'Prospect Reports',           patterns: [/prospect/, /applicantreport/] },
+  // The HelloData market-comp export — the only report here about the market
+  // rather than about an Align building. It arrives as a PAIR ('… - Simple - …'
+  // and '… - Full - …'), and both belong in this folder: the pipeline reads the
+  // first and says in the log why it does not read the second. Above the
+  // leasing rules because a comp file's name carries a submarket list that can
+  // mention anything.
+  { folder: 'Comps',                      patterns: [/hellodata/, /rentcomp/, /marketsurvey/, /comps/] },
+  // A11, owner 2026-09-21: these four leasing families live in ONE folder,
+  // split by property inside it. Demographics stays on its own -- it is a
+  // resident-profile export, not a leasing report, and was the one of the five
+  // the owner kept separate.
+  //
+  // Four rules rather than one because the PATTERNS still have to be distinct:
+  // report_map.json gives each family its own parser, and the pipeline picks a
+  // parser by name_patterns, not by folder. Collapsing them into a single rule
+  // would file them together and leave nothing able to tell a renewal tracker
+  // from a daily report.
+  { folder: 'Daily Leasing Reports',      patterns: [/renewaltracker/, /renewalssince/, /renewalworkbook/, /renewal/] },
+  { folder: 'Daily Leasing Reports',      patterns: [/prospect/, /applicantreport/] },
   { folder: 'Daily Leasing Reports',      patterns: [/dailyreport/] },
-  { folder: 'Daily Tracker',              patterns: [/dailytracker/] },
+  { folder: 'Daily Leasing Reports',      patterns: [/dailytracker/] },
   { folder: 'Demographics',               patterns: [/demographic/] },
   // Kept for the RealPage rate tracker, this folder's intended content, which
   // has never arrived. /renewalworkbook/ moved up to Renewal Tracker.
@@ -305,6 +322,14 @@ function fileGmailPdfsToDrive() {
         if (dest === null) {   // external folder unresolved -- park it, don't guess
           dest = getSubfolder_(root, CONFIG.UNSORTED_FOLDER, cache);
           unsorted++;
+        } else if (SPLIT_BY_PROPERTY.indexOf(target) >= 0) {
+          const pf = propertyFolderFor_(att.getName());
+          if (pf) {
+            dest = getPropertySubfolder_(dest, pf, cache);
+          } else {
+            Logger.log('"' + att.getName() + '" -> ' + target + ' (top level): no ' +
+              'property in its name, so it is not filed under a building');
+          }
         }
         const finalName = resolveName_(dest, wanted, att);
 
@@ -540,6 +565,83 @@ function getRootFolder_() {
  * the file where it is rather than creating a same-named folder inside the drop
  * tree, which would silently shadow the real one.
  */
+// ---------------------------------------------------------------------------
+// A11: per-property subfolders inside a category folder
+//
+// The owner asked for the four leasing families in one folder "split out by
+// property". Splitting happens at FILING time, from the attachment's own name,
+// because that is the only place the property is knowable -- the pipeline
+// attributes by filename and by what is inside the file, never by the folder a
+// report sits in, which is the whole point of "folders organise; filenames
+// route". So these subfolders are for a human browsing Drive; nothing
+// downstream depends on them, and fetch_drive reads one level of subfolders
+// inside a registered folder already.
+//
+// A file whose property cannot be read from its name lands at the TOP of the
+// category folder rather than in a guessed building. Visible and wrong-looking
+// beats filed under a neighbour -- the same rule that kept the concession
+// burn-off unattributed for six weeks.
+const SPLIT_BY_PROPERTY = ['Daily Leasing Reports'];
+
+const PROPERTY_FOLDERS = [
+  { folder: "The Landing", words: ["The Landing", ".Landing", "p0005611", "p0005612", "p0005640", "p0005671", "p000611"] },
+  { folder: "Chorus", words: ["p0003872", "p0004764", "p0005215", ".Chorus", "Chorus"] },
+  { folder: "Madelon", words: ["The Madelon", "camadelo", "camadret", "Madelon", "madelon"] },
+  { folder: "335 Third Street", words: ["335 Third Street", "335 3rd Street", "rs335"] },
+  { folder: "Palma", words: ["rspalman", "rspalmas", ".palma", "Palma"] },
+  { folder: "1023 Mission", words: ["1023 Mission", "1023070"] },
+  { folder: "123 Mission", words: ["123 Mission", "1230090"] },
+  { folder: "251 Post", words: ["251 Post", "2510150"] },
+  { folder: "667 Mission", words: ["667 Mission", "6670040"] },
+  { folder: "Bellevue", words: ["Bellevue", "bpc0010"] },
+  { folder: "California Plaza", words: ["California Plaza", "cp00080"] },
+  { folder: "The Exchange", words: ["The Exchange", "exc00130"] },
+  { folder: "Wood Hollow", words: ["Wood Hollow", "wh00020"] },
+  { folder: "2101 Mission", words: ["2101 Mission", "2101121", "2101122", "2101123"] },
+  { folder: "Burbank Empire", words: ["Burbank Empire", "bec0100", "bec0101", "bec0102"] },
+  { folder: "Walnut Creek Center", words: ["Walnut Creek Center", "WCC0050", "owcc051", "twcc052"] },
+  { folder: "Essex OpCo", words: ["Essex OpCo", "esx00145", "esx00146", "esx00147", "esx00149"] },
+  { folder: "Essex PropCo", words: ["Essex PropCo", "esx00141", "esx00142", "esx00143", "esx00144"] },
+  { folder: "Livermore", words: ["Livermore", "lm00030", "lm00031", "lm00032", "lm00033"] },
+  { folder: "1335 Webster", words: ["1335 Webster", "dnc1335w"] },
+  { folder: "15 Marina Blvd", words: ["15 Marina Blvd", "dnc15mar"] },
+  { folder: "1655 ECR", words: ["1655 ECR", "dnc1655e"] },
+  { folder: "3350 Mission St", words: ["3350 Mission St", "dnc3350m"] },
+  { folder: "5727 College", words: ["5727 College", "dnc5727c"] },
+  { folder: "850 La Playa", words: ["850 La Playa", "dnc850la"] },
+  { folder: "Align So FS", words: ["Align So FS", "dnccasofs"] },
+  { folder: "Sequoia Living Project", words: ["Sequoia Living Project", "dncsequi"] },
+  { folder: "Sequoia Living Inc", words: ["Sequoia Living Inc", "dncsequo"] },
+];
+
+function propertyFolderFor_(filename) {
+  const hay = String(filename || '').toLowerCase();
+  // Longest word first within each property (the generator sorts them), and
+  // first property to match wins. "The Landing" must beat a bare "landing"
+  // appearing inside another building's name.
+  for (var i = 0; i < PROPERTY_FOLDERS.length; i++) {
+    const e = PROPERTY_FOLDERS[i];
+    for (var j = 0; j < e.words.length; j++) {
+      if (hay.indexOf(String(e.words[j]).toLowerCase()) >= 0) return e.folder;
+    }
+  }
+  return null;
+}
+
+function getPropertySubfolder_(parent, name, cache) {
+  // Deliberately NOT getSubfolder_: that one consults EXTERNAL_FOLDERS, the
+  // routing rules and the auto-folder cap, all of which are about category
+  // names at the top of the drop tree. A property subfolder is none of those,
+  // and the MAX_NEW_PER_RUN cap would stop a first run creating more than five
+  // buildings' folders.
+  const key = parent.getId() + '/' + name;
+  if (cache[key]) return cache[key];
+  const it = parent.getFoldersByName(name);
+  cache[key] = it.hasNext() ? it.next() : parent.createFolder(name);
+  return cache[key];
+}
+
+
 function getSubfolder_(root, name, cache) {
   if (cache[name]) return cache[name];
 

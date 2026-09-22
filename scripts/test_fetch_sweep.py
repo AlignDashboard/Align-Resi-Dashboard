@@ -192,14 +192,42 @@ def main():
     check("an archive nested inside a live folder is not descended into",
           {e["name"] for e in man} == {"RentRoll09_11_2026.xlsx"})
 
-    # One level, not a recursion: anything deeper is a tree nobody described,
-    # and walking it would eventually find somebody's archive under a name
-    # NEVER_SWEEP does not know.
+    # Two levels, because that is what the groupings are. The comp exports are
+    # grouped by market and then by which of the paired exports it is, so a
+    # one-level walk reports Comps as empty while ninety files sit under it --
+    # and reports it in silence, since the folder itself is registered and the
+    # sweep only walks the drop tree's top level.
+    comps = {"R": [(FOLDER, "Comps", "cp")],
+             "cp": [(FOLDER, "Oakland", "oak"), (FOLDER, "Archive", "carch")],
+             "oak": [(FOLDER, "Simple", "osim"), (FOLDER, "Full", "oful")],
+             "osim": [(FILE, "2026-09-21 HelloData - Simple - 335 Third Street.xlsx", "s1")],
+             "oful": [(FILE, "2026-09-21 HelloData - Full - 335 Third Street.xlsx", "s2")],
+             "carch": [(FOLDER, "Oakland - Full", "oarch")],
+             "oarch": [(FILE, "2026-08-04 HelloData - Full - 335 Third Street.xlsx", "s3")]}
+    man = run(fd, comps)
+    check("a file two levels down is read",
+          {e["name"] for e in man} == {
+              "2026-09-21 HelloData - Simple - 335 Third Street.xlsx",
+              "2026-09-21 HelloData - Full - 335 Third Street.xlsx"})
+    check("a file two levels down says which path it sat in",
+          {e["found_in"] for e in man} == {"Comps/Oakland/Simple",
+                                           "Comps/Oakland/Full"})
+    # The archived vintages are the reason the descent is safe to lengthen at
+    # all. They are real exports matching the entry's own patterns, one folder
+    # away from the live ones, and republishing one would move the Market Comps
+    # tab back to an August reading of the market.
+    check("an Archive two levels down is not descended into",
+          not any(e["name"].startswith("2026-08-04") for e in man))
+
+    # A fixed depth, not a recursion: anything deeper is a tree nobody
+    # described, and walking it would eventually find somebody's archive under
+    # a name NEVER_SWEEP does not know.
     man = run(fd, {"R": [(FOLDER, "Rent Roll", "rr")],
                    "rr": [(FOLDER, "2026", "y26")],
                    "y26": [(FOLDER, "Q3", "q3")],
-                   "q3": [(FILE, "RentRoll09_11_2026.xlsx", "r1")]})
-    check("the descent stops at one level", not man)
+                   "q3": [(FOLDER, "Sep", "sep")],
+                   "sep": [(FILE, "RentRoll09_11_2026.xlsx", "r1")]})
+    check("the descent stops at two levels", not man)
 
     print("\n5. one filename, two report types -> reported, not guessed")
     real = json.loads((ROOT / "config" / "report_map.json").read_text())

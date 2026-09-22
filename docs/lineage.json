@@ -26,50 +26,9 @@
    "primary": "t-exptrend",
    "holds": "Expense Trend"
   },
-  "cOpSummary": {
-   "card": "Operating Summary",
-   "tab": "The Landing",
-   "tables": [
-    "t-monthlypl"
-   ],
-   "flows": [
-    "t12"
-   ],
-   "primary": "t-monthlypl",
-   "holds": "Monthly P&L"
-  },
-  "cExpDeep": {
-   "card": "Expense Deep Dive",
-   "tab": "The Landing",
-   "tables": [
-    "t-buckets",
-    "t-l-opps"
-   ],
-   "flows": [
-    "t12"
-   ],
-   "primary": "t-l-buckets",
-   "holds": "Expense deep dive \u2014 buckets"
-  },
-  "cNoi": {
-   "card": "Expense Load & NOI \u2014 controllable/door",
-   "tab": "The Landing",
-   "tables": [
-    "t-buckets",
-    "t-l-noi",
-    "t-l-noi-ttm",
-    "t-l-tax"
-   ],
-   "flows": [
-    "t12",
-    "analyst_workbook"
-   ],
-   "primary": "t-l-noi",
-   "holds": "Expense load & NOI"
-  },
   "cdOpSummary": {
    "card": "Operating Summary",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-monthlypl"
    ],
@@ -81,7 +40,7 @@
   },
   "cdNoi": {
    "card": "Expense Load & NOI",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-monthlypl",
     "t-buckets",
@@ -95,7 +54,7 @@
   },
   "cdExpDeep": {
    "card": "Expense Deep Dive",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-buckets",
     "t-monthlypl"
@@ -108,7 +67,7 @@
   },
   "cdRentCapture": {
    "card": "Loss to Lease",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-rentcap",
     "t-rentroll",
@@ -123,7 +82,7 @@
   },
   "cdFeeds": {
    "card": "What Feeds This Tab",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [],
    "flows": [
     "t12",
@@ -156,7 +115,8 @@
     "t-sc-props",
     "t-sc-thresholds",
     "t-sc-metrics",
-    "t-sc-workbook"
+    "t-sc-workbook",
+    "t-sc-matrix"
    ],
    "flows": [
     "budget",
@@ -164,10 +124,11 @@
     "bldg_metrics",
     "lease_tradeout",
     "eliseai_daily",
-    "kpi_workbook"
+    "kpi_workbook",
+    "analyst_workbook"
    ],
-   "primary": "t-sc-matrix",
-   "holds": "KPI Scorecard matrix"
+   "primary": "t-sc-measured",
+   "holds": "Measured KPI values"
   },
   "psc-palma": {
    "card": "KPI Scorecard \u2014 Palma",
@@ -185,28 +146,13 @@
   },
   "cdDelq": {
    "card": "Delinquency",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-sc-measured",
     "t-sc-arrivals"
    ],
    "flows": [
     "delinquency"
-   ],
-   "primary": "t-sc-measured",
-   "holds": "Measured KPI values"
-  },
-  "cLandingScorecard": {
-   "card": "KPI Scorecard \u2014 The Landing",
-   "tab": "The Landing",
-   "tables": [
-    "t-sc-arrivals",
-    "t-sc-matrix",
-    "t-sc-thresholds"
-   ],
-   "flows": [
-    "bldg_metrics",
-    "analyst_workbook"
    ],
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
@@ -254,23 +200,84 @@
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
   },
-  "cdTradeOuts": {
-   "card": "Trade-outs",
-   "tab": "Landing (Drive)",
+  "cmcVerdict": {
+   "card": "Market Rent Check",
+   "tab": "Market Comps",
    "tables": [
-    "t-renewals",
-    "t-tradeouts"
+    "t-compscheck",
+    "t-comps"
    ],
    "flows": [
-    "renewal_tracker",
-    "daily_leasing"
+    "market_comps"
    ],
-   "primary": "t-tradeouts",
-   "holds": "Trade Outs"
+   "primary": "t-compscheck",
+   "holds": "Market rent, four readings"
+  },
+  "cmcDivergence": {
+   "card": "Asking Rent vs The Submarket",
+   "tab": "Market Comps",
+   "tables": [
+    "t-compstrend"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-compstrend",
+   "holds": "Asking $/sqft against the ring, by quarter"
+  },
+  "cmcBuildUp": {
+   "card": "What The Market Would Pay",
+   "tab": "Market Comps",
+   "tables": [
+    "t-compscheck",
+    "t-unitdir"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-compscheck",
+   "holds": "Market rent, four readings"
+  },
+  "cmcEvidence": {
+   "card": "How It Is Actually Leasing",
+   "tab": "Market Comps",
+   "tables": [
+    "t-comps"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-comps",
+   "holds": "Comp set"
+  },
+  "cmcSet": {
+   "card": "The Comp Set",
+   "tab": "Market Comps",
+   "tables": [
+    "t-comps"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-comps",
+   "holds": "Comp set"
+  },
+  "cmcMethod": {
+   "card": "What This Tab Cannot Say",
+   "tab": "Market Comps",
+   "tables": [
+    "t-comps",
+    "t-compstrend"
+   ],
+   "flows": [
+    "market_comps"
+   ],
+   "primary": "t-comps",
+   "holds": "Comp set"
   },
   "cdRollover": {
    "card": "Rollover Schedule",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-rollover"
    ],
@@ -282,7 +289,7 @@
   },
   "cdGaps": {
    "card": "Largest Unit Gaps",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-gaps",
     "t-unitdir"
@@ -295,7 +302,7 @@
   },
   "cdInventory": {
    "card": "Unit Inventory",
-   "tab": "Landing (Drive)",
+   "tab": "Landing",
    "tables": [
     "t-occupancy",
     "t-unitdir"
@@ -307,23 +314,18 @@
    "primary": "t-unitdir",
    "holds": "Unit directory \u2014 floorplans"
   },
-  "cGaps": {
-   "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
-   "tab": "The Landing",
+  "cdTradeOuts": {
+   "card": "Trade-outs",
+   "tab": "Landing",
    "tables": [
-    "t-unitdir",
-    "t-l-units",
-    "t-l-hold-units",
-    "t-l-hold-summary",
-    "t-l-inputs",
-    "t-l-meta"
+    "t-tradeouts",
+    "t-renewals"
    ],
    "flows": [
-    "unit_directory",
-    "analyst_workbook"
+    "daily_leasing"
    ],
-   "primary": "t-l-units",
-   "holds": "Unit-level gap analysis"
+   "primary": "t-tradeouts",
+   "holds": "Trade Outs"
   },
   "cPortfolioScorecard": {
    "card": "KPI Scorecard",
@@ -341,76 +343,6 @@
    ],
    "primary": "t-sc-matrix",
    "holds": "KPI Scorecard matrix"
-  },
-  "cRentCapture": {
-   "card": "Loss to Lease",
-   "tab": "The Landing",
-   "tables": [
-    "t-l-capture",
-    "t-l-capture-ttm",
-    "t-l-revcompare"
-   ],
-   "flows": [
-    "analyst_workbook"
-   ],
-   "primary": "t-l-capture",
-   "holds": "Rent capture"
-  },
-  "cTradeOuts": {
-   "card": "Trade-outs",
-   "tab": "The Landing",
-   "tables": [
-    "t-l-leases",
-    "t-l-offers",
-    "t-l-lease-summary",
-    "t-l-renewact",
-    "t-l-bands"
-   ],
-   "flows": [
-    "analyst_workbook"
-   ],
-   "primary": "t-l-leases",
-   "holds": "New-lease trade-outs \u2014 lease detail"
-  },
-  "cRollover": {
-   "card": "Rollover Schedule",
-   "tab": "The Landing",
-   "tables": [
-    "t-l-rollover"
-   ],
-   "flows": [
-    "analyst_workbook"
-   ],
-   "primary": "t-l-rollover",
-   "holds": "Rollover schedule"
-  },
-  "cDelinquency": {
-   "card": "Delinquency",
-   "tab": "The Landing",
-   "tables": [
-    "t-l-delq-aging",
-    "t-l-delq-top",
-    "t-l-delq-summary",
-    "t-l-delq-531"
-   ],
-   "flows": [
-    "analyst_workbook"
-   ],
-   "primary": "t-l-delq-aging",
-   "holds": "Delinquency \u2014 aging"
-  },
-  "cInsights": {
-   "card": "Insights Scorecard",
-   "tab": "The Landing",
-   "tables": [
-    "t-l-insights",
-    "t-l-flags"
-   ],
-   "flows": [
-    "analyst_workbook"
-   ],
-   "primary": "t-l-insights",
-   "holds": "Insights scorecard"
   },
   "cTradeOutsPortfolio": {
    "card": "Trade Outs",
@@ -438,15 +370,18 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-17T23:26:58.985182+00:00",
+  "generated_at": "2026-09-21T18:58:18.379636+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
    "partial": 3,
+   "waiting": 1,
    "no-parser": 8,
    "manual": 1
   },
-  "warnings": []
+  "warnings": [
+   "Daily Leasing Reports (renewal_tracker) is active in report_map.json but has no entry in build_lineage.DRIVE_FLOWS \u2014 the page shows it with an unknown downstream"
+  ]
  },
  "stages": [
   {
@@ -571,34 +506,7 @@
     },
     {
      "card": "Operating Summary",
-     "tab": "The Landing",
-     "anchor": "cOpSummary",
-     "tables": [
-      "t-monthlypl-*"
-     ]
-    },
-    {
-     "card": "Expense Deep Dive",
-     "tab": "The Landing",
-     "anchor": "cExpDeep",
-     "primary": "t-l-buckets",
-     "tables": [
-      "t-buckets-*",
-      "t-l-opps"
-     ]
-    },
-    {
-     "card": "Expense Load & NOI \u2014 controllable/door",
-     "tab": "The Landing",
-     "anchor": "cNoi",
-     "primary": "t-l-noi",
-     "tables": [
-      "t-buckets-*"
-     ]
-    },
-    {
-     "card": "Operating Summary",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdOpSummary",
      "primary": "t-monthlypl-*",
      "tables": [
@@ -607,7 +515,7 @@
     },
     {
      "card": "Expense Load & NOI",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdNoi",
      "primary": "t-monthlypl-*",
      "tables": [
@@ -618,7 +526,7 @@
     },
     {
      "card": "Expense Deep Dive",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdExpDeep",
      "primary": "t-buckets-*",
      "tables": [
@@ -628,7 +536,7 @@
     },
     {
      "card": "Loss to Lease",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdRentCapture",
      "primary": "t-rentcap-*",
      "tables": [
@@ -637,7 +545,7 @@
     },
     {
      "card": "What Feeds This Tab",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdFeeds",
      "tables": []
     }
@@ -738,7 +646,7 @@
     },
     {
      "card": "Budget variance tile",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "dkpisSc",
      "tile": true
     }
@@ -836,7 +744,7 @@
     },
     {
      "card": "Delinquency",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdDelq",
      "primary": "t-sc-measured",
      "tables": [
@@ -846,13 +754,13 @@
     },
     {
      "card": "Delinquency tile",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "dkpisSc",
      "tile": true
     },
     {
      "card": "What Feeds This Tab",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdFeeds",
      "tables": []
     }
@@ -871,15 +779,7 @@
      "as_of": "2026-09-08",
      "source_file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
      "landed_at": "2026-09-08T23:28:43.225Z",
-     "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
-    },
-    {
-     "property": "Palma",
-     "file": "Delinquency_8_1_2026.xls.xlsx",
-     "as_of": "2026-08-10",
-     "source_file": "Delinquency_8_1_2026.xls.xlsx",
-     "landed_at": "2026-08-10T17:30:44.001Z",
-     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+     "detail": "1 KPI cell(s): Loss to Lease %"
     }
    ],
    "status": "live"
@@ -939,15 +839,7 @@
      "as_of": "2026-09-08",
      "source_file": "2026-09-08 Delinquency_9_1_2026.xls (1).xlsx",
      "landed_at": "2026-09-08T23:28:43.225Z",
-     "detail": "8 KPI cell(s): Budget Variance %, Concession Load %, Controllable OpEx/Unit, Loss to Lease %, Month to Month Leases, NOI Margin %, Split Between 30/60/90, Total Deliquency"
-    },
-    {
-     "property": "Palma",
-     "file": "Delinquency_8_1_2026.xls.xlsx",
-     "as_of": "2026-08-10",
-     "source_file": "Delinquency_8_1_2026.xls.xlsx",
-     "landed_at": "2026-08-10T17:30:44.001Z",
-     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+     "detail": "1 KPI cell(s): Loss to Lease %"
     }
    ],
    "status": "live"
@@ -1028,25 +920,14 @@
      ]
     },
     {
-     "card": "KPI Scorecard \u2014 The Landing",
-     "tab": "The Landing",
-     "anchor": "cLandingScorecard",
-     "primary": "t-sc-measured",
-     "tables": [
-      "t-sc-arrivals",
-      "t-sc-matrix",
-      "t-sc-thresholds"
-     ]
-    },
-    {
      "card": "Leased % and Trade-out % tiles",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "dkpisSc",
      "tile": true
     },
     {
      "card": "What Feeds This Tab",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdFeeds",
      "tables": []
     },
@@ -1082,12 +963,6 @@
       "t-sc-matrix",
       "t-sc-thresholds"
      ]
-    },
-    {
-     "card": "Leased tile",
-     "tab": "The Landing",
-     "anchor": "lkpis",
-     "tile": true
     }
    ],
    "tables": [
@@ -1134,78 +1009,134 @@
    "status": "live"
   },
   {
-   "id": "renewal_tracker",
-   "title": "Renewal tracker",
+   "id": "market_comps",
+   "title": "Market comp export (HelloData)",
    "origin_kind": "drive",
-   "source_label": "Renewal Tracker",
-   "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": "<date> Landing 2025 Renewal Tracker - Full (42).xlsx",
-   "carries": "A sheet per month from January 2024 forward \u2014 every renewal offer with its current rent, offered rent and status \u2014 plus the month-to-month roster.",
+   "source_label": "Comps",
+   "source_detail": "Drive folder \u00b7 *",
+   "example": "HelloData - Simple - <market> Comps.xlsx",
+   "carries": "Every building in the submarket and every unit it has listed for three years: bedrooms, size, asking and effective rent, first listed, removed, days on market.",
    "filed_by": [
-    "renewal",
-    "renewalssince",
-    "renewaltracker",
-    "renewalworkbook"
+    "comps",
+    "hellodata",
+    "marketsurvey",
+    "rentcomp"
    ],
-   "report_type": "renewal_tracker",
-   "parser": "parse_renewal_tracker",
+   "report_type": "market_comps",
+   "parser": "parse_comps",
    "registered": "active",
    "documented": true,
    "steps": [
     {
-     "script": "scripts/parse_renewal_tracker.py",
-     "does": "Reads each month sheet and the MTM roster, and works out which column holds the offered rent.",
-     "checks": "The offered rent is resolved by ARITHMETIC, not by label: 'BEST OFFER $' is the offer difference on the May 2025 sheet and the offered rate on June 2025's, so a value near the current rent is read as a rate and one near zero as a difference. A sheet whose header cannot be matched is recorded as unread rather than read with the wrong columns."
+     "script": "scripts/parse_comps.py",
+     "does": "Cuts the market from each Align building's point of view: comp rings by distance, median asking rent by bedroom, the quarterly asking-$/sqft series against the ring, days on market and concession share. Publishes aggregates only \u2014 the listing rows are a licensed vendor dataset and everything in docs/ is downloadable.",
+     "checks": "A comp export has no total row, so two structural reconciliations stand in: every listed building must be described in the Property Data table (the rings are built from its coordinates), and Days on Market must reconcile to each listing's own dates. Align's own buildings are excluded from every comp set by resolving them against config/properties.json."
     },
     {
      "script": "scripts/build_metrics.py",
-     "does": "Stores the whole tracker, overwriting the last copy \u2014 one file carries every month.",
-     "checks": "The Yardi tenant code beside each MTM unit is emitted as resident_code so the central scrub drops it."
+     "does": "Joins the market to the building: applies the comp median for each bedroom, plus the subject's own long-run premium to its ring, to the unit directory's bedroom mix, and sets that against the three copies of the Yardi market rent table the pipeline already holds \u2014 the rent roll's column, the directory's plan table and the statement's gross market rent potential.",
+     "checks": "A bedroom the ring has fewer than five listings for keeps the building's own figure and is named as unverified, rather than being priced off a handful of asking rents. The formatted twin of the export is skipped by name of its own layout, with a reason, rather than half-read."
     }
    ],
    "stores": [
-    "data/<slug>/renewal_tracker.json"
+    "data/<slug>/comps.json"
    ],
    "publishes": [
     {
      "file": "metrics.json",
-     "key": "leasing"
+     "key": "comps"
     }
    ],
    "dashboard": [
     {
-     "card": "Trade-outs",
-     "tab": "Landing (Drive)",
-     "anchor": "cdTradeOuts",
-     "primary": "t-renewals-*",
+     "card": "Market Rent Check",
+     "tab": "Market Comps",
+     "anchor": "cmcVerdict",
+     "primary": "t-compscheck-*",
      "tables": [
-      "t-renewals-*",
-      "t-tradeouts-*"
-     ],
-     "holds": "Renewal offers by month, and the month-to-month roster"
+      "t-compscheck-*",
+      "t-comps-*"
+     ]
+    },
+    {
+     "card": "Asking Rent vs The Submarket",
+     "tab": "Market Comps",
+     "anchor": "cmcDivergence",
+     "primary": "t-compstrend-*",
+     "tables": [
+      "t-compstrend-*"
+     ]
+    },
+    {
+     "card": "What The Market Would Pay",
+     "tab": "Market Comps",
+     "anchor": "cmcBuildUp",
+     "primary": "t-compscheck-*",
+     "tables": [
+      "t-compscheck-*",
+      "t-unitdir-*"
+     ]
+    },
+    {
+     "card": "How It Is Actually Leasing",
+     "tab": "Market Comps",
+     "anchor": "cmcEvidence",
+     "primary": "t-comps-*",
+     "tables": [
+      "t-comps-*"
+     ]
+    },
+    {
+     "card": "The Comp Set",
+     "tab": "Market Comps",
+     "anchor": "cmcSet",
+     "primary": "t-comps-*",
+     "tables": [
+      "t-comps-*"
+     ]
+    },
+    {
+     "card": "What This Tab Cannot Say",
+     "tab": "Market Comps",
+     "anchor": "cmcMethod",
+     "primary": "t-comps-*",
+     "tables": [
+      "t-comps-*",
+      "t-compstrend-*"
+     ]
     }
    ],
    "tables": [
-    "t-renewals-*"
+    "t-comps-*",
+    "t-compstrend-*",
+    "t-compscheck-*"
    ],
-   "note": "Its per-offer rows are what let the Trade-outs card average renewals the same way it averages new leases. The analyst workbook carries monthly aggregates only, which is why the card on The Landing has to show one side rent-weighted and the other as a plain mean.",
-   "open_item": "D9",
+   "note": "The only feed here about the MARKET rather than about an Align building, and the only thing the Yardi market rent column can be checked against \u2014 that column is set by the property team, and it is the denominator of loss to lease on both Landing tabs and of the rent-capture series. The export arrives as a pair of near-identical names; the entry claims both on purpose, so a renamed export cannot go unread, and the formatted one is skipped with a reason.",
+   "open_item": null,
    "same_as": null,
    "evidence": [
     {
      "property": "chorus",
-     "file": "data/chorus/renewal_tracker.json",
-     "as_of": "2026-11",
-     "source_file": "2026-09-14 Chorus 2026 Renewal Tracker.xlsx",
-     "landed_at": "2026-09-14T19:28:39.872Z",
+     "file": "data/chorus/comps.json",
+     "as_of": "2026-09-15",
+     "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:40.857Z",
+     "detail": null
+    },
+    {
+     "property": "madelon",
+     "file": "data/madelon/comps.json",
+     "as_of": "2026-09-15",
+     "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:40.857Z",
      "detail": null
     },
     {
      "property": "the-landing",
-     "file": "data/the-landing/renewal_tracker.json",
-     "as_of": "2026-11",
-     "source_file": "2026-09-15 Landing 2025 Renewal Tracker - Full (43).xlsx",
-     "landed_at": "2026-09-15T20:28:48.757Z",
+     "file": "data/the-landing/comps.json",
+     "as_of": "2026-09-15",
+     "source_file": "HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-09-18T00:29:40.857Z",
      "detail": null
     }
    ],
@@ -1251,7 +1182,7 @@
    "dashboard": [
     {
      "card": "Loss to Lease",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdRentCapture",
      "primary": "t-rentroll-*",
      "tables": [
@@ -1262,7 +1193,7 @@
     },
     {
      "card": "Rollover Schedule",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdRollover",
      "primary": "t-rollover-*",
      "tables": [
@@ -1272,7 +1203,7 @@
     },
     {
      "card": "Largest Unit Gaps",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdGaps",
      "primary": "t-gaps-*",
      "tables": [
@@ -1283,7 +1214,7 @@
     },
     {
      "card": "Unit Inventory",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdInventory",
      "primary": "t-occupancy-*",
      "tables": [
@@ -1323,7 +1254,7 @@
    "example": "<date> Daily Report- Week Ending 9.7.26.xlsx",
    "carries": "Every new lease signed that week: unit, plan, square footage, the new rent and \u2014 the part nothing else in the pipeline has \u2014 the PRIOR LEASE RATE it is replacing.",
    "filed_by": [
-    "dailyreport"
+    "dailytracker"
    ],
    "report_type": "daily_leasing_report",
    "parser": "parse_daily_leasing",
@@ -1353,7 +1284,7 @@
    "dashboard": [
     {
      "card": "Trade-outs",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdTradeOuts",
      "primary": "t-tradeouts-*",
      "tables": [
@@ -1446,7 +1377,7 @@
    "dashboard": [
     {
      "card": "Trade-out % tile",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "dkpisSc",
      "tile": true
     },
@@ -1521,17 +1452,8 @@
    ],
    "dashboard": [
     {
-     "card": "Largest Unit Gaps \u2014 beds and plan sq ft",
-     "tab": "The Landing",
-     "anchor": "cGaps",
-     "primary": "t-l-units",
-     "tables": [
-      "t-unitdir-*"
-     ]
-    },
-    {
      "card": "Unit Inventory",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdInventory",
      "primary": "t-unitdir-*",
      "tables": [
@@ -1540,7 +1462,7 @@
     },
     {
      "card": "What Feeds This Tab",
-     "tab": "Landing (Drive)",
+     "tab": "Landing",
      "anchor": "cdFeeds",
      "tables": []
     }
@@ -1704,6 +1626,32 @@
    "status": "partial"
   },
   {
+   "id": "daily-leasing-reports-renewal-tracker",
+   "title": "Daily Leasing Reports",
+   "origin_kind": "drive",
+   "source_label": "Daily Leasing Reports",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": null,
+   "carries": "The Landing 2025 Renewal Tracker and the 'Renewals since ...' extracts. Feeds the analyst workbook's Source Renewal Tracker grey tab, which is refreshed by pasting",
+   "filed_by": [
+    "dailytracker"
+   ],
+   "report_type": "renewal_tracker",
+   "parser": "parse_renewal_tracker",
+   "registered": "active",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "waiting"
+  },
+  {
    "id": "airm-yardi-rev-management-revenue-mgmt",
    "title": "AIRM - Yardi Rev Management",
    "origin_kind": "drive",
@@ -1765,10 +1713,36 @@
    "status": "no-parser"
   },
   {
-   "id": "daily-tracker-daily-tracker",
-   "title": "Daily Tracker",
+   "id": "daily-leasing-reports-prospect-report",
+   "title": "Daily Leasing Reports",
    "origin_kind": "drive",
-   "source_label": "Daily Tracker",
+   "source_label": "Daily Leasing Reports",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": null,
+   "carries": "Weekly 'Prospect and applicant Report' extracts, one per leasing week.",
+   "filed_by": [
+    "dailytracker"
+   ],
+   "report_type": "prospect_report",
+   "parser": null,
+   "registered": "pending",
+   "documented": false,
+   "steps": [],
+   "stores": [],
+   "publishes": [],
+   "dashboard": [],
+   "tables": [],
+   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
+   "open_item": null,
+   "same_as": null,
+   "evidence": [],
+   "status": "no-parser"
+  },
+  {
+   "id": "daily-leasing-reports-daily-tracker",
+   "title": "Daily Leasing Reports",
+   "origin_kind": "drive",
+   "source_label": "Daily Leasing Reports",
    "source_detail": "Drive folder \u00b7 *.xlsx",
    "example": null,
    "carries": "The 'Daily Tracker' workbook. Distinct from the daily leasing reports above",
@@ -1830,33 +1804,6 @@
     "propstatus"
    ],
    "report_type": "property_status",
-   "parser": null,
-   "registered": "pending",
-   "documented": false,
-   "steps": [],
-   "stores": [],
-   "publishes": [],
-   "dashboard": [],
-   "tables": [],
-   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
-   "open_item": null,
-   "same_as": null,
-   "evidence": [],
-   "status": "no-parser"
-  },
-  {
-   "id": "prospect-reports-prospect-report",
-   "title": "Prospect Reports",
-   "origin_kind": "drive",
-   "source_label": "Prospect Reports",
-   "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": null,
-   "carries": "Weekly 'Prospect and applicant Report' extracts, one per leasing week.",
-   "filed_by": [
-    "applicantreport",
-    "prospect"
-   ],
-   "report_type": "prospect_report",
    "parser": null,
    "registered": "pending",
    "documented": false,
@@ -1999,17 +1946,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-17",
+     "as_of": "2026-09-21",
      "source_file": null,
-     "landed_at": "2026-09-17T15:37:39Z",
-     "detail": "37 day(s) recorded"
+     "landed_at": "2026-09-21T15:37:59Z",
+     "detail": "40 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-17",
+     "as_of": "2026-09-21",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-17T15:37:39Z",
+     "landed_at": "2026-09-21T15:37:59Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2111,7 +2058,7 @@
    "publishes": [
     {
      "file": "landing.json",
-     "key": "the whole Landing view"
+     "key": "the whole workbook extract (no card draws it)"
     },
     {
      "file": "scorecard.json",
@@ -2140,83 +2087,12 @@
    ],
    "dashboard": [
     {
-     "card": "Loss to Lease",
-     "tab": "The Landing",
-     "anchor": "cRentCapture",
-     "tables": [
-      "t-l-capture",
-      "t-l-capture-ttm",
-      "t-l-revcompare"
-     ]
-    },
-    {
-     "card": "Trade-outs",
-     "tab": "The Landing",
-     "anchor": "cTradeOuts",
-     "tables": [
-      "t-l-leases",
-      "t-l-offers",
-      "t-l-lease-summary",
-      "t-l-renewact",
-      "t-l-bands"
-     ]
-    },
-    {
-     "card": "Rollover Schedule",
-     "tab": "The Landing",
-     "anchor": "cRollover",
-     "tables": [
-      "t-l-rollover"
-     ]
-    },
-    {
-     "card": "Expense Load & NOI",
-     "tab": "The Landing",
-     "anchor": "cNoi",
-     "tables": [
-      "t-l-noi",
-      "t-l-noi-ttm",
-      "t-l-tax"
-     ]
-    },
-    {
-     "card": "Largest Unit Gaps",
-     "tab": "The Landing",
-     "anchor": "cGaps",
-     "tables": [
-      "t-l-units",
-      "t-l-hold-units",
-      "t-l-hold-summary",
-      "t-l-inputs",
-      "t-l-meta"
-     ]
-    },
-    {
-     "card": "Delinquency",
-     "tab": "The Landing",
-     "anchor": "cDelinquency",
-     "tables": [
-      "t-l-delq-aging",
-      "t-l-delq-top",
-      "t-l-delq-summary",
-      "t-l-delq-531"
-     ]
-    },
-    {
-     "card": "Insights Scorecard",
-     "tab": "The Landing",
-     "anchor": "cInsights",
-     "tables": [
-      "t-l-insights",
-      "t-l-flags"
-     ]
-    },
-    {
-     "card": "KPI Scorecard \u2014 The Landing",
-     "tab": "The Landing",
-     "anchor": "cLandingScorecard",
+     "card": "KPI Scorecard \u2014 four measured cells",
+     "tab": "Scorecard",
+     "anchor": "cScorecard",
      "primary": "t-sc-measured",
      "tables": [
+      "t-sc-measured",
       "t-sc-arrivals",
       "t-sc-matrix"
      ]
@@ -2232,7 +2108,7 @@
     "t-l-insights",
     "t-l-meta"
    ],
-   "note": "The workbook is fed by the same Yardi reports the Drive pipeline collects \u2014 pasted in rather than fetched. It is why The Landing has a full view while the rent roll has never reached the pipeline.",
+   "note": "The workbook is fed by the same Yardi reports the Drive pipeline collects \u2014 pasted in rather than fetched. It carried the whole Landing view until the pipeline could draw the building on its own; what is left is the four scorecard cells no Drive report answers yet.",
    "sub_sources": [
     {
      "tab": "Source CY25 / Source Aug25-Jul26",
@@ -2334,7 +2210,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-17T23:23:45.115512+00:00",
+     "landed_at": "2026-09-21T18:58:15.880332+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

@@ -1,6 +1,6 @@
-# The Landing (Drive) — report packet
+# The Landing — report packet
 
-What to pull, and where to drop it, to make the `Landing (Drive)` tab update
+What to pull, and where to drop it, to make the `Landing` tab update
 completely. That tab is the one that **moves on its own**: every number on it
 comes from a report the Gmail filer drops into Drive and the pipeline parses, so
 dropping a fresh direct export in Drive is the whole refresh. (`The Landing` tab

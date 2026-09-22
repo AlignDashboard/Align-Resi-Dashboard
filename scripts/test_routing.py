@@ -166,15 +166,15 @@ CASES = [
     ("2026-08-25 leasing_funnel_report_2026-08-25.xlsx",            "EliseAI Reports"),
     ("2026-08-18 leasing_funnel_report_2026-08-18.xlsx",            "EliseAI Reports"),
     ("leasing_funnel_report_2026-08-04.xlsx",                       "EliseAI Reports"),
-    ("2026-08-31 Landing 2025 Renewal Tracker - Full (40).xlsx",    "Renewal Tracker"),
-    ("2026-08-30 Renewals since 9.15.25 - (updated 8.30.26).xlsx",  "Renewal Tracker"),
+    ("2026-08-31 Landing 2025 Renewal Tracker - Full (40).xlsx",    "Daily Leasing Reports"),
+    ("2026-08-30 Renewals since 9.15.25 - (updated 8.30.26).xlsx",  "Daily Leasing Reports"),
     ("2026-08-31 BoxScoreSummary08_31_2026 - 30Days - The Landing.xlsx", "Property Status"),
     ("2026-08-31 BoxScoreSummary08_31_2026 - 60Days - The Landing.xlsx", "Property Status"),
-    ("2026-08-30 8.24-8.30 Prospect and applicant Report  (1).xlsx", "Prospect Reports"),
+    ("2026-08-30 8.24-8.30 Prospect and applicant Report  (1).xlsx", "Daily Leasing Reports"),
     ("2026-08-31 Daily Report- Week Ending 8.30.26 (2).xlsx",       "Daily Leasing Reports"),
     ("2026-08-30 8.30.26 - The Madelon - Daily Report.xlsx",        "Daily Leasing Reports"),
     ("2026-08-28 08.24.2026- 08.30.2026- Chorus - Daily Report (3).xlsx", "Daily Leasing Reports"),
-    ("2026-08-29 Daily Tracker  (14) (1) (43).xlsx",                "Daily Tracker"),
+    ("2026-08-29 Daily Tracker  (14) (1) (43).xlsx",                "Daily Leasing Reports"),
     ("2026-08-31 rs_sql_JPM_Demographics_Combined - The Landing (3).xlsx", "Demographics"),
     ("UnitDirectory08_25_2026.xlsx",                                "Building Info"),
     ("2026-08-26 UnitDirectory08_25_2026.xlsx",                     "Building Info"),
@@ -189,6 +189,12 @@ CASES = [
     ("LeaseTradeoutReport-Landing.XLS",                             "Historical Tradeout Reports"),
     ("2026-09-17 LeaseTradeoutReport-Landing.XLS",                  "Historical Tradeout Reports"),
     ("Landing 2025 Resi Budget.xlsx",                               "Budgets"),
+    # The HelloData comp export arrives as a pair. Both belong in Comps and
+    # both must be CLAIMABLE by its entry (check 10) -- the pipeline reads the
+    # Simple one and skips the Full one by name of its own layout, which is a
+    # parser decision rather than a routing one.
+    ("2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx", "Comps"),
+    ("2026-09-18 HelloData - Full - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",   "Comps"),
     # already filed correctly today -- these must not move
     ("12_Month_Statement_Accrual.xlsx",                             "T12 Expenses"),
     ("2026-07-16 12_Month_Statement_rs335_accrual.xlsx",            "T12 Expenses"),
@@ -300,6 +306,52 @@ def main():
         failures.append("PROPERTY_WORDS has names properties.json does not")
     if not missing and not extra:
         print(f"   PASS all {len(words)} names, aliases and codes agree")
+
+    print("\n7b. PROPERTY_FOLDERS still matches config/properties.json (A11)")
+    # The per-property split inside Daily Leasing Reports is generated from the
+    # property master, and has the same failure mode PROPERTY_WORDS has: a
+    # building added to properties.json and not here files at the top of the
+    # category folder for ever, which looks like a report that simply has no
+    # property in its name.
+    pf_block = re.search(r"const PROPERTY_FOLDERS = \[(.*?)\n\];",
+                         SCRIPT.read_text(), re.S)
+    if not pf_block:
+        print("   FAIL PROPERTY_FOLDERS not found in the script")
+        failures.append("PROPERTY_FOLDERS missing")
+    else:
+        folders = set(re.findall(r"folder:\s*\"([^\"]+)\"", pf_block.group(1)))
+        want = {x["name"] for x in props}
+        miss, extra2 = want - folders, folders - want
+        if miss or extra2:
+            print(f"   FAIL properties without a folder: {sorted(miss)[:6]}; "
+                  f"folders with no property: {sorted(extra2)[:6]}")
+            failures.append("PROPERTY_FOLDERS disagrees with properties.json")
+        else:
+            print(f"   PASS all {len(folders)} properties have a subfolder name")
+        # Every word the split matches on must be one the master knows, or a
+        # file routes to a building on the strength of a string nothing owns.
+        pf_words = set(re.findall(r"\"([^\"]+)\"", pf_block.group(1))) - folders
+        stray = pf_words - expected
+        if stray:
+            print(f"   FAIL the split matches on {len(stray)} word(s) properties.json "
+                  f"does not know: {sorted(stray)[:6]}")
+            failures.append("PROPERTY_FOLDERS matches on unknown words")
+        else:
+            print(f"   PASS all {len(pf_words)} match words come from the master")
+
+    print("\n7c. the leasing families share one folder, Demographics does not (A11)")
+    # load_rules yields (folder, [pattern, ...]) tuples, not dicts.
+    fam = {folder for folder, pats in rules
+           if any(k in str(pats) for k in
+                  ("renewal", "prospect", "dailyreport", "dailytracker"))}
+    demo = {folder for folder, pats in rules if "demographic" in str(pats)}
+    if fam == {"Daily Leasing Reports"} and demo == {"Demographics"}:
+        print("   PASS four leasing families -> Daily Leasing Reports; "
+              "Demographics kept separate")
+    else:
+        print(f"   FAIL leasing families route to {sorted(fam)}, demographics to "
+              f"{sorted(demo)}")
+        failures.append("the A11 folder merge is not in place")
 
     print(f"\n8. a new report type names its own folder ({len(NEW_TYPE_CASES)} case(s))")
     for filename, want in NEW_TYPE_CASES:
