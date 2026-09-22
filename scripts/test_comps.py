@@ -52,6 +52,7 @@ import openpyxl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_metrics as bm      # noqa: E402
+import refresh_comps as rc     # noqa: E402
 import parse_comps as pc        # noqa: E402
 from xlsx_anchors import LayoutError  # noqa: E402
 
@@ -88,8 +89,16 @@ LIST_HEAD = ["Building Name", "Street Address", "City", "State", "Zip Code",
 AS_OF = "2026-09-15"
 
 
-def build(path, props, listings, sheets=None):
-    """A HelloData 'Simple' export: two flat tables, headers on row 1."""
+def build(path, props, listings, sheets=None, as_of=None):
+    """A HelloData 'Simple' export: two flat tables, headers on row 1.
+
+    Pass `as_of` to stamp the WHOLE file as one vintage -- both tables, every
+    row -- which is what a second extract of the same market is, and what
+    `store_comps` orders vintages by. Left out, each listing keeps the snapshot
+    date it was built with, because several checks here turn on a row observed
+    on an older snapshot than the file's own.
+    """
+    stamp = as_of or AS_OF
     wb = openpyxl.Workbook()
     if sheets is not None:                     # the formatted twin
         wb.remove(wb.active)
@@ -102,11 +111,11 @@ def build(path, props, listings, sheets=None):
     ws.append(PROP_HEAD)
     for name, addr, zp, lat, lng, units, built in props:
         ws.append([name, addr, "San Francisco", "CA", zp, lat, lng,
-                   "San Francisco-Oakland-Hayward, CA", units, built, AS_OF])
+                   "San Francisco-Oakland-Hayward, CA", units, built, stamp])
     ls = wb.create_sheet(pc.LISTING_SHEET)
     ls.append(LIST_HEAD)
     for r in listings:
-        ls.append(r)
+        ls.append(list(r[:-1]) + [as_of] if as_of else list(r))
     wb.save(path)
     return path
 
@@ -434,6 +443,91 @@ def main():
                json.load(open(fp))["vintages"])
         finally:
             bm.DATA = was
+
+        print("\nthe master routes a building by its own NAME, not only its aliases")
+        # The comp export names each building as the market names it, so this
+        # is the one feed that routes on a property's own name -- and until
+        # 2026-09-22 the master did not carry names at all. It looked healthy
+        # because the four properties a report had ever named happened to
+        # duplicate their names into `aliases`; 335 Third Street did not, so
+        # its whole Oakland comp set parsed, tied out and was dropped with one
+        # [warn] line.
+        props_all, code_to_prop = bm.load_properties()
+        unrouted = [q["slug"] for q in props_all
+                    if (code_to_prop.get(q["name"].lower()) or {}).get("slug") != q["slug"]]
+        ok("every property routes by its own name", not unrouted, unrouted)
+        ok("...including the one that exposed the gap",
+           (code_to_prop.get("335 third street") or {}).get("slug") == "335-third-street")
+
+        # Two properties claiming one string is a silent misroute -- whichever
+        # sorted last would win and nothing downstream could tell -- so it is
+        # refused rather than resolved.
+        clash = pathlib.Path(tmp) / "clash"
+        (clash / "config").mkdir(parents=True, exist_ok=True)
+        (clash / "config" / "properties.json").write_text(json.dumps({"properties": [
+            {"slug": "a", "name": "Shared Name", "codes": ["aa"]},
+            {"slug": "b", "name": "B", "codes": ["bb"], "aliases": ["Shared Name"]},
+        ]}))
+        cwd = os.getcwd()
+        try:
+            os.chdir(clash)
+            try:
+                bm.load_properties()
+                refused = False
+            except SystemExit:
+                refused = True
+        finally:
+            os.chdir(cwd)
+        ok("a name two properties claim is refused, not resolved", refused)
+
+        print("\nrefresh_comps rewrites the comps block and nothing else")
+        was, bm.DATA = bm.DATA, pathlib.Path(tmp) / "rdata"
+        mpath = pathlib.Path(tmp) / "metrics.json"
+        was_m, rc.METRICS = rc.METRICS, mpath
+        argv = sys.argv
+        try:
+            # A metrics.json with other blocks in it, as the live one has.
+            mpath.write_text(json.dumps({
+                "meta": {"generated_at": "2026-01-01T00:00:00Z"},
+                "unit_directory": {"available": False, "properties": []},
+                "comps": {"available": False, "properties": []},
+                "scorecard_note": "untouched",
+            }))
+            newer = build(os.path.join(tmp, "newer.xlsx"), [SUBJECT, NEAR], base_listings())
+
+            sys.argv = ["refresh_comps.py", newer]
+            rc.main()
+            got = json.load(open(mpath))
+            ok("a market that was not on the tab is published",
+               [x["slug"] for x in got["comps"]["properties"]] == ["the-landing"],
+               got["comps"]["properties"])
+            ok("...at the export's own as-of",
+               got["comps"]["properties"][0]["as_of"] == AS_OF,
+               got["comps"]["properties"][0].get("as_of"))
+            ok("every other block is left exactly as it was",
+               got["scorecard_note"] == "untouched"
+               and got["meta"]["generated_at"] == "2026-01-01T00:00:00Z"
+               and got["unit_directory"] == {"available": False, "properties": []},
+               sorted(got))
+
+            # An OLDER export must not walk the tab backwards -- arrival order
+            # does not track vintage in this feed, and a scheduled refresh will
+            # be handed whatever arrived, not whatever is newest.
+            old_file = build(os.path.join(tmp, "older.xlsx"), [SUBJECT, NEAR],
+                             base_listings(), as_of="2026-06-15")
+            sys.argv = ["refresh_comps.py", old_file]
+            rc.main()
+            got2 = json.load(open(mpath))
+            ok("an older export does not walk the published market backwards",
+               got2["comps"]["properties"][0]["as_of"] == AS_OF,
+               got2["comps"]["properties"][0].get("as_of"))
+
+            sys.argv = ["refresh_comps.py", newer, "--dry-run"]
+            before = mpath.read_text()
+            rc.main()
+            ok("--dry-run writes nothing", mpath.read_text() == before)
+        finally:
+            bm.DATA, rc.METRICS, sys.argv = was, was_m, argv
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
