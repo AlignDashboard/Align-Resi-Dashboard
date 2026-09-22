@@ -1003,6 +1003,100 @@ def store_renewal_tracker(prop, parsed):
                          "mtm", "unread_sheets", "problems"])
 
 
+def _vintage(value):
+    """A comp export's own as-of date as a comparable `YYYY-MM-DD`, or None."""
+    return str(value)[:10] if value else None
+
+
+def store_comps(prop, parsed):
+    """data/<slug>/comps.json — this property's view of its own submarket.
+
+    Kept whole rather than accumulated, unlike the trade-out report: one comp
+    export carries three years of listings, so a later file restates the same
+    history rather than adding the next slice of a window.
+
+    But which file is "later" is the file's own `as_of`, never the newest
+    arrival and never whichever parsed last. Those come apart badly here: the
+    Drive folders hold ~90 exports whose arrival order does not track their
+    vintage at all — a copy that landed 2026-09-21 carries an as-of of
+    2026-08-05, six weeks behind one that landed three days earlier. Taking
+    whatever parsed last would move the Market Comps tab back to an August
+    reading of the market with nothing on the page to say so, which is the one
+    failure a tab built to check someone else's number cannot afford.
+
+    Nor is a later vintage a strict superset of an earlier one, which this
+    function used to assume. HelloData revises its own history: of 739 listings
+    in the 2026-08-11 Oakland file, 43 are absent from the 2026-09-20 one — and
+    every one of those is a unit still in the newer file under a revised
+    `First Listed` date, not a building or a unit that went away. So the newest
+    vintage is the right single answer, and the older files are the vendor's
+    revision history rather than copies of it.
+
+    They stay live in `Comps/<market>/Simple/` and are read on every run, which
+    is what makes this a choice rather than an accident: the folder is the whole
+    cadence, the store picks the best of it, and `vintages` records what it was
+    offered. Only the `Full` twins are archived, and only because no parser
+    reads them — a twenty-sheet formatted workbook with no parseable table in
+    it costs 2-4 MB a file to fetch and answers nothing.
+
+    The section is already aggregates — medians, counts and shares. The listing
+    rows behind them are a licensed vendor dataset and stay out of `data/` for
+    the same reason resident names do: everything here is served to anyone with
+    the URL.
+    """
+    section = (parsed.get("sections") or [{}])[0]
+    out = dict(section)
+    out.update({
+        "report_type": parsed.get("report_type"),
+        "vendor": parsed.get("vendor"),
+        "market": parsed.get("market"),
+        "properties_in_file": parsed.get("properties_in_file"),
+        "listings_in_file": parsed.get("listings_in_file"),
+        "source_file": parsed.get("source_file"),
+        "landed_at": parsed.get("landed_at"),
+        "checks": parsed.get("checks"),
+        "problems": (parsed.get("problems") or []) + (section.get("problems") or []),
+    })
+    fp = DATA / prop["slug"] / "comps.json"
+    fp.parent.mkdir(parents=True, exist_ok=True)
+
+    have = {}
+    if fp.exists():
+        try:
+            have = json.load(open(fp)) or {}
+        except (json.JSONDecodeError, OSError):
+            have = {}
+
+    mine, theirs = _vintage(out.get("as_of")), _vintage(have.get("as_of"))
+
+    # Every vintage this store has been offered, whether or not it won. It is
+    # what lets the tab stop calling itself single-vintage the day it is not,
+    # and it is the only record of the export cadence — the files themselves
+    # are archived. Dates only, and a set, so re-reading the folder every run
+    # adds nothing.
+    seen = sorted(set(have.get("vintages") or []) | ({mine} if mine else set()))
+
+    if theirs and (not mine or mine < theirs):
+        # An older reading of the same market. Keep the newer one and say so:
+        # a file silently ignored and a file silently applied look identical in
+        # a green run, and this folder holds ninety of them.
+        print(f"[skip] {parsed.get('source_file')}: comps as of "
+              f"{mine or 'unknown'}, older than the {theirs} already stored "
+              f"for {prop['name']}")
+        have["vintages"] = seen
+        json.dump(scrub(have), open(fp, "w"), indent=2, default=str)
+        return fp
+
+    out["vintages"] = seen
+    json.dump(scrub(out), open(fp, "w"), indent=2, default=str)
+    ring = next((r for r in section.get("rings") or [] if r.get("primary")), {})
+    print(f"[ok] stored market comps for {prop['name']}: {ring.get('properties', 0)} "
+          f"comp propert(ies) within {section.get('primary_radius_mi')} mi, "
+          f"{ring.get('listings', 0)} listing(s) as of {section.get('as_of')} "
+          f"({len(seen)} vintage(s) on file)")
+    return fp
+
+
 # report_type -> what to do with a successful parse
 ACCUMULATORS = {
     "t12_statement": None,          # handled inline (needs the book/period checks)
@@ -1015,6 +1109,7 @@ ACCUMULATORS = {
     "daily_leasing_report": store_daily_leasing,
     "renewal_tracker": store_renewal_tracker,
     "lease_tradeout": store_lease_tradeout,
+    "market_comps": store_comps,
 }
 
 
@@ -1024,7 +1119,13 @@ def process_manifest():
         print("[info] no manifest; rebuilding metrics from existing data/ only")
         return
     manifest = json.load(open(mpath))
-    _, code_to_prop = load_properties()
+    all_props, code_to_prop = load_properties()
+    props_by_slug = {p["slug"]: p for p in all_props}
+    # report_map entries by report_type, for the per-report settings the
+    # manifest does not carry (today: which property an export that names none
+    # belongs to -- see the unattributed branch below).
+    rmap_by_type = {e.get("report_type"): e
+                    for e in json.load(open("config/report_map.json"))["subfolders"]}
 
     # Deterministic order: sort by filename so date-prefixed files process
     # oldest-to-newest and the newest file wins any same-period collision.
@@ -1047,6 +1148,16 @@ def process_manifest():
         # carry Drive's arrival time onto the parse, so store_report can record
         # when the report landed rather than only what period it covers. Set
         # before the multi-section split below, which copies the parse.
+        # A parser may claim a file and then decline to read it: the comp
+        # export arrives as a pair of near-identical names, one machine-readable
+        # and one formatted for the eye. That is a skip with a reason, not a
+        # failure -- the entry claims everything in its folder on purpose, so a
+        # renamed export cannot go unread, and this is what keeps the log
+        # honest about the file it is not reading.
+        if parsed.get("skip"):
+            print(f"[skip] {item['name']}: {parsed['skip']}")
+            continue
+
         parsed["landed_at"] = item.get("landed_at")
         # setdefault, not assignment: a parser that names its own source (the
         # unit directory, the funnel) knows the name it was filed under, which
@@ -1075,14 +1186,30 @@ def process_manifest():
                 prop = code_to_prop.get(code.lower()) if code else None
                 if not prop:
                     if parsed.get("unattributed"):
-                        # the file itself names no property (the concession
-                        # burn-off says only "For Selected Properties"), so
-                        # this is an export-settings problem, not a config one
-                        print(f"[warn] {item['name']} names no property "
-                              f"({parsed.get('coverage')!r}) -- parsed and tied "
-                              f"out, but stored nowhere until the owner settles "
-                              f"which property the export covers")
-                        continue
+                        # The file names no property ("For Selected Properties"
+                        # and nothing else), so the report map may name the
+                        # owner instead -- the concession burn-off is Palma's,
+                        # settled by the owner 2026-09-21 (A6).
+                        #
+                        # Only ever reached when the file itself is silent: a
+                        # section that names its building routes by that name
+                        # above, so this cannot overrule an export that says
+                        # who it is about. That distinction is the whole reason
+                        # attribution was refused rather than guessed for six
+                        # weeks -- filing one building's concessions under
+                        # another is not a thing a log line makes safe.
+                        fallback = (rmap_by_type.get(item["report_type"])
+                                    or {}).get("unattributed_property")
+                        prop = props_by_slug.get(fallback) if fallback else None
+                        if not prop:
+                            print(f"[warn] {item['name']} names no property "
+                                  f"({parsed.get('coverage')!r}) -- parsed and tied "
+                                  f"out, but stored nowhere until the owner settles "
+                                  f"which property the export covers")
+                            continue
+                        print(f"[attributed] {item['name']} names no property "
+                              f"({parsed.get('coverage')!r}); report_map assigns it "
+                              f"to {prop['name']}")
                     print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                           f"add it to config/properties.json; skipping")
                     continue
@@ -1345,6 +1472,208 @@ def expense_trend(pl_props):
         "basis": "Monthly expenses per property, from each property's own "
                  "12-month accrual statement",
     }
+
+
+# A bedroom type needs this many current comp listings before the market is
+# allowed to set a rent for it. Below it the building's own Yardi figure is
+# kept and the bedroom is NAMED as unverified -- The Landing's 16 three-beds
+# have two comparable listings in the whole submarket, and two listings is a
+# pair of asking prices rather than a market.
+MIN_BED_FOR_IMPLIED = 5
+
+
+def bedroom_mix(ud_prop):
+    """Units, floor area and the Yardi market rent, per bedroom count.
+
+    The unit directory is the only feed that says how many bedrooms a floorplan
+    has, which is what makes a building comparable to a market at all: a comp
+    median is per bedroom, and the rent roll names plans without defining them.
+
+    The rent here is the midpoint of each plan's published min/max times its
+    units, so it is an ESTIMATE of the directory's market rent table and says
+    so wherever it is published. The exact per-unit sum is not in the stored
+    directory; the statement's own gross potential rent is the tied-out twin of
+    this figure and is published beside it for exactly that reason.
+    """
+    mix, no_rent = {}, []
+    for code, pl in sorted((ud_prop.get("plans") or {}).items()):
+        bed, units = pl.get("bedrooms"), pl.get("units") or 0
+        if bed is None or not units:
+            continue
+        m = mix.setdefault(bed, {"bed": bed, "units": 0, "sqft": 0.0,
+                                 "yardi_rent": 0.0, "plans": 0, "priced": 0})
+        m["units"] += units
+        m["sqft"] += (pl.get("sqft_avg") or 0) * units
+        m["plans"] += 1
+        lo, hi = pl.get("rent_min"), pl.get("rent_max")
+        if lo is None or hi is None:
+            no_rent.append(code)
+        else:
+            m["yardi_rent"] += (lo + hi) / 2 * units
+            m["priced"] += units
+    return mix, no_rent
+
+
+def comp_implied(mix, ring, premium):
+    """What this building's whole market rent table would be at comp asking.
+
+    Per bedroom, because that is the unit the market quotes in and the one
+    size-match can be checked on. The subject's own long-run premium to the
+    ring is applied rather than nothing: a comp median is the middle of the
+    submarket, and a building that has asked 6% over that middle for three
+    years is worth 6% over it today. Withholding the premium would understate
+    the answer exactly as much as ignoring the comps overstates it, so both
+    are published — `premium` is a field here, not a constant.
+    """
+    rows, total, unverified = [], 0.0, []
+    for bed in sorted(mix):
+        m = mix[bed]
+        c = ((ring or {}).get("by_bed") or {}).get(str(bed))
+        subject_sqft = m["sqft"] / m["units"] if m["units"] else None
+        if c and c["n"] >= MIN_BED_FOR_IMPLIED:
+            rent, source = c["median_rent"] * (1 + premium), "comps"
+        else:
+            rent = m["yardi_rent"] / m["priced"] if m["priced"] else None
+            source, _ = "yardi", unverified.append(bed)
+        if rent is None:
+            continue
+        total += rent * m["units"]
+        rows.append({
+            "bed": bed, "units": m["units"],
+            "subject_sqft": round(subject_sqft, 1) if subject_sqft else None,
+            "comp_sqft": c["median_sqft"] if c else None,
+            "comp_n": c["n"] if c else 0,
+            "comp_median_rent": c["median_rent"] if c else None,
+            "size_gap": (round(subject_sqft / c["median_sqft"] - 1, 4)
+                         if c and subject_sqft and c["median_sqft"] else None),
+            "yardi_rent": (round(m["yardi_rent"] / m["priced"], 2)
+                           if m["priced"] else None),
+            "rent": round(rent, 2), "total": round(rent * m["units"], 2),
+            "source": source,
+        })
+    return {"rows": rows, "total": round(total, 2), "unverified_beds": unverified,
+            "premium": premium}
+
+
+def comps_verification(section, ud_prop, rr_prop, rc_prop):
+    """The Yardi market rent table, measured against the market it claims.
+
+    Four figures for one number, and the point of the card is that three of
+    them agree. Two are Yardi's own (the rent roll's market rent column and the
+    unit directory's table), one is the general ledger's copy of it (the
+    statement's gross market rent potential, which is the same table booked as
+    revenue), and one is the market's. Where the three Yardi figures disagree
+    with EACH OTHER, the disagreement dates the change — which is what a single
+    comparison against the comps could never do.
+
+    Returns None when the property has no directory, since without a bedroom
+    mix there is nothing to apply a comp median to.
+    """
+    if not ud_prop or not (ud_prop.get("plans") or {}):
+        return None
+    mix, no_rent = bedroom_mix(ud_prop)
+    if not mix:
+        return None
+    premium = ((section.get("premium") or {}).get("median")) or 0.0
+    rings = section.get("rings") or []
+    primary = next((r for r in rings if r.get("primary")), None)
+    implied = comp_implied(mix, primary, premium)
+    if not implied["rows"]:
+        return None
+
+    sources, base = [], implied["total"]
+    gap = lambda v: round(v / base - 1, 4) if base else None      # noqa: E731
+
+    if rr_prop and rr_prop.get("market_rent_total"):
+        sources.append({
+            "key": "rent_roll", "label": "Rent roll",
+            "detail": "the market rent column, unit by unit",
+            "as_of": rr_prop.get("as_of"), "source_file": rr_prop.get("source_file"),
+            "market_rent": rr_prop["market_rent_total"],
+            "units": rr_prop.get("units"), "psf": rr_prop.get("market_psf"),
+            "gap": gap(rr_prop["market_rent_total"]), "exact": True,
+        })
+    directory_total = sum(m["yardi_rent"] for m in mix.values())
+    if directory_total:
+        sources.append({
+            "key": "unit_directory", "label": "Unit directory",
+            "detail": "each plan's published market rent, midpoint of its range",
+            "as_of": ud_prop.get("as_of"), "source_file": ud_prop.get("source_file"),
+            "market_rent": round(directory_total, 2),
+            "units": sum(m["priced"] for m in mix.values()),
+            "gap": gap(directory_total), "exact": False,
+        })
+    if rc_prop and rc_prop.get("market_potential"):
+        pot = rc_prop["market_potential"][-1]
+        sources.append({
+            "key": "statement", "label": "T12 statement",
+            "detail": "gross market rent potential, the same table booked as revenue",
+            "as_of": rc_prop.get("period_end"),
+            "month": (rc_prop.get("months") or [None])[-1],
+            "market_rent": pot, "gap": gap(pot), "exact": True,
+        })
+    sources.append({
+        "key": "comp_implied", "label": "Comp-implied",
+        "detail": (f"comp median asking rent by bedroom, plus this building's own "
+                   f"{premium:+.1%} long-run premium to its submarket"),
+        "as_of": section.get("as_of"), "market_rent": implied["total"],
+        "gap": 0.0, "exact": False,
+    })
+
+    # The same build-up at every ring the export was cut into, so the answer
+    # carries its own sensitivity: a gap that survives three comp sets is a
+    # finding, and one that does not is a choice of radius.
+    sensitivity = []
+    for r in rings:
+        alt = comp_implied(mix, r, premium)
+        if not alt["rows"]:
+            continue
+        rr = (rr_prop or {}).get("market_rent_total")
+        sensitivity.append({
+            "radius_mi": r.get("radius_mi"), "primary": bool(r.get("primary")),
+            "properties": r.get("properties"), "listings": r.get("listings"),
+            "implied": alt["total"],
+            "gap": round(rr / alt["total"] - 1, 4) if rr and alt["total"] else None,
+        })
+
+    # The headline is the newest Yardi reading of the table, which is normally
+    # the rent roll -- it is the one that is per-unit, current and used as the
+    # denominator of loss to lease. A property with no roll in the pipeline
+    # still has a table worth checking, so the directory stands in and the card
+    # names which one it is rather than going blank on a property that has one
+    # fewer feed.
+    headline = next((s for s in sources if s["key"] == "rent_roll"), None) \
+        or next((s for s in sources if s["key"] == "unit_directory"), None)
+    out = {
+        "implied": implied,
+        "sources": sources,
+        "sensitivity": sensitivity,
+        "unpriced_plans": no_rent,
+        "basis": (f"Comp median asking rent per bedroom on the "
+                  f"{section.get('primary_radius_mi')} mi ring, times the "
+                  f"subject's own median premium to that ring, applied to the "
+                  f"unit directory's bedroom mix"),
+    }
+    if headline:
+        over = headline["market_rent"] - implied["total"]
+        out["headline"] = {
+            "gap": headline["gap"], "dollars": round(over, 2),
+            "annual": round(over * 12, 2), "source": headline["key"],
+            "label": headline["label"], "exact": headline.get("exact"),
+            "as_of": headline["as_of"], "source_file": headline.get("source_file"),
+        }
+        # What the published loss to lease becomes on a market rent the comps
+        # support. The occupied share is the roll's own -- market rent is not
+        # flat across units, so scaling the total by it beats assuming it is.
+        occ_share = (((rr_prop or {}).get("market_rent_occupied") or 0)
+                     / ((rr_prop or {}).get("market_rent_total") or 1))
+        inplace = (rr_prop or {}).get("actual_rent_occupied")
+        occ_market = implied["total"] * occ_share
+        if inplace and occ_market:
+            out["headline"]["ltl_published"] = (rr_prop or {}).get("loss_to_lease_pct")
+            out["headline"]["ltl_restated"] = round(
+                (occ_market - inplace) / occ_market, 4)
+    return out
 
 
 def build_metrics_json():
@@ -1732,6 +2061,40 @@ def build_metrics_json():
                          "tieout_max_gap": latest.get("tieout_max_gap"),
                          "problems": latest.get("problems") or []})
     metrics["rent_capture"] = {"available": bool(rc_props), "properties": rc_props}
+
+    # The market, and the Yardi market rent table measured against it. The three
+    # blocks the verification joins are read back out of `metrics` rather than
+    # from `data/`, because the rent roll's store is gitignored (per-unit, it
+    # arrives with resident names) and so exists only during a pipeline run --
+    # the published aggregate is what a fresh clone has, and it carries every
+    # figure this needs. Same reasoning as rent_roll_ltl() in populate_scorecard.
+    comps_props = []
+    by_slug = lambda block, slug: next(                                # noqa: E731
+        (x for x in ((metrics.get(block) or {}).get("properties") or [])
+         if x.get("slug") == slug), None)
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "comps.json"
+        if not fp.exists():
+            continue
+        c = json.load(open(fp))
+        ver = comps_verification(c, by_slug("unit_directory", p["slug"]),
+                                 by_slug("rent_roll", p["slug"]),
+                                 by_slug("rent_capture", p["slug"]))
+        comps_props.append({"slug": p["slug"], "name": p["name"],
+                            **{k: v for k, v in c.items()
+                               if k not in ("report_type", "property_code")},
+                            "verification": ver})
+        if ver and ver.get("headline"):
+            h = ver["headline"]
+            print(f"[ok] market comps for {p['name']}: {h.get('label', 'Yardi')} "
+                  f"market rent is {h['gap']:+.1%} against the comp-implied "
+                  f"figure (${h['dollars']:,.0f}/mo)")
+        else:
+            print(f"[ok] market comps for {p['name']}: market side only "
+                  f"(no unit directory or no rent roll to verify against)")
+    metrics["comps"] = {"available": bool(comps_props), "properties": comps_props}
 
     if expense_ratio_props:
         metrics["expense_ratio"] = {

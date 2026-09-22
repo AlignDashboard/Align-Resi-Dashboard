@@ -56,7 +56,9 @@
         "*concessionburnoff*",
         "*concession_burnoff*"
       ],
-      "status": "active"
+      "status": "active",
+      "unattributed_property": "palma",
+      "_comment": "The export says only 'For Selected Properties' and names no building in any heading. Owner settled 2026-09-21 that it covers Palma (A6). A file that DOES name its properties still routes by those names -- this is the fallback for one that names none, not an override."
     },
     {
       "drive_folder": "AIRM - Yardi Rev Management",
@@ -147,7 +149,21 @@
       "_comment": "Yardi Lease Tradeout Report: one row per new lease with the lease it replaced beside it, over whatever window the export was run for. The only feed carrying a trade-out with its own history -- the weekly leasing workbook covers a fortnight and the EliseAI export publishes a rate with no rows behind it. Feeds the Trade-out % tile on the Landing (Drive) tab through metrics.json's lease_tradeout block. file_glob is '*' ON PURPOSE: Yardi names this export .XLS and writes an .xlsx, so neither extension describes it and the parser sniffs the magic bytes instead. Leases are accumulated by (unit, signed date, previous lease start) rather than the newest file winning whole, because the next export's window may be narrower than this one's."
     },
     {
-      "drive_folder": "Renewal Tracker",
+      "drive_folder": "Comps",
+      "report_type": "market_comps",
+      "parser": "parse_comps",
+      "file_glob": "*",
+      "name_patterns": [
+        "*hellodata*",
+        "*comps*",
+        "*rent comp*",
+        "*market survey*"
+      ],
+      "status": "active",
+      "_comment": "The HelloData market-comp export -- the only feed here that describes the market rather than Align's own buildings, and so the only thing the Yardi market rent column can be checked against. It arrives as a PAIR with near-identical names: 'HelloData - Simple - ....xlsx' is two flat tables and is what parse_comps reads, and 'HelloData - Full - ....xlsx' is the same market as a formatted workbook with no parseable table in it. The glob is '*' so the entry claims both, deliberately: a narrower pattern would mean a renamed export silently stops being read, which is the failure 'Landing 2026 Resi Budget.xlsx' hit in the Budgets folder. The formatted one is then SKIPPED by the parser with a line saying why, rather than erroring -- see parse_comps._pick_tables."
+    },
+    {
+      "drive_folder": "Daily Leasing Reports",
       "report_type": "renewal_tracker",
       "parser": "parse_renewal_tracker",
       "file_glob": "*.xlsx",
@@ -159,7 +175,7 @@
       ]
     },
     {
-      "drive_folder": "Prospect Reports",
+      "drive_folder": "Daily Leasing Reports",
       "report_type": "prospect_report",
       "parser": null,
       "file_glob": "*.xlsx",
@@ -179,7 +195,7 @@
       ]
     },
     {
-      "drive_folder": "Daily Tracker",
+      "drive_folder": "Daily Leasing Reports",
       "report_type": "daily_tracker",
       "parser": null,
       "file_glob": "*.xlsx",

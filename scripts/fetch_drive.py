@@ -65,7 +65,10 @@ DL_ROOT = pathlib.Path("_downloads")
 # superseded copies of live reports on purpose: "2026-07-14 RentRoll…" next to
 # four other July exports is a decision, not a misfile, and pulling it back in
 # would publish stale figures as current.
-NEVER_SWEEP = {"Archive Reports"}
+NEVER_SWEEP = {"Archive Reports", "Archive"}
+
+# How far below a registered folder the folder pass walks. See contents().
+MAX_SUBFOLDER_DEPTH = 2
 
 
 def _service():
@@ -146,33 +149,51 @@ def main():
         return trees.get(entry.get("tree", "reports"), {})
 
     def contents(entry):
-        """Every file in an entry's folder, including one level of subfolders.
+        """Every file in an entry's folder, including two levels of subfolders.
 
-        The owner groups a feed's files by property once there is more than one
-        building's worth -- Budgets/Landing/ is the first -- and a folder pass
-        that read only direct children would report the folder as empty while
-        the files sat one level down. The rescue sweep is no backstop for that:
-        it walks the drop tree's top level too. So a registered folder's own
-        subfolders are read as part of it, which is what "drop it in Drive and
-        the pipeline picks it up" has to mean.
+        The owner groups a feed's files once there is more than one building's
+        or one market's worth, and a folder pass that read only direct children
+        would report the folder as empty while the files sat below it. The
+        rescue sweep is no backstop for that: it walks the drop tree's top level
+        too. So a registered folder's own subfolders are read as part of it,
+        which is what "drop it in Drive and the pipeline picks it up" has to
+        mean.
 
-        One level, not a full recursion, and never through NEVER_SWEEP: an
-        archive nested inside a live folder is still an archive, and walking
-        arbitrarily deep would eventually find one.
+        Two levels because that is what the groupings actually are. Budgets is
+        grouped one deep, by property (Budgets/Landing/). The comp exports are
+        grouped twice -- by market and then by which of the paired exports it is
+        (Comps/Oakland/Simple/) -- because the market is the thing a reader
+        picks first and the Simple/Full split is a property of every market.
+
+        A fixed depth, not a recursion, and never through NEVER_SWEEP. Both
+        guards are here for one reason: walk far enough and you eventually find
+        an archive, and republishing a superseded report as current is the
+        failure this whole file is careful about. A folder deeper than the walk
+        gets a line rather than silence -- an unread folder that says nothing is
+        exactly how Budgets/Landing/ stranded two budgets.
         """
         root = folders_for(entry)[entry["drive_folder"]]
         out = []
-        for f in _list_children(svc, root):
-            if f["mimeType"] != FOLDER_MIME:
-                out.append(dict(f, _sub=None))
-                continue
-            if f["name"] in NEVER_SWEEP:
-                print(f"[info] '{entry['drive_folder']}/{f['name']}' not read "
-                      f"(NEVER_SWEEP: an archive of superseded reports)")
-                continue
-            for g in _list_children(svc, f["id"]):
-                if g["mimeType"] != FOLDER_MIME:
-                    out.append(dict(g, _sub=f["name"]))
+
+        def walk(folder_id, rel, depth):
+            for f in _list_children(svc, folder_id):
+                if f["mimeType"] != FOLDER_MIME:
+                    out.append(dict(f, _sub=rel or None))
+                    continue
+                here = f"{rel}/{f['name']}" if rel else f["name"]
+                where = f"{entry['drive_folder']}/{here}"
+                if f["name"] in NEVER_SWEEP:
+                    print(f"[info] '{where}' not read "
+                          f"(NEVER_SWEEP: an archive of superseded reports)")
+                    continue
+                if depth + 1 > MAX_SUBFOLDER_DEPTH:
+                    print(f"[warn] '{where}' is deeper than the folder pass "
+                          f"walks ({MAX_SUBFOLDER_DEPTH} level(s)) — its files "
+                          f"are not read")
+                    continue
+                walk(f["id"], here, depth + 1)
+
+        walk(root, "", 0)
         return out
 
     manifest = []

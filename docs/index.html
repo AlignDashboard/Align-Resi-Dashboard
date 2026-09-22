@@ -35,7 +35,6 @@
     --red:        #d9694f;
     --green:      #6bbf8a;
     --blue:       #6aa9e9;
-    --blue-soft:  rgba(106,169,233,.13);
     --gate-glow:  #171d26;
     --on-amber:   #10130f;
     --grid:       #2a323d;
@@ -63,7 +62,6 @@
     --red:        #b23f28;
     --green:      #2d7549;
     --blue:       #1f6fb8;
-    --blue-soft:  rgba(31,111,184,.09);
     --gate-glow:  #ffffff;
     --on-amber:   #ffffff;
     --grid:       #dfe3e9;
@@ -278,8 +276,8 @@
      out to be, keeping the 300px floor when the grid goes single-column and
      there is no taller neighbour to match. Chart.js already draws this one with
      maintainAspectRatio:false, so it redraws to the height it is handed. */
-  #cNoi { display: flex; flex-direction: column; }
-  #cNoi .chartwrap { flex: 1 1 auto; height: auto; min-height: 300px; }
+  #cdNoi { display: flex; flex-direction: column; }
+  #cdNoi .chartwrap { flex: 1 1 auto; height: auto; min-height: 300px; }
 
   footer { margin-top: 30px; color: var(--muted); font-size: 10px; letter-spacing: 1px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
   .loaderr { color: var(--red); font-size: 12px; padding: 40px; text-align:center; }
@@ -455,17 +453,6 @@
   .card.flash { animation: cardflash 1.5s ease-out; }
   @media (prefers-reduced-motion: reduce) { .card.flash { animation-duration: .01s; } }
 
-  .inrow { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 10px 0 4px; }
-  .inrow label { display: flex; flex-direction: column; gap: 4px; font-size: 9px;
-    letter-spacing: 1px; color: var(--blue); text-transform: uppercase; }
-  input.blu { background: var(--blue-soft); border: 1px solid var(--blue); color: var(--text);
-    font-family: inherit; font-size: 12px; padding: 5px 8px; width: 86px; outline: none; }
-  input.blu:focus { box-shadow: 0 0 0 1px var(--blue); }
-  input.blu::placeholder { color: var(--muted); }
-  .inrow .rst { background: none; border: 1px solid var(--line); color: var(--muted);
-    font-family: inherit; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-    padding: 6px 10px; cursor: pointer; }
-  .inrow .rst:hover { color: var(--text); border-color: var(--muted); }
   .blu-note { font-size: 9px; letter-spacing: .5px; color: var(--blue); margin-top: 6px; }
 
   /* The Expense Ratio card's left column: one T12 figure per property shown,
@@ -527,22 +514,20 @@
      pin them, so pressing a toggle changes the numbers and nothing else. The
      header height is reserved for two lines for the same reason: a heading that
      wraps at one width and not another would otherwise nudge the rows down.
-     Both Landing tabs carry this card and it is one renderer, so it is one set
-     of rules rather than a copy that drifts. */
-  #lopTbl table.dt, #dopTbl table.dt { table-layout: fixed; }
+     renderOpSummary is still written to serve any mount, so a second Landing
+     tab would share these rules rather than copying them; only #lopTbl went,
+     with the workbook-fed tab on 2026-09-18. */
+  #dopTbl table.dt { table-layout: fixed; }
   /* Five columns now -- the row label, the selected period, and three
      comparisons -- so the four data columns split what the label leaves. */
-  #lopTbl table.dt th, #lopTbl table.dt td,
   #dopTbl table.dt th, #dopTbl table.dt td { width: 19.5%; }
-  #lopTbl table.dt th:first-child, #lopTbl table.dt td:first-child,
   #dopTbl table.dt th:first-child, #dopTbl table.dt td:first-child { width: 22%; }
-  #lopTbl table.dt th, #dopTbl table.dt th { vertical-align: bottom; height: 52px; }
+  #dopTbl table.dt th { vertical-align: bottom; height: 52px; }
   /* It is the board's header table -- three rows above everything else -- so it
      is set larger than the data tables further down the page. */
-  #lopTbl table.dt, #dopTbl table.dt { font-size: 15px; margin-top: 14px; }
-  #lopTbl table.dt th, #dopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
-  #lopTbl table.dt td, #dopTbl table.dt td { padding: 13px 10px 13px 0; }
-  #lopTbl table.dt td:first-child,
+  #dopTbl table.dt { font-size: 15px; margin-top: 14px; }
+  #dopTbl table.dt th { font-size: 10px; padding-bottom: 9px; }
+  #dopTbl table.dt td { padding: 13px 10px 13px 0; }
   #dopTbl table.dt td:first-child { font-weight: 600; letter-spacing: 0.2px; }
   /* This card is far wider than its eight columns need -- about 350px of text in
      a 1100px table -- and an auto-layout table gives the surplus to whichever
@@ -562,34 +547,33 @@
      The widths are content-derived and sum to 100. nowrap is set only on the two
      columns that must not break, so anything longer than expected wraps inside
      its own column instead of colliding with the next. */
-  /* Shared with the Landing (Drive) tab's Largest Unit Gaps table (#dgTbl),
-     which has the identical eight columns — one rule rather than a second copy
-     that drifts. Without table-layout:fixed the table's 620px natural width
-     scrolls the whole page at 390px.
+  /* Without table-layout:fixed the table's 620px natural width scrolls the
+     whole page at 390px. This was an #dgTbl rule covering the
+     workbook tab's identical table until that tab came off on 2026-09-18.
 
      The widths are content-derived and sum to 100. nowrap is set only on the two
      columns that must not break, so anything longer than expected wraps inside
      its own column instead of colliding with the next. */
-  :is(#lgTbl, #dgTbl) table.dt { table-layout: fixed; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(n+3),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(n+3) { text-align: right; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(1),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(1) { width: 12%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(2),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(2) { width: 7.5%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(3),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(3) { width: 8%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(4),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(4) { width: 14.3%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(5),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(5) { width: 13.2%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(6),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(6) { width: 13.2%; }
-  :is(#lgTbl, #dgTbl) table.dt th:nth-child(7),
-  :is(#lgTbl, #dgTbl) table.dt td:nth-child(7) {
+  #dgTbl table.dt { table-layout: fixed; }
+  #dgTbl table.dt th:nth-child(n+3),
+  #dgTbl table.dt td:nth-child(n+3) { text-align: right; }
+  #dgTbl table.dt th:nth-child(1),
+  #dgTbl table.dt td:nth-child(1) { width: 12%; }
+  #dgTbl table.dt th:nth-child(2),
+  #dgTbl table.dt td:nth-child(2) { width: 7.5%; }
+  #dgTbl table.dt th:nth-child(3),
+  #dgTbl table.dt td:nth-child(3) { width: 8%; }
+  #dgTbl table.dt th:nth-child(4),
+  #dgTbl table.dt td:nth-child(4) { width: 14.3%; }
+  #dgTbl table.dt th:nth-child(5),
+  #dgTbl table.dt td:nth-child(5) { width: 13.2%; }
+  #dgTbl table.dt th:nth-child(6),
+  #dgTbl table.dt td:nth-child(6) { width: 13.2%; }
+  #dgTbl table.dt th:nth-child(7),
+  #dgTbl table.dt td:nth-child(7) {
     width: 16.4%; padding-left: 0; white-space: nowrap; }
-  :is(#lgTbl, #dgTbl) table.dt th:last-child,
-  :is(#lgTbl, #dgTbl) table.dt td:last-child {
+  #dgTbl table.dt th:last-child,
+  #dgTbl table.dt td:last-child {
     width: 15.4%; padding-right: 0; white-space: nowrap; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
@@ -624,9 +608,9 @@
      The eyebrow rewraps instead, which it already did whenever the text changed.
      flex-start pins the row to the top of the head, so a rewrap underneath it
      cannot nudge it either. */
-  #cExpDeep .card-head > :first-child { flex: 1 1 0; min-width: 0; }
-  #cExpDeep .togrow { align-self: flex-start; }
-  #lcExpMonth[hidden] { display: block; visibility: hidden; }
+  #cdExpDeep .card-head > :first-child { flex: 1 1 0; min-width: 0; }
+  #cdExpDeep .togrow { align-self: flex-start; }
+  #dexpMonth[hidden] { display: block; visibility: hidden; }
 
   @media (max-width: 760px) {
     .grid { grid-template-columns: 1fr; }
@@ -635,9 +619,8 @@
        operating summary they also keep the fixed column geometry its toggle
        relies on, since the percentages resolve against the table, not the
        card. Tables narrower than their card are unaffected. */
-    #lopTbl, #lgTbl, #ldTbl, #lcExpTbl,
-    #dopTbl, #dexpTbl, #diTbl, #dfTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #lopTbl table.dt, #dopTbl table.dt { min-width: 620px; }
+    #dopTbl, #dexpTbl, #dgTbl, #diTbl, #dfTbl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #dopTbl table.dt { min-width: 620px; }
     /* The unit directory's six columns and the feed table's five hold short
        values, so they need far less room than the operating summary -- but more
        than 390px. dfMissing is deliberately not a scroller: it is three columns
@@ -650,8 +633,8 @@
        or T12 and the whole page under this card moved as the toggle was pressed.
        48px covers the tallest of the three, and the table's fixed width means
        that figure is the same at every phone width rather than one per size. */
-    #lopTbl table.dt th, #dopTbl table.dt th { height: 48px; }
-    #lgTbl table.dt { min-width: 680px; }
+    #dopTbl table.dt th { height: 48px; }
+    #dgTbl table.dt { min-width: 680px; }
     /* 16px of gutter is more than the prose tables can give up here: liTbl's
        four columns pushed 13px past their card at 400px, and it is deliberately
        not one of the scrollers above -- prose wraps rather than scrolling
@@ -698,8 +681,8 @@
       <div class="tabs" role="tablist" aria-label="Dashboard views">
         <button class="tab" role="tab" id="tabView1" aria-controls="view1" aria-selected="true">Portfolio</button>
         <button class="tab" role="tab" id="tabScorecard" aria-controls="viewScorecard" aria-selected="false" tabindex="-1">Scorecard</button>
-        <button class="tab" role="tab" id="tabView2" aria-controls="view2" aria-selected="false" tabindex="-1">The Landing</button>
-        <button class="tab" role="tab" id="tabView2d" aria-controls="view2d" aria-selected="false" tabindex="-1">Landing (Drive)</button>
+        <button class="tab" role="tab" id="tabView2d" aria-controls="view2d" aria-selected="false" tabindex="-1">Landing</button>
+        <button class="tab" role="tab" id="tabComps" aria-controls="viewComps" aria-selected="false" tabindex="-1">Market Comps</button>
         <button class="tab" role="tab" id="tabRates" aria-controls="viewRates" aria-selected="false" tabindex="-1">Rental Rates</button>
       </div>
       <!-- not a .tab: the tab machinery selects on that class -->
@@ -812,124 +795,17 @@
     </div>
     </div><!-- /viewScorecard -->
 
-    <div class="view" id="view2" role="tabpanel" aria-labelledby="tabView2" tabindex="0" hidden>
-    <div class="grid">
-
-      <div class="card wide" id="cOpSummary">
-        <div class="card-head">
-          <div>
-            <h2>Operating Summary</h2>
-            <div class="opsel">
-              <label for="lopSelect">Comparison:</label>
-              <select class="prop-select" id="lopSelect"></select>
-            </div>
-          </div>
-          <!-- Filled by renderOpSummary: which buttons exist depends on what
-               the select is reading the card from. -->
-          <div class="togrow" id="lopTogs" role="group" aria-label="Measured against"></div>
-        </div>
-        <div id="lopTbl"></div>
-        <div class="blu-note" id="lopNote" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cLandingScorecard">
-        <div class="card-head">
-          <div>
-            <h2>KPI Scorecard — The Landing</h2>
-          </div>
-          <div class="sc-health" id="lscHealth"></div>
-        </div>
-        <div class="sc-strip" id="lscStrip"></div>
-        <div class="sc-legend" id="lscLegend"></div>
-        <div class="sc-note" id="lscNote"></div>
-      </div>
-
-      <div class="kpis" id="lkpis"></div>
-
-      <div class="card wide" id="cRentCapture">
-        <h2>Loss to Lease</h2>
-        <div class="chartwrap"><canvas id="lcCapture"></canvas></div>
-        <div class="blu-note" id="lcCaptureFoot" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cTradeOuts">
-        <h2>Trade-outs</h2>
-        <span class="eyebrow">NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT</span>
-        <div class="statrow" id="ltStats"></div>
-        <div class="chartwrap"><canvas id="lcTrade"></canvas></div>
-        <div class="blu-note" id="ltFoot" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cRollover">
-        <h2>Rollover Schedule</h2>
-        <span class="eyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
-        <div class="chartwrap" style="height:250px;"><canvas id="lcRoll"></canvas></div>
-      </div>
-
-      <div class="card" id="cNoi">
-        <h2>Expense Load &amp; NOI</h2>
-        <span class="eyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR</span>
-        <div class="ckgrid" id="lcNoiCks" role="group" aria-label="Series shown"></div>
-        <div class="chartwrap"><canvas id="lcNoi"></canvas></div>
-        <div class="blu-note" id="lcNoiFoot" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card" id="cExpDeep">
-        <div class="card-head">
-          <div>
-            <h2>Expense Deep Dive</h2>
-            <span class="eyebrow" id="lcExpEyebrow">AUG 25–JUL 26</span>
-          </div>
-          <div class="togrow" role="group" aria-label="Deep dive period">
-            <button class="tog" type="button" data-ep="t12" aria-pressed="true">T12</button>
-            <button class="tog" type="button" data-ep="month" aria-pressed="false">Month</button>
-            <select id="lcExpMonth" class="prop-select" hidden aria-label="Statement month"></select>
-          </div>
-        </div>
-        <div class="ckgrid" id="lcExpCks" role="group" aria-label="Categories shown"></div>
-        <div class="chartwrap" id="lcExpWrap" style="height:250px;"><canvas id="lcExp"></canvas></div>
-        <div class="blu-note" id="lcExpNote" style="color:var(--muted);"></div>
-        <div id="lcExpTbl" style="max-height:180px;overflow-y:auto;"></div>
-      </div>
-
-      <div class="card wide" id="cGaps">
-        <h2>Largest Unit Gaps</h2>
-        <span class="eyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
-        <div id="lgTbl"></div>
-        <div class="blu-note" id="lgNote" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cDelinquency">
-        <h2>Delinquency</h2>
-        <span class="eyebrow" id="ldEyebrow">RESIDENT BALANCES · AGING</span>
-        <div style="display:flex;gap:22px;flex-wrap:wrap;">
-          <div style="flex:0 0 auto;min-width:170px;" id="ldStats"></div>
-          <div class="chartwrap" style="flex:1 1 260px;height:200px;"><canvas id="lcDelq"></canvas></div>
-          <div style="flex:1 1 300px;" id="ldTbl"></div>
-        </div>
-        <div class="blu-note" id="ldNote" style="color:var(--muted);"></div>
-      </div>
-
-      <div class="card wide" id="cInsights">
-        <h2>Insights Scorecard</h2>
-        <span class="eyebrow">WHAT THE DATA SAYS, SCORED · RED FLAGS &amp; OPEN QUESTIONS FOR THE PM</span>
-        <div style="display:flex;gap:22px;flex-wrap:wrap;">
-          <div style="flex:1 1 400px;" id="liTbl"></div>
-          <div style="flex:1 1 400px;" id="liFlags"></div>
-        </div>
-      </div>
-
-    </div>
-    <div class="blu-note" id="lMeta" style="color:var(--muted);margin-top:14px;"></div>
-    </div><!-- /view2 -->
-
     <!-- =========================================================
-         LANDING (DRIVE) — the same building, built only from what
-         Google Drive delivers. Nothing on this tab comes from the
-         analyst workbook: every number moves when a fresh export
-         lands in Drive and the pipeline runs. The workbook-fed
-         Landing tab is the fuller view; this is the one that cannot
-         quietly go stale, because everything on it has a feed.
+         LANDING — built only from what Google Drive delivers.
+         Nothing on this tab comes from the analyst workbook: every
+         number moves when a fresh export lands in Drive and the
+         pipeline runs, which is why it cannot quietly go stale.
+
+         It was "Landing (Drive)" beside a workbook-fed "The Landing"
+         until 2026-09-18. The ids keep the d- prefix from that
+         split; renaming them would touch lineage.json's card index,
+         data.html's deep links and every anchor in between for no
+         change a reader sees.
          ========================================================= -->
     <div class="view" id="view2d" role="tabpanel" aria-labelledby="tabView2d" tabindex="0" hidden>
     <div class="blu-note" id="dIntro" style="color:var(--muted);margin-bottom:14px;"></div>
@@ -1063,6 +939,80 @@
     <div class="blu-note" id="dMeta" style="color:var(--muted);margin-top:14px;"></div>
     </div><!-- /view2d -->
 
+    <!-- ============================================================
+         MARKET COMPS
+         The only tab that draws a report about the MARKET rather than
+         about an Align building, and the only one that can therefore
+         answer whether a number the property team sets by hand is right.
+         Everything here comes from the HelloData export in Drive `Comps`
+         (parse_comps -> metrics.json `comps`), joined to three feeds that
+         already publish their own copy of the Yardi market rent table.
+         ============================================================ -->
+    <div class="view" id="viewComps" role="tabpanel" aria-labelledby="tabComps" tabindex="0" hidden>
+    <div class="blu-note" id="mcIntro" style="color:var(--muted);margin-bottom:14px;"></div>
+    <div class="grid">
+
+      <div class="card wide" id="cmcVerdict">
+        <div class="card-head">
+          <div>
+            <h2>Market Rent Check</h2>
+            <span class="eyebrow" id="mcvEyebrow">LOADING…</span>
+          </div>
+          <div class="opsel">
+            <label for="mcSelect">Property:</label>
+            <select class="prop-select" id="mcSelect"></select>
+          </div>
+        </div>
+        <div class="statrow" id="mcvStats"></div>
+        <div class="sc-scroll"><div id="mcvTbl"></div></div>
+        <div class="blu-note" id="mcvNote" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cmcDivergence">
+        <div class="card-head">
+          <div>
+            <h2>Asking Rent vs The Submarket</h2>
+            <span class="eyebrow" id="mcdEyebrow">LOADING…</span>
+          </div>
+          <div class="togrow" id="mcdTogs" role="group" aria-label="Period">
+            <button class="tog" type="button" data-mcp="q" aria-pressed="true">Quarterly</button>
+            <button class="tog" type="button" data-mcp="m" aria-pressed="false">Monthly</button>
+          </div>
+        </div>
+        <div class="chartwrap"><canvas id="mcChart"></canvas></div>
+        <div class="blu-note" id="mcdFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card wide" id="cmcBuildUp">
+        <h2>What The Market Would Pay</h2>
+        <span class="eyebrow" id="mcbEyebrow">LOADING…</span>
+        <div class="sc-scroll"><div id="mcbTbl"></div></div>
+        <div class="blu-note" id="mcbFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card" id="cmcEvidence">
+        <h2>How It Is Actually Leasing</h2>
+        <span class="eyebrow" id="mceEyebrow">LOADING…</span>
+        <div class="statrow" id="mceStats"></div>
+        <div class="blu-note" id="mceFoot" style="color:var(--muted);"></div>
+      </div>
+
+      <div class="card" id="cmcMethod">
+        <h2>What This Tab Cannot Say</h2>
+        <span class="eyebrow">THE LIMITS OF A COMP SET · EACH ONE READ FROM THE FILE RATHER THAN TYPED</span>
+        <div id="mcmList"></div>
+      </div>
+
+      <div class="card wide" id="cmcSet">
+        <h2>The Comp Set</h2>
+        <span class="eyebrow" id="mcsEyebrow">LOADING…</span>
+        <div class="sc-scroll"><div id="mcsTbl"></div></div>
+        <div class="blu-note" id="mcsFoot" style="color:var(--muted);"></div>
+      </div>
+
+    </div>
+    <div class="blu-note" id="mcMeta" style="color:var(--muted);margin-top:14px;"></div>
+    </div><!-- /viewComps -->
     <div class="view" id="viewRates" role="tabpanel" aria-labelledby="tabRates" tabindex="0" hidden>
     <div class="blu-note" id="rtIntro" style="color:var(--muted);margin-bottom:16px;"></div>
     <div class="grid">
@@ -1085,6 +1035,7 @@
 
     </div>
     </div><!-- /viewRates -->
+
 
     <div id="propPanels"></div>
 
@@ -1309,15 +1260,15 @@ function focusCardFromHash() {
 }
 window.addEventListener("hashchange", focusCardFromHash);
 
-// The two Landing views load their data lazily on first activation, which also
+// These views load their data lazily on first activation, which also
 // guarantees their canvases are visible (and therefore sized) when built.
-let landingStarted = false, landingDriveStarted = false;
+let landingDriveStarted = false, compsStarted = false;
 function maybeLoadLanding(tab) {
-  if (tab.id === "tabView2" && !landingStarted) { landingStarted = true; loadLanding(); }
   if (tab.id === "tabView2d" && !landingDriveStarted) {
     landingDriveStarted = true;
     loadLandingDrive();
   }
+  if (tab.id === "tabComps" && !compsStarted) { compsStarted = true; loadComps(); }
   if (tab.id === "tabRates" && !ratesStarted) { ratesStarted = true; loadRates(); }
 }
 
@@ -1361,7 +1312,7 @@ async function loadRates() {
     + "their own exports arrive.";
 
   /* ---- the rate trend ---- */
-  (function rateTrend() {
+  section("cRateTrend", function rateTrend() {
     const card = document.getElementById("cRateTrend");
     const rows = (tro && tro.months) || [];
     if (!rows.length) { card.hidden = true; return; }
@@ -1465,10 +1416,10 @@ async function loadRates() {
       + "The two flat lines are a snapshot and not a series — the rent roll of "
       + (rr && rr.as_of ? rr.as_of : "—") + " — so they say where the book sits today, "
       + "not where it sat in each month behind them.";
-  })();
+  });
 
   /* ---- asking rate by bedroom ---- */
-  (function byBedroom() {
+  section("cRateByBed", function byBedroom() {
     const card = document.getElementById("cRateByBed");
     const plans = (dir && dir.plans) || null;
     if (!plans) { card.hidden = true; return; }
@@ -1539,7 +1490,8 @@ async function loadRates() {
             + "directory is the building's fixed description. Neither is wrong, and "
             + "this card draws the directory."
           : "");
-  })();
+  });
+
 }
 
 // Left/Right arrows move between tabs, per the tablist keyboard convention.
@@ -1683,9 +1635,11 @@ const legendCfg = { labels: { boxWidth: 10, boxHeight: 10, padding: 16,
 // Sync the button and chart chrome with whatever the inline head script applied.
 applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark", false);
 
-// One fetch of metrics.json for the cards that need it after the first render.
-// The Landing's view is built from landing.json; the few cards that also read
-// the pipeline's own output share this rather than each fetching again.
+// One fetch of metrics.json for the cards that need it after the first render,
+// shared rather than each card fetching again. landing.json is no longer read
+// by this page at all — the tab that drew it came off on 2026-09-18; it is
+// still generated, still published, and still fills four scorecard cells
+// through populate_scorecard --from-landing.
 let _metricsPromise = null;
 const metricsJson = () => (_metricsPromise = _metricsPromise
   || fetch("metrics.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
@@ -1932,7 +1886,7 @@ async function loadDashboard() {
      Still parameterised on ids and a unit, since NOI Margin is meant to use
      the same pattern. Two things changed on 2026-09-17, by request.
 
-     The chart is now **the series the Landing (Drive) tab draws**: each
+     The chart is now **the series the Landing tab draws**: each
      property's monthly ratio off the stitched monthly_pl run, opex over
      revenue, exactly as that tab's Expense Load & NOI card computes it. That
      is a change of source, not a restyle. The block's own trend_values are one
@@ -2059,7 +2013,7 @@ async function loadDashboard() {
                   "of spending.");
       }
       bits.push("The lines are each property's monthly ratio off the stitched " +
-                "P&L — the same series the Landing (Drive) tab's Expense " +
+                "P&L — the same series the Landing tab's Expense " +
                 "Load & NOI card draws — and a line stops where that " +
                 "property's statements do rather than being drawn across the gap.");
       bits.push("Monthly ratios are volatile on an accrual basis, since a " +
@@ -2301,33 +2255,6 @@ function statBlock(host, stats) {                        // [[value, label], ...
     host.appendChild(st);
   });
 }
-function inputRow(host, defs, onChange) {                // defs: {key,label,val,ph,step,width}
-  host.textContent = "";
-  const fields = {};
-  defs.forEach(d => {
-    const lab = elc("label", null, d.label);
-    const inp = elc("input", "blu");
-    inp.type = "number"; inp.step = d.step || "any";
-    if (d.val !== null && d.val !== undefined) inp.value = d.val;
-    if (d.ph) inp.placeholder = d.ph;
-    if (d.width) inp.style.width = d.width;
-    inp.addEventListener("input", onChange);
-    lab.prepend(); lab.appendChild(inp);
-    host.appendChild(lab);
-    fields[d.key] = inp;
-  });
-  const rst = elc("button", "rst", "reset");
-  rst.addEventListener("click", () => {
-    defs.forEach(d => { fields[d.key].value = (d.val !== null && d.val !== undefined) ? d.val : ""; });
-    onChange();
-  });
-  host.appendChild(rst);
-  return fields;
-}
-const numOr = (inp, fallback) => {
-  const v = parseFloat(inp.value);
-  return Number.isFinite(v) ? v : fallback;
-};
 
 /* ============================================================
    KPI SCORECARD (data: scorecard.json)
@@ -2481,6 +2408,7 @@ const SC_FEED_PREFIXES = [
   { prefix: "budget_", fallbackWhat: "12-month budget" },
   { prefix: "rentroll_", fallbackWhat: "rent roll" },
   { prefix: "tradeout_", fallbackWhat: "lease tradeout report" },
+  { prefix: "delq_", fallbackWhat: "delinquency summary" },
 ];
 function scFeeds() {
   const out = [];
@@ -2801,8 +2729,9 @@ async function renderScorecard(ids, chosen) {
       ? "below target: " + p.below_metrics.join(", ")
       : "nothing below target");
     // Link the label when that property has a tab, built-out or placeholder.
+    // The Landing's own tab is the Drive one, which is not named tabProp-*.
     const tab = p.slug && (document.getElementById("tabProp-" + p.slug) ||
-      (p.slug === "the-landing" ? document.getElementById("tabView2") : null));
+      (p.slug === "the-landing" ? document.getElementById("tabView2d") : null));
     if (tab) {
       const b = elc("button", null, p.label);
       b.type = "button";
@@ -3052,14 +2981,14 @@ function renderPropertyScorecard(slug, ids) {
 }
 
 /* ---- Operating summary (a trailing window vs the window before it) ----
-   Shared by the workbook-fed Landing tab and the Drive-only one, because it
-   never read the workbook: the pipeline parses each T12 from Drive, stitches
+   Written to serve any mount rather than one card, because it never read the
+   workbook: the pipeline parses each T12 from Drive, stitches
    successive statements into one continuous month series and publishes it
    through metrics.json, so this card refreshes when they do and lengthens as
    more statements arrive. Two copies of it would drift the moment one was
    edited. */
 /* Loss to lease — shared by The Landing (the analyst workbook's Rent Capture
-   block) and Landing (Drive) (the T12 statement's RESIDENTIAL RENTAL INCOME
+   block) and Landing (the T12 statement's RESIDENTIAL RENTAL INCOME
    section, metrics.json `rent_capture`). The workbook's block turned out to be
    that section retyped — all six series tie to the cent across the twelve
    overlapping months — so both sources publish the same shape and one renderer
@@ -3905,14 +3834,17 @@ async function renderBudgetActual(d) {
 }
 
 /* ---- Expense deep dive ----
-   Shared by both Landing tabs. Both views draw from the property's own T12
-   statement, translated to the Align account tree through the COA mapping and
-   published via metrics.json: T12 sums the twelve months per group, Month shows
-   one at a time. `wb` is the analyst workbook's own read of the same expense,
-   passed only by the workbook-fed tab -- it supplies the fallback chart for a
-   property with no statement yet, the tie-out figures and the opportunities
-   table. The Drive-only tab passes null, and ties the statement out against its
-   own P&L line instead. */
+   Draws from the property's own T12 statement, translated to the Align account
+   tree through the COA mapping and published via metrics.json: T12 sums the
+   twelve months per group, Month shows one at a time.
+
+   `wb` is the analyst workbook's own read of the same expense -- the fallback
+   chart for a property with no statement yet, the tie-out figures and the
+   opportunities table. The workbook-fed Landing tab was its only caller and
+   came off on 2026-09-18, so every live mount passes null and ties the
+   statement out against its own P&L line instead. The branch is kept rather
+   than torn out: it is what a second source would mount through, and it is the
+   only no-statement fallback the renderer has. */
 async function renderExpenseDeep(slug, ids, wb) {
   const wrap = document.getElementById(ids.wrap);
   const note = document.getElementById(ids.note);
@@ -4178,487 +4110,15 @@ async function renderExpenseDeep(slug, ids, wb) {
 }
 
 /* ============================================================
-   THE LANDING — property deep-dive view (data: landing.json)
-   Blue-bordered inputs mirror the workbook's blue "changeable"
-   cells; scenario cards recompute live from unit-level data.
-   ============================================================ */
-async function loadLanding() {
-  let L;
-  try {
-    const res = await fetch("landing.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    L = await res.json();
-  } catch (e) {
-    document.getElementById("view2").textContent = "";
-    document.getElementById("view2").appendChild(
-      elc("div", "loaderr", "Could not load landing.json — run scripts/extract_landing.py."));
-    return;
-  }
-  // This property's slice of the KPI scorecard, at the top of its view.
-  await scPromise;
-  renderPropertyScorecard("the-landing", {
-    health: "lscHealth", strip: "lscStrip",
-    legend: "lscLegend", note: "lscNote",
-  });
+   LANDING — built only from what Google Drive delivers.
 
-  const units = L.units;
-
-  /* ---- KPI strip ---- */
-  // Each tile jumps to the card that shows the working behind its number.
-  function jumpToCard(id) {
-    const card = document.getElementById(id);
-    if (!card) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    card.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    card.classList.remove("flash");
-    void card.offsetWidth;                    // restart the animation on repeat clicks
-    card.classList.add("flash");
-    card.addEventListener("animationend", () => card.classList.remove("flash"), { once: true });
-  }
-  (function kpis() {
-    const host = document.getElementById("lkpis");
-    const ltlCeiling = (L.expense_overview.revenue_compare[0] || {}).saving;
-    // One occupancy figure on this page. The board carried two: this tile's TTM
-    // economic occupancy from the workbook -- a dollar measure, 1 - vacancy loss
-    // over market potential -- beside the scorecard's Leased %, a unit measure
-    // snapshotted on the export date. Two definitions, two feeds and two dates
-    // read as one number disagreeing with itself, so the tile now mirrors the
-    // scorecard cell: occupancy has a single definition, source and as-of date
-    // wherever the page states it. Economic occupancy is still what the rent
-    // capture card is built from, under its own name, where the distinction
-    // between dollars and units is the point.
-    const scProp = SC && (SC.properties || []).find(x => x.slug === "the-landing");
-    const leased = scProp ? scValue(scProp, "Leased %") : null;
-    const leasedOn = scKpiAsOf("the-landing", "Leased %");
-    const occTile = leased && leased.display
-      ? [leased.display, "Leased",
-         "100 \u2212 exposure" + (leasedOn ? " \u00b7 as of " + leasedOn : ""),
-         "cLandingScorecard", "the KPI scorecard"]
-      : ["\u2014", "Leased", "awaiting the leasing feed",
-         "cLandingScorecard", "the KPI scorecard"];
-    const tiles = [
-      [fmPct(1 - L.inputs.inplace_psf / L.inputs.yardi_market_psf), "Below market", "in-place $" + L.inputs.inplace_psf.toFixed(2) + " vs $" + L.inputs.yardi_market_psf.toFixed(2) + "/sf", "cGaps", "largest unit gaps — gap to market by unit"],
-      [fm$(ltlCeiling || 0) + "/yr", "Loss to lease", "full-capture ceiling", "cRentCapture", "loss to lease by month"],
-      [fm$(L.expense_noi.ttm.noi), "TTM NOI", "margin " + fmPct(L.expense_noi.ttm.noi_margin), "cNoi", "expense load & NOI"],
-      occTile,
-      [String(L.holdovers.summary.units), "Holdover units", fm$(L.holdovers.summary.gap_yr) + "/yr gap", "cGaps", "largest unit gaps"],
-      [fm$(L.delinquency.net), "Delinquency, net", fmPct(L.delinquency.pct_month_rent) + " of monthly rent", "cDelinquency", "delinquency aging"],
-    ];
-    tiles.forEach(([v, k, s, target, where]) => {
-      const kp = elc("button", "kpi");
-      kp.type = "button";
-      kp.appendChild(elc("div", "v amber", v));
-      kp.appendChild(elc("div", "k", k));
-      kp.appendChild(elc("div", "s", s));
-      const jump = elc("span", "jump", "↓");
-      jump.setAttribute("aria-hidden", "true");
-      kp.appendChild(jump);
-      kp.setAttribute("aria-label", k + ": " + v + ". Jump to " + where + ".");
-      kp.addEventListener("click", () => jumpToCard(target));
-      host.appendChild(kp);
-    });
-  })();
-
-  /* ---- Loss to lease ---- */
-  renderRentCapture(L.rent_capture, { canvas: "lcCapture", foot: "lcCaptureFoot" });
-
-  /* ---- Operating summary ---- */
-  // Shared with the Drive-only tab; see renderOpSummary. It never read the
-  // workbook -- it draws the pipeline's own T12 series -- which is why both
-  // tabs can show the same card.
-  renderOpSummary("the-landing",
-    { card: "cOpSummary", tbl: "lopTbl", note: "lopNote", sel: "lopSelect",
-      togs: "lopTogs" });
-
-  /* ---- Expense & NOI ---- */
-  (async function noi() {
-    const en = L.expense_noi;
-    // Controllable expense per door: the month's operating expense less taxes,
-    // insurance, utilities and the management fee, over the property's unit
-    // count. The exclusions are what management cannot move in a month, so what
-    // is left is the part a PM is actually answerable for. It needs the expense
-    // split by category, which the workbook's Expense & NOI tab does not carry
-    // -- only a total and its own controllable cut, on a different basket. So
-    // the numerator comes from the T12 statement's own account groups, the same
-    // source the Expense Deep Dive draws.
-    //
-    // That statement spans twelve months where this chart spans nineteen, so the
-    // line starts where the statement does rather than being padded out.
-    const doors = L.meta.units;
-    const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const m = await metricsJson();
-    const eb = (((m || {}).expense_buckets || {}).properties || [])
-      .find(x => x.slug === "the-landing") || null;
-
-    // See controllableMissing: every exclusion has to be found by name, or the
-    // line is withheld rather than drawn with taxes counted as controllable.
-    let ctrl = {}, ctrlNote = "";
-    if (eb) {
-      if (!controllableMissing(Object.keys(eb.buckets)).length) {
-        const [em, ey] = eb.period_end.split(" ");
-        const end = (+ey) * 12 + MO.indexOf(em);
-        eb.labels.forEach((_, i) => {
-          const t = end - (eb.labels.length - 1 - i);
-          const key = Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
-          let total = 0, excluded = 0;
-          Object.keys(eb.buckets).forEach(n => {
-            const v = eb.buckets[n][i] || 0;
-            total += v;
-            if (isNotControllable(n)) excluded += v;
-          });
-          ctrl[key] = total - excluded;
-        });
-      } else {
-        ctrlNote = "Controllable expense/door is not drawn: the statement's account "
-                 + "groups no longer name taxes, insurance, utilities and the management "
-                 + "fee the way this chart excludes them, and guessing which is which "
-                 + "would overstate it.";
-      }
-    } else {
-      ctrlNote = "Controllable expense/door is not drawn: no T12 statement has reached "
-               + "the pipeline, and the workbook alone does not split expense by category.";
-    }
-    const perDoor = en.months.map(k =>
-      (doors && ctrl[k] != null) ? ctrl[k] / doors : null);
-    const ctrlMonths = en.months.filter(k => ctrl[k] != null);
-    const ctrlTtm = ctrlMonths.length
-      ? ctrlMonths.reduce((t, k) => t + ctrl[k], 0) / ctrlMonths.length : null;
-    const chart = new Chart(document.getElementById("lcNoi"), {
-      type: "line",
-      data: { labels: en.months.map(shortMo),
-        datasets: [
-          { label: "NOI margin", data: en.noi_margin.map(v => v * 100), yAxisID: "y", borderColor: C.green, backgroundColor: C.green, borderWidth: 2, pointRadius: 2, tension: .25 },
-          { label: "Expense ratio", data: en.opex_ratio.map(v => v * 100), yAxisID: "y", borderColor: C.red, backgroundColor: C.red, borderWidth: 2, pointRadius: 2, tension: .25 },
-          { label: "Controllable expense / door", data: perDoor, yAxisID: "y2", borderColor: C.amber, backgroundColor: C.amber, borderWidth: 2, pointRadius: 2, tension: .25 },
-        ] },
-      options: { maintainAspectRatio: false, responsive: true,
-        // the checkbox grid above the chart is both the legend and the switch,
-        // so the chart's own legend would only restate it
-        plugins: { legend: { display: false },
-          tooltip: { callbacks: { label: c => c.dataset.yAxisID === "y2"
-            ? `${c.dataset.label}: ${fm$(c.parsed.y)}/mo`
-            : `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
-        scales: { y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
-          y2: { position: "right", grid: { display: false }, beginAtZero: true,
-                ticks: { callback: v => "$" + (v / 1e3).toFixed(1) + "k" } },
-          x: { grid: { display: false } } } }
-    });
-    ckGrid(document.getElementById("lcNoiCks"),
-      chart.data.datasets.map((d, i) => ({ label: d.label, color: d.borderColor, i })),
-      it => chart.isDatasetVisible(it.i),
-      it => {
-        chart.setDatasetVisibility(it.i, !chart.isDatasetVisible(it.i));
-        // the dollar axis has one tenant; an axis for nothing keeps claiming
-        // the right margin, so it leaves with its series
-        chart.options.scales.y2.display = chart.isDatasetVisible(2);
-        chart.update();
-      });
-    document.getElementById("lcNoiFoot").textContent =
-      "TTM NOI " + fm$(en.ttm.noi) + " (" + fmPct(en.ttm.noi_margin) + " margin) on revenue " +
-      fm$(en.ttm.revenue) + ". "
-      + (ctrlNote || ("Controllable expense/door is the month's operating expense less "
-          + "taxes, insurance, utilities and the management fee, over the property's "
-          + doors + " units, on "
-          + "the right axis \u2014 " + fm$(ctrlTtm / doors) + "/mo averaged across the "
-          + ctrlMonths.length + " months the T12 statement covers, against "
-          + fm$(en.ttm.opex_per_unit / 12) + "/mo for total expense. It starts at "
-          + shortMo(ctrlMonths[0]) + " because the statement does; the two ratio lines run "
-          + "the full range. "))
-      + en.tax_note;
-  })();
-
-  /* ---- Expense deep dive ---- */
-  // Shared with the Drive-only tab; see renderExpenseDeep. The workbook side
-  // of the card -- the no-statement fallback, the tie-out figures and the
-  // opportunities table -- is passed in, so the Drive-only tab gets the same
-  // chart with none of it.
-  renderExpenseDeep("the-landing",
-    { card: "cExpDeep", eyebrow: "lcExpEyebrow", cks: "lcExpCks", wrap: "lcExpWrap",
-      canvas: "lcExp", note: "lcExpNote", sel: "lcExpMonth", tbl: "lcExpTbl" },
-    { buckets: L.expense_overview.buckets, ttmOpex: L.expense_noi.ttm.opex,
-      months: L.expense_noi.months, opex: L.expense_noi.opex,
-      opportunities: L.expense_overview.opportunities });
-
-
-  /* ---- Trade-outs ---- */
-  (function trades() {
-    // Both sides of the roll on one axis. They are both "percent over the rent
-    // that was there before", which is what makes the overlay fair -- and the
-    // gap between them is the whole story: a vacated unit re-leases at four to
-    // five times the increase a sitting resident is offered.
-    //
-    // They are NOT computed the same way, and the footnote says so rather than
-    // letting a shared axis imply it:
-    //   new leases -- every executed lease carries its own trade-out, so a month
-    //     is the plain mean of the leases signed in it.
-    //   renewals   -- the workbook publishes no per-renewal record, only monthly
-    //     offer aggregates, so the only figure available is its rent-weighted
-    //     increase. Averaging it further would be inventing precision.
-    //
-    // Both sit on a trailing 24-month axis anchored to the latest month the data
-    // reports as having happened, not to the browser's clock -- this page is
-    // static and its workbook is refreshed by hand, so a clock anchor would grow
-    // an empty column every month while the data stood still.
-    const s = L.leasing.summary, ra = L.leasing.renewal_activity || {};
-    const WINDOW = 24;
-    const addMonths = (k, n) => {                 // "2026-07", -3 -> "2026-04"
-      const [y, m] = k.split("-").map(Number), t = y * 12 + (m - 1) + n;
-      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
-    };
-
-    const byMonth = new Map();
-    L.leasing.leases.filter(l => l.status === "Executed").forEach(l => {
-      const k = l.date.slice(0, 7);
-      if (!byMonth.has(k)) byMonth.set(k, []);
-      byMonth.get(k).push(l);
-    });
-    const mean = (a, f) => a.reduce((t, x) => t + f(x), 0) / a.length;
-    const newMonths = [...byMonth.keys()].sort().map(k => {
-      const ls = byMonth.get(k);
-      return { month: k, n: ls.length, pct: mean(ls, l => l.tradeout) * 100 };
-    });
-
-    const renewRaw = (((L.renewal || {}).offers || {}).months || []).map(m => ({
-      month: m.month, n: m.leases, pct: m.wtd_increase * 100,
-    }));
-
-    // Renewal offers run past the tracker date for upcoming expirations, so they
-    // cannot set the anchor: a forward offer is not a trailing month.
-    const trackMo = (ra.tracker_date || "").slice(0, 7);
-    const actual = [...newMonths.map(m => m.month),
-                    ...renewRaw.filter(m => !trackMo || m.month <= trackMo).map(m => m.month)];
-    const endMo = actual.sort().slice(-1)[0] || trackMo;
-    const axis = Array.from({ length: WINDOW },
-                            (_, i) => addMonths(addMonths(endMo, -(WINDOW - 1)), i));
-
-    // Months with no lease are gaps, never zeros: a zero bar would assert a 0%
-    // trade-out in a month that simply reported nothing.
-    const pick = (rows, k) => {
-      const by = new Map(rows.map(r => [r.month, r]));
-      return axis.map(m => { const r = by.get(m); return r ? r[k] : null; });
-    };
-    const newPct = pick(newMonths, "pct");
-    const renPct = pick(renewRaw, "pct");
-    const counts = { new: pick(newMonths, "n"), renew: pick(renewRaw, "n") };
-    const dropped = renewRaw.filter(m => m.month > endMo).map(m => m.month);
-    const filled = axis.filter((_, i) => newPct[i] !== null || renPct[i] !== null).length;
-
-    new Chart(document.getElementById("lcTrade"), {
-      data: { labels: axis.map(shortMo),
-        datasets: [
-          // order drives draw order and the legend alike: new lease, then renewal
-          { type: "bar", label: "New lease · avg trade-out %", data: newPct, yAxisID: "y",
-            backgroundColor: newPct.map(v => v < 0 ? C.red : C.teal), order: 1 },
-          { type: "bar", label: "Renewal · wtd increase %", data: renPct, yAxisID: "y",
-            backgroundColor: renPct.map(v => v < 0 ? C.red : C.green), order: 2 },
-        ] },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: {
-          title: c => shortMo(axis[c[0].dataIndex]),
-          label: c => {
-            const i = c.dataIndex;
-            const n = c.datasetIndex === 0 ? counts.new[i] : counts.renew[i];
-            return `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`
-                 + (n ? ` (${n} lease${n === 1 ? "" : "s"})` : "");
-          } } } },
-        scales: {
-          y: { position: "left", grid: gridCfg, ticks: { callback: v => v + "%" } },
-          x: { grid: { display: false },
-            // 24 labels will not sit side by side on this card, and autoSkip
-            // would hide the very months whose emptiness is the point.
-            ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false } } } }
-    });
-
-    statBlock(document.getElementById("ltStats"), [
-      [fmPct(s.avg_tradeout_exec), "avg new-lease trade-out"],
-      ["+" + fmPct(ra.avg_increase, 0), "avg renewal increase"],
-      [fmPct(s.capture_at_signing), "capture at signing"],
-      [String(s.executed), "new leases"],
-      [String(ra.renewals_signed || 0), "renewals signed"],
-    ]);
-
-    document.getElementById("ltFoot").textContent =
-      "Teal is the unweighted mean of the trade-outs executed that month; green is that "
-      + "month's rent-weighted renewal increase, which is the only form the offer "
-      + "aggregates support — they carry no per-renewal rows to average. Both are percent "
-      + "over the prior rent, so they share one axis. Axis is the trailing " + WINDOW + " months to "
-      + shortMo(endMo) + "; " + filled + " of " + WINDOW + " report data — months with no "
-      + "lease are left empty rather than drawn as zero, and the workbook's Lease Detail tab "
-      + "is hand-typed from the RealPage rate tracker, which is why the history is short."
-      + (dropped.length ? " Offers already extended for " + dropped.map(shortMo).join(", ")
-          + " sit past the window: a forward offer is not a trailing month." : "");
-  })();
-
-  /* ---- Rollover schedule ---- */
-  (function rollover() {
-    const r = L.rollover.filter(x => x.units > 0);
-    const labels = r.map(x => x.month.startsWith("Expired") ? "Holdover" : shortMo(x.month));
-    new Chart(document.getElementById("lcRoll"), {
-      data: { labels,
-        datasets: [
-          { type: "bar", label: "Units expiring", data: r.map(x => x.units),
-            backgroundColor: r.map(x => x.month.startsWith("Expired") ? C.red : C.amber) },
-          { type: "line", label: "Cumulative %", data: r.map(x => x.cum_pct * 100), yAxisID: "y2",
-            borderColor: C.muted, borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0 },
-        ] },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: {
-          label: c => c.dataset.yAxisID === "y2" ? `Cumulative: ${c.parsed.y.toFixed(0)}%`
-            : `${c.parsed.y} units · ${fm$(r[c.dataIndex].uncaptured)}/mo uncaptured` } } },
-        scales: { y: { grid: gridCfg }, y2: { position: "right", grid: { display: false }, min: 0, max: 100, ticks: { callback: v => v + "%" } },
-          x: { grid: { display: false } } } }
-    });
-  })();
-
-  /* ---- Largest unit gaps ---- */
-  (async function gaps() {
-    const top = units.filter(u => u.gap > 0)
-      .sort((a, b) => b.gap - a.gap).slice(0, 12);
-
-    // Bedrooms belong to the floorplan, not the unit, and neither the rent roll
-    // nor the workbook says how many a plan has -- both only name the code
-    // ("lab19"). The Yardi Unit Directory does, so the plan code is joined to
-    // it here and shown as bedrooms instead. A plan the directory does not
-    // carry prints as a dash naming the code rather than guessing from it.
-    const m = await metricsJson();
-    const dir = (((m || {}).unit_directory || {}).properties || [])
-      .find(x => x.slug === "the-landing") || null;
-    const plan = t => ((dir || {}).plans || {})[t] || null;
-
-    const bedsCell = u => {
-      const p = plan(u.type);
-      const b = p ? p.bedrooms : null;
-      const e = elc("span", null, b == null ? "\u2014" : b === 0 ? "Studio" : b + " BR");
-      e.title = p
-        ? "Plan " + u.type + " \u00b7 " + b + " bed / " + p.baths + " bath \u00b7 "
-          + p.units + " units of this plan \u00b7 " + p.sqft_min + "\u2013" + p.sqft_max + " sqft"
-        : "Plan " + u.type + " is not in the unit directory";
-      return e;
-    };
-
-    // Expiry: the month the lease runs to, unless it has already run out. A
-    // holdover is the month-to-month case -- the workbook's MTM tab is the same
-    // roster -- and carries the exact date it expired, so that goes on hover.
-    // "Expired" without MTM is a lease past its date that the workbook has not
-    // put in that roster, which is worth telling apart rather than merging.
-    const ho = {};
-    (L.holdovers.units || []).forEach(h => { ho[h.unit] = h; });
-    const rrKey = +((L.meta.rent_roll_as_of || "").slice(0, 4)
-                    + (L.meta.rent_roll_as_of || "").slice(5, 7)) || 0;
-    const moOf = k => shortMo(String(k).slice(0, 4) + "-" + String(k).slice(4, 6));
-    const expiryCell = u => {
-      let text, title;
-      const h = ho[u.unit];
-      if (u.status === "Vacant" || !u.expiry_key || u.expiry_key <= 190001) {
-        text = "\u2014"; title = "No lease on the rent roll";
-      } else if (h) {
-        text = "MTM \u00b7 " + moOf(u.expiry_key);
-        title = "Lease expired " + h.expired + " and has run month to month since \u2014 "
-                + h.months_expired + " months";
-      } else if (u.expiry_key < rrKey) {
-        text = "Expired " + moOf(u.expiry_key);
-        title = "Ran out before the rent roll's own date (" + L.meta.rent_roll_as_of
-                + ") but is not on the workbook's month-to-month roster";
-      } else {
-        text = moOf(u.expiry_key);
-        title = "Lease runs to " + moOf(u.expiry_key);
-      }
-      const e = elc("span", null, text);
-      e.title = title;
-      return e;
-    };
-
-    buildTable(document.getElementById("lgTbl"),
-      [{ t: "Unit" }, { t: "Beds" }, { t: "SF", num: true },
-       { t: "In-place", num: true }, { t: "Market", num: true },
-       { t: "Gap/yr", num: true }, { t: "Expiry" }, { t: "Status" }],
-      top.map(u => ["#" + u.unit, bedsCell(u), u.sqft.toLocaleString(),
-        fm$(u.inplace), fm$(u.market), fm$(u.gap * 12),
-        expiryCell(u), statusPill(u.status === "Holdover" ? "FLAG" : "CURRENT")]));
-    const t = document.getElementById("lgTbl").querySelectorAll(".pill");
-    t.forEach((p, i) => { p.textContent = top[i].status; });
-
-    document.getElementById("lgNote").textContent =
-      "Rents, square footage and lease dates are the workbook's, from the rent roll of "
-      + L.meta.rent_roll_as_of + ". Bedrooms come from the Yardi Unit Directory"
-      + (dir ? " of " + dir.as_of + " (" + dir.residential_units + " apartments across "
-               + Object.keys(dir.plans).length + " floorplans)" : ", which has not been fetched yet")
-      + ", joined on the plan code. Expiry is the month the lease runs to; \u201cMTM\u201d is a "
-      + "lease already run out and continuing month to month, with the date it expired on hover.";
-  })();
-
-  /* ---- Delinquency ---- */
-  (function delq() {
-    const dq = L.delinquency;
-    document.getElementById("ldEyebrow").textContent =
-      "RESIDENT BALANCES AS OF " + dq.as_of + " · NET " + fm$(dq.net) + " AFTER CREDITS";
-    const host = document.getElementById("ldStats");
-    statBlock(host, [
-      [fm$(dq.gross_owed), "gross owed"],
-      [String(dq.units_with_balance) + " / " + String(dq.occupied_units), "units w/ balance"],
-      [fmPct(dq.pct_month_rent), "of monthly rent"],
-      [fm$(dq.retail_balance), "retail balance"],
-    ]);
-    host.querySelectorAll(".st").forEach(st => { st.style.marginBottom = "10px"; });
-    const ag = dq.aging;
-    new Chart(document.getElementById("lcDelq"), {
-      type: "bar",
-      data: { labels: ag.map(a => a.bucket),
-        datasets: [{ label: "Amount", data: ag.map(a => a.amount),
-          backgroundColor: [C.green, C.amber, C.amber, C.red] }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => `${fm$(c.parsed.x)} · ${fmPct(ag[c.dataIndex].pct_owed)} of total · ${ag[c.dataIndex].status}` } } },
-        scales: { x: { grid: gridCfg, ticks: { callback: v => "$" + (v / 1e3).toFixed(0) + "k" } },
-          y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
-    });
-    buildTable(document.getElementById("ldTbl"),
-      // no resident name: a surname beside an amount past due is personal data,
-      // and the unit number is enough to act on
-      [{ t: "Unit" }, { t: "Owed", num: true }, { t: "Over 90d", num: true }],
-      dq.top.slice(0, 8).map(x => ["#" + x.unit, fm$(x.owed), x.over90 ? fm$(x.over90) : "—"]));
-    const u5 = dq.unit_531;
-    if (u5) {
-      document.getElementById("ldNote").textContent =
-        "Unit 531 (also the rent-override unit on Inputs) is tracked separately: " +
-        (u5.balance_latest.label || "latest balance") + " " + fm$(u5.balance_latest.amount) +
-        " (" + fm$(u5.new_charges_week) + " new charges, " + fm$(u5.paid_week) +
-        " paid in the week), " + fm$(u5.aged_over_30) + " aged past 30 days · status " +
-        u5.status + " · PM memo: " + u5.memo + ".";
-    }
-  })();
-
-  /* ---- Insights scorecard (the workbook's own scored read) ---- */
-  (function insights() {
-    const ins = L.insights || {};
-    const fmVal = v => typeof v !== "number" ? String(v)
-      : (Math.abs(v) >= 20 ? String(Math.round(v)) : fmPct(v, Math.abs(v) < 0.02 && v !== 0 ? 2 : 1));
-    buildTable(document.getElementById("liTbl"),
-      [{ t: "Metric" }, { t: "Value", num: true }, { t: "Status" }, { t: "What it means", mut: true }],
-      (ins.metrics || []).map(m => [m.name, fmVal(m.value), statusPill(m.status), m.meaning]));
-    buildTable(document.getElementById("liFlags"),
-      [{ t: "Open question" }, { t: "Status" }, { t: "What would settle it", mut: true }],
-      (ins.flags || []).map(f => [f.item, statusPill(f.status), f.settle]));
-  })();
-
-  /* ---- meta line ---- */
-  document.getElementById("lMeta").textContent =
-    L.meta.property + " · " + L.meta.units + " units · " + L.meta.rentable_sqft.toLocaleString() +
-    " sq ft · rent roll as of " + L.meta.rent_roll_as_of + " · source: " + L.meta.source_workbook +
-    " (rent roll, GL/T12, delinquency — same report types as the Drive pipeline; refresh on command)";
-}
-
-/* ============================================================
-   LANDING (DRIVE) — the same building as The Landing, built only
-   from what Google Drive delivers.
-
-   The Landing tab is fed by the analyst workbook (V37), which is
-   refreshed by pasting reports into grey tabs, recalculating in
-   Excel and re-running scripts/extract_landing.py. Everything it
-   shows is real; none of it moves on its own. This tab is the
-   subset that does: every number below comes from a report the
-   Gmail filer drops into Drive and the daily pipeline parses, so
-   dropping a fresh export in Drive is the whole refresh.
+   A second tab drew this same building from the analyst workbook
+   (V37) until 2026-09-18 — refreshed by pasting reports into grey
+   tabs, recalculating in Excel and re-running extract_landing.py.
+   Everything it showed was real; none of it moved on its own, and
+   that is why this one outlived it: every number below comes from a
+   report the Gmail filer drops into Drive and the daily pipeline
+   parses, so dropping a fresh export in Drive is the whole refresh.
 
    The rule, applied per number rather than per card: if a fresh
    direct export cannot update it today, with the parsers that
@@ -4680,18 +4140,18 @@ const SCD_SLUG = "the-landing";
 const SCD_DRIVE_FEEDS = [
   { prefix: "bldg_", only: null,
     what: "EliseAI building-metrics export · Drive “EliseAI Reports”" },
-  // The unprefixed family is whichever populate_scorecard run wrote last, and
-  // that is either the Drive AR report (--from-pipeline) or the analyst
-  // workbook (--from-landing) -- they own the same cells and overwrite each
-  // other. Only the first belongs here, so the feed is taken only when the
-  // recorded source is not the workbook. Naming the two KPIs is not enough on
-  // its own: on 2026-09-03 a --from-landing run for Concession Load % put the
-  // workbook back in front of a same-week Drive report, and a filter that read
-  // the KPI list alone would have published a workbook number on this tab.
-  { prefix: "", only: ["Total Deliquency", "Split Between 30/60/90"],
-    what: "delinquency summary · Drive “Residential AR Analytics”",
-    fromDrive: m => !/workbook|landing\.json|analyst/i.test(
-      String(m.source || "") + " " + String(m.received_what || "")) },
+  // The two AR cells are the Drive report's outright (owner, 2026-09-21,
+  // closing G3): --from-landing no longer fills them at all, and the report
+  // records them under its own delq_ family. So this needs no fromDrive
+  // predicate any more -- the family IS the answer to "is this Drive-fed".
+  //
+  // It used to sit on the unprefixed family with a predicate reading the
+  // recorded source, because both runs wrote the same two cells and the last
+  // one won. That guard is what kept a workbook number off this tab on
+  // 2026-09-03; it is unnecessary now only because the race it guarded against
+  // cannot happen. Do not read its removal as the race having been benign.
+  { prefix: "delq_", only: null,
+    what: "delinquency summary · Drive “Residential AR Analytics”" },
   // Budget Variance % is filled by the --from-landing run but owes the
   // workbook nothing: both sides are Drive reports (the budget export and the
   // T12 statement), which is why populate_scorecard records it under its own
@@ -4720,6 +4180,12 @@ const SCD_DRIVE_FEEDS = [
 // and by the delinquency card, which has to tell "no report has ever arrived"
 // apart from "one has, and something else owns the cell today".
 function scdFeedIsDrive(feed, meas) {
+  // A caller naming a family this list no longer carries gets `false`, not a
+  // crash. On 2026-09-21 the delinquency cells moved from the unprefixed family
+  // to delq_ and two lookups here still asked for "", so this read .prefix off
+  // undefined and threw -- taking out the Delinquency card and both cards after
+  // it. A renamed family is a card with nothing to say, not a broken page.
+  if (!feed) return false;
   const listed = meas[feed.prefix + "kpis"];
   if (!listed || !listed.length) return false;
   return feed.fromDrive ? !!feed.fromDrive(prefixed(meas, feed.prefix)) : true;
@@ -4745,29 +4211,37 @@ const SCD_FEED_ROWS = [
   // What this one fills depends on which populate_scorecard run wrote last, so
   // it is asked rather than asserted.
   { flow: "delinquency", fills: "Delinquency card and tile",
-    fillsIf: { prefix: "", idle: "nothing today — the workbook owns its two cells" } },
+    fillsIf: { prefix: "delq_",
+               idle: "nothing yet — no AR report has filled its two cells" } },
   { flow: "budget", fills: "The Budget variance tile" },
   { flow: "rent_roll", fills: "Loss to Lease · Rollover Schedule · Largest Unit Gaps" },
   { flow: "daily_leasing", fills: "Trade-outs — the new-lease series" },
   { flow: "renewal_tracker", fills: "Trade-outs — the renewal series and the MTM count" },
   { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door",
-    // The one feed on this tab whose refresh route is not open today. Building
-    // Info sits in the Drive library rather than the drop tree, on purpose, and
-    // fetch_drive only scans that tree when GDRIVE_REFERENCE_FOLDER_ID is set --
-    // it is not, so the entry is skipped with a log line every run
-    // (fetch_drive.py:142, 232). The numbers below are real and Drive-derived;
-    // they just cannot move yet, which on a tab that promises only refreshable
-    // figures has to be said out loud rather than left to the arrival date.
-    blocked: "its Drive folder is in the reference library, which the pipeline is not "
-           + "scanning yet — GDRIVE_REFERENCE_FOLDER_ID is unset, so a fresh export "
-           + "dropped there is skipped with a log line and these figures stay on the "
-           + "file named above (open item C5)" },
+    // The one feed on this tab that does not refresh -- and, since the owner
+    // settled C5 on 2026-09-21, not because anything is blocking it. The unit
+    // directory is a legacy export that will never change: it is the buildings'
+    // fixed description (floorplan, square footage, bedrooms, baths), and
+    // those do not move. So GDRIVE_REFERENCE_FOLDER_ID being unset costs
+    // nothing here; there is no fresher file waiting to be scanned.
+    //
+    // Still said out loud, because this tab promises figures that would move
+    // on the next pipeline run and these would not. The difference between "is
+    // stale" and "is final" is the whole content of the sentence: a reader who
+    // sees an old date and no explanation assumes the first.
+    blocked: "it is a legacy export — the buildings' fixed description, which "
+           + "will not be re-issued (owner, 2026-09-21). The date below is the "
+           + "file's, not a sign of a feed that has stopped: these figures are "
+           + "final rather than stale" },
 ];
 const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).blocked || "";
 
-// What the workbook-fed Landing tab shows that this one cannot, and what would
-// put it here. Written down rather than inferred: a card that is absent for a
-// good reason and a card that is absent by accident look identical.
+// What this building's picture is still missing, and what would put it here.
+// Written down rather than inferred: a card that is absent for a good reason and
+// a card that is absent by accident look identical. The list was framed against
+// the workbook-fed Landing tab until that tab came off on 2026-09-18 -- three of
+// the four were cards it carried, so they are now absent from the dashboard
+// outright rather than merely from this view.
 const SCD_MISSING = [
   // Both sides of this arrived on 2026-09-11. What is left is not a report.
   { what: "Holdovers reconciled unit by unit",
@@ -4792,6 +4266,64 @@ const SCD_MISSING = [
     needs: "a concession burn-off naming its property" },
 ];
 
+/* ---- Each card is drawn inside this ----
+   A throw in one section used to take out every card below it. On 2026-09-21
+   the delinquency card looked up a scorecard family that had been renamed
+   (the AR cells moved to delq_ when G3 closed), read `.prefix` off undefined,
+   and Delinquency, Unit Inventory and What Feeds This Tab simply stopped
+   appearing — three cards gone, one console line, nothing on the page saying
+   so. A card with nothing to say must say nothing, not vanish.
+
+   So each section runs in isolation: one that throws is contained to its own
+   card, which falls back to the page's own no-data mark, and the sections
+   after it still run. The error still reaches the console — this hides
+   nothing, it just stops one missing feed reading as a redesign.
+
+   Hoisted to module scope on 2026-09-22 so the Rental Rates tab is
+   contained the same way rather than growing a second copy of this,
+   which would have drifted the first time either was edited. */
+function section(id, fn) {
+  try {
+    const r = fn();
+    // An async section (the feeds card reads lineage.json) settles later, so
+    // its rejection is caught there rather than here -- without this, a throw
+    // inside one is an unhandled rejection and the card stays blank.
+    if (r && typeof r.catch === "function") r.catch(e => sectionFailed(id, e));
+  } catch (e) { sectionFailed(id, e); }
+}
+function sectionFailed(id, err) {
+  console.error("Card " + id + " could not be drawn", err);
+  const host = document.getElementById(id);
+  if (!host) return;
+  if (!host.classList.contains("card")) {
+    // A tile row, not a card: one tile carrying the dash keeps the row's
+    // shape rather than leaving a gap where tiles were.
+    host.textContent = "";
+    const kp = elc("div", "kpi");
+    kp.appendChild(elc("div", "v", "\u2014"));
+    kp.appendChild(elc("div", "k", "Not available"));
+    kp.appendChild(elc("div", "s", "this row could not be drawn"));
+    host.appendChild(kp);
+    return;
+  }
+  // Keep the card's heading, eyebrow and corner link; replace whatever the
+  // section had managed to build.
+  [...host.children].forEach(el => {
+    const keep = el.tagName === "H2" || el.classList.contains("card-head")
+      || el.classList.contains("eyebrow") || el.classList.contains("cardsrc");
+    if (!keep) el.remove();
+  });
+  const empty = elc("div", "empty");
+  empty.style.minHeight = "120px";
+  empty.appendChild(elc("div", "dash"));
+  empty.appendChild(elc("div", "big", "\u2014 not available"));
+  empty.appendChild(elc("div", "why",
+    "This card's data is missing or has moved, so it has nothing to show. "
+    + "Nothing else on this tab is affected; the browser console carries the "
+    + "error."));
+  host.appendChild(empty);
+}
+
 async function loadLandingDrive() {
   const m = await metricsJson();
   await scPromise;
@@ -4807,22 +4339,23 @@ async function loadLandingDrive() {
   const prop = SC && (SC.properties || []).find(x => x.slug === SCD_SLUG);
   const meas = ((SC && SC.measured) || {})[SCD_SLUG] || {};
 
+
   document.getElementById("dIntro").textContent =
     "The Landing, built only from Google Drive. Every number on this tab comes from a "
     + "report the pipeline fetches and parses, so a fresh direct export dropped in Drive "
     + "is the whole refresh — nothing here is typed in, pasted into a grey tab or carried "
-    + "over from the analyst workbook. The Landing tab beside it is the fuller view and "
-    + "the two will disagree where the workbook is more recent, or where it measures "
-    + "something on a basis no report publishes. What this tab cannot show, and why, is "
-    + "on the last card.";
+    + "over from the analyst workbook. A second tab drew the same building from that "
+    + "workbook until 2026-09-18; the workbook still fills several scorecard cells "
+    + "through populate_scorecard --from-landing, but nothing on this page reads it "
+    + "directly. What this tab cannot show, and why, is on the last card.";
 
   /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
-  renderOpSummary(SCD_SLUG,
+  section("cdOpSummary", () => renderOpSummary(SCD_SLUG,
     { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote", sel: "dopSelect",
-      togs: "dopTogs" });
+      togs: "dopTogs" }));
 
   /* ---- Loss to lease — the statement's own rental-income section ---- */
-  (function rentCaptureDrive() {
+  section("cdRentCapture", function rentCaptureDrive() {
     const rc = pick("rent_capture", SCD_SLUG);
     const card = document.getElementById("cdRentCapture");
     const ok = renderRentCapture(rc, { canvas: "dcCapture", foot: "dcCaptureFoot" },
@@ -4839,7 +4372,7 @@ async function loadLandingDrive() {
         + "draws metrics.json rent_capture, written by build_metrics from the "
         + "T12 statement; nothing has been stored for " + SCD_SLUG + ".";
     }
-  })();
+  });
 
   /* ---- The doors, and the controllable series both the NOI card and the
           tiles need. Unit count comes from the Yardi unit directory rather
@@ -4917,7 +4450,7 @@ async function loadLandingDrive() {
   }
 
   /* ---- KPI strip — what the statement itself reports ---- */
-  (function kpis() {
+  section("dkpis", function kpis() {
     const plKeys = pl
       ? ((pl.months && pl.months.length === pl.revenue.length)
           ? pl.months : monthKeysBack(pl.period_end, pl.revenue.length))
@@ -4963,12 +4496,12 @@ async function loadLandingDrive() {
     // rather than statement figures, so they moved up into the row above when
     // the grid came off, instead of being printed twice on one tab.
     tileRow("dkpis", tiles);
-  })();
+  });
 
   /* ---- The scorecard cells this tab keeps, as tiles ----
      A twelve-cell KPI grid stood here until 2026-09-15. Four cells are worth a
-     tile; the rest are on The Landing's own card and the portfolio scorecard,
-     unchanged, and scorecard.json still carries every one of them.
+     tile; the rest are on the Scorecard tab, unchanged, and scorecard.json
+     still carries every one of them.
 
      Two things the grid did that a bare number does not, and both are kept:
 
@@ -4984,7 +4517,7 @@ async function loadLandingDrive() {
        cell shows as absent with the reason rather than borrowed. */
   const SCD_GRADE = { exceeding: "exceeding target", in_range: "in target range",
                       below: "below target" };
-  (function scTiles() {
+  section("dkpisSc", function scTiles() {
     if (!SC || !prop) { tileRow("dkpisSc", []); return; }
     const unscored = scUnscoredSet();
     // The family that lists a cell, whether or not it owns it today -- which is
@@ -5077,10 +4610,10 @@ async function loadLandingDrive() {
               t.period];
     });
     tileRow("dkpisSc", tiles);
-  })();
+  });
 
   /* ---- Expense load & NOI, entirely from the statement ---- */
-  (function noi() {
+  section("cdNoi", function noi() {
     const foot = document.getElementById("dnoiFoot");
     if (!pl) {
       document.getElementById("dnoiEyebrow").textContent = "AWAITING THE STATEMENT";
@@ -5176,23 +4709,23 @@ async function loadLandingDrive() {
             + fm$(ttmOpex / 12 / doors) + "/mo for total expense. The door count is the "
             + "unit directory's residential_units, not the workbook's."
           : "Controllable expense/door is not drawn: " + ctrlWhy + ".");
-  })();
+  });
 
   /* ---- Expense deep dive — the same card as The Landing, with no workbook ---- */
-  renderExpenseDeep(SCD_SLUG,
+  section("cdExpDeep", () => renderExpenseDeep(SCD_SLUG,
     { card: "cdExpDeep", eyebrow: "dexpEyebrow", cks: "dexpCks", wrap: "dexpWrap",
-      canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null);
+      canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null));
 
   /* ---- Trade-outs, from the two leasing feeds.
 
-     The workbook-fed card on The Landing draws its new-lease side as a plain
+     The workbook-fed card this replaced drew its new-lease side as a plain
      mean and its renewal side rent-weighted, because the analyst workbook only
-     ever carried monthly renewal AGGREGATES — its own footnote says the offer
+     ever carried monthly renewal AGGREGATES — its own footnote said the offer
      data "carry no per-renewal rows to average". parse_renewal_tracker reads
      those rows, so both series here are the same average over the same kind of
      thing, and the weighted figure is kept on the tooltip rather than mixed
      into the axis. ---- */
-  (function tradeOuts() {
+  section("cdTradeOuts", function tradeOuts() {
     const card = document.getElementById("cdTradeOuts");
     const wb = (lease && lease.new_leases) || null;   // the weekly leasing workbook
     const rn = (lease && lease.renewals) || null;
@@ -5386,7 +4919,7 @@ async function loadLandingDrive() {
       + " Capture at signing is not shown: neither feed carries a market rent at signing "
       + "to divide by — the tradeout report gives the lease it replaced, not what the "
       + "unit was asking.";
-  })();
+  });
 
   /* ---- Loss to lease, rollover and unit gaps — all three from the rent roll.
      The Landing draws its loss-to-lease as a 19-month series off the workbook's
@@ -5396,7 +4929,7 @@ async function loadLandingDrive() {
      (gross potential, loss to lease, vacancy, concessions), which the parser
      does not read yet — the footnote says so rather than leaving the shape
      difference unexplained. ---- */
-  (function rentRoll() {
+  section("cdRollover", function rentRoll() {
     // cdRentCapture is not in this list: its monthly chart is the T12
     // statement's and renders without a roll. Only the roll's half of that
     // card goes away.
@@ -5511,16 +5044,16 @@ async function loadLandingDrive() {
       + ". Occupied units only — a vacant unit's gap is its whole asking rent and would head "
       + "this table on every roll. No resident field reaches this page: the parse is scrubbed "
       + "before it is written to disk.";
-  })();
+  });
 
   /* ---- Delinquency, from what the Drive AR report actually publishes ---- */
-  (function delq() {
+  section("cdDelq", function delq() {
     const eyebrow = document.getElementById("ddEyebrow");
     const note = document.getElementById("ddNote");
     // Only if a Drive report owns these cells right now. The workbook fills the
     // same two through --from-landing and the last run wins, so "there is a
     // value" is not the same question as "Drive put it there".
-    const feed = SCD_DRIVE_FEEDS.find(f => f.prefix === "");
+    const feed = SCD_DRIVE_FEEDS.find(f => f.prefix === "delq_");
     const driveOwns = scdFeedIsDrive(feed, meas);
     const rate = driveOwns && prop && scValue(prop, "Total Deliquency");
     const split = driveOwns && prop && scValue(prop, "Split Between 30/60/90");
@@ -5631,12 +5164,11 @@ async function loadLandingDrive() {
           : "")
       + "The 0–30 bucket, the balance per unit and the largest balances are parsed and "
       + "tied out but stop in data/: they are unit level and the report arrives with "
-      + "resident names, so nothing publishes them. The Landing tab shows them from the "
-      + "workbook's own scrubbed copy instead.";
-  })();
+      + "resident names, so nothing publishes them.";
+  });
 
   /* ---- Unit inventory, from the Yardi unit directory ---- */
-  (function inventory() {
+  section("cdInventory", function inventory() {
     const note = document.getElementById("diNote");
     if (!dir) {
       document.getElementById("diEyebrow").textContent = "AWAITING THE UNIT DIRECTORY";
@@ -5851,10 +5383,10 @@ async function loadLandingDrive() {
             + "out against the export's own totals, but they are as of that export and "
             + "will stay there."
           : "");
-  })();
+  });
 
   /* ---- What feeds this tab, and what it cannot show ---- */
-  (async function feeds() {
+  section("cdFeeds", async function feeds() {
     const ln = await lineageJson();
     const flows = ((ln || {}).flows || []);
     const isLanding = s => String(s || "").toLowerCase().indexOf("landing") >= 0;
@@ -5931,14 +5463,12 @@ async function loadLandingDrive() {
       + " things The Landing shows that no Drive export can refresh today. "
       + oneReport.charAt(0).toUpperCase() + oneReport.slice(1)
       + (blocked.length
-          ? " One caveat on the left-hand table, and it is the sharpest thing on this "
-            + "page: " + spell(blocked.length) + " of these "
-            + spell(SCD_FEED_ROWS.length) + " feeds cannot actually be refreshed right "
-            + "now — " + blocked.join("; ") + ". Everything it fills is genuinely "
-            + "Drive-derived and ties out, so it belongs here, but it is frozen until "
-            + "that is fixed, and a stale arrival date is the only sign."
+          ? " One note on the left-hand table: " + spell(blocked.length) + " of these "
+            + spell(SCD_FEED_ROWS.length) + " feeds will not refresh — "
+            + blocked.join("; ") + ". Everything it fills is genuinely Drive-derived "
+            + "and ties out, so it belongs here."
           : "");
-  })();
+  });
 
   document.getElementById("dMeta").textContent =
     (dir ? dir.name : "The Landing") + " · "
@@ -5947,6 +5477,505 @@ async function loadLandingDrive() {
     + "sources: " + SCD_FEED_ROWS.length + " Google Drive reports, no analyst workbook. "
     + "Refreshed by scripts/fetch_drive.py and scripts/build_metrics.py on the daily "
     + "cron — drop a fresh export in Drive and the next run picks it up.";
+}
+
+
+/* ============================================================
+   MARKET COMPS  (data: metrics.json `comps`)
+
+   Every other tab draws Align's own buildings. This one draws the
+   market around one of them, which is the only thing a Yardi market
+   rent can be checked against: that column is set by the property
+   team, it is the denominator of loss to lease and of the rent-capture
+   series, and until this feed existed nothing in the pipeline could
+   say whether it was right.
+
+   The verdict card is deliberately FOUR figures for one number. Three
+   of them are the building's own -- the rent roll's market rent
+   column, the unit directory's plan table, and the statement's gross
+   market rent potential, which is that same table booked as revenue --
+   and one is the market's. A single comparison against the comps could
+   only say that a number looks high; three internal copies that
+   disagree with each other date the change, which is what makes it
+   actionable rather than arguable.
+   ============================================================ */
+const MC = { block: null, slug: null, period: "q", chart: null };
+
+// The sign goes BEFORE the dollar, and it is the typographic minus the rest of
+// the page uses: a building whose table sits under the market is a real case
+// (Chorus reads −4.3%) and "$-107,433" is not how money is written.
+const mcUsd = v => (v < 0 ? "−" : "") + "$" + Math.round(Math.abs(v)).toLocaleString("en-US");
+const mcM = v => (v < 0 ? "−" : "") + "$" + (Math.abs(v) / 1e6).toFixed(2) + "M";
+// Signed, with the typographic minus the rest of the page uses: these sit in
+// table columns beside one another at 10.5px, where a hyphen reads as a dash.
+const mcSign = (v, d) => {
+  const dp = d === undefined ? 1 : d;
+  const pct = Math.abs(v * 100);
+  // A gap that rounds to nothing is nothing: "−0.0%" reads as a real
+  // shortfall at a glance, and the 2-bed size match is exactly that case.
+  if (pct < 0.5 / Math.pow(10, dp)) return pct.toFixed(dp) + "%";
+  return (v < 0 ? "−" : "+") + pct.toFixed(dp) + "%";
+};
+const mcPsf = v => "$" + v.toFixed(2);
+const mcDays = n => n + (n === 1 ? " day" : " days");
+
+function mcProp() {
+  return ((MC.block || {}).properties || []).find(x => x.slug === MC.slug) || null;
+}
+
+function mcRing(p) {
+  return (p.rings || []).find(r => r.primary) || null;
+}
+
+/* ---- 1. the verdict ---- */
+function mcVerdict(p) {
+  const v = p.verification, ring = mcRing(p) || {};
+  document.getElementById("mcvEyebrow").textContent =
+    "THE MARKET RENT COLUMN · AGAINST " + (ring.properties || 0) + " COMPS WITHIN "
+    + p.primary_radius_mi + " MI · " + (p.vendor || "COMP EXPORT") + " AS OF " + p.as_of;
+
+  const stats = document.getElementById("mcvStats");
+  const tbl = document.getElementById("mcvTbl");
+  const note = document.getElementById("mcvNote");
+  stats.textContent = ""; tbl.textContent = "";
+
+  if (!v) {
+    note.textContent =
+      "The market side of this property is on the cards below, but its market rent "
+      + "cannot be checked yet: that needs a unit directory for the bedroom mix and "
+      + "a rent roll to compare against, and " + p.name + " has neither in the "
+      + "pipeline. Nothing here is missing from the comp export — it is the "
+      + "building's own feeds that have not arrived.";
+    return;
+  }
+
+  const h = v.headline || {};
+  const row = [];
+  if (h.gap !== undefined) {
+    row.push([mcSign(h.gap), (h.label || "YARDI").toUpperCase()
+                             + (h.gap < 0 ? " UNDER" : " OVER") + " COMP-IMPLIED"]);
+  }
+  if (h.dollars) row.push([mcUsd(h.dollars), "PER MONTH"]);
+  if (h.annual) row.push([mcM(h.annual), "PER YEAR"]);
+  if (h.ltl_restated !== undefined) {
+    row.push([(h.ltl_restated * 100).toFixed(1) + "%",
+              "LOSS TO LEASE RESTATED · PUBLISHED " + (h.ltl_published * 100).toFixed(1) + "%"]);
+  }
+  statBlock(stats, row);
+
+  buildTable(tbl,
+    [{ t: "Source" }, { t: "What it is" }, { t: "As of" },
+     { t: "Market rent / mo", num: true }, { t: "vs comp-implied", num: true }],
+    (v.sources || []).map(s => [
+      s.label + (s.exact === false ? " †" : ""),
+      s.detail,
+      s.as_of || s.month || "—",
+      mcUsd(s.market_rent),
+      s.key === "comp_implied" ? "—" : mcSign(s.gap),
+    ]));
+
+  // The sensitivity is the answer's own robustness, and it belongs in the
+  // sentence rather than in a footnote nobody reads: a gap that survives three
+  // comp sets is a finding, one that does not is a choice of radius.
+  const sens = (v.sensitivity || []).filter(s => s.gap !== null && s.gap !== undefined);
+  const spread = sens.map(s => (s.radius_mi ? s.radius_mi + " mi" : "every building in the file")
+                               + " " + mcSign(s.gap)).join(", ");
+  // The baseline cannot corroborate itself, and the rent roll is what is being
+  // measured: what matters is the OTHER copies of the same Yardi table.
+  const agree = (v.sources || []).filter(
+    s => s.key !== "rent_roll" && s.key !== "comp_implied"
+         && s.gap !== null && s.gap !== undefined && Math.abs(s.gap) <= 0.03);
+  note.textContent =
+    v.basis + ". "
+    + (h.source && h.source !== "rent_roll"
+        ? "No rent roll has reached the pipeline for " + p.name + ", so the "
+          + "figure measured here is the " + (h.label || "").toLowerCase()
+          + "'s \u2014 the same Yardi table, one feed further from today. "
+        : "")
+    + (agree.length
+        ? "Note which figures agree: the " + agree.map(s => s.label).join(" and the ")
+          + " sit within 3% of what the comps support, so the step sits in the "
+          + "rent roll alone — and they are dated "
+          + agree.map(s => s.as_of || s.month).join(" and ")
+          + ", which puts the change after them rather than anywhere in the past year. "
+        : "")
+    + (spread ? "The same build-up at every ring the export was cut into: " + spread
+              + ". " : "")
+    + "† an estimate rather than a tied-out total: the directory figure is the "
+    + "midpoint of each plan's published range, and the comp-implied figure is a "
+    + "median times a premium. The rent roll and the statement are exact."
+    + ((v.unpriced_plans || []).length
+        ? " " + v.unpriced_plans.length + " floorplan(s) carry no market rent in the "
+          + "directory and are left out of its total: " + v.unpriced_plans.join(", ") + "."
+        : "");
+}
+
+/* ---- 2. the divergence chart ---- */
+function mcChartDraw(p) {
+  const pts = (MC.period === "q" ? p.quarters : p.months) || [];
+  const prem = p.premium || {};
+  const ring = mcRing(p) || {};
+  document.getElementById("mcdEyebrow").textContent =
+    "MEDIAN ASKING $/SQFT ON NEW LISTINGS · " + p.name.toUpperCase() + " vs "
+    + (ring.properties || 0) + " COMPS WITHIN " + p.primary_radius_mi + " MI";
+
+  if (MC.chart) { MC.chart.destroy(); MC.chart = null; }
+  const cv = document.getElementById("mcChart");
+  MC.chart = new Chart(cv, {
+    type: "line",
+    data: {
+      labels: pts.map(x => x.key),
+      datasets: [
+        { label: p.name, data: pts.map(x => x.subject_psf),
+          borderColor: C.amber, backgroundColor: C.amber, tension: .25,
+          borderWidth: 2, pointRadius: 3, spanGaps: false },
+        { label: "Comp ring (median)", data: pts.map(x => x.comp_psf),
+          borderColor: C.teal, backgroundColor: C.teal, tension: .25,
+          borderWidth: 2, pointRadius: 2, spanGaps: false },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false, responsive: true,
+      plugins: {
+        legend: legendCfg,
+        tooltip: { callbacks: { label: c => {
+          const x = pts[c.dataIndex];
+          const n = c.datasetIndex === 0 ? x.subject_n : x.comp_n;
+          return c.dataset.label + ": " + mcPsf(c.parsed.y) + "/sqft on "
+                 + n + " listing" + (n === 1 ? "" : "s");
+        } } },
+      },
+      scales: {
+        y: { grid: gridCfg, ticks: { callback: v => "$" + v.toFixed(2) } },
+        x: { grid: { display: false } },
+      },
+    },
+  });
+
+  // The footnote is computed from the series against the baseline, so it
+  // cannot go stale as quarters arrive and it cannot overstate a normal one.
+  const base = prem.median;
+  const graded = pts.filter(x => x.premium !== null && x.premium !== undefined);
+  const newest = graded.length ? graded[graded.length - 1] : null;
+  let run = [];
+  for (let i = graded.length - 1; i >= 0; i--) {
+    if (base !== null && base !== undefined && graded[i].premium > base + 0.10) run.unshift(graded[i]);
+    else break;
+  }
+  // Measured from the period BEFORE the run began: a run of one quarter has no
+  // span of its own, and "moved from $7.53 to $7.53" is what that reads as.
+  const startIdx = graded.length - run.length - 1;
+  const ringFrom = graded[Math.max(0, startIdx)] || (run[0] || {});
+  const last = run.length ? run[run.length - 1] : null;
+  const ringMove = (last && ringFrom.comp_psf) ? last.comp_psf / ringFrom.comp_psf - 1 : null;
+  const subjMove = (last && ringFrom.subject_psf) ? last.subject_psf / ringFrom.subject_psf - 1 : null;
+  const label = MC.period === "q" ? "quarter" : "month";
+  document.getElementById("mcdFoot").textContent =
+    "Each point is the median asking $/sqft of the units FIRST LISTED in that "
+    + label + ", so a unit that sits unlet reports its price once rather than in "
+    + "every " + label + " until it goes. "
+    + (base !== null && base !== undefined
+        ? p.name + " has asked a median " + mcSign(base) + " over this ring across "
+          + prem.quarters + " quarters (" + prem.first + "–" + prem.last
+          + "), taken per bedroom and weighted by its own listing counts so the "
+          + "figure follows price rather than which unit types happened to be "
+          + "vacant. "
+        : "")
+    + (run.length
+        ? "The last " + (run.length === 1 ? label : run.length + " " + label + "s")
+          + (run.length === 1 ? " sits" : " sit") + " more than ten points above "
+          + "that: " + run.map(x => x.key + " " + mcSign(x.premium)).join(", ")
+          + ". The ring moved " + mcSign(ringMove) + " over the same stretch, from "
+          + mcPsf(ringFrom.comp_psf) + " to " + mcPsf(run[run.length - 1].comp_psf)
+          + "/sqft, while this building moved " + mcSign(subjMove) + "."
+        : newest
+          ? "The newest " + label + " reads " + mcSign(newest.premium)
+            + ", inside the long-run range."
+          : "");
+}
+
+/* ---- 3. the build-up ---- */
+function mcBuildUp(p) {
+  const v = p.verification;
+  const eyebrow = document.getElementById("mcbEyebrow");
+  const tbl = document.getElementById("mcbTbl");
+  const foot = document.getElementById("mcbFoot");
+  tbl.textContent = "";
+  if (!v) {
+    eyebrow.textContent = "AWAITING THIS PROPERTY'S OWN FEEDS";
+    foot.textContent = "This card multiplies the comp set's rents by the building's "
+      + "bedroom mix, which comes from the Yardi unit directory. " + p.name
+      + " has none in the pipeline.";
+    return;
+  }
+  const im = v.implied || {};
+  eyebrow.textContent = "COMP MEDIAN BY BEDROOM · PLUS THIS BUILDING'S OWN "
+    + mcSign(im.premium) + " PREMIUM · APPLIED TO ITS UNIT MIX";
+
+  const rows = (im.rows || []).map(r => [
+    r.bed + " bed" + (r.source === "yardi" ? " †" : ""),
+    String(r.units),
+    r.subject_sqft ? Math.round(r.subject_sqft) + " sf" : "—",
+    r.comp_sqft ? Math.round(r.comp_sqft) + " sf (" + r.comp_n + ")" : "—",
+    (r.comp_median_rent && r.source === "comps") ? mcUsd(r.comp_median_rent) : "—",
+    mcUsd(r.rent),
+    r.yardi_rent ? mcUsd(r.yardi_rent) : "—",
+    (r.yardi_rent && r.source === "comps") ? mcSign(r.yardi_rent / r.rent - 1) : "—",
+  ]);
+  rows.push(["All " + (im.rows || []).reduce((a, r) => a + r.units, 0) + " units", "", "", "", "",
+             mcUsd(im.total), "", ""]);
+  buildTable(tbl,
+    [{ t: "Bedrooms" }, { t: "Units", num: true }, { t: "Avg size", num: true },
+     { t: "Comp size (n)", num: true }, { t: "Comp median", num: true },
+     { t: "Market rent", num: true }, { t: "Yardi's own", num: true },
+     { t: "Yardi vs market", num: true }],
+    rows);
+
+  const bad = Object.keys(p.size_match || {}).filter(b => !p.size_match[b].like_for_like);
+  foot.textContent =
+    "A comp median is only like-for-like while the two sides are the same size, "
+    + "which is what the size columns are for: "
+    + (im.rows || []).filter(r => r.source === "comps" && r.size_gap !== null
+                                  && r.size_gap !== undefined)
+        .map(r => r.bed + " bed " + mcSign(r.size_gap)).join(", ")
+    + ". "
+    + ((im.unverified_beds || []).length
+        ? "† " + im.unverified_beds.map(b => b + " bed").join(" and ")
+          + " keeps the building's own figure: the submarket has fewer than five "
+          + "comparable units listed, and a handful of asking prices is not a "
+          + "market. Those units are in the total at Yardi's rent, so the gap this "
+          + "tab reports is the one that survives leaving them alone. "
+        : "")
+    + (bad.length
+        ? "Note the CURRENTLY LISTED units differ in size from the ring on "
+          + bad.map(b => b + " bed").join(", ")
+          + ", which is why the build-up above uses the whole building's mix "
+          + "rather than whatever is vacant today."
+        : "");
+}
+
+/* ---- 4. how it is leasing ---- */
+function mcEvidence(p) {
+  const d = p.days_on_market || {}, c = p.concessions || {}, sl = p.subject_listings || {};
+  document.getElementById("mceEyebrow").textContent =
+    "THE MARKET'S OWN ANSWER · LISTINGS SINCE " + (d.since || "").slice(0, 7);
+  const stats = [];
+  if (d.subject_median !== null && d.subject_median !== undefined) {
+    stats.push([mcDays(d.subject_median),
+                "MEDIAN DAYS ON MARKET · COMPS " + mcDays(d.comp_median)]);
+  }
+  if (c.subject_share !== null && c.subject_share !== undefined) {
+    stats.push([(c.subject_share * 100).toFixed(0) + "%",
+                "LISTINGS WITH A CONCESSION · COMPS "
+                + (c.comp_share * 100).toFixed(0) + "%"]);
+  }
+  if (sl.current) stats.push([String(sl.current), "UNITS LISTED TODAY"]);
+  if (sl.oldest_days) stats.push([mcDays(sl.oldest_days), "OLDEST ONE, STILL UNLET"]);
+  statBlock(document.getElementById("mceStats"), stats);
+
+  const slower = (d.subject_median && d.comp_median)
+    ? d.subject_median / d.comp_median - 1 : null;
+  document.getElementById("mceFoot").textContent =
+    "Days on market is read from each listing's own dates, which the parser "
+    + "reconciles against the column rather than trusting it. "
+    + (slower !== null
+        ? p.name + "'s units take " + mcSign(slower, 0) + " as long to go as the "
+          + "ring's (" + d.subject_n + " closed listings against " + d.comp_n + "). "
+        : "")
+    + ((c.subject_share === 0 && c.comp_share)
+        ? "It is also advertising no concession where "
+          + (c.comp_share * 100).toFixed(0) + "% of the ring is, so the gap on an "
+          + "effective-rent basis is wider than the asking figures show. "
+        : "")
+    + "Neither figure is a verdict on its own — a building can lease slowly for "
+    + "a dozen reasons — but both point the same way as the rents above.";
+}
+
+/* ---- 5. the limits ---- */
+function mcMethod(p) {
+  const v = p.verification, im = (v || {}).implied || {}, ring = mcRing(p) || {};
+  const items = [
+    ["Asking rents, not signed rents",
+     "Every comp figure here is what a building is advertising, which is the right "
+     + "basis for “what could this unit get today” and is not a "
+     + "transaction record. The subject's own signed leases are on the Trade-outs "
+     + "card of the Landing tab."],
+  ];
+  const vintages = p.vintages || [];
+  if ((im.unverified_beds || []).length) {
+    items.push([im.unverified_beds.map(b => b + "-bed units are not verified").join(", "),
+                "Fewer than five are listed anywhere in the ring. They keep the "
+                + "building's own market rent in the build-up above rather than "
+                + "being extrapolated from a pair of listings."]);
+  }
+  items.push(
+    ["Floor, view and finish are not controlled",
+     "The export describes a building, not a unit's outlook. The premium this tab "
+     + "applies — " + (p.premium && p.premium.median !== null
+                        ? mcSign(p.premium.median) : "the subject's own") + " over "
+     + (ring.properties || 0) + " comps, across " + ((p.premium || {}).quarters || 0)
+     + " quarters — is the stand-in: it is whatever this building has actually "
+     + "commanded over its neighbours, rather than a judgement about why."],
+    [(vintages.length > 1
+       ? "Read from the newest of " + vintages.length + " extracts"
+       : "One vintage"),
+     (vintages.length > 1
+       ? "The feed has " + vintages.length + " extracts on file, " + vintages[0]
+         + " to " + vintages[vintages.length - 1] + ", and every figure here is "
+         + "read from the newest of them — " + p.as_of + ". They are the vendor's "
+         + "own revisions of the same three-year history rather than successive "
+         + "slices of it, so they are not stitched: a later extract restates the "
+         + "earlier one, down to moving a listing's first-listed date. The "
+         + "pipeline picks by the extract's own as-of date, never by which file "
+         + "arrived last, because in this folder those disagree by weeks."
+       : "This is a single extract, as of " + p.as_of + ". It cannot be checked "
+         + "against a second one until the next export lands in Drive, at which "
+         + "point the trend above lengthens by itself.")],
+    ["Aggregates only",
+     "The listing rows behind these medians are a licensed vendor dataset, and "
+     + "everything this page fetches is downloadable by anyone who can open it. "
+     + (p.listings_in_file ? p.listings_in_file.toLocaleString("en-US") + " listings across "
+        + p.properties_in_file + " buildings went into " : "The export went into ")
+     + "the medians; none of them is published."]);
+
+  const host = document.getElementById("mcmList");
+  host.textContent = "";
+  items.forEach(([head, body]) => {
+    const wrap = elc("div");
+    wrap.style.cssText = "margin:0 0 12px;";
+    const h = elc("div", null, head);
+    h.style.cssText = "font-size:10px;letter-spacing:.5px;color:var(--text);margin-bottom:3px;";
+    const b = elc("div", null, body);
+    b.style.cssText = "font-size:9px;letter-spacing:.3px;color:var(--muted);line-height:1.6;";
+    wrap.append(h, b);
+    host.appendChild(wrap);
+  });
+}
+
+/* ---- 6. the comp set ---- */
+function mcSet(p) {
+  const ring = mcRing(p) || {};
+  // The ring is cut on every bedroom the MARKET has, which is what the
+  // build-up needs; this table is a reader comparing their own building, so it
+  // shows the bedrooms the building has. A studio median is market data, and
+  // it is on the data page, but it is noise in a column here.
+  const own = (((p.verification || {}).implied || {}).rows || []).map(r => String(r.bed));
+  const beds = (own.length ? own : Object.keys(p.subject_by_bed || {}))
+    .filter(b => (ring.by_bed || {})[b]).sort();
+  document.getElementById("mcsEyebrow").textContent =
+    "EVERY BUILDING WITHIN " + p.primary_radius_mi + " MI · "
+    + (ring.listings || 0) + " UNITS LISTED ON " + p.as_of;
+
+  const heads = [{ t: "Property" }, { t: "Miles", num: true }, { t: "Built", num: true },
+                 { t: "Units", num: true }, { t: "Listed", num: true }]
+    .concat(beds.map(b => ({ t: b + " bed (median)", num: true })));
+  const rows = (p.comps || []).map(c => [
+    c.building, c.miles.toFixed(2), c.year_built ? String(c.year_built) : "—",
+    c.units ? String(c.units) : "—", String(c.listings),
+  ].concat(beds.map(b => {
+    const v = (c.by_bed || {})[b];
+    return v ? mcUsd(v.median_rent) : "—";
+  })));
+  // The subject sits in the same table, last and labelled, because a comp table
+  // that does not show what it is comparing to makes the reader hold the number
+  // in their head.
+  rows.push([p.name + " — subject", "0.00",
+             String((p.subject || {}).year_built || "—"),
+             String((p.subject || {}).units || "—"),
+             String((p.subject_listings || {}).current || 0)]
+    .concat(beds.map(b => {
+      const v = (p.subject_by_bed || {})[b];
+      return v ? mcUsd(v.median_rent) : "—";
+    })));
+  buildTable(document.getElementById("mcsTbl"), heads, rows);
+
+  document.getElementById("mcsFoot").textContent =
+    "Ranked by distance. A building with no listing today is still in the ring — "
+    + "it is a comp whether or not it happens to have a vacancy this week — and "
+    + "the medians above it are taken across listings, not across buildings, so a "
+    + "large building with fourteen vacancies counts fourteen times and a small one "
+    + "with none counts nought. "
+    + ((p.excluded_related || []).length
+        ? "Align's own " + p.excluded_related.join(" and ") + " sit inside this "
+          + "radius and are deliberately OUT of the set: letting one Align "
+          + "building price another is not an independent check. They are in the "
+          + "export, and each gets its own comp set on this tab."
+        : "");
+}
+
+function mcRenderAll() {
+  const p = mcProp();
+  if (!p) return;
+  mcVerdict(p);
+  mcChartDraw(p);
+  mcBuildUp(p);
+  mcEvidence(p);
+  mcMethod(p);
+  mcSet(p);
+  document.getElementById("mcMeta").textContent =
+    p.name + " · " + (p.vendor || "comp export") + " "
+    + (p.market ? "(" + p.market + ") " : "")
+    + "as of " + p.as_of + " · " + (p.properties_in_file || 0) + " buildings, "
+    + (p.listings_in_file || 0).toLocaleString("en-US") + " listings read · "
+    + "source: " + (p.source_file || "—")
+    + (p.landed_at ? ", landed in Drive " + p.landed_at.slice(0, 10) : "")
+    + ". Drop a fresh export in the Drive Comps folder and the next pipeline run "
+    + "refreshes every figure on this tab.";
+}
+
+async function loadComps() {
+  const m = await metricsJson();
+  MC.block = (m || {}).comps || null;
+  const intro = document.getElementById("mcIntro");
+  const list = ((MC.block || {}).properties) || [];
+
+  if (!list.length) {
+    intro.textContent =
+      "No comp export has reached the pipeline yet. Drop a HelloData export into "
+      + "the Drive Comps folder and this tab fills itself on the next run: the "
+      + "market rent check, the asking-rent trend and the comp set all come from "
+      + "that one file.";
+    document.querySelectorAll("#viewComps .grid > .card").forEach(c => { c.hidden = true; });
+    return;
+  }
+
+  intro.textContent =
+    "The only tab here that draws the MARKET rather than the buildings. Everything "
+    + "on it comes from one comp export in Drive, and it exists to answer a "
+    + "question no other feed can: the market rent column in the rent roll is set "
+    + "by the property team, it is the denominator of loss to lease and of the "
+    + "rent-capture series on the two Landing tabs, and nothing else in the "
+    + "pipeline can measure it against the market it names. The Landing's table "
+    + "is deliberately ahead of that market \u2014 the step this tab first "
+    + "measured was confirmed as intended on 2026-09-18, with more expected \u2014 "
+    + "so what is reported here is how far ahead it sits and whether the market "
+    + "is paying it, not whether someone made a mistake. Align's own buildings "
+    + "are excluded from every comp set.";
+
+  const sel = document.getElementById("mcSelect");
+  sel.textContent = "";
+  list.forEach(p => {
+    const o = elc("option", null, p.name);
+    o.value = p.slug;
+    sel.appendChild(o);
+  });
+  // The property with a verification leads: it is the one this tab can answer for.
+  const first = list.find(p => p.verification) || list[0];
+  MC.slug = first.slug;
+  sel.value = MC.slug;
+  sel.addEventListener("change", () => { MC.slug = sel.value; mcRenderAll(); });
+
+  document.querySelectorAll("#mcdTogs .tog").forEach(b => {
+    b.addEventListener("click", () => {
+      MC.period = b.getAttribute("data-mcp");
+      document.querySelectorAll("#mcdTogs .tog").forEach(x =>
+        x.setAttribute("aria-pressed", String(x === b)));
+      mcChartDraw(mcProp());
+    });
+  });
+
+  mcRenderAll();
+  mountCardLinks();
 }
 
 /* ============================================================
