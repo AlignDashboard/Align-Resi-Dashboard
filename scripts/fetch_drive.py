@@ -171,8 +171,16 @@ def main():
         failure this whole file is careful about. A folder deeper than the walk
         gets a line rather than silence -- an unread folder that says nothing is
         exactly how Budgets/Landing/ stranded two budgets.
+
+        An entry can also name subfolders of its own that no parser reads, in
+        `skip_subfolders`. That is not an archive: Comps/<market>/Full holds the
+        newest formatted twin of every comp export, filed there on purpose for
+        anyone who wants to open one, and at 2-4 MB apiece fetching them daily
+        buys a log line saying the parser skipped them. Matched by folder name
+        at any depth, like NEVER_SWEEP, and logged for the same reason.
         """
         root = folders_for(entry)[entry["drive_folder"]]
+        skip = set(entry.get("skip_subfolders") or ())
         out = []
 
         def walk(folder_id, rel, depth):
@@ -185,6 +193,15 @@ def main():
                 if f["name"] in NEVER_SWEEP:
                     print(f"[info] '{where}' not read "
                           f"(NEVER_SWEEP: an archive of superseded reports)")
+                    continue
+                if f["name"] in skip:
+                    # Not an archive and not a mistake: a folder this feed files
+                    # on purpose and no parser reads. Saying so every run is the
+                    # point -- an unread folder that says nothing is how
+                    # Budgets/Landing/ stranded two budgets.
+                    print(f"[info] '{where}' not read (skip_subfolders on the "
+                          f"'{entry['drive_folder']}' entry: filed for people, "
+                          f"not for a parser)")
                     continue
                 if depth + 1 > MAX_SUBFOLDER_DEPTH:
                     print(f"[warn] '{where}' is deeper than the folder pass "

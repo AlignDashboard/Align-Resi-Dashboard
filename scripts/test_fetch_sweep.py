@@ -197,27 +197,34 @@ def main():
     # one-level walk reports Comps as empty while ninety files sit under it --
     # and reports it in silence, since the folder itself is registered and the
     # sweep only walks the drop tree's top level.
+    # The archived folder below holds a SIMPLE export on purpose, so the two
+    # protections are tested independently: the Full twin is kept out by the
+    # entry's skip_subfolders and the archived one by NEVER_SWEEP, and removing
+    # either guard fails only its own check.
     comps = {"R": [(FOLDER, "Comps", "cp")],
              "cp": [(FOLDER, "Oakland", "oak"), (FOLDER, "Archive", "carch")],
              "oak": [(FOLDER, "Simple", "osim"), (FOLDER, "Full", "oful")],
              "osim": [(FILE, "2026-09-21 HelloData - Simple - 335 Third Street.xlsx", "s1")],
              "oful": [(FILE, "2026-09-21 HelloData - Full - 335 Third Street.xlsx", "s2")],
-             "carch": [(FOLDER, "Oakland - Full", "oarch")],
-             "oarch": [(FILE, "2026-08-04 HelloData - Full - 335 Third Street.xlsx", "s3")]}
+             "carch": [(FOLDER, "Oakland - Simple", "oarch")],
+             "oarch": [(FILE, "2026-08-04 HelloData - Simple - 335 Third Street.xlsx", "s3")]}
     man = run(fd, comps)
     check("a file two levels down is read",
-          {e["name"] for e in man} == {
-              "2026-09-21 HelloData - Simple - 335 Third Street.xlsx",
-              "2026-09-21 HelloData - Full - 335 Third Street.xlsx"})
+          {e["name"] for e in man} ==
+          {"2026-09-21 HelloData - Simple - 335 Third Street.xlsx"})
     check("a file two levels down says which path it sat in",
-          {e["found_in"] for e in man} == {"Comps/Oakland/Simple",
-                                           "Comps/Oakland/Full"})
+          [e["found_in"] for e in man] == ["Comps/Oakland/Simple"])
     # The archived vintages are the reason the descent is safe to lengthen at
     # all. They are real exports matching the entry's own patterns, one folder
     # away from the live ones, and republishing one would move the Market Comps
     # tab back to an August reading of the market.
     check("an Archive two levels down is not descended into",
           not any(e["name"].startswith("2026-08-04") for e in man))
+    # skip_subfolders is not an archive guard: Comps/<market>/Full holds the
+    # CURRENT formatted twin, filed there for people to open. No parser reads
+    # it and it is 2-4 MB a file, so the fetch should not carry it.
+    check("skip_subfolders keeps a live but unparsed subfolder out",
+          not any(" - Full - " in e["name"] for e in man))
 
     # A fixed depth, not a recursion: anything deeper is a tree nobody
     # described, and walking it would eventually find somebody's archive under

@@ -84,6 +84,89 @@ def load_property_words():
     return re.findall(r'"((?:[^"\\]|\\.)*)"', block.group(1))
 
 
+def load_table(name):
+    """A {folder, words} table out of the Apps Script.
+
+    PROPERTY_FOLDERS, COMP_MARKETS and COMP_KINDS are one shape matched by one
+    function over there, so they are one reader here. A table that stops
+    parsing is a hard exit rather than an empty result: a silent [] would make
+    every subpath check below pass by measuring nothing.
+    """
+    block = re.search(r"const " + name + r" = \[(.*?)\n\];", SCRIPT.read_text(), re.S)
+    if not block:
+        sys.exit(f"FAIL: could not find {name} in {SCRIPT}")
+    out = [(m.group(1), re.findall(r'"([^"]+)"', m.group(2)))
+           for m in re.finditer(r'\{\s*folder:\s*"([^"]+)"\s*,\s*words:\s*\[(.*?)\]\s*\}',
+                                block.group(1), re.S)]
+    if not out:
+        sys.exit(f"FAIL: {name} parsed to nothing -- has the format changed?")
+    return out
+
+
+def load_split_inside():
+    """SPLIT_INSIDE: which category folders are split inside, and by what."""
+    block = re.search(r"const SPLIT_INSIDE = \{(.*?)\n\};", SCRIPT.read_text(), re.S)
+    if not block:
+        sys.exit("FAIL: could not find SPLIT_INSIDE in " + str(SCRIPT))
+    out = {m.group(1): re.findall(r"[A-Z][A-Z_]+", m.group(2))
+           for m in re.finditer(r'"([^"]+)":\s*\[([^\]]*)\]', block.group(1))}
+    if not out:
+        sys.exit("FAIL: SPLIT_INSIDE parsed to nothing -- has the format changed?")
+    return out
+
+
+def subpath(target, filename, split, tables):
+    """Mirror of subpathFor_(): [] when the folder is not split, None when it
+    is and the filename does not say where the file goes."""
+    names = split.get(target)
+    if not names:
+        return []
+    hay = str(filename or "").lower()
+    segs = []
+    for n in names:
+        hit = next((folder for folder, words in tables[n]
+                    if any(w.lower() in hay for w in words)), None)
+        if hit is None:
+            return None
+        segs.append(hit)
+    return segs
+
+
+# Real filenames, and where inside their category folder they belong.
+# None means "its name does not say" -- the top of the category folder, never a
+# guess. A partial read counts as not saying: a comp export filed under its
+# market alone would read as the whole of that market.
+SPLIT_CASES = [
+    ("2026-09-21 HelloData - Simple - 335 Third Street (3).xlsx",
+     "Comps", ["Oakland", "Simple"]),
+    ("2026-09-21 HelloData - Full - 335 Third Street.xlsx",
+     "Comps", ["Oakland", "Full"]),
+    ("HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, "
+     "Dogpatch_Mission Bay).xlsx", "Comps", ["San Francisco", "Simple"]),
+    ("2026-09-18 HelloData - Full - Align San Francisco Comps (Mid Market, "
+     "Mission, Dogpatch_Mission Bay).xlsx", "Comps", ["San Francisco", "Full"]),
+    # A submarket nobody has listed. Top of Comps, where the fetch still reads
+    # it -- the pipeline never cared which folder a report sits in.
+    ("2026-09-22 HelloData - Simple - Align Berkeley Comps.xlsx", "Comps", None),
+    # The market reads and the kind does not, which is the partial case.
+    ("2026-09-22 HelloData Oakland comps export.xlsx", "Comps", None),
+    # A11's own split, unchanged by the generalisation.
+    ("2026-09-21 Daily Report- Week Ending 9.20.26 - The Madelon.xlsx",
+     "Daily Leasing Reports", ["Madelon"]),
+    # A finding rather than a preference: the renewal tracker names its building
+    # as a bare "Landing", and the property master's words for it are "The
+    # Landing" and ".Landing", so the whole family lands at the TOP of the
+    # folder. Pinned as it behaves, not as it should -- loosening the word would
+    # mean adding a bare "Landing" alias to properties.json, which also feeds
+    # the report-type stripper and the comp parser's Align-building exclusion.
+    # Open item C10.
+    ("2026-08-31 Landing 2025 Renewal Tracker - Full (40).xlsx",
+     "Daily Leasing Reports", None),
+    # A folder nobody splits.
+    ("RentRoll09_11_2026.xlsx", "Rent Roll", []),
+]
+
+
 AUTO_EXTS = ("xlsx", "xls", "csv", "pdf", "docx", "doc")
 AUTO_FILLER = r"(?:^|\s)(week ending|weekending|as of|since|thru|through|updated|copy of)(?=\s|$)"
 
@@ -352,6 +435,56 @@ def main():
         print(f"   FAIL leasing families route to {sorted(fam)}, demographics to "
               f"{sorted(demo)}")
         failures.append("the A11 folder merge is not in place")
+
+    print(f"\n7d. files land in the right subfolder ({len(SPLIT_CASES)} case(s))")
+    split = load_split_inside()
+    tables = {n: load_table(n) for ns in split.values() for n in ns}
+    for filename, target, want in SPLIT_CASES:
+        got = subpath(target, filename, split, tables)
+        if got == want:
+            where = ("/".join([target] + got) if got
+                     else target + (" (top level)" if want is None else ""))
+            print(f"   PASS {where} <- {filename[:58]}")
+        else:
+            print(f"   FAIL {filename}: wanted {want}, got {got}")
+            failures.append(f"{filename} does not split where it should")
+
+    # A folder SPLIT_INSIDE names but no rule routes to is a split that never
+    # runs, and looks exactly like one that does.
+    stray_split = set(split) - {folder for folder, _ in rules}
+    if stray_split:
+        print(f"   FAIL SPLIT_INSIDE names folders no rule routes to: "
+              f"{sorted(stray_split)}")
+        failures.append("SPLIT_INSIDE names a folder no rule uses")
+    else:
+        print(f"   PASS all {len(split)} split folders are rule targets")
+
+    # The cross-file contract. The filer files N levels down; fetch_drive walks
+    # MAX_SUBFOLDER_DEPTH. Add a third table to a split and every file under it
+    # is filed correctly and never read again, with nothing to say so.
+    depth = re.search(r"^MAX_SUBFOLDER_DEPTH = (\d+)",
+                      (ROOT / "scripts" / "fetch_drive.py").read_text(), re.M)
+    deepest = max((len(ns) for ns in split.values()), default=0)
+    if not depth:
+        print("   FAIL MAX_SUBFOLDER_DEPTH not found in fetch_drive.py")
+        failures.append("MAX_SUBFOLDER_DEPTH missing")
+    elif deepest > int(depth.group(1)):
+        print(f"   FAIL the filer files {deepest} level(s) down; fetch_drive walks "
+              f"{depth.group(1)}")
+        failures.append("the split is deeper than the fetch descends")
+    else:
+        print(f"   PASS the deepest split is {deepest} level(s); fetch_drive walks "
+              f"{depth.group(1)}")
+
+    # A '/' in any of these names is a Drive folder name, not a path -- the same
+    # accident check 2 catches in a rule's own folder.
+    slashed = [f for t in tables.values() for f, _ in t if "/" in f] + \
+              [f for f in split if "/" in f]
+    if slashed:
+        print(f"   FAIL a subfolder name contains '/': {slashed}")
+        failures.append("a subfolder name contains a slash")
+    else:
+        print("   PASS no subfolder name contains a slash")
 
     print(f"\n8. a new report type names its own folder ({len(NEW_TYPE_CASES)} case(s))")
     for filename, want in NEW_TYPE_CASES:

@@ -160,7 +160,10 @@
         "*market survey*"
       ],
       "status": "active",
-      "_comment": "The HelloData market-comp export -- the only feed here that describes the market rather than Align's own buildings, and so the only thing the Yardi market rent column can be checked against. It arrives as a PAIR with near-identical names: 'HelloData - Simple - ....xlsx' is two flat tables and is what parse_comps reads, and 'HelloData - Full - ....xlsx' is the same market as a formatted workbook with no parseable table in it. The glob is '*' so the entry claims both, deliberately: a narrower pattern would mean a renamed export silently stops being read, which is the failure 'Landing 2026 Resi Budget.xlsx' hit in the Budgets folder. The formatted one is then SKIPPED by the parser with a line saying why, rather than erroring -- see parse_comps._pick_tables."
+      "skip_subfolders": [
+        "Full"
+      ],
+      "_comment": "The HelloData market-comp export -- the only feed here that describes the market rather than Align's own buildings, and so the only thing the Yardi market rent column can be checked against. It arrives as a PAIR with near-identical names: 'HelloData - Simple - ....xlsx' is two flat tables and is what parse_comps reads, and 'HelloData - Full - ....xlsx' is the same market as a formatted workbook with no parseable table in it. The glob is '*' so the entry claims both, deliberately: a narrower pattern would mean a renamed export silently stops being read, which is the failure 'Landing 2026 Resi Budget.xlsx' hit in the Budgets folder. The formatted one is then SKIPPED by the parser with a line saying why, rather than erroring -- see parse_comps._pick_tables. The folder is organised Comps/<market>/{Simple,Full} and the fetch descends two levels into it, so 'skip_subfolders': ['Full'] keeps the formatted twins out of the download while leaving them in Drive for people -- the parser's skip is still the record of why they are not read, and the fetch log now says the same thing one step earlier."
     },
     {
       "drive_folder": "Daily Leasing Reports",
