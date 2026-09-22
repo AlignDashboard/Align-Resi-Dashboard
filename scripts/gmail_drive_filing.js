@@ -322,14 +322,8 @@ function fileGmailPdfsToDrive() {
         if (dest === null) {   // external folder unresolved -- park it, don't guess
           dest = getSubfolder_(root, CONFIG.UNSORTED_FOLDER, cache);
           unsorted++;
-        } else if (SPLIT_BY_PROPERTY.indexOf(target) >= 0) {
-          const pf = propertyFolderFor_(att.getName());
-          if (pf) {
-            dest = getPropertySubfolder_(dest, pf, cache);
-          } else {
-            Logger.log('"' + att.getName() + '" -> ' + target + ' (top level): no ' +
-              'property in its name, so it is not filed under a building');
-          }
+        } else {
+          dest = applySplit_(dest, target, att.getName(), cache);
         }
         const finalName = resolveName_(dest, wanted, att);
 
@@ -444,8 +438,9 @@ function resortExistingFiles() {
     // Already in the right place (incl. genuinely unidentifiable files in _Unsorted).
     if (target === item.from) { stayed++; return; }
 
-    const dest = getSubfolder_(root, target, cache);
+    let dest = getSubfolder_(root, target, cache);
     if (dest === null) { stayed++; return; }   // reason already logged
+    dest = applySplit_(dest, target, item.file.getName(), cache);
     if (fileExists_(dest, item.file.getName())) { stayed++; return; }
 
     item.file.moveTo(dest);
@@ -566,22 +561,31 @@ function getRootFolder_() {
  * tree, which would silently shadow the real one.
  */
 // ---------------------------------------------------------------------------
-// A11: per-property subfolders inside a category folder
+// Subfolders inside a category folder
 //
-// The owner asked for the four leasing families in one folder "split out by
-// property". Splitting happens at FILING time, from the attachment's own name,
-// because that is the only place the property is knowable -- the pipeline
-// attributes by filename and by what is inside the file, never by the folder a
-// report sits in, which is the whole point of "folders organise; filenames
-// route". So these subfolders are for a human browsing Drive; nothing
-// downstream depends on them, and fetch_drive reads one level of subfolders
-// inside a registered folder already.
+// Two category folders are split inside: Daily Leasing Reports by property
+// (A11), and Comps by market and then by which of the paired exports it is.
+// Splitting happens at FILING time, from the attachment's own name, because
+// that is the only place either is knowable -- the pipeline attributes by
+// filename and by what is inside the file, never by the folder a report sits
+// in, which is the whole point of "folders organise; filenames route". So
+// these subfolders are for a human browsing Drive; nothing downstream depends
+// on them, and fetch_drive reads two levels of subfolders inside a registered
+// folder already.
 //
-// A file whose property cannot be read from its name lands at the TOP of the
-// category folder rather than in a guessed building. Visible and wrong-looking
+// A file whose subpath cannot be read from its name lands at the TOP of the
+// category folder rather than in a guessed one. Visible and wrong-looking
 // beats filed under a neighbour -- the same rule that kept the concession
-// burn-off unattributed for six weeks.
-const SPLIT_BY_PROPERTY = ['Daily Leasing Reports'];
+// burn-off unattributed for six weeks. That applies to a PARTIAL match too: a
+// comp export whose market reads but whose kind does not is not filed under
+// the market alone, because a reader would then take that folder for the whole
+// of it.
+//
+// Every table is the same {folder, words} shape, matched the same way, so the
+// contract test can read all three out of this file and the matcher is written
+// once. A rule's own `folder` never carries a '/': nesting is this table's job,
+// and a slash in a folder name is a real Drive folder name, which is the
+// accident test_routing.py check 2 exists to catch.
 
 const PROPERTY_FOLDERS = [
   { folder: "The Landing", words: ["The Landing", ".Landing", "p0005611", "p0005612", "p0005640", "p0005671", "p000611"] },
@@ -614,13 +618,44 @@ const PROPERTY_FOLDERS = [
   { folder: "Sequoia Living Inc", words: ["Sequoia Living Inc", "dncsequo"] },
 ];
 
-function propertyFolderFor_(filename) {
+// The comp exports are about a MARKET, not an Align building, so they cannot
+// split on PROPERTY_FOLDERS. Every word here is deliberately specific -- the
+// San Francisco export's own title lists its submarkets, so "Mission Bay"
+// rather than a bare "Mission", which would claim anything mentioning the
+// street. Oakland is listed first as a defence rather than a fix: no filename
+// on file needs that order today, and the day a market's name turns up inside
+// another's, the first entry should be the narrower one. A market nobody has
+// listed reads as no match, which files at the top of Comps and says so -- the
+// right answer for a submarket the pipeline has never seen, and one the fetch
+// still reads, since nothing downstream cares which folder a report sits in.
+const COMP_MARKETS = [
+  { folder: "Oakland",       words: ["335 Third Street", "335 3rd Street", "Oakland", "Jack London"] },
+  { folder: "San Francisco", words: ["San Francisco", "Mid Market", "Dogpatch", "Mission Bay"] },
+];
+
+// HelloData names its pair "HelloData - <Kind> - <market>", and the kind is the
+// whole of the difference between them: the pipeline parses Simple and skips
+// Full, which is twenty sheets of formatting with no parseable table in it.
+// Matched on the separators rather than the bare word so "Full" inside a
+// submarket name cannot claim a file.
+const COMP_KINDS = [
+  { folder: "Simple", words: ["- Simple -"] },
+  { folder: "Full",   words: ["- Full -"] },
+];
+
+// Which folders are split inside, and by what. One segment per table, in order.
+const SPLIT_INSIDE = {
+  "Daily Leasing Reports": [PROPERTY_FOLDERS],
+  "Comps": [COMP_MARKETS, COMP_KINDS],
+};
+
+function firstMatch_(table, filename) {
   const hay = String(filename || '').toLowerCase();
-  // Longest word first within each property (the generator sorts them), and
-  // first property to match wins. "The Landing" must beat a bare "landing"
+  // Longest word first within each entry (the generator sorts them), and the
+  // first entry to match wins. "The Landing" must beat a bare "landing"
   // appearing inside another building's name.
-  for (var i = 0; i < PROPERTY_FOLDERS.length; i++) {
-    const e = PROPERTY_FOLDERS[i];
+  for (var i = 0; i < table.length; i++) {
+    const e = table[i];
     for (var j = 0; j < e.words.length; j++) {
       if (hay.indexOf(String(e.words[j]).toLowerCase()) >= 0) return e.folder;
     }
@@ -628,12 +663,46 @@ function propertyFolderFor_(filename) {
   return null;
 }
 
-function getPropertySubfolder_(parent, name, cache) {
+/**
+ * The subfolders under `target` this file belongs in: [] when that folder is
+ * not split, null when it is and the name does not say where it goes.
+ */
+function subpathFor_(target, filename) {
+  const tables = SPLIT_INSIDE[target];
+  if (!tables) return [];
+  const segs = [];
+  for (var i = 0; i < tables.length; i++) {
+    const seg = firstMatch_(tables[i], filename);
+    if (!seg) return null;
+    segs.push(seg);
+  }
+  return segs;
+}
+
+/**
+ * Walk `dest` down the file's subpath, creating folders as needed, and return
+ * where it should be written. Logs and returns `dest` unchanged when the name
+ * does not say. Used by the live filing AND by resortExistingFiles, so a
+ * re-sort lands a file exactly where an arrival would.
+ */
+function applySplit_(dest, target, filename, cache) {
+  const segs = subpathFor_(target, filename);
+  if (segs === null) {
+    Logger.log('"' + filename + '" -> ' + target + ' (top level): its name does ' +
+      'not say which subfolder of ' + target + ' it belongs in, so it is not ' +
+      'filed under a guessed one');
+    return dest;
+  }
+  segs.forEach(function (seg) { dest = getNestedSubfolder_(dest, seg, cache); });
+  return dest;
+}
+
+function getNestedSubfolder_(parent, name, cache) {
   // Deliberately NOT getSubfolder_: that one consults EXTERNAL_FOLDERS, the
   // routing rules and the auto-folder cap, all of which are about category
-  // names at the top of the drop tree. A property subfolder is none of those,
-  // and the MAX_NEW_PER_RUN cap would stop a first run creating more than five
-  // buildings' folders.
+  // names at the top of the drop tree. A subfolder inside a category folder is
+  // none of those, and the MAX_NEW_PER_RUN cap would stop a first run creating
+  // more than five buildings' folders.
   const key = parent.getId() + '/' + name;
   if (cache[key]) return cache[key];
   const it = parent.getFoldersByName(name);

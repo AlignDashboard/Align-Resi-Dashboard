@@ -608,7 +608,16 @@ Only the `Full` twins are archived, in `Comps/Archive/` — `Archive` is in
 `NEVER_SWEEP`, so neither pass reads it. Nothing is deleted; they are simply
 2–4 MB apiece, no parser reads them, and fetching ninety of them daily is the
 kind of cost open item A15 is about. The newest of each stays live under
-`<market>/Full/` for anyone who wants to open one.
+`<market>/Full/` for anyone who wants to open one, and **the entry's
+`skip_subfolders: ["Full"]` keeps those out of the download too** — an archive
+guard would have been the wrong tool there, since those files are current
+rather than superseded. It is matched by folder name at any depth, like
+`NEVER_SWEEP`, and logged every run for the same reason.
+
+**The filer writes this tree itself**, market folder and kind folder both, from
+the export's own name — see *Two folders are split inside* below. It does not
+yet do so in Drive, because the deployed script is sixteen days behind the repo
+(A16's dead credential, consequence recorded as C9).
 
 **There is no total row to tie out against.** Every other parser here checks
 itself against the report's own arithmetic; a comp export has none, so two
@@ -647,7 +656,7 @@ scrub drops it from everything on its way to `data/`, which emptied the comp
 table on the first run. Weakening a scrub that exists to keep residents out of a
 public file, in order to publish a comp table, would be the wrong way round.
 
-`scripts/test_comps.py` holds it down — 46 fixture-free checks against exports
+`scripts/test_comps.py` holds it down — 50 fixture-free checks against exports
 built in a temp dir. The eight load-bearing guards were each verified by
 mutation (the two reconciliations, the floorplan skip, the as-of cut, the Align
 exclusion, the bed-weighted premium, the thin-bedroom fallback and the
@@ -2098,7 +2107,7 @@ The sweep is scoped, and each limit exists for a reason:
 | Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
 | Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |
 
-`scripts/test_fetch_sweep.py` holds this down — 12 checks against a stubbed Drive
+`scripts/test_fetch_sweep.py` holds this down — 21 checks against a stubbed Drive
 mirroring the real layout, no network or fixtures. Both archive protections are
 tested *independently*: removing either one alone fails a check, since the name
 guard would otherwise cover for the missing tree scoping.
@@ -2145,7 +2154,11 @@ name the same folders, so the two halves cannot drift apart.
 out of the `.js` directly, and asserts every rule's folder is a `drive_folder` in
 `report_map.json`, that no folder name contains `/`, that every `file_glob`
 starts with `*`, that the two trees agree, and that a list of real filenames
-still routes where it belongs. Run it after editing either file.
+still routes where it belongs. Check 7d extends that last one past the category
+folder: a real filename must land in the right *subfolder* of it, a name that
+cannot say must land at the top rather than in a guess, and the deepest split
+must stay within `fetch_drive`'s `MAX_SUBFOLDER_DEPTH`. Run it after editing
+either file.
 
 Two traps worth knowing:
 
@@ -2158,7 +2171,7 @@ Two traps worth knowing:
   `report_map.json` and the `.js` rule all change together; `test_routing.py`
   fails if only one moves.
 
-### The leasing families share one folder, split by property
+### Two folders are split inside, and `SPLIT_INSIDE` is how
 
 Since 2026-09-21 (A11, owner's call) `Renewal Tracker`, `Prospect Reports`,
 `Daily Tracker` and `Daily Leasing Reports` are **one Drive folder** —
@@ -2171,19 +2184,56 @@ Four routing rules still point there, not one. The pipeline picks a parser by
 rule would file the families together and leave nothing able to tell a renewal
 tracker from a daily report.
 
-**The split happens at filing time, from the attachment's own name**
-(`SPLIT_BY_PROPERTY`, `PROPERTY_FOLDERS` and `propertyFolderFor_` in the `.js`),
-because that is the only place the property is knowable. It is for a human
-browsing Drive: `fetch_drive` already reads one level of subfolders inside a
-registered folder, and attribution comes from the filename and the file's
-contents as it always has. A file whose name carries no property lands at the
-**top** of the folder with a log line rather than in a guessed building.
+`Comps` is the second, and it is split **twice** — by market and then by which
+of the paired exports it is, matching the tree under *Two markets, and ninety
+extracts of them* above. So the filer writes
+`Comps/San Francisco/Simple/…` rather than dropping everything at the top.
+
+**Both splits happen at filing time, from the attachment's own name**, because
+that is the only place the market or the property is knowable. `SPLIT_INSIDE`
+in the `.js` maps a category folder to the tables it is split by, one segment
+per table — `PROPERTY_FOLDERS` for the leasing families, `COMP_MARKETS` then
+`COMP_KINDS` for the comps — and all three tables are the same
+`{folder, words}` shape matched by one `firstMatch_`, so a third split is a
+table and a line rather than a second mechanism.
+
+Three things about how it behaves:
+
+- **A partial read is not a partial file.** A comp export whose market matches
+  and whose kind does not lands at the **top** of `Comps` with a log line, not
+  in the market folder alone — a reader opening `Comps/Oakland/` would take it
+  for the whole of Oakland. Same rule as a leasing report with no property in
+  its name, and the same rule that kept the concession burn-off unattributed
+  for six weeks.
+- **Nothing downstream depends on it.** These subfolders are for a human
+  browsing Drive; attribution comes from the filename and the file's contents,
+  as it always has. A market nobody has listed still parses — it just sits at
+  the top of `Comps`, which `fetch_drive` reads first.
+- **`applySplit_` is shared with `resortExistingFiles`**, so a re-sort lands a
+  file exactly where an arrival would. It did not before, which meant running
+  the documented recovery step put files somewhere a fresh arrival never goes.
+
+**A rule's own `folder` still never carries a `/`.** Nesting is `SPLIT_INSIDE`'s
+job. A `/` is legal in a Drive folder name, so a rule naming
+`Comps/Oakland/Simple` would create one folder called that — the accident
+`test_routing.py` check 2 exists to catch, and the reason this is a table
+rather than a path.
 
 `PROPERTY_FOLDERS` is generated from `config/properties.json` and has the same
 contract `PROPERTY_WORDS` does — `test_routing.py` check 7b fails if a property
 is added to one and not the other, and check 7c fails if the four families stop
 sharing the folder. A building missing from the list files at the top for ever,
-which looks exactly like a report that has no property in its name.
+which looks exactly like a report that has no property in its name. **That is
+live today for the renewal trackers**: they name their building as a bare
+`Landing 2025 …` and the master's words are `The Landing` / `.Landing`, so the
+whole family files at the top (open item C10, pinned as it behaves in check 7d).
+
+`COMP_MARKETS` has no such generator — there is no market list in the repo to
+generate it from — so check 7d pins it against real filenames instead, and
+**check 7d also holds the one cross-file contract that has no other guard**:
+the deepest split must be within `fetch_drive`'s `MAX_SUBFOLDER_DEPTH`. Add a
+third table to a split and every file under it is filed perfectly and never
+read again, with nothing anywhere to say so.
 
 Deploying it needs the `.js` pushed and `resortExistingFiles` run; **files
 already in the three old folders have to be moved by hand**, since that function
