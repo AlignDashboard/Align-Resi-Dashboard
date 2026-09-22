@@ -50,6 +50,25 @@ ask for the PR; do not open one preemptively.
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
 
+### A report can name a building any of three ways
+
+`build_metrics.load_properties()` routes a report to a property on its Yardi
+`codes`, its `aliases`, **and its own `name`** — all three, lowercased.
+
+The name was missing until 2026-09-22, and the gap was invisible because the
+four buildings a report had ever named happened to carry their own names in
+`aliases` as well. The comp export does not play along: it names each building
+as the market names it, so the section reading `335 Third Street` parsed, tied
+out against its own arithmetic, and then **routed nowhere** — one
+`[warn] unknown property code` line and the whole Oakland comp set gone, on the
+tab whose job is to check somebody else's number. Twenty-four of the
+twenty-eight properties were one export away from the same thing.
+
+A string two properties both claim is **refused, not resolved**: whichever
+sorted last would win and nothing downstream could tell. `test_comps.py` checks
+both halves — every property routes by its own name, and a shared name raises —
+each verified by mutation.
+
 ## Refreshing the analyst workbook extract
 
 **`landing.json` no longer feeds a tab.** A workbook-fed `The Landing` tab sat
@@ -656,7 +675,7 @@ scrub drops it from everything on its way to `data/`, which emptied the comp
 table on the first run. Weakening a scrub that exists to keep residents out of a
 public file, in order to publish a comp table, would be the wrong way round.
 
-`scripts/test_comps.py` holds it down — 50 fixture-free checks against exports
+`scripts/test_comps.py` holds it down — 58 fixture-free checks against exports
 built in a temp dir. The eight load-bearing guards were each verified by
 mutation (the two reconciliations, the floorplan skip, the as-of cut, the Align
 exclusion, the bed-weighted premium, the thin-bedroom fallback and the
@@ -665,6 +684,40 @@ the leasing parsers' tests record.
 
 Tables: `t-comps-<slug>`, `t-compstrend-<slug>` and `t-compscheck-<slug>` on the
 data page, under a `Market Comps` group.
+
+### Refreshing the tab on its own, daily
+
+`scripts/refresh_comps.py <file-or-dir> [--landed-at ISO] [--dry-run]` parses
+comp exports and rewrites **only** `metrics["comps"]`, leaving every other
+block in `docs/metrics.json` exactly as it found it (checked, not assumed).
+
+It exists because the daily cron cannot carry this feed on its own. The export
+arrives several times a day, for every market Align asks for; the cron runs
+once, takes about five hours, and its push-retry loop replays whatever it built
+over anything newer (A15). So "the comps tab is refreshed daily" needs
+something that runs the one feed and touches nothing else.
+
+It is the same code either way: the block is built by
+`build_metrics.comps_block`, which both callers use, so the published figures
+cannot depend on which of the two wrote them. Three things it is careful about,
+all of which a scheduled caller depends on:
+
+- **An older export cannot walk the tab backwards.** `store_comps` keeps the
+  newest `as_of`, which matters more here than anywhere — a scheduled run is
+  handed whatever *arrived*, and arrival order does not track vintage in this
+  feed.
+- **A file it cannot read is skipped, not fatal.** The export is a pair and the
+  formatted twin has no parseable table, so a batch that died on the first
+  unreadable file would die on every batch.
+- **`--dry-run` writes nothing**, which is how the run asks "is there a newer
+  vintage?" before touching the repo.
+
+**A daily Routine runs it** (created 2026-09-22, ~21:00 UTC, after the cron has
+normally finished): it lists every market folder under Drive `Comps`, takes the
+`Simple` exports that arrived in the last three days, dry-runs them, and only
+when a vintage is genuinely newer does it refresh, check for PII and push. It
+enumerates the market folders rather than naming them, so a third market is
+picked up the day its folder appears. A day with nothing newer ends silently.
 
 ### A property with no rent roll still gets a check
 

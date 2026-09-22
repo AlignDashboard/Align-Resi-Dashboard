@@ -30,14 +30,38 @@ DOCS = pathlib.Path("docs")
 # ---- config helpers -------------------------------------------------------
 
 def load_properties():
+    """The property master, and everything a report might name a building by.
+
+    Three sources, all routing the same way and all lowercased for matching:
+    the Yardi `codes`, the `aliases` third-party exports use where Yardi would
+    use a code ("335 3rd Street"), and **the property's own `name`**.
+
+    The name was missing until 2026-09-22, and the gap was invisible because
+    the four properties that had ever been named by a report happened to carry
+    their own names in `aliases` as well. The comp export does not: it names
+    each building as the market names it, so a section reading
+    `335 Third Street` parsed, tied out, and then routed nowhere -- the whole
+    Oakland comp set dropped with one `[warn] unknown property code` line, on a
+    tab whose job is to check somebody else's number. Twenty-four of the
+    twenty-eight properties were in that state.
+
+    A string two properties both claim is a silent misroute, so it is refused
+    here rather than resolved: whichever happened to be last in the file would
+    win, and nothing downstream could tell.
+    """
     cfg = json.load(open("config/properties.json"))
-    code_to_prop = {}
+    code_to_prop, owner = {}, {}
     for p in cfg["properties"]:
-        # aliases are the names third-party exports use where Yardi would use a
-        # code ("335 3rd Street"); both route the same way
-        for c in list(p["codes"]) + list(p.get("aliases") or []):
-            # normalize to lowercase for matching robustness
-            code_to_prop[c.lower()] = p
+        for c in [p["name"]] + list(p["codes"]) + list(p.get("aliases") or []):
+            key = str(c).lower()
+            if key in owner and owner[key] != p["slug"]:
+                raise SystemExit(
+                    f"config/properties.json: '{c}' is claimed by both "
+                    f"'{owner[key]}' and '{p['slug']}'. A report naming it "
+                    f"would route to whichever sorted last, so fix the master "
+                    f"rather than letting it pick.")
+            owner[key] = p["slug"]
+            code_to_prop[key] = p
     return cfg["properties"], code_to_prop
 
 
@@ -1006,6 +1030,51 @@ def store_renewal_tracker(prop, parsed):
 def _vintage(value):
     """A comp export's own as-of date as a comparable `YYYY-MM-DD`, or None."""
     return str(value)[:10] if value else None
+
+
+def comps_block(props, metrics):
+    """metrics["comps"] — the market, and the Yardi market rent table measured
+    against it.
+
+    The three blocks the verification joins are read back out of `metrics`
+    rather than from `data/`, because the rent roll's store is gitignored
+    (per-unit, it arrives with resident names) and so exists only during a
+    pipeline run — the published aggregate is what a fresh clone has, and it
+    carries every figure this needs. Same reasoning as `rent_roll_ltl()` in
+    `populate_scorecard`.
+
+    That is also what lets `refresh_comps.py` rebuild this block on its own,
+    from a `metrics.json` that is already on disk, without re-running the whole
+    pipeline for a feed that arrives several times a day. One definition, two
+    callers: a second copy would drift the first time the verification changed.
+    """
+    comps_props = []
+    by_slug = lambda block, slug: next(                                # noqa: E731
+        (x for x in ((metrics.get(block) or {}).get("properties") or [])
+         if x.get("slug") == slug), None)
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "comps.json"
+        if not fp.exists():
+            continue
+        c = json.load(open(fp))
+        ver = comps_verification(c, by_slug("unit_directory", p["slug"]),
+                                 by_slug("rent_roll", p["slug"]),
+                                 by_slug("rent_capture", p["slug"]))
+        comps_props.append({"slug": p["slug"], "name": p["name"],
+                            **{k: v for k, v in c.items()
+                               if k not in ("report_type", "property_code")},
+                            "verification": ver})
+        if ver and ver.get("headline"):
+            h = ver["headline"]
+            print(f"[ok] market comps for {p['name']}: {h.get('label', 'Yardi')} "
+                  f"market rent is {h['gap']:+.1%} against the comp-implied "
+                  f"figure (${h['dollars']:,.0f}/mo)")
+        else:
+            print(f"[ok] market comps for {p['name']}: market side only "
+                  f"(no unit directory or no rent roll to verify against)")
+    return {"available": bool(comps_props), "properties": comps_props}
 
 
 def store_comps(prop, parsed):
@@ -2062,39 +2131,7 @@ def build_metrics_json():
                          "problems": latest.get("problems") or []})
     metrics["rent_capture"] = {"available": bool(rc_props), "properties": rc_props}
 
-    # The market, and the Yardi market rent table measured against it. The three
-    # blocks the verification joins are read back out of `metrics` rather than
-    # from `data/`, because the rent roll's store is gitignored (per-unit, it
-    # arrives with resident names) and so exists only during a pipeline run --
-    # the published aggregate is what a fresh clone has, and it carries every
-    # figure this needs. Same reasoning as rent_roll_ltl() in populate_scorecard.
-    comps_props = []
-    by_slug = lambda block, slug: next(                                # noqa: E731
-        (x for x in ((metrics.get(block) or {}).get("properties") or [])
-         if x.get("slug") == slug), None)
-    for p in props:
-        if not p.get("active", True):
-            continue
-        fp = DATA / p["slug"] / "comps.json"
-        if not fp.exists():
-            continue
-        c = json.load(open(fp))
-        ver = comps_verification(c, by_slug("unit_directory", p["slug"]),
-                                 by_slug("rent_roll", p["slug"]),
-                                 by_slug("rent_capture", p["slug"]))
-        comps_props.append({"slug": p["slug"], "name": p["name"],
-                            **{k: v for k, v in c.items()
-                               if k not in ("report_type", "property_code")},
-                            "verification": ver})
-        if ver and ver.get("headline"):
-            h = ver["headline"]
-            print(f"[ok] market comps for {p['name']}: {h.get('label', 'Yardi')} "
-                  f"market rent is {h['gap']:+.1%} against the comp-implied "
-                  f"figure (${h['dollars']:,.0f}/mo)")
-        else:
-            print(f"[ok] market comps for {p['name']}: market side only "
-                  f"(no unit directory or no rent roll to verify against)")
-    metrics["comps"] = {"available": bool(comps_props), "properties": comps_props}
+    metrics["comps"] = comps_block(props, metrics)
 
     if expense_ratio_props:
         metrics["expense_ratio"] = {
