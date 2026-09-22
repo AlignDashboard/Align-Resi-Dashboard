@@ -116,6 +116,26 @@ def main():
     # daily pipeline never passes it, so nothing unparsed reaches the build.
     fetch_pending = "--all" in sys.argv
     cfg = json.load(open("config/report_map.json"))
+
+    # --only <report_type> (repeatable) narrows the run to one feed. The daily
+    # pipeline never passes it and is unchanged; it exists because the whole
+    # fetch has taken four and a half hours (open item A15) and one feed can
+    # arrive several times a day. A scoped run also skips the unmapped-folder
+    # report below: that walks every folder in the drop tree, which is most of
+    # what the scan costs, and a run that was told which feed it wants is not
+    # the run that should be announcing new report types.
+    only = {sys.argv[i + 1] for i, a in enumerate(sys.argv)
+            if a == "--only" and i + 1 < len(sys.argv)}
+    if only:
+        known = {e.get("report_type") for e in cfg["subfolders"]}
+        unknown = only - known
+        if unknown:
+            sys.exit(f"--only: no report_map.json entry has report_type "
+                     f"{sorted(unknown)} -- known types are {sorted(k for k in known if k)}")
+        cfg["subfolders"] = [e for e in cfg["subfolders"]
+                             if e.get("report_type") in only]
+        print(f"[info] --only {sorted(only)}: {len(cfg['subfolders'])} entr(ies) "
+              f"of the report map, and no scan for unmapped folders")
     svc = _service()
     parent = os.environ["GDRIVE_FOLDER_ID"]
     reference_parent = os.environ.get("GDRIVE_REFERENCE_FOLDER_ID") or None
@@ -219,8 +239,9 @@ def main():
     # Only the reports tree is checked for strays: the library is the owner's to
     # arrange, and warning about every folder in it would be noise, not a finding.
     folders = trees["reports"]
-    unmapped = sorted(set(folders) - {e["drive_folder"] for e in cfg["subfolders"]
-                                      if e.get("tree", "reports") == "reports"})
+    unmapped = [] if only else sorted(
+        set(folders) - {e["drive_folder"] for e in cfg["subfolders"]
+                        if e.get("tree", "reports") == "reports"})
     for name in unmapped:
         files = contents({"drive_folder": name})
         # The Gmail filer names a folder after the report type when nothing
