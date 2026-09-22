@@ -731,12 +731,21 @@ arrives several times a day. A scoped run also skips the unmapped-folder scan,
 which walks every folder in the drop tree and is most of what the scan costs.
 An unknown type is refused rather than quietly fetching nothing.
 
-**A Claude Routine of the same name exists too** (`Market Comps — daily refresh
-from HelloData`, 21:00 UTC), which walks Drive by connector rather than by
-service account and reports per market. It is belt-and-braces rather than the
-mechanism: Routines in this org cannot be created with a connector attached, so
-until Google Drive is added to it from the claude.ai Routines UI it will say so
-and stop. The workflow above needs nothing added to it.
+**A Claude Routine is not the tool for this, and it was tried.** One existed
+alongside the workflow for about an hour on 2026-09-22 and was deleted, because
+a fired Routine session here starts with neither half of what the job needs: no
+Google Drive connector (`create_trigger` refuses the `connectors` parameter for
+this org, and the fired session reports Drive as `enabledInChat: false`) and no
+repo source (it is created with `sources: []`, and the session has no
+`add_repo` tool or working checkout). Both would have to be attached by hand in
+the claude.ai Routines UI, and neither is reachable from the API.
+
+The workflow needs none of that — it has the pipeline's own service account and
+the repo it runs in. And the case the Routine was meant to cover barely exists:
+a new market arrives as a new subfolder inside `Comps`, which the two-level
+descent picks up by itself, and a genuinely new top-level folder is still
+reported every day by `update.yml`'s unmapped-folder scan. Worth knowing before
+anyone reaches for a Routine here again.
 
 ### A property with no rent roll still gets a check
 
