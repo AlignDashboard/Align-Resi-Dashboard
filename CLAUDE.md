@@ -712,12 +712,31 @@ all of which a scheduled caller depends on:
 - **`--dry-run` writes nothing**, which is how the run asks "is there a newer
   vintage?" before touching the repo.
 
-**A daily Routine runs it** (created 2026-09-22, ~21:00 UTC, after the cron has
-normally finished): it lists every market folder under Drive `Comps`, takes the
-`Simple` exports that arrived in the last three days, dry-runs them, and only
-when a vintage is genuinely newer does it refresh, check for PII and push. It
-enumerates the market folders rather than naming them, so a third market is
-picked up the day its folder appears. A day with nothing newer ends silently.
+**`.github/workflows/refresh_comps.yml` runs it daily**, at 21:30 UTC — after
+`update.yml` has normally finished, so the two are not usually building at
+once. It is `fetch_drive.py --only market_comps` then `refresh_comps.py`, and
+it commits only when a vintage actually moved: a no-change run leaves the tree
+byte-identical, so a quiet day produces no commit at all.
+
+Its push race is handled the opposite way to `update.yml`'s, and deliberately.
+That one replays its own output onto the new main, because rebuilding it costs
+five hours. This one's inputs are still on the runner and rebuilding costs
+seconds, so it **resets to main and re-runs the refresh** — `store_comps` then
+reads whatever stores main now carries and keeps the newest as-of either way.
+Replaying output is what A15 is about; replaying the computation is safe.
+
+`--only <report_type>` is new with it: the daily pipeline never passes it and is
+unchanged, but the whole fetch has taken four and a half hours and this feed
+arrives several times a day. A scoped run also skips the unmapped-folder scan,
+which walks every folder in the drop tree and is most of what the scan costs.
+An unknown type is refused rather than quietly fetching nothing.
+
+**A Claude Routine of the same name exists too** (`Market Comps — daily refresh
+from HelloData`, 21:00 UTC), which walks Drive by connector rather than by
+service account and reports per market. It is belt-and-braces rather than the
+mechanism: Routines in this org cannot be created with a connector attached, so
+until Google Drive is added to it from the claude.ai Routines UI it will say so
+and stop. The workflow above needs nothing added to it.
 
 ### A property with no rent roll still gets a check
 
@@ -2160,7 +2179,7 @@ The sweep is scoped, and each limit exists for a reason:
 | Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
 | Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |
 
-`scripts/test_fetch_sweep.py` holds this down — 21 checks against a stubbed Drive
+`scripts/test_fetch_sweep.py` holds this down — 24 checks against a stubbed Drive
 mirroring the real layout, no network or fixtures. Both archive protections are
 tested *independently*: removing either one alone fails a check, since the name
 guard would otherwise cover for the missing tree scoping.

@@ -47,8 +47,9 @@ def _stub_google():
     sys.modules["googleapiclient.http"].MediaIoBaseDownload = object
 
 
-def run(fd, tree, reports="R", reference=None):
+def run(fd, tree, reports="R", reference=None, argv=None):
     """Run fetch_drive.main() against `tree` and return its manifest."""
+    sys.argv = ["fetch_drive.py"] + list(argv or [])
     fd._service = lambda: None
     fd._list_children = lambda svc, pid, mime=None: [
         {"id": i, "name": n, "mimeType": m,
@@ -235,6 +236,32 @@ def main():
                    "q3": [(FOLDER, "Sep", "sep")],
                    "sep": [(FILE, "RentRoll09_11_2026.xlsx", "r1")]})
     check("the descent stops at two levels", not man)
+
+    print("\n4b. --only narrows the run to one feed")
+    # The whole fetch has taken four and a half hours; the comp export arrives
+    # several times a day. A scoped run is what lets a second schedule refresh
+    # one feed without paying for the other twenty-eight.
+    scoped = {"R": [(FOLDER, "Comps", "cp"), (FOLDER, "Rent Roll", "rr"),
+                    (FOLDER, "Delinquency", "dq")],
+              "cp": [(FILE, "2026-09-21 HelloData - Simple - 335 Third Street.xlsx", "s1")],
+              "rr": [(FILE, "RentRoll09_11_2026.xlsx", "r1")],
+              "dq": [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d1")]}
+    man = run(fd, scoped, argv=["--only", "market_comps"])
+    check("--only fetches just that feed",
+          {e["report_type"] for e in man} == {"market_comps"},
+          )
+    # Unscoped, the same tree brings back all three -- so the check above is
+    # measuring the flag rather than a tree that only had comps in it.
+    man = run(fd, scoped)
+    check("...and the same tree unscoped brings back the others",
+          {e["report_type"] for e in man} == {"market_comps", "rent_roll", "ar_analytics"})
+    # A typo in the flag is a run that silently fetches nothing.
+    try:
+        run(fd, scoped, argv=["--only", "market_comp"])
+        refused = False
+    except SystemExit:
+        refused = True
+    check("a report type nothing declares is refused, not silently empty", refused)
 
     print("\n5. one filename, two report types -> reported, not guessed")
     real = json.loads((ROOT / "config" / "report_map.json").read_text())
