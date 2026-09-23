@@ -867,7 +867,7 @@
   "properties_in_file": 10,
   "listings_in_file": 738,
   "source_file": "2026-09-22 HelloData - Simple - 335 Third Street (2).xlsx",
-  "landed_at": null,
+  "landed_at": "2026-09-22T17:28:31.107Z",
   "checks": [
     {
       "check": "every listed building is described in 'Property Data'",

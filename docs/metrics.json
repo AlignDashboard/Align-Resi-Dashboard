@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-21T18:58:15.880332+00:00",
+    "generated_at": "2026-09-23T17:46:48.647174+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -2913,8 +2913,8 @@
         "new_leases": {
           "weeks": 4,
           "as_of": "2026-09-20",
-          "landed_at": "2026-09-20T01:28:32.861Z",
-          "source_file": "2026-09-19 Daily Report- Week Ending 9.20.26.xlsx",
+          "landed_at": "2026-09-21T23:28:31.515Z",
+          "source_file": "2026-09-21 Daily Report- Week Ending 9.20.26.xlsx",
           "months": [
             {
               "month": "2026-08",
@@ -2942,8 +2942,8 @@
             "from": "2024-01",
             "to": "2026-11"
           },
-          "landed_at": "2026-09-15T20:28:48.757Z",
-          "source_file": "2026-09-15 Landing 2025 Renewal Tracker - Full (43).xlsx",
+          "landed_at": "2026-09-21T23:28:34.027Z",
+          "source_file": "2026-09-21 Landing 2025 Renewal Tracker - Full (47).xlsx",
           "months": [
             {
               "month": "2024-01",
@@ -3351,9 +3351,9 @@
               "current_rent": 84251.0,
               "offered_rent": 89561.0,
               "statuses": {
-                "MTM": 2,
+                "MTM": 1,
                 "Notice": 3,
-                "Renewed": 13
+                "Renewed": 14
               }
             },
             {
@@ -3379,8 +3379,7 @@
               "statuses": {
                 "MTM": 2,
                 "Notice": 3,
-                "Offer Accepted": 1,
-                "Renewed": 12
+                "Renewed": 13
               }
             },
             {
@@ -3405,22 +3404,22 @@
               "current_rent": 57627.0,
               "offered_rent": 83373.0,
               "statuses": {
-                "Notice": 1,
+                "Notice": 2,
                 "Offer Accepted": 1,
                 "Renewed": 1,
-                "Waiting For Response": 10
+                "Waiting For Response": 9
               }
             }
           ],
           "mtm": {
-            "units": 31,
-            "current_rent": 150376.0,
-            "market_rent": 222370.0,
+            "units": 33,
+            "current_rent": 160445.0,
+            "market_rent": 237541.0,
             "statuses": {
-              "(blank)": 3,
+              "(blank)": 2,
               "Notice": 4,
-              "Renewed": 3,
-              "Waiting For Response": 21
+              "Renewed": 4,
+              "Waiting For Response": 23
             },
             "rows_without_rent": 0
           }
@@ -3430,22 +3429,22 @@
         "slug": "chorus",
         "name": "Chorus",
         "new_leases": {
-          "weeks": 4,
-          "as_of": "2026-09-20",
-          "landed_at": "2026-09-20T01:28:30.621Z",
-          "source_file": "2026-09-19 09.14.2026- 09.20.2026- Chorus - Daily Report (5).xlsx",
+          "weeks": 5,
+          "as_of": "2026-09-27",
+          "landed_at": "2026-09-23T02:28:31.627Z",
+          "source_file": "2026-09-22 09.21.2026- 09.27.2026- Chorus - Daily Report.xlsx",
           "months": [
             {
               "month": "2026-09",
-              "leases": 10,
-              "lease_rent": 59379.0,
-              "prior_rent": 47746.0,
-              "mean_tradeout": 0.240389,
-              "wtd_tradeout": 0.243643
+              "leases": 11,
+              "lease_rent": 67142.0,
+              "prior_rent": 52746.0,
+              "mean_tradeout": 0.268772,
+              "wtd_tradeout": 0.272931
             }
           ],
-          "leases": 10,
-          "mean_tradeout": 0.240389
+          "leases": 11,
+          "mean_tradeout": 0.268772
         },
         "renewals": {
           "as_of": "2026-11",
@@ -3929,22 +3928,22 @@
         "slug": "madelon",
         "name": "Madelon",
         "new_leases": {
-          "weeks": 20,
-          "as_of": "2026-09-20",
-          "landed_at": "2026-09-21T02:28:30.396Z",
-          "source_file": "2026-09-20 9.20.26 - The Madelon - Daily Report .xlsx",
+          "weeks": 22,
+          "as_of": "2026-09-22",
+          "landed_at": "2026-09-23T01:28:40.761Z",
+          "source_file": "2026-09-22 9.22.26 - The Madelon - Daily Report.xlsx",
           "months": [
             {
               "month": "2026-09",
-              "leases": 17,
-              "lease_rent": 81044.0,
-              "prior_rent": 61679.0,
-              "mean_tradeout": 0.334727,
-              "wtd_tradeout": 0.313964
+              "leases": 18,
+              "lease_rent": 84609.0,
+              "prior_rent": 64891.0,
+              "mean_tradeout": 0.322237,
+              "wtd_tradeout": 0.303863
             }
           ],
-          "leases": 17,
-          "mean_tradeout": 0.334727
+          "leases": 18,
+          "mean_tradeout": 0.322237
         }
       }
     ]
@@ -6427,7 +6426,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6550,
         "source_file": "2026-09-22 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (3).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-09-22T23:28:31.610Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -7971,7 +7970,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6550,
         "source_file": "2026-09-22 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (3).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-09-22T23:28:31.610Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -9557,7 +9556,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6550,
         "source_file": "2026-09-22 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (3).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-09-22T23:28:31.610Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -10520,7 +10519,7 @@
         "properties_in_file": 10,
         "listings_in_file": 738,
         "source_file": "2026-09-22 HelloData - Simple - 335 Third Street (2).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-09-22T17:28:31.107Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
