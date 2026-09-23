@@ -619,12 +619,13 @@ const STATUS_BLURB = {
 };
 const ORIGIN_LABEL = {
   drive: "Google Drive folder", email: "Dashboard mailbox",
-  workbook: "Analyst workbook", manual: "Edited in place",
+  workbook: "Analyst workbook", site: "Another dashboard", manual: "Edited in place",
 };
 const ORIGIN_GROUP = {
   drive: "From Google Drive · the daily pipeline",
   email: "From the dashboard mailbox",
   workbook: "From a workbook, refreshed by hand",
+  site: "From another dashboard, imported by hand",
   manual: "No feed behind it",
 };
 
@@ -701,9 +702,10 @@ function nodeSource(f, aliases) {
 /* Some feeds record what they are ("EliseAI building metrics export
    (metrics-building-2026-08-31.csv)") rather than only what the file was
    called, so pull the filename out of the sentence rather than giving up on
-   it. Nothing without a report extension counts. */
+   it. Nothing without a report extension counts -- and .html is one, because
+   the Rental Rate Tracker's report is its own encrypted page. */
 const fileFrom = x => {
-  const m = String(x || "").match(/[\w.\-]+\.(?:xlsx|xlsm|xls|csv)\b/i);
+  const m = String(x || "").match(/[\w.\-]+\.(?:xlsx|xlsm|xls|csv|html)\b/i);
   return m ? base(m[0]) : null;
 };
 
