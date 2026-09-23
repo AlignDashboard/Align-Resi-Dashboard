@@ -30,14 +30,38 @@ DOCS = pathlib.Path("docs")
 # ---- config helpers -------------------------------------------------------
 
 def load_properties():
+    """The property master, and everything a report might name a building by.
+
+    Three sources, all routing the same way and all lowercased for matching:
+    the Yardi `codes`, the `aliases` third-party exports use where Yardi would
+    use a code ("335 3rd Street"), and **the property's own `name`**.
+
+    The name was missing until 2026-09-22, and the gap was invisible because
+    the four properties that had ever been named by a report happened to carry
+    their own names in `aliases` as well. The comp export does not: it names
+    each building as the market names it, so a section reading
+    `335 Third Street` parsed, tied out, and then routed nowhere -- the whole
+    Oakland comp set dropped with one `[warn] unknown property code` line, on a
+    tab whose job is to check somebody else's number. Twenty-four of the
+    twenty-eight properties were in that state.
+
+    A string two properties both claim is a silent misroute, so it is refused
+    here rather than resolved: whichever happened to be last in the file would
+    win, and nothing downstream could tell.
+    """
     cfg = json.load(open("config/properties.json"))
-    code_to_prop = {}
+    code_to_prop, owner = {}, {}
     for p in cfg["properties"]:
-        # aliases are the names third-party exports use where Yardi would use a
-        # code ("335 3rd Street"); both route the same way
-        for c in list(p["codes"]) + list(p.get("aliases") or []):
-            # normalize to lowercase for matching robustness
-            code_to_prop[c.lower()] = p
+        for c in [p["name"]] + list(p["codes"]) + list(p.get("aliases") or []):
+            key = str(c).lower()
+            if key in owner and owner[key] != p["slug"]:
+                raise SystemExit(
+                    f"config/properties.json: '{c}' is claimed by both "
+                    f"'{owner[key]}' and '{p['slug']}'. A report naming it "
+                    f"would route to whichever sorted last, so fix the master "
+                    f"rather than letting it pick.")
+            owner[key] = p["slug"]
+            code_to_prop[key] = p
     return cfg["properties"], code_to_prop
 
 
@@ -693,21 +717,58 @@ def store_concessions(prop, parsed):
                          "unit_count", "totals"])
 
 
+BUDGET_KEYS = ["report_type", "property", "property_code", "property_codes",
+               "tree", "year", "as_of", "labels", "revenue_monthly",
+               "opex_operating_monthly", "buckets", "buckets_unmapped",
+               "buckets_tieout_gap", "buckets_error"]
+
+
 def store_budget(prop, parsed):
-    """data/<slug>/budget.json — the year's plan, in the T12 statement's shape.
+    """data/<slug>/budget.json — the plans, one point per budget YEAR.
 
     Monthly revenue and operating-expense lines plus the Align-grouped expense
     buckets, exactly as the actuals' expense_buckets are grouped, so the
     scorecard's Budget Variance fill compares one basket against itself. A
     budget carries no resident, but it goes through store_report like every
     other feed so the central scrub covers it by default.
+
+    Keyed on the year and ACCUMULATED rather than overwritten, the way
+    expense_buckets keeps a point per statement period. A budget is a calendar
+    year and the T12 window the dashboard draws is not: the actuals run Sep-Aug
+    today, so a store that held only the newest year would leave four months of
+    that window with no plan to compare against, and the Budget vs Actual card
+    would report a gap where the file that answers it was simply overwritten.
+    Re-filing the same year replaces that year's point, so re-processing a
+    re-export is idempotent.
     """
-    return store_report(prop, parsed, "budget.json",
-                        ["report_type", "property", "property_code",
-                         "property_codes", "tree", "year", "as_of", "labels",
-                         "revenue_monthly", "opex_operating_monthly",
-                         "buckets", "buckets_unmapped", "buckets_tieout_gap",
-                         "buckets_error"])
+    year = parsed.get("year")
+    if year is None:
+        print(f"[warn] {prop['name']}: budget carries no year -- not stored")
+        return None
+
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / "budget.json"
+    hist = json.load(open(fp)) if fp.exists() else {}
+    # Files written before budgets were kept per year are a single flat plan.
+    # Carry that one in as its own year rather than dropping it on the floor.
+    years = hist.get("years")
+    if years is None:
+        years = [hist] if hist.get("year") is not None else []
+
+    point = {k: scrub(parsed.get(k)) for k in BUDGET_KEYS}
+    point["source_file"] = parsed.get("source_file")
+    point["landed_at"] = parsed.get("landed_at")
+    point["checks"] = parsed.get("checks")
+
+    years = [y for y in years if y.get("year") != year]
+    years.append(point)
+    years.sort(key=lambda y: y["year"])
+    json.dump({"years": years}, open(fp, "w"), indent=2, default=str)
+    print(f"[ok] stored budget for {prop['name']} ({year}) from "
+          f"{parsed.get('source_file')}: {len(point.get('buckets') or {})} bucket(s), "
+          f"{len(years)} year(s) on file")
+    return fp
 
 
 def rent_roll_summary(rr):
@@ -898,6 +959,60 @@ def store_daily_leasing(prop, parsed):
     return fp
 
 
+def store_lease_tradeout(prop, parsed):
+    """data/<slug>/lease_tradeout.json — new-lease trade-outs, accumulated.
+
+    Accumulated by lease rather than overwritten, because the window is chosen
+    at export time: this report is run "From x To y" and the next one may be
+    wider, narrower or offset. Taking the newest file whole would throw away
+    every lease outside whatever range that export happened to ask for.
+
+    The key is (unit, signed date, previous lease start). A unit turns over
+    more than once inside one window -- 102 appears twice in the first file --
+    so unit and date alone are not unique, and the previous lease is what makes
+    a given turnover that turnover. Re-filing a window therefore replaces its
+    leases instead of doubling them.
+
+    Each file's own period and tie-out are kept in `files`, because the tie-out
+    is a statement about that export against its own Grand Total row and stops
+    meaning anything once several are merged.
+
+    No resident, no name — the report has no such column. It still goes through
+    the central scrub, like the unit directory.
+    """
+    fp = DATA / prop["slug"] / "lease_tradeout.json"
+    fp.parent.mkdir(parents=True, exist_ok=True)
+    hist = json.load(open(fp)) if fp.exists() else {"files": [], "leases": []}
+
+    key = lambda l: (l.get("unit"), l.get("signed"), l.get("prev_start"))  # noqa: E731
+    fresh = {key(l): scrub(l) for l in parsed.get("leases") or []}
+    kept = [l for l in hist.get("leases", []) if key(l) not in fresh]
+    hist["leases"] = sorted(kept + list(fresh.values()),
+                            key=lambda l: (l.get("signed") or "", l.get("unit") or ""))
+
+    rec = {k: parsed.get(k) for k in
+           ("source_file", "landed_at", "period_start", "period_end", "rate_type",
+            "lease_date_basis", "tradeout_basis", "checks", "problems")}
+    rec["leases"] = len(fresh)
+    hist["files"] = [f for f in hist.get("files", [])
+                     if f.get("source_file") != rec["source_file"]] + [rec]
+    hist["files"].sort(key=lambda f: f.get("period_end") or "")
+
+    for k in ("report_type", "property", "rate_type", "lease_date_basis",
+              "tradeout_basis"):
+        hist[k] = parsed.get(k)
+    hist["as_of"] = max(f.get("period_end") or "" for f in hist["files"]) or None
+    hist["landed_at"] = parsed.get("landed_at")
+    hist["source_file"] = parsed.get("source_file")
+
+    json.dump(hist, open(fp, "w"), indent=2, default=str)
+    print(f"[ok] stored lease trade-outs for {prop['name']}: "
+          f"{len(fresh)} lease(s) from {parsed.get('source_file')} "
+          f"({parsed.get('period_start')}..{parsed.get('period_end')}), "
+          f"{len(hist['leases'])} on file")
+    return fp
+
+
 def store_renewal_tracker(prop, parsed):
     """data/<slug>/renewal_tracker.json — the whole tracker, overwritten.
 
@@ -912,6 +1027,145 @@ def store_renewal_tracker(prop, parsed):
                          "mtm", "unread_sheets", "problems"])
 
 
+def _vintage(value):
+    """A comp export's own as-of date as a comparable `YYYY-MM-DD`, or None."""
+    return str(value)[:10] if value else None
+
+
+def comps_block(props, metrics):
+    """metrics["comps"] — the market, and the Yardi market rent table measured
+    against it.
+
+    The three blocks the verification joins are read back out of `metrics`
+    rather than from `data/`, because the rent roll's store is gitignored
+    (per-unit, it arrives with resident names) and so exists only during a
+    pipeline run — the published aggregate is what a fresh clone has, and it
+    carries every figure this needs. Same reasoning as `rent_roll_ltl()` in
+    `populate_scorecard`.
+
+    That is also what lets `refresh_comps.py` rebuild this block on its own,
+    from a `metrics.json` that is already on disk, without re-running the whole
+    pipeline for a feed that arrives several times a day. One definition, two
+    callers: a second copy would drift the first time the verification changed.
+    """
+    comps_props = []
+    by_slug = lambda block, slug: next(                                # noqa: E731
+        (x for x in ((metrics.get(block) or {}).get("properties") or [])
+         if x.get("slug") == slug), None)
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "comps.json"
+        if not fp.exists():
+            continue
+        c = json.load(open(fp))
+        ver = comps_verification(c, by_slug("unit_directory", p["slug"]),
+                                 by_slug("rent_roll", p["slug"]),
+                                 by_slug("rent_capture", p["slug"]))
+        comps_props.append({"slug": p["slug"], "name": p["name"],
+                            **{k: v for k, v in c.items()
+                               if k not in ("report_type", "property_code")},
+                            "verification": ver})
+        if ver and ver.get("headline"):
+            h = ver["headline"]
+            print(f"[ok] market comps for {p['name']}: {h.get('label', 'Yardi')} "
+                  f"market rent is {h['gap']:+.1%} against the comp-implied "
+                  f"figure (${h['dollars']:,.0f}/mo)")
+        else:
+            print(f"[ok] market comps for {p['name']}: market side only "
+                  f"(no unit directory or no rent roll to verify against)")
+    return {"available": bool(comps_props), "properties": comps_props}
+
+
+def store_comps(prop, parsed):
+    """data/<slug>/comps.json — this property's view of its own submarket.
+
+    Kept whole rather than accumulated, unlike the trade-out report: one comp
+    export carries three years of listings, so a later file restates the same
+    history rather than adding the next slice of a window.
+
+    But which file is "later" is the file's own `as_of`, never the newest
+    arrival and never whichever parsed last. Those come apart badly here: the
+    Drive folders hold ~90 exports whose arrival order does not track their
+    vintage at all — a copy that landed 2026-09-21 carries an as-of of
+    2026-08-05, six weeks behind one that landed three days earlier. Taking
+    whatever parsed last would move the Market Comps tab back to an August
+    reading of the market with nothing on the page to say so, which is the one
+    failure a tab built to check someone else's number cannot afford.
+
+    Nor is a later vintage a strict superset of an earlier one, which this
+    function used to assume. HelloData revises its own history: of 739 listings
+    in the 2026-08-11 Oakland file, 43 are absent from the 2026-09-20 one — and
+    every one of those is a unit still in the newer file under a revised
+    `First Listed` date, not a building or a unit that went away. So the newest
+    vintage is the right single answer, and the older files are the vendor's
+    revision history rather than copies of it.
+
+    They stay live in `Comps/<market>/Simple/` and are read on every run, which
+    is what makes this a choice rather than an accident: the folder is the whole
+    cadence, the store picks the best of it, and `vintages` records what it was
+    offered. Only the `Full` twins are archived, and only because no parser
+    reads them — a twenty-sheet formatted workbook with no parseable table in
+    it costs 2-4 MB a file to fetch and answers nothing.
+
+    The section is already aggregates — medians, counts and shares. The listing
+    rows behind them are a licensed vendor dataset and stay out of `data/` for
+    the same reason resident names do: everything here is served to anyone with
+    the URL.
+    """
+    section = (parsed.get("sections") or [{}])[0]
+    out = dict(section)
+    out.update({
+        "report_type": parsed.get("report_type"),
+        "vendor": parsed.get("vendor"),
+        "market": parsed.get("market"),
+        "properties_in_file": parsed.get("properties_in_file"),
+        "listings_in_file": parsed.get("listings_in_file"),
+        "source_file": parsed.get("source_file"),
+        "landed_at": parsed.get("landed_at"),
+        "checks": parsed.get("checks"),
+        "problems": (parsed.get("problems") or []) + (section.get("problems") or []),
+    })
+    fp = DATA / prop["slug"] / "comps.json"
+    fp.parent.mkdir(parents=True, exist_ok=True)
+
+    have = {}
+    if fp.exists():
+        try:
+            have = json.load(open(fp)) or {}
+        except (json.JSONDecodeError, OSError):
+            have = {}
+
+    mine, theirs = _vintage(out.get("as_of")), _vintage(have.get("as_of"))
+
+    # Every vintage this store has been offered, whether or not it won. It is
+    # what lets the tab stop calling itself single-vintage the day it is not,
+    # and it is the only record of the export cadence — the files themselves
+    # are archived. Dates only, and a set, so re-reading the folder every run
+    # adds nothing.
+    seen = sorted(set(have.get("vintages") or []) | ({mine} if mine else set()))
+
+    if theirs and (not mine or mine < theirs):
+        # An older reading of the same market. Keep the newer one and say so:
+        # a file silently ignored and a file silently applied look identical in
+        # a green run, and this folder holds ninety of them.
+        print(f"[skip] {parsed.get('source_file')}: comps as of "
+              f"{mine or 'unknown'}, older than the {theirs} already stored "
+              f"for {prop['name']}")
+        have["vintages"] = seen
+        json.dump(scrub(have), open(fp, "w"), indent=2, default=str)
+        return fp
+
+    out["vintages"] = seen
+    json.dump(scrub(out), open(fp, "w"), indent=2, default=str)
+    ring = next((r for r in section.get("rings") or [] if r.get("primary")), {})
+    print(f"[ok] stored market comps for {prop['name']}: {ring.get('properties', 0)} "
+          f"comp propert(ies) within {section.get('primary_radius_mi')} mi, "
+          f"{ring.get('listings', 0)} listing(s) as of {section.get('as_of')} "
+          f"({len(seen)} vintage(s) on file)")
+    return fp
+
+
 # report_type -> what to do with a successful parse
 ACCUMULATORS = {
     "t12_statement": None,          # handled inline (needs the book/period checks)
@@ -923,6 +1177,8 @@ ACCUMULATORS = {
     "budget": store_budget,
     "daily_leasing_report": store_daily_leasing,
     "renewal_tracker": store_renewal_tracker,
+    "lease_tradeout": store_lease_tradeout,
+    "market_comps": store_comps,
 }
 
 
@@ -932,7 +1188,13 @@ def process_manifest():
         print("[info] no manifest; rebuilding metrics from existing data/ only")
         return
     manifest = json.load(open(mpath))
-    _, code_to_prop = load_properties()
+    all_props, code_to_prop = load_properties()
+    props_by_slug = {p["slug"]: p for p in all_props}
+    # report_map entries by report_type, for the per-report settings the
+    # manifest does not carry (today: which property an export that names none
+    # belongs to -- see the unattributed branch below).
+    rmap_by_type = {e.get("report_type"): e
+                    for e in json.load(open("config/report_map.json"))["subfolders"]}
 
     # Deterministic order: sort by filename so date-prefixed files process
     # oldest-to-newest and the newest file wins any same-period collision.
@@ -955,6 +1217,16 @@ def process_manifest():
         # carry Drive's arrival time onto the parse, so store_report can record
         # when the report landed rather than only what period it covers. Set
         # before the multi-section split below, which copies the parse.
+        # A parser may claim a file and then decline to read it: the comp
+        # export arrives as a pair of near-identical names, one machine-readable
+        # and one formatted for the eye. That is a skip with a reason, not a
+        # failure -- the entry claims everything in its folder on purpose, so a
+        # renamed export cannot go unread, and this is what keeps the log
+        # honest about the file it is not reading.
+        if parsed.get("skip"):
+            print(f"[skip] {item['name']}: {parsed['skip']}")
+            continue
+
         parsed["landed_at"] = item.get("landed_at")
         # setdefault, not assignment: a parser that names its own source (the
         # unit directory, the funnel) knows the name it was filed under, which
@@ -983,14 +1255,30 @@ def process_manifest():
                 prop = code_to_prop.get(code.lower()) if code else None
                 if not prop:
                     if parsed.get("unattributed"):
-                        # the file itself names no property (the concession
-                        # burn-off says only "For Selected Properties"), so
-                        # this is an export-settings problem, not a config one
-                        print(f"[warn] {item['name']} names no property "
-                              f"({parsed.get('coverage')!r}) -- parsed and tied "
-                              f"out, but stored nowhere until the owner settles "
-                              f"which property the export covers")
-                        continue
+                        # The file names no property ("For Selected Properties"
+                        # and nothing else), so the report map may name the
+                        # owner instead -- the concession burn-off is Palma's,
+                        # settled by the owner 2026-09-21 (A6).
+                        #
+                        # Only ever reached when the file itself is silent: a
+                        # section that names its building routes by that name
+                        # above, so this cannot overrule an export that says
+                        # who it is about. That distinction is the whole reason
+                        # attribution was refused rather than guessed for six
+                        # weeks -- filing one building's concessions under
+                        # another is not a thing a log line makes safe.
+                        fallback = (rmap_by_type.get(item["report_type"])
+                                    or {}).get("unattributed_property")
+                        prop = props_by_slug.get(fallback) if fallback else None
+                        if not prop:
+                            print(f"[warn] {item['name']} names no property "
+                                  f"({parsed.get('coverage')!r}) -- parsed and tied "
+                                  f"out, but stored nowhere until the owner settles "
+                                  f"which property the export covers")
+                            continue
+                        print(f"[attributed] {item['name']} names no property "
+                              f"({parsed.get('coverage')!r}); report_map assigns it "
+                              f"to {prop['name']}")
                     print(f"[warn] unknown property code '{code}' in {item['name']} -- "
                           f"add it to config/properties.json; skipping")
                     continue
@@ -1187,6 +1475,276 @@ def stitch_rent_capture(points, label=""):
     return out
 
 
+MONTHS_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def month_label(key):
+    """'2025-08' -> 'Aug 25'.
+
+    The year is not decoration here. monthly_pl's own labels are the bare
+    month, which is unambiguous over one statement's twelve columns; this
+    axis is the union of several properties' windows and already spans
+    fourteen months, so it carries two Julys and a bare label would put them
+    on the same tick in the reader's head.
+    """
+    y, m = key.split("-")
+    return f"{MONTHS_ABBR[int(m) - 1]} {y[2:]}"
+
+
+def expense_trend(pl_props):
+    """metrics.json's expense_trend block -- every property's expense line.
+
+    Two things this has to get right, and both would be invisible in the
+    numbers:
+
+    * **The axis is the union of the properties' months, keyed on YYYY-MM.**
+      The statements do not cover the same window -- The Landing's runs
+      Aug 25-Aug 26 and Palma's Jul 25-Jun 26 -- so lining the series up by
+      position would plot Palma's July against The Landing's August and draw
+      the offset as a swing in spending. A property with no statement for a
+      month gets null, and the card breaks its line there rather than joining
+      across it.
+
+    * **The lines are not all the same expense row.** The Landing's is total
+      expenses (jpm 549999-9999); Palma's is recoverable operating opex,
+      because the Align tree has no counterpart to that row -- see
+      expense_anchor_for(). Two different expense loads on one axis, so each
+      line carries its own scope and anchor and the block flags the
+      disagreement rather than printing one basis over both.
+    """
+    months = sorted({m for p in pl_props for m in p["months"]})
+    out = []
+    for p in pl_props:
+        by_month = dict(zip(p["months"], p["opex"]))
+        out.append({
+            "slug": p["slug"],
+            "name": p["name"],
+            "data": [by_month.get(m) for m in months],
+            "first_month": p["months"][0] if p["months"] else None,
+            "last_month": p["months"][-1] if p["months"] else None,
+            "period_end": p["period_end"],
+            "expense_scope": p["expense_scope"],
+            "expense_anchor": p["expense_anchor"],
+            "basis": p["basis"],
+        })
+    scopes = {p["expense_scope"] for p in out}
+    return {
+        "available": bool(out),
+        "months": months,
+        "labels": [month_label(m) for m in months],
+        "properties": out,
+        # True where the lines are not the same expense row, which the card
+        # has to say out loud: it is the same trap the Expense Ratio card
+        # carries a per-property basis for.
+        "mixed_scope": len(scopes) > 1,
+        "basis": "Monthly expenses per property, from each property's own "
+                 "12-month accrual statement",
+    }
+
+
+# A bedroom type needs this many current comp listings before the market is
+# allowed to set a rent for it. Below it the building's own Yardi figure is
+# kept and the bedroom is NAMED as unverified -- The Landing's 16 three-beds
+# have two comparable listings in the whole submarket, and two listings is a
+# pair of asking prices rather than a market.
+MIN_BED_FOR_IMPLIED = 5
+
+
+def bedroom_mix(ud_prop):
+    """Units, floor area and the Yardi market rent, per bedroom count.
+
+    The unit directory is the only feed that says how many bedrooms a floorplan
+    has, which is what makes a building comparable to a market at all: a comp
+    median is per bedroom, and the rent roll names plans without defining them.
+
+    The rent here is the midpoint of each plan's published min/max times its
+    units, so it is an ESTIMATE of the directory's market rent table and says
+    so wherever it is published. The exact per-unit sum is not in the stored
+    directory; the statement's own gross potential rent is the tied-out twin of
+    this figure and is published beside it for exactly that reason.
+    """
+    mix, no_rent = {}, []
+    for code, pl in sorted((ud_prop.get("plans") or {}).items()):
+        bed, units = pl.get("bedrooms"), pl.get("units") or 0
+        if bed is None or not units:
+            continue
+        m = mix.setdefault(bed, {"bed": bed, "units": 0, "sqft": 0.0,
+                                 "yardi_rent": 0.0, "plans": 0, "priced": 0})
+        m["units"] += units
+        m["sqft"] += (pl.get("sqft_avg") or 0) * units
+        m["plans"] += 1
+        lo, hi = pl.get("rent_min"), pl.get("rent_max")
+        if lo is None or hi is None:
+            no_rent.append(code)
+        else:
+            m["yardi_rent"] += (lo + hi) / 2 * units
+            m["priced"] += units
+    return mix, no_rent
+
+
+def comp_implied(mix, ring, premium):
+    """What this building's whole market rent table would be at comp asking.
+
+    Per bedroom, because that is the unit the market quotes in and the one
+    size-match can be checked on. The subject's own long-run premium to the
+    ring is applied rather than nothing: a comp median is the middle of the
+    submarket, and a building that has asked 6% over that middle for three
+    years is worth 6% over it today. Withholding the premium would understate
+    the answer exactly as much as ignoring the comps overstates it, so both
+    are published — `premium` is a field here, not a constant.
+    """
+    rows, total, unverified = [], 0.0, []
+    for bed in sorted(mix):
+        m = mix[bed]
+        c = ((ring or {}).get("by_bed") or {}).get(str(bed))
+        subject_sqft = m["sqft"] / m["units"] if m["units"] else None
+        if c and c["n"] >= MIN_BED_FOR_IMPLIED:
+            rent, source = c["median_rent"] * (1 + premium), "comps"
+        else:
+            rent = m["yardi_rent"] / m["priced"] if m["priced"] else None
+            source, _ = "yardi", unverified.append(bed)
+        if rent is None:
+            continue
+        total += rent * m["units"]
+        rows.append({
+            "bed": bed, "units": m["units"],
+            "subject_sqft": round(subject_sqft, 1) if subject_sqft else None,
+            "comp_sqft": c["median_sqft"] if c else None,
+            "comp_n": c["n"] if c else 0,
+            "comp_median_rent": c["median_rent"] if c else None,
+            "size_gap": (round(subject_sqft / c["median_sqft"] - 1, 4)
+                         if c and subject_sqft and c["median_sqft"] else None),
+            "yardi_rent": (round(m["yardi_rent"] / m["priced"], 2)
+                           if m["priced"] else None),
+            "rent": round(rent, 2), "total": round(rent * m["units"], 2),
+            "source": source,
+        })
+    return {"rows": rows, "total": round(total, 2), "unverified_beds": unverified,
+            "premium": premium}
+
+
+def comps_verification(section, ud_prop, rr_prop, rc_prop):
+    """The Yardi market rent table, measured against the market it claims.
+
+    Four figures for one number, and the point of the card is that three of
+    them agree. Two are Yardi's own (the rent roll's market rent column and the
+    unit directory's table), one is the general ledger's copy of it (the
+    statement's gross market rent potential, which is the same table booked as
+    revenue), and one is the market's. Where the three Yardi figures disagree
+    with EACH OTHER, the disagreement dates the change — which is what a single
+    comparison against the comps could never do.
+
+    Returns None when the property has no directory, since without a bedroom
+    mix there is nothing to apply a comp median to.
+    """
+    if not ud_prop or not (ud_prop.get("plans") or {}):
+        return None
+    mix, no_rent = bedroom_mix(ud_prop)
+    if not mix:
+        return None
+    premium = ((section.get("premium") or {}).get("median")) or 0.0
+    rings = section.get("rings") or []
+    primary = next((r for r in rings if r.get("primary")), None)
+    implied = comp_implied(mix, primary, premium)
+    if not implied["rows"]:
+        return None
+
+    sources, base = [], implied["total"]
+    gap = lambda v: round(v / base - 1, 4) if base else None      # noqa: E731
+
+    if rr_prop and rr_prop.get("market_rent_total"):
+        sources.append({
+            "key": "rent_roll", "label": "Rent roll",
+            "detail": "the market rent column, unit by unit",
+            "as_of": rr_prop.get("as_of"), "source_file": rr_prop.get("source_file"),
+            "market_rent": rr_prop["market_rent_total"],
+            "units": rr_prop.get("units"), "psf": rr_prop.get("market_psf"),
+            "gap": gap(rr_prop["market_rent_total"]), "exact": True,
+        })
+    directory_total = sum(m["yardi_rent"] for m in mix.values())
+    if directory_total:
+        sources.append({
+            "key": "unit_directory", "label": "Unit directory",
+            "detail": "each plan's published market rent, midpoint of its range",
+            "as_of": ud_prop.get("as_of"), "source_file": ud_prop.get("source_file"),
+            "market_rent": round(directory_total, 2),
+            "units": sum(m["priced"] for m in mix.values()),
+            "gap": gap(directory_total), "exact": False,
+        })
+    if rc_prop and rc_prop.get("market_potential"):
+        pot = rc_prop["market_potential"][-1]
+        sources.append({
+            "key": "statement", "label": "T12 statement",
+            "detail": "gross market rent potential, the same table booked as revenue",
+            "as_of": rc_prop.get("period_end"),
+            "month": (rc_prop.get("months") or [None])[-1],
+            "market_rent": pot, "gap": gap(pot), "exact": True,
+        })
+    sources.append({
+        "key": "comp_implied", "label": "Comp-implied",
+        "detail": (f"comp median asking rent by bedroom, plus this building's own "
+                   f"{premium:+.1%} long-run premium to its submarket"),
+        "as_of": section.get("as_of"), "market_rent": implied["total"],
+        "gap": 0.0, "exact": False,
+    })
+
+    # The same build-up at every ring the export was cut into, so the answer
+    # carries its own sensitivity: a gap that survives three comp sets is a
+    # finding, and one that does not is a choice of radius.
+    sensitivity = []
+    for r in rings:
+        alt = comp_implied(mix, r, premium)
+        if not alt["rows"]:
+            continue
+        rr = (rr_prop or {}).get("market_rent_total")
+        sensitivity.append({
+            "radius_mi": r.get("radius_mi"), "primary": bool(r.get("primary")),
+            "properties": r.get("properties"), "listings": r.get("listings"),
+            "implied": alt["total"],
+            "gap": round(rr / alt["total"] - 1, 4) if rr and alt["total"] else None,
+        })
+
+    # The headline is the newest Yardi reading of the table, which is normally
+    # the rent roll -- it is the one that is per-unit, current and used as the
+    # denominator of loss to lease. A property with no roll in the pipeline
+    # still has a table worth checking, so the directory stands in and the card
+    # names which one it is rather than going blank on a property that has one
+    # fewer feed.
+    headline = next((s for s in sources if s["key"] == "rent_roll"), None) \
+        or next((s for s in sources if s["key"] == "unit_directory"), None)
+    out = {
+        "implied": implied,
+        "sources": sources,
+        "sensitivity": sensitivity,
+        "unpriced_plans": no_rent,
+        "basis": (f"Comp median asking rent per bedroom on the "
+                  f"{section.get('primary_radius_mi')} mi ring, times the "
+                  f"subject's own median premium to that ring, applied to the "
+                  f"unit directory's bedroom mix"),
+    }
+    if headline:
+        over = headline["market_rent"] - implied["total"]
+        out["headline"] = {
+            "gap": headline["gap"], "dollars": round(over, 2),
+            "annual": round(over * 12, 2), "source": headline["key"],
+            "label": headline["label"], "exact": headline.get("exact"),
+            "as_of": headline["as_of"], "source_file": headline.get("source_file"),
+        }
+        # What the published loss to lease becomes on a market rent the comps
+        # support. The occupied share is the roll's own -- market rent is not
+        # flat across units, so scaling the total by it beats assuming it is.
+        occ_share = (((rr_prop or {}).get("market_rent_occupied") or 0)
+                     / ((rr_prop or {}).get("market_rent_total") or 1))
+        inplace = (rr_prop or {}).get("actual_rent_occupied")
+        occ_market = implied["total"] * occ_share
+        if inplace and occ_market:
+            out["headline"]["ltl_published"] = (rr_prop or {}).get("loss_to_lease_pct")
+            out["headline"]["ltl_restated"] = round(
+                (occ_market - inplace) / occ_market, 4)
+    return out
+
+
 def build_metrics_json():
     props, _ = load_properties()
 
@@ -1253,6 +1811,70 @@ def build_metrics_json():
         "available": bool(bucket_props),
         "properties": bucket_props,
     }
+
+    # The budgeted twin of the block above, for the Portfolio tab's Budget vs
+    # Actual card. Published on explicit YYYY-MM month keys rather than on the
+    # statement's bare "Aug".."Jul" labels, because this series spans calendar
+    # years by construction -- the whole point of it is to line a plan up
+    # against a T12 window that starts in one year and ends in the next, and
+    # bare labels cannot say which year a month belongs to.
+    budget_props = []
+    for p_ in props:
+        if not p_.get("active", True):
+            continue
+        fp = DATA / p_["slug"] / "budget.json"
+        if not fp.exists():
+            continue
+        raw = json.load(open(fp))
+        years = raw.get("years")
+        if years is None:                      # pre-per-year file: one flat plan
+            years = [raw] if raw.get("year") is not None else []
+        years = [y for y in years if y.get("buckets") and y.get("year") is not None]
+        if not years:
+            continue
+        years.sort(key=lambda y: y["year"])
+        lo, hi = years[0]["year"], years[-1]["year"]
+        months = [f"{y}-{m:02d}" for y in range(lo, hi + 1) for m in range(1, 13)]
+        by_year = {y["year"]: y for y in years}
+        # A category a covered year does not carry is a real zero -- that year's
+        # buckets tie out against its own TOTAL EXPENSES, so nothing is missing
+        # from it. A month in a year with NO budget on file is null, and the
+        # card draws no bar there rather than a plan of nothing.
+        names = sorted({n for y in years for n in y["buckets"]})
+        buckets = {n: [] for n in names}
+        revenue, opex = [], []
+        for key in months:
+            yr, mo = int(key[:4]), int(key[5:]) - 1
+            y = by_year.get(yr)
+            for n in names:
+                buckets[n].append(None if y is None
+                                  else round((y["buckets"].get(n) or [0.0] * 12)[mo], 2))
+            revenue.append(None if y is None else (y.get("revenue_monthly") or [None] * 12)[mo])
+            opex.append(None if y is None else (y.get("opex_operating_monthly") or [None] * 12)[mo])
+        missing = sorted(set(range(lo, hi + 1)) - set(by_year))
+        if missing:
+            print(f"[warn] {p_['name']}: no budget on file for "
+                  f"{', '.join(str(y) for y in missing)} -- those months publish "
+                  f"as unplanned rather than as zero")
+        budget_props.append({
+            "slug": p_["slug"], "name": p_["name"],
+            "months": months,
+            "buckets": buckets,
+            "revenue": revenue,
+            "opex_operating": opex,
+            "years": [{"year": y["year"], "source_file": y.get("source_file"),
+                       "landed_at": y.get("landed_at"), "as_of": y.get("as_of"),
+                       "tieout_gap": y.get("buckets_tieout_gap")} for y in years],
+            "years_missing": missing,
+            "basis": ("Yardi 12-month budget accrual, grouped on the Align account "
+                      "tree through config/coa_map.json and tied out against each "
+                      "file's own total expenses month by month -- the same basket "
+                      "the actuals' expense buckets carry"),
+        })
+        print(f"[ok] budget for {p_['name']}: {len(years)} year(s) "
+              f"({lo}-{hi}), {len(names)} bucket(s)")
+    metrics["budget"] = {"available": bool(budget_props),
+                         "properties": budget_props}
 
     # The floorplan table per property, for joining a unit's plan code to its
     # bedroom count. Static description of the building, refreshed when a new
@@ -1394,6 +2016,55 @@ def build_metrics_json():
                   f"{len(rn.get('months') or [])} month(s) of renewal offers")
     metrics["leasing"] = {"available": bool(leasing_props), "properties": leasing_props}
 
+    # Lease trade-outs from the Yardi Lease Tradeout Report, which is the only
+    # feed carrying a trade-out with its own history: one row per new lease with
+    # the lease it replaced beside it. Published as the monthly series and a few
+    # trailing windows rather than the rows themselves -- the rows are in
+    # data/<slug>/lease_tradeout.json, and nothing on the page draws them one at
+    # a time.
+    #
+    # `pct` everywhere here is the report's OWN definition: total current
+    # effective rent over total previous effective rent. The mean of the
+    # per-lease percentages is published beside it as `mean_pct` and is not
+    # interchangeable -- concessions push a previous effective rent toward zero
+    # (one lease on The Landing reads $86 against a $62,716 concession and
+    # prints 6,136%), so the mean runs 70.1% where the weighted figure is 23.4%.
+    to_props = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "lease_tradeout.json"
+        if not fp.exists():
+            continue
+        held = json.load(open(fp))
+        leases = held.get("leases") or []
+        if not leases:
+            continue
+        mod = importlib.import_module("parse_lease_tradeout")
+        files = held.get("files") or []
+        entry = {
+            "slug": p["slug"], "name": p["name"],
+            "as_of": held.get("as_of"),
+            "period_start": min((f.get("period_start") or "") for f in files) or None,
+            "period_end": held.get("as_of"),
+            "rate_type": held.get("rate_type"),
+            "lease_date_basis": held.get("lease_date_basis"),
+            "tradeout_basis": held.get("tradeout_basis"),
+            "source_file": held.get("source_file"),
+            "landed_at": held.get("landed_at"),
+            "files": len(files),
+            "all": mod.summarise(leases),
+            "windows": {f"t{n}": mod.window(leases, n) for n in (3, 6, 12)},
+        }
+        entry["months"] = (entry["all"] or {}).pop("months", [])
+        to_props.append(entry)
+        a, w = entry["all"], entry["windows"].get("t3") or {}
+        print(f"[ok] lease trade-outs for {p['name']}: {a['leases']} lease(s) "
+              f"{entry['period_start']}..{entry['period_end']}, "
+              f"{a['pct']:.1%} weighted over the whole window, "
+              f"{w.get('pct', 0):.1%} over the trailing 3 months")
+    metrics["lease_tradeout"] = {"available": bool(to_props), "properties": to_props}
+
     # Latest monthly P&L point per property, for the operating-summary card.
     pl_props = []
     for p in props:
@@ -1428,6 +2099,13 @@ def build_metrics_json():
                          "basis": series["basis"] or latest.get("basis")})
     metrics["monthly_pl"] = {"available": bool(pl_props), "properties": pl_props}
 
+    # The Portfolio tab's Expense Trend card: one total-expense line per
+    # property on one axis, so the buildings are read against each other
+    # rather than one at a time. Derived from pl_props above rather than
+    # re-read from disk, so a month here and the same month on the Operating
+    # Summary cannot disagree.
+    metrics["expense_trend"] = expense_trend(pl_props)
+
     # Residential rental income, for the Loss to Lease card. Same shape as the
     # analyst workbook's rent_capture block on purpose: the page renders either
     # source through one renderer rather than two that can drift.
@@ -1452,6 +2130,8 @@ def build_metrics_json():
                          "tieout_max_gap": latest.get("tieout_max_gap"),
                          "problems": latest.get("problems") or []})
     metrics["rent_capture"] = {"available": bool(rc_props), "properties": rc_props}
+
+    metrics["comps"] = comps_block(props, metrics)
 
     if expense_ratio_props:
         metrics["expense_ratio"] = {

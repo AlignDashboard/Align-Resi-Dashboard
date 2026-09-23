@@ -3,12 +3,9 @@ name: Deploy Dashboard
 # Publishes docs/ to GitHub Pages from an artifact assembled at run time, so the
 # data files do not have to live in git history to reach the live site.
 #
-# The site shell (HTML, vendored Chart.js, unlock.js) comes from main. The data
-# comes from the `data` branch, which carries a single commit that is replaced on
-# each publish — so only the current data exists anywhere, and nothing
-# accumulates. The data files are sealed (docs/*.json.enc); the browser opens
-# them with the key the password gate derives, so what is deployed here is
-# ciphertext whichever branch it came from.
+# The site shell (HTML, vendored Chart.js) comes from main. The data JSON comes
+# from the `data` branch, which carries a single commit that is replaced on each
+# publish — so only the current data exists anywhere, and nothing accumulates.
 #
 # During migration the `data` branch may not exist yet; in that case whatever
 # JSON is committed in main is used instead, so the site keeps working either
@@ -60,7 +57,7 @@ jobs:
             mkdir -p _data
             git archive FETCH_HEAD | tar -x -C _data
             found=0
-            for f in metrics.json.enc landing.json.enc scorecard.json.enc lineage.json.enc; do
+            for f in metrics.json landing.json scorecard.json lineage.json; do
               if [ -f "_data/$f" ]; then
                 cp "_data/$f" "docs/$f"
                 echo "overlaid docs/$f from the data branch"
@@ -72,19 +69,8 @@ jobs:
             echo "no data branch yet — using the JSON committed in main"
           fi
           # Fail loudly rather than deploy a site whose charts cannot load.
-          for f in metrics.json.enc landing.json.enc scorecard.json.enc lineage.json.enc; do
-            test -s "docs/$f" || { echo "::error::docs/$f is missing or empty"; exit 1; }
-          done
-          # The sealed files are the whole point; a plaintext copy riding along
-          # in the artifact would be served beside them and undo it. They are
-          # gitignored, so this should be impossible — which is exactly why it
-          # is worth one line to be sure, rather than trusting it silently.
           for f in metrics.json landing.json scorecard.json lineage.json; do
-            if [ -e "docs/$f" ]; then
-              echo "::error::docs/$f is plaintext and would be published beside the"
-              echo "::error::sealed copy. Only docs/*.json.enc may be deployed."
-              exit 1
-            fi
+            test -s "docs/$f" || { echo "::error::docs/$f is missing or empty"; exit 1; }
           done
 
       - name: Refuse to publish if personal data is in the site

@@ -204,10 +204,22 @@ def main():
     ok("cleaning contract -> Cleaning (5110)", g.get("Cleaning", [0])[0] == 8000, g)
     ok("utilities via COA", g.get("Utilities (net of billbacks)", [0])[0] == 14000, g)
     ok("legal -> Professional fees", g.get("Professional fees", [0])[0] == 2000, g)
-    ok("unmapped account grouped by its label and reported",
-       g.get("Security & fire/life safety", [0])[0] == 3000
+    # A10, owner 2026-09-21: an account the COA map does not translate goes to
+    # ONE section rather than being guessed into a real category by a keyword in
+    # its label. This check used to assert the guess (Courtesy patrol ->
+    # Security & fire/life safety), which made ~$115k of T12 look COA-placed.
+    ok("an unmapped account goes to the one lump section, and is reported",
+       g.get("Unmapped (JPM accounts not in the COA map)", [0])[0] == 3000
+       and g.get("Security & fire/life safety") is None
        and any("510510-0041" in a for a in jb["unmapped_accounts"]),
-       (g.get("Security & fire/life safety"), jb["unmapped_accounts"]))
+       (g.get("Unmapped (JPM accounts not in the COA map)"),
+        g.get("Security & fire/life safety"), jb["unmapped_accounts"]))
+    # The one case where lumping is not merely presentational: an account the
+    # keyword table used to file under a group the controllable basket excludes
+    # becomes controllable. It must be named, not absorbed.
+    ok("an account the lump moves into the controllable basket is named",
+       isinstance(jb.get("reclassified_controllable"), list),
+       jb.get("reclassified_controllable"))
     ok("financing never enters the groups",
        sum(v[0] for v in g.values()) == 268300, {k: v[0] for k, v in g.items()})
     ok("jpm tie-out against TOTAL EXPENSES", jb["recoverable_tieout_max_gap"] < 0.01,

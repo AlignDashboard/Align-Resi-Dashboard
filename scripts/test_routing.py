@@ -22,10 +22,15 @@ Checks, all fixture-free:
   - every file_glob starts with "*" (the filer prefixes the arrival date)
   - real report filenames, verbatim from Drive, route where they belong
   - a file that is filed correctly today does not move
+  - a file the filer routes to an ACTIVE folder is one that folder's entry can
+    actually claim, by file_glob or name_patterns. Routing a report correctly
+    and then never reading it is the same silent failure wearing a tidier
+    Drive -- see check 10.
 
 Run: python scripts/test_routing.py
 """
 
+import fnmatch
 import json
 import pathlib
 import re
@@ -77,6 +82,100 @@ def load_property_words():
     if not block:
         sys.exit("FAIL: could not find PROPERTY_WORDS in " + str(SCRIPT))
     return re.findall(r'"((?:[^"\\]|\\.)*)"', block.group(1))
+
+
+def load_table(name):
+    """A {folder, words} table out of the Apps Script.
+
+    PROPERTY_FOLDERS, COMP_MARKETS and COMP_KINDS are one shape matched by one
+    function over there, so they are one reader here. A table that stops
+    parsing is a hard exit rather than an empty result: a silent [] would make
+    every subpath check below pass by measuring nothing.
+    """
+    block = re.search(r"const " + name + r" = \[(.*?)\n\];", SCRIPT.read_text(), re.S)
+    if not block:
+        sys.exit(f"FAIL: could not find {name} in {SCRIPT}")
+    out = [(m.group(1), re.findall(r'"([^"]+)"', m.group(2)))
+           for m in re.finditer(r'\{\s*folder:\s*"([^"]+)"\s*,\s*words:\s*\[(.*?)\]\s*\}',
+                                block.group(1), re.S)]
+    if not out:
+        sys.exit(f"FAIL: {name} parsed to nothing -- has the format changed?")
+    return out
+
+
+def load_split_inside():
+    """SPLIT_INSIDE: which category folders are split inside, and by what."""
+    block = re.search(r"const SPLIT_INSIDE = \{(.*?)\n\};", SCRIPT.read_text(), re.S)
+    if not block:
+        sys.exit("FAIL: could not find SPLIT_INSIDE in " + str(SCRIPT))
+    out = {m.group(1): re.findall(r"[A-Z][A-Z_]+", m.group(2))
+           for m in re.finditer(r'"([^"]+)":\s*\[([^\]]*)\]', block.group(1))}
+    if not out:
+        sys.exit("FAIL: SPLIT_INSIDE parsed to nothing -- has the format changed?")
+    return out
+
+
+def subpath(target, filename, split, tables):
+    """Mirror of subpathFor_(): [] when the folder is not split, None when it
+    is and the filename does not say where the file goes."""
+    names = split.get(target)
+    if not names:
+        return []
+    hay = str(filename or "").lower()
+    segs = []
+    for n in names:
+        hit = next((folder for folder, words in tables[n]
+                    if any(w.lower() in hay for w in words)), None)
+        if hit is None:
+            return None
+        segs.append(hit)
+    return segs
+
+
+# Real filenames, and where inside their category folder they belong.
+# None means "its name does not say" -- the top of the category folder, never a
+# guess. A partial read counts as not saying: a comp export filed under its
+# market alone would read as the whole of that market.
+SPLIT_CASES = [
+    ("2026-09-21 HelloData - Simple - 335 Third Street (3).xlsx",
+     "Comps", ["Oakland", "Simple"]),
+    ("2026-09-21 HelloData - Full - 335 Third Street.xlsx",
+     "Comps", ["Oakland", "Full"]),
+    ("HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, "
+     "Dogpatch_Mission Bay).xlsx", "Comps", ["San Francisco", "Simple"]),
+    ("2026-09-18 HelloData - Full - Align San Francisco Comps (Mid Market, "
+     "Mission, Dogpatch_Mission Bay).xlsx", "Comps", ["San Francisco", "Full"]),
+    # A submarket nobody has listed. Top of Comps, where the fetch still reads
+    # it -- the pipeline never cared which folder a report sits in.
+    ("2026-09-22 HelloData - Simple - Align Berkeley Comps.xlsx", "Comps", None),
+    # The market reads and the kind does not, which is the partial case.
+    ("2026-09-22 HelloData Oakland comps export.xlsx", "Comps", None),
+    # A11's own split, unchanged by the generalisation.
+    ("2026-09-21 Daily Report- Week Ending 9.20.26 - The Madelon.xlsx",
+     "Daily Leasing Reports", ["Madelon"]),
+    # The renewal tracker and the Landing daily tracker name their building as
+    # a bare "Landing". Until C10 closed (2026-09-23) the master's words were
+    # only "The Landing" and ".Landing", so both families filed at the TOP of
+    # the folder. "Landing" is now an alias in properties.json, which also
+    # feeds the report-type stripper and the comp parser's Align exclusion.
+    ("2026-08-31 Landing 2025 Renewal Tracker - Full (40).xlsx",
+     "Daily Leasing Reports", ["The Landing"]),
+    ("2026-09-22 Daily Report Tracker - Landing 9.22.26.xlsx",
+     "Daily Leasing Reports", ["The Landing"]),
+    # Rent Roll and Delinquency split by property too (2026-09-23). Yardi's roll
+    # names no property in its filename, so it stays at the top rather than
+    # being guessed into a building.
+    ("RentRoll09_11_2026.xlsx", "Rent Roll", None),
+    ("2026-09-21 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "Delinquency", ["Chorus"]),
+    ("2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "Delinquency", ["The Landing"]),
+    ("2026-09-21 Delinquency Notes - 09.21.2026.xlsx", "Delinquency", None),
+    ("2026-09-23 Residential AR Aging - Chorus.xlsx",
+     "Residential AR Analytics", ["Chorus"]),
+    # A folder nobody splits.
+    ("12_Month_Budget_Accrual.xlsx", "Budgets", []),
+]
 
 
 AUTO_EXTS = ("xlsx", "xls", "csv", "pdf", "docx", "doc")
@@ -161,20 +260,35 @@ CASES = [
     ("2026-08-25 leasing_funnel_report_2026-08-25.xlsx",            "EliseAI Reports"),
     ("2026-08-18 leasing_funnel_report_2026-08-18.xlsx",            "EliseAI Reports"),
     ("leasing_funnel_report_2026-08-04.xlsx",                       "EliseAI Reports"),
-    ("2026-08-31 Landing 2025 Renewal Tracker - Full (40).xlsx",    "Renewal Tracker"),
-    ("2026-08-30 Renewals since 9.15.25 - (updated 8.30.26).xlsx",  "Renewal Tracker"),
+    ("2026-08-31 Landing 2025 Renewal Tracker - Full (40).xlsx",    "Daily Leasing Reports"),
+    ("2026-08-30 Renewals since 9.15.25 - (updated 8.30.26).xlsx",  "Daily Leasing Reports"),
     ("2026-08-31 BoxScoreSummary08_31_2026 - 30Days - The Landing.xlsx", "Property Status"),
     ("2026-08-31 BoxScoreSummary08_31_2026 - 60Days - The Landing.xlsx", "Property Status"),
-    ("2026-08-30 8.24-8.30 Prospect and applicant Report  (1).xlsx", "Prospect Reports"),
+    ("2026-08-30 8.24-8.30 Prospect and applicant Report  (1).xlsx", "Daily Leasing Reports"),
     ("2026-08-31 Daily Report- Week Ending 8.30.26 (2).xlsx",       "Daily Leasing Reports"),
     ("2026-08-30 8.30.26 - The Madelon - Daily Report.xlsx",        "Daily Leasing Reports"),
     ("2026-08-28 08.24.2026- 08.30.2026- Chorus - Daily Report (3).xlsx", "Daily Leasing Reports"),
-    ("2026-08-29 Daily Tracker  (14) (1) (43).xlsx",                "Daily Tracker"),
+    ("2026-08-29 Daily Tracker  (14) (1) (43).xlsx",                "Daily Leasing Reports"),
     ("2026-08-31 rs_sql_JPM_Demographics_Combined - The Landing (3).xlsx", "Demographics"),
     ("UnitDirectory08_25_2026.xlsx",                                "Building Info"),
     ("2026-08-26 UnitDirectory08_25_2026.xlsx",                     "Building Info"),
     ("12_Month_Budget_Accrual.xlsx",                                "Budgets"),
     ("2026-09-03 12_Month_Budget_Accrual.xlsx",                     "Budgets"),
+    # Hand-uploaded on 2026-09-16, named nothing like the Yardi export. The
+    # filer's /budget/ rule always routed these; it was the PIPELINE that could
+    # not claim them -- see the name_patterns check below.
+    ("Landing 2026 Resi Budget.xlsx",                               "Budgets"),
+    # Yardi names this one .XLS and writes an .xlsx; the folder entry's
+    # file_glob is "*" so the pipeline claims it whatever it is called.
+    ("LeaseTradeoutReport-Landing.XLS",                             "Historical Tradeout Reports"),
+    ("2026-09-17 LeaseTradeoutReport-Landing.XLS",                  "Historical Tradeout Reports"),
+    ("Landing 2025 Resi Budget.xlsx",                               "Budgets"),
+    # The HelloData comp export arrives as a pair. Both belong in Comps and
+    # both must be CLAIMABLE by its entry (check 10) -- the pipeline reads the
+    # Simple one and skips the Full one by name of its own layout, which is a
+    # parser decision rather than a routing one.
+    ("2026-09-18 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx", "Comps"),
+    ("2026-09-18 HelloData - Full - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",   "Comps"),
     # already filed correctly today -- these must not move
     ("12_Month_Statement_Accrual.xlsx",                             "T12 Expenses"),
     ("2026-07-16 12_Month_Statement_rs335_accrual.xlsx",            "T12 Expenses"),
@@ -287,6 +401,102 @@ def main():
     if not missing and not extra:
         print(f"   PASS all {len(words)} names, aliases and codes agree")
 
+    print("\n7b. PROPERTY_FOLDERS still matches config/properties.json (A11)")
+    # The per-property split inside Daily Leasing Reports is generated from the
+    # property master, and has the same failure mode PROPERTY_WORDS has: a
+    # building added to properties.json and not here files at the top of the
+    # category folder for ever, which looks like a report that simply has no
+    # property in its name.
+    pf_block = re.search(r"const PROPERTY_FOLDERS = \[(.*?)\n\];",
+                         SCRIPT.read_text(), re.S)
+    if not pf_block:
+        print("   FAIL PROPERTY_FOLDERS not found in the script")
+        failures.append("PROPERTY_FOLDERS missing")
+    else:
+        folders = set(re.findall(r"folder:\s*\"([^\"]+)\"", pf_block.group(1)))
+        want = {x["name"] for x in props}
+        miss, extra2 = want - folders, folders - want
+        if miss or extra2:
+            print(f"   FAIL properties without a folder: {sorted(miss)[:6]}; "
+                  f"folders with no property: {sorted(extra2)[:6]}")
+            failures.append("PROPERTY_FOLDERS disagrees with properties.json")
+        else:
+            print(f"   PASS all {len(folders)} properties have a subfolder name")
+        # Every word the split matches on must be one the master knows, or a
+        # file routes to a building on the strength of a string nothing owns.
+        pf_words = set(re.findall(r"\"([^\"]+)\"", pf_block.group(1))) - folders
+        stray = pf_words - expected
+        if stray:
+            print(f"   FAIL the split matches on {len(stray)} word(s) properties.json "
+                  f"does not know: {sorted(stray)[:6]}")
+            failures.append("PROPERTY_FOLDERS matches on unknown words")
+        else:
+            print(f"   PASS all {len(pf_words)} match words come from the master")
+
+    print("\n7c. the leasing families share one folder, Demographics does not (A11)")
+    # load_rules yields (folder, [pattern, ...]) tuples, not dicts.
+    fam = {folder for folder, pats in rules
+           if any(k in str(pats) for k in
+                  ("renewal", "prospect", "dailyreport", "dailytracker"))}
+    demo = {folder for folder, pats in rules if "demographic" in str(pats)}
+    if fam == {"Daily Leasing Reports"} and demo == {"Demographics"}:
+        print("   PASS four leasing families -> Daily Leasing Reports; "
+              "Demographics kept separate")
+    else:
+        print(f"   FAIL leasing families route to {sorted(fam)}, demographics to "
+              f"{sorted(demo)}")
+        failures.append("the A11 folder merge is not in place")
+
+    print(f"\n7d. files land in the right subfolder ({len(SPLIT_CASES)} case(s))")
+    split = load_split_inside()
+    tables = {n: load_table(n) for ns in split.values() for n in ns}
+    for filename, target, want in SPLIT_CASES:
+        got = subpath(target, filename, split, tables)
+        if got == want:
+            where = ("/".join([target] + got) if got
+                     else target + (" (top level)" if want is None else ""))
+            print(f"   PASS {where} <- {filename[:58]}")
+        else:
+            print(f"   FAIL {filename}: wanted {want}, got {got}")
+            failures.append(f"{filename} does not split where it should")
+
+    # A folder SPLIT_INSIDE names but no rule routes to is a split that never
+    # runs, and looks exactly like one that does.
+    stray_split = set(split) - {folder for folder, _ in rules}
+    if stray_split:
+        print(f"   FAIL SPLIT_INSIDE names folders no rule routes to: "
+              f"{sorted(stray_split)}")
+        failures.append("SPLIT_INSIDE names a folder no rule uses")
+    else:
+        print(f"   PASS all {len(split)} split folders are rule targets")
+
+    # The cross-file contract. The filer files N levels down; fetch_drive walks
+    # MAX_SUBFOLDER_DEPTH. Add a third table to a split and every file under it
+    # is filed correctly and never read again, with nothing to say so.
+    depth = re.search(r"^MAX_SUBFOLDER_DEPTH = (\d+)",
+                      (ROOT / "scripts" / "fetch_drive.py").read_text(), re.M)
+    deepest = max((len(ns) for ns in split.values()), default=0)
+    if not depth:
+        print("   FAIL MAX_SUBFOLDER_DEPTH not found in fetch_drive.py")
+        failures.append("MAX_SUBFOLDER_DEPTH missing")
+    elif deepest > int(depth.group(1)):
+        print(f"   FAIL the filer files {deepest} level(s) down; fetch_drive walks "
+              f"{depth.group(1)}")
+        failures.append("the split is deeper than the fetch descends")
+    else:
+        print(f"   PASS the deepest split is {deepest} level(s); fetch_drive walks "
+              f"{depth.group(1)}")
+
+    # A '/' in any of these names is a Drive folder name, not a path -- the same
+    # accident check 2 catches in a rule's own folder.
+    slashed = [f for t in tables.values() for f, _ in t if "/" in f] + \
+              [f for f in split if "/" in f]
+    if slashed:
+        print(f"   FAIL a subfolder name contains '/': {slashed}")
+        failures.append("a subfolder name contains a slash")
+    else:
+        print("   PASS no subfolder name contains a slash")
+
     print(f"\n8. a new report type names its own folder ({len(NEW_TYPE_CASES)} case(s))")
     for filename, want in NEW_TYPE_CASES:
         got = report_type(filename, words)
@@ -307,6 +517,37 @@ def main():
             stolen += 1
     if not stolen:
         print(f"   PASS all {len(CASES)} rule-owned files still reach their rule")
+
+    print("\n10. a file the filer routes is a file the pipeline can claim")
+    # The failure this catches is invisible from either side alone: the filer
+    # puts a report in the right folder and reports success, the pipeline scans
+    # that folder and reports success, and the report is never read because no
+    # glob and no name_pattern matches it. That is exactly what happened to
+    # "Landing 2026 Resi Budget.xlsx" on 2026-09-16 -- the filer's /budget/ rule
+    # routed it correctly, while the entry only claimed *12_month_budget* and
+    # *budget_accrual*. Only folders with an ACTIVE entry are checked: a pending
+    # folder has no parser yet, so not claiming a file is its whole point.
+    active = {}
+    for e in cfg["subfolders"]:
+        if e.get("status") == "active":
+            active.setdefault(e["drive_folder"], []).append(e)
+    unclaimable = 0
+    for filename, want in CASES:
+        entries = active.get(want)
+        if not entries:
+            continue
+        low = filename.lower()
+        if any(fnmatch.fnmatch(filename, e.get("file_glob") or "*")
+               or any(fnmatch.fnmatch(low, p.lower())
+                      for p in e.get("name_patterns") or [])
+               for e in entries):
+            continue
+        print(f"   FAIL {filename!r} lands in {want!r}, which no active entry "
+              f"can claim (glob or name_patterns)")
+        failures.append(f"{filename!r} reaches {want!r} but is never read")
+        unclaimable += 1
+    if not unclaimable:
+        print("   PASS every routed file matches an entry that reads its folder")
 
     print()
     if failures:

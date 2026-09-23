@@ -65,7 +65,10 @@ DL_ROOT = pathlib.Path("_downloads")
 # superseded copies of live reports on purpose: "2026-07-14 RentRoll…" next to
 # four other July exports is a decision, not a misfile, and pulling it back in
 # would publish stale figures as current.
-NEVER_SWEEP = {"Archive Reports"}
+NEVER_SWEEP = {"Archive Reports", "Archive"}
+
+# How far below a registered folder the folder pass walks. See contents().
+MAX_SUBFOLDER_DEPTH = 2
 
 
 def _service():
@@ -113,6 +116,26 @@ def main():
     # daily pipeline never passes it, so nothing unparsed reaches the build.
     fetch_pending = "--all" in sys.argv
     cfg = json.load(open("config/report_map.json"))
+
+    # --only <report_type> (repeatable) narrows the run to one feed. The daily
+    # pipeline never passes it and is unchanged; it exists because the whole
+    # fetch has taken four and a half hours (open item A15) and one feed can
+    # arrive several times a day. A scoped run also skips the unmapped-folder
+    # report below: that walks every folder in the drop tree, which is most of
+    # what the scan costs, and a run that was told which feed it wants is not
+    # the run that should be announcing new report types.
+    only = {sys.argv[i + 1] for i, a in enumerate(sys.argv)
+            if a == "--only" and i + 1 < len(sys.argv)}
+    if only:
+        known = {e.get("report_type") for e in cfg["subfolders"]}
+        unknown = only - known
+        if unknown:
+            sys.exit(f"--only: no report_map.json entry has report_type "
+                     f"{sorted(unknown)} -- known types are {sorted(k for k in known if k)}")
+        cfg["subfolders"] = [e for e in cfg["subfolders"]
+                             if e.get("report_type") in only]
+        print(f"[info] --only {sorted(only)}: {len(cfg['subfolders'])} entr(ies) "
+              f"of the report map, and no scan for unmapped folders")
     svc = _service()
     parent = os.environ["GDRIVE_FOLDER_ID"]
     reference_parent = os.environ.get("GDRIVE_REFERENCE_FOLDER_ID") or None
@@ -146,8 +169,69 @@ def main():
         return trees.get(entry.get("tree", "reports"), {})
 
     def contents(entry):
-        return [f for f in _list_children(svc, folders_for(entry)[entry["drive_folder"]])
-                if f["mimeType"] != FOLDER_MIME]
+        """Every file in an entry's folder, including two levels of subfolders.
+
+        The owner groups a feed's files once there is more than one building's
+        or one market's worth, and a folder pass that read only direct children
+        would report the folder as empty while the files sat below it. The
+        rescue sweep is no backstop for that: it walks the drop tree's top level
+        too. So a registered folder's own subfolders are read as part of it,
+        which is what "drop it in Drive and the pipeline picks it up" has to
+        mean.
+
+        Two levels because that is what the groupings actually are. Budgets is
+        grouped one deep, by property (Budgets/Landing/). The comp exports are
+        grouped twice -- by market and then by which of the paired exports it is
+        (Comps/Oakland/Simple/) -- because the market is the thing a reader
+        picks first and the Simple/Full split is a property of every market.
+
+        A fixed depth, not a recursion, and never through NEVER_SWEEP. Both
+        guards are here for one reason: walk far enough and you eventually find
+        an archive, and republishing a superseded report as current is the
+        failure this whole file is careful about. A folder deeper than the walk
+        gets a line rather than silence -- an unread folder that says nothing is
+        exactly how Budgets/Landing/ stranded two budgets.
+
+        An entry can also name subfolders of its own that no parser reads, in
+        `skip_subfolders`. That is not an archive: Comps/<market>/Full holds the
+        newest formatted twin of every comp export, filed there on purpose for
+        anyone who wants to open one, and at 2-4 MB apiece fetching them daily
+        buys a log line saying the parser skipped them. Matched by folder name
+        at any depth, like NEVER_SWEEP, and logged for the same reason.
+        """
+        root = folders_for(entry)[entry["drive_folder"]]
+        skip = set(entry.get("skip_subfolders") or ())
+        out = []
+
+        def walk(folder_id, rel, depth):
+            for f in _list_children(svc, folder_id):
+                if f["mimeType"] != FOLDER_MIME:
+                    out.append(dict(f, _sub=rel or None))
+                    continue
+                here = f"{rel}/{f['name']}" if rel else f["name"]
+                where = f"{entry['drive_folder']}/{here}"
+                if f["name"] in NEVER_SWEEP:
+                    print(f"[info] '{where}' not read "
+                          f"(NEVER_SWEEP: an archive of superseded reports)")
+                    continue
+                if f["name"] in skip:
+                    # Not an archive and not a mistake: a folder this feed files
+                    # on purpose and no parser reads. Saying so every run is the
+                    # point -- an unread folder that says nothing is how
+                    # Budgets/Landing/ stranded two budgets.
+                    print(f"[info] '{where}' not read (skip_subfolders on the "
+                          f"'{entry['drive_folder']}' entry: filed for people, "
+                          f"not for a parser)")
+                    continue
+                if depth + 1 > MAX_SUBFOLDER_DEPTH:
+                    print(f"[warn] '{where}' is deeper than the folder pass "
+                          f"walks ({MAX_SUBFOLDER_DEPTH} level(s)) — its files "
+                          f"are not read")
+                    continue
+                walk(f["id"], here, depth + 1)
+
+        walk(root, "", 0)
+        return out
 
     manifest = []
     # Folders the config does not mention at all — a report dropped in one of
@@ -155,8 +239,9 @@ def main():
     # Only the reports tree is checked for strays: the library is the owner's to
     # arrange, and warning about every folder in it would be noise, not a finding.
     folders = trees["reports"]
-    unmapped = sorted(set(folders) - {e["drive_folder"] for e in cfg["subfolders"]
-                                      if e.get("tree", "reports") == "reports"})
+    unmapped = [] if only else sorted(
+        set(folders) - {e["drive_folder"] for e in cfg["subfolders"]
+                        if e.get("tree", "reports") == "reports"})
     for name in unmapped:
         files = contents({"drive_folder": name})
         # The Gmail filer names a folder after the report type when nothing
@@ -249,7 +334,7 @@ def main():
             print(f"[note] '{name}': {len(skipped)} file(s) outside this "
                   f"entry's glob: {skipped}")
         for f in files:
-            take(entry, f, name)
+            take(entry, f, f"{name}/{f['_sub']}" if f.get("_sub") else name)
 
     # ---------------------------------------------------------------- pass 2
     # Any file in the drop tree that nobody claimed, matched on its own name.

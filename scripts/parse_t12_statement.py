@@ -154,7 +154,28 @@ def _align_group(align_code, align_name):
 
 # Fallback for JPM leaves the COA workbook does not map (they are listed in the
 # output so the owner can extend the mapping): grouped by their own label.
-_JPM_FALLBACK = [
+# A10, owner 2026-09-21: "Lump all these together in 1 section." An account the
+# COA map does not translate goes to ONE bucket now, rather than being guessed
+# into a real category by a keyword in its label.
+#
+# The keyword table below is what it replaces. It read plausibly and was wrong
+# in kind: it put ten unmapped JPM accounts into seven different Align groups on
+# the strength of a substring, so ~$115k of T12 was presented as though the COA
+# map had placed it. A reader could not tell a mapped account from a guessed
+# one, which is the opposite of what the Align-tree grouping is for.
+#
+# One consequence is not presentational and must not be read as incidental:
+# "520510-0007 Gross Rec./Bus. Lic. Tax" matched ("tax",) and therefore sat in
+# Taxes, which NOT_CONTROLLABLE excludes from the scorecard's controllable
+# basket. In one section it is controllable. That is a real move in a published
+# KPI caused by a change to presentation, so the parser reports every account it
+# reclassifies out of a non-controllable group (see `reclassified_controllable`
+# below) rather than letting the figure drift quietly.
+_JPM_LUMP = "Unmapped (JPM accounts not in the COA map)"
+
+# Kept for the record: the groups these accounts used to be guessed into, and
+# which of those the controllable basket excludes.
+_JPM_FALLBACK_RETIRED = [
     ("Residential turnover", ("turnover",)),
     ("Security & fire/life safety", ("patrol", "security", "alarm")),
     ("Tenant engagement", ("concierge", "courtesy")),
@@ -163,6 +184,7 @@ _JPM_FALLBACK = [
     ("Admin & office", ("credit report", "credit card", "bank", "office")),
     ("Repairs & maintenance", ("carpet", "repair", "maint")),
 ]
+_NOT_CONTROLLABLE_GROUPS = ("tax", "insurance", "utilit", "management fee")
 
 
 def expense_buckets_jpm(rows):
@@ -175,7 +197,7 @@ def expense_buckets_jpm(rows):
     """
     coa = _coa()["jpm"]
     months = 12
-    buckets, unmapped, other = {}, [], []
+    buckets, unmapped, other, reclassified = {}, [], [], []
     total = None
     in_exp = False
     for r in rows:
@@ -201,8 +223,14 @@ def expense_buckets_jpm(rows):
             grp = _align_group(mapped[0], mapped[1])
         else:
             unmapped.append(f"{code} {label}")
-            grp = next((g for g, kws in _JPM_FALLBACK
+            grp = _JPM_LUMP
+            # What the retired keyword table would have done with it, recorded
+            # only where that group was one the controllable basket excludes --
+            # i.e. where lumping moves the account INTO the basket.
+            was = next((g for g, kws in _JPM_FALLBACK_RETIRED
                         if any(k in label.lower() for k in kws)), None)
+            if was and any(k in was.lower() for k in _NOT_CONTROLLABLE_GROUPS):
+                reclassified.append(f"{code} {label} (was grouped under {was})")
         if grp is None:
             grp = "Other / unclassified"
             other.append(f"{code} {label}")
@@ -222,6 +250,9 @@ def expense_buckets_jpm(rows):
         "buckets": {k: [round(v, 2) for v in vs] for k, vs in sorted(buckets.items())},
         "other_labels": other,
         "unmapped_accounts": unmapped,
+        # Accounts the lump moves into the controllable basket, because the
+        # group they used to be guessed into was one the basket excludes.
+        "reclassified_controllable": reclassified,
         "below_line_excluded": [],
         "recoverable_tieout_max_gap": round(delta, 4),
         "grouping": "align_tree_via_coa_map",

@@ -123,10 +123,31 @@ const ROUTING_RULES = [
   // and from Weekly Leasing Reports, so either would work; this folder already
   // exists and already holds the EliseAI exports.
   { folder: 'EliseAI Reports',            patterns: [/leasingfunnel/, /funnelreport/, /eliseai/] },
-  { folder: 'Renewal Tracker',            patterns: [/renewaltracker/, /renewalssince/, /renewalworkbook/, /renewal/] },
-  { folder: 'Prospect Reports',           patterns: [/prospect/, /applicantreport/] },
+  // The Yardi Lease Tradeout Report — 'LeaseTradeoutReport-<property>.XLS'.
+  // /tradeout/ is unique across this table; it sits above the leasing rules
+  // anyway so a future /leasereport/ cannot claim it first.
+  { folder: 'Historical Tradeout Reports', patterns: [/tradeout/, /leasetradeout/] },
+  // The HelloData market-comp export — the only report here about the market
+  // rather than about an Align building. It arrives as a PAIR ('… - Simple - …'
+  // and '… - Full - …'), and both belong in this folder: the pipeline reads the
+  // first and says in the log why it does not read the second. Above the
+  // leasing rules because a comp file's name carries a submarket list that can
+  // mention anything.
+  { folder: 'Comps',                      patterns: [/hellodata/, /rentcomp/, /marketsurvey/, /comps/] },
+  // A11, owner 2026-09-21: these four leasing families live in ONE folder,
+  // split by property inside it. Demographics stays on its own -- it is a
+  // resident-profile export, not a leasing report, and was the one of the five
+  // the owner kept separate.
+  //
+  // Four rules rather than one because the PATTERNS still have to be distinct:
+  // report_map.json gives each family its own parser, and the pipeline picks a
+  // parser by name_patterns, not by folder. Collapsing them into a single rule
+  // would file them together and leave nothing able to tell a renewal tracker
+  // from a daily report.
+  { folder: 'Daily Leasing Reports',      patterns: [/renewaltracker/, /renewalssince/, /renewalworkbook/, /renewal/] },
+  { folder: 'Daily Leasing Reports',      patterns: [/prospect/, /applicantreport/] },
   { folder: 'Daily Leasing Reports',      patterns: [/dailyreport/] },
-  { folder: 'Daily Tracker',              patterns: [/dailytracker/] },
+  { folder: 'Daily Leasing Reports',      patterns: [/dailytracker/] },
   { folder: 'Demographics',               patterns: [/demographic/] },
   // Kept for the RealPage rate tracker, this folder's intended content, which
   // has never arrived. /renewalworkbook/ moved up to Renewal Tracker.
@@ -203,7 +224,7 @@ const PROPERTY_WORDS = [
   "p0005612", "p0005640", "p0005671", "rspalman",
   "rspalmas", ".Chorus", "1023070", "1230090",
   "2101121", "2101122", "2101123", "2510150",
-  "6670040", "Madelon", "WCC0050", "bec0100",
+  "6670040", "Landing", "Madelon", "WCC0050", "bec0100",
   "bec0101", "bec0102", "bpc0010", "cp00080",
   "lm00030", "lm00031", "lm00032", "lm00033",
   "madelon", "owcc051", "p000611", "twcc052",
@@ -301,6 +322,8 @@ function fileGmailPdfsToDrive() {
         if (dest === null) {   // external folder unresolved -- park it, don't guess
           dest = getSubfolder_(root, CONFIG.UNSORTED_FOLDER, cache);
           unsorted++;
+        } else {
+          dest = applySplit_(dest, target, att.getName(), cache);
         }
         const finalName = resolveName_(dest, wanted, att);
 
@@ -415,8 +438,9 @@ function resortExistingFiles() {
     // Already in the right place (incl. genuinely unidentifiable files in _Unsorted).
     if (target === item.from) { stayed++; return; }
 
-    const dest = getSubfolder_(root, target, cache);
+    let dest = getSubfolder_(root, target, cache);
     if (dest === null) { stayed++; return; }   // reason already logged
+    dest = applySplit_(dest, target, item.file.getName(), cache);
     if (fileExists_(dest, item.file.getName())) { stayed++; return; }
 
     item.file.moveTo(dest);
@@ -536,6 +560,163 @@ function getRootFolder_() {
  * the file where it is rather than creating a same-named folder inside the drop
  * tree, which would silently shadow the real one.
  */
+// ---------------------------------------------------------------------------
+// Subfolders inside a category folder
+//
+// Five category folders are split inside: Daily Leasing Reports (A11), Rent
+// Roll, Delinquency and Residential AR Analytics by property, and Comps by
+// market and then by which of the paired exports it is. Yardi's rent roll names no property in its
+// filename (RentRoll09_15_2026.xlsx), so most rolls file at the top of Rent
+// Roll; the split catches the ones that do.
+// Splitting happens at FILING time, from the attachment's own name, because
+// that is the only place either is knowable -- the pipeline attributes by
+// filename and by what is inside the file, never by the folder a report sits
+// in, which is the whole point of "folders organise; filenames route". So
+// these subfolders are for a human browsing Drive; nothing downstream depends
+// on them, and fetch_drive reads two levels of subfolders inside a registered
+// folder already.
+//
+// A file whose subpath cannot be read from its name lands at the TOP of the
+// category folder rather than in a guessed one. Visible and wrong-looking
+// beats filed under a neighbour -- the same rule that kept the concession
+// burn-off unattributed for six weeks. That applies to a PARTIAL match too: a
+// comp export whose market reads but whose kind does not is not filed under
+// the market alone, because a reader would then take that folder for the whole
+// of it.
+//
+// Every table is the same {folder, words} shape, matched the same way, so the
+// contract test can read all three out of this file and the matcher is written
+// once. A rule's own `folder` never carries a '/': nesting is this table's job,
+// and a slash in a folder name is a real Drive folder name, which is the
+// accident test_routing.py check 2 exists to catch.
+
+const PROPERTY_FOLDERS = [
+  { folder: "The Landing", words: ["The Landing", ".Landing", "p0005611", "p0005612", "p0005640", "p0005671", "Landing", "p000611"] },
+  { folder: "Chorus", words: ["p0003872", "p0004764", "p0005215", ".Chorus", "Chorus"] },
+  { folder: "Madelon", words: ["The Madelon", "camadelo", "camadret", "Madelon", "madelon"] },
+  { folder: "335 Third Street", words: ["335 Third Street", "335 3rd Street", "rs335"] },
+  { folder: "Palma", words: ["rspalman", "rspalmas", ".palma", "Palma"] },
+  { folder: "1023 Mission", words: ["1023 Mission", "1023070"] },
+  { folder: "123 Mission", words: ["123 Mission", "1230090"] },
+  { folder: "251 Post", words: ["251 Post", "2510150"] },
+  { folder: "667 Mission", words: ["667 Mission", "6670040"] },
+  { folder: "Bellevue", words: ["Bellevue", "bpc0010"] },
+  { folder: "California Plaza", words: ["California Plaza", "cp00080"] },
+  { folder: "The Exchange", words: ["The Exchange", "exc00130"] },
+  { folder: "Wood Hollow", words: ["Wood Hollow", "wh00020"] },
+  { folder: "2101 Mission", words: ["2101 Mission", "2101121", "2101122", "2101123"] },
+  { folder: "Burbank Empire", words: ["Burbank Empire", "bec0100", "bec0101", "bec0102"] },
+  { folder: "Walnut Creek Center", words: ["Walnut Creek Center", "WCC0050", "owcc051", "twcc052"] },
+  { folder: "Essex OpCo", words: ["Essex OpCo", "esx00145", "esx00146", "esx00147", "esx00149"] },
+  { folder: "Essex PropCo", words: ["Essex PropCo", "esx00141", "esx00142", "esx00143", "esx00144"] },
+  { folder: "Livermore", words: ["Livermore", "lm00030", "lm00031", "lm00032", "lm00033"] },
+  { folder: "1335 Webster", words: ["1335 Webster", "dnc1335w"] },
+  { folder: "15 Marina Blvd", words: ["15 Marina Blvd", "dnc15mar"] },
+  { folder: "1655 ECR", words: ["1655 ECR", "dnc1655e"] },
+  { folder: "3350 Mission St", words: ["3350 Mission St", "dnc3350m"] },
+  { folder: "5727 College", words: ["5727 College", "dnc5727c"] },
+  { folder: "850 La Playa", words: ["850 La Playa", "dnc850la"] },
+  { folder: "Align So FS", words: ["Align So FS", "dnccasofs"] },
+  { folder: "Sequoia Living Project", words: ["Sequoia Living Project", "dncsequi"] },
+  { folder: "Sequoia Living Inc", words: ["Sequoia Living Inc", "dncsequo"] },
+];
+
+// The comp exports are about a MARKET, not an Align building, so they cannot
+// split on PROPERTY_FOLDERS. Every word here is deliberately specific -- the
+// San Francisco export's own title lists its submarkets, so "Mission Bay"
+// rather than a bare "Mission", which would claim anything mentioning the
+// street. Oakland is listed first as a defence rather than a fix: no filename
+// on file needs that order today, and the day a market's name turns up inside
+// another's, the first entry should be the narrower one. A market nobody has
+// listed reads as no match, which files at the top of Comps and says so -- the
+// right answer for a submarket the pipeline has never seen, and one the fetch
+// still reads, since nothing downstream cares which folder a report sits in.
+const COMP_MARKETS = [
+  { folder: "Oakland",       words: ["335 Third Street", "335 3rd Street", "Oakland", "Jack London"] },
+  { folder: "San Francisco", words: ["San Francisco", "Mid Market", "Dogpatch", "Mission Bay"] },
+];
+
+// HelloData names its pair "HelloData - <Kind> - <market>", and the kind is the
+// whole of the difference between them: the pipeline parses Simple and skips
+// Full, which is twenty sheets of formatting with no parseable table in it.
+// Matched on the separators rather than the bare word so "Full" inside a
+// submarket name cannot claim a file.
+const COMP_KINDS = [
+  { folder: "Simple", words: ["- Simple -"] },
+  { folder: "Full",   words: ["- Full -"] },
+];
+
+// Which folders are split inside, and by what. One segment per table, in order.
+const SPLIT_INSIDE = {
+  "Daily Leasing Reports": [PROPERTY_FOLDERS],
+  "Rent Roll":             [PROPERTY_FOLDERS],
+  "Delinquency":           [PROPERTY_FOLDERS],
+  "Residential AR Analytics": [PROPERTY_FOLDERS],
+  "Comps": [COMP_MARKETS, COMP_KINDS],
+};
+
+function firstMatch_(table, filename) {
+  const hay = String(filename || '').toLowerCase();
+  // Longest word first within each entry (the generator sorts them), and the
+  // first entry to match wins. "The Landing" must beat a bare "landing"
+  // appearing inside another building's name.
+  for (var i = 0; i < table.length; i++) {
+    const e = table[i];
+    for (var j = 0; j < e.words.length; j++) {
+      if (hay.indexOf(String(e.words[j]).toLowerCase()) >= 0) return e.folder;
+    }
+  }
+  return null;
+}
+
+/**
+ * The subfolders under `target` this file belongs in: [] when that folder is
+ * not split, null when it is and the name does not say where it goes.
+ */
+function subpathFor_(target, filename) {
+  const tables = SPLIT_INSIDE[target];
+  if (!tables) return [];
+  const segs = [];
+  for (var i = 0; i < tables.length; i++) {
+    const seg = firstMatch_(tables[i], filename);
+    if (!seg) return null;
+    segs.push(seg);
+  }
+  return segs;
+}
+
+/**
+ * Walk `dest` down the file's subpath, creating folders as needed, and return
+ * where it should be written. Logs and returns `dest` unchanged when the name
+ * does not say. Used by the live filing AND by resortExistingFiles, so a
+ * re-sort lands a file exactly where an arrival would.
+ */
+function applySplit_(dest, target, filename, cache) {
+  const segs = subpathFor_(target, filename);
+  if (segs === null) {
+    Logger.log('"' + filename + '" -> ' + target + ' (top level): its name does ' +
+      'not say which subfolder of ' + target + ' it belongs in, so it is not ' +
+      'filed under a guessed one');
+    return dest;
+  }
+  segs.forEach(function (seg) { dest = getNestedSubfolder_(dest, seg, cache); });
+  return dest;
+}
+
+function getNestedSubfolder_(parent, name, cache) {
+  // Deliberately NOT getSubfolder_: that one consults EXTERNAL_FOLDERS, the
+  // routing rules and the auto-folder cap, all of which are about category
+  // names at the top of the drop tree. A subfolder inside a category folder is
+  // none of those, and the MAX_NEW_PER_RUN cap would stop a first run creating
+  // more than five buildings' folders.
+  const key = parent.getId() + '/' + name;
+  if (cache[key]) return cache[key];
+  const it = parent.getFoldersByName(name);
+  cache[key] = it.hasNext() ? it.next() : parent.createFolder(name);
+  return cache[key];
+}
+
+
 function getSubfolder_(root, name, cache) {
   if (cache[name]) return cache[name];
 

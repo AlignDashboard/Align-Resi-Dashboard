@@ -52,6 +52,23 @@ SOURCE_FILE = "scripts/gmail_drive_filing.js"
 CODE_FILE = "Code"          # the project's existing SERVER_JS file
 MANIFEST = "appsscript"     # the project's JSON manifest
 
+# Google answers a dead refresh token with a bare `invalid_grant` blob that says
+# nothing about what to do, and the two causes want the same fix but read very
+# differently: `invalid_rapt` is a Workspace reauth policy expiring the token on
+# a timer, which looks like an outage because nothing in the repo changed.
+EXPIRED_GRANT = """
+The refresh token in CLASPRC_JSON is no longer usable. Nothing in this repo is
+broken -- the token itself has expired or been revoked, and only a fresh one
+fixes it:
+
+  1. clasp login              (as dashboard@alignrealestate.com)
+  2. copy ~/.clasprc.json into the CLASPRC_JSON repository secret
+  3. re-run this workflow
+
+`invalid_rapt` specifically means a Workspace reauth policy has expired the
+token on a schedule, so expect this to recur; the script in the project keeps
+running in the meantime, it just stops being updated from here."""
+
 
 def find_credentials(raw):
     """
@@ -119,7 +136,8 @@ def _request(url, *, method="GET", token=None, data=None, form=None):
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode(errors="replace")[:600]
-        sys.exit(f"{method} {url.split('?')[0]} failed: HTTP {exc.code}\n{detail}")
+        hint = EXPIRED_GRANT if "invalid_grant" in detail else ""
+        sys.exit(f"{method} {url.split('?')[0]} failed: HTTP {exc.code}\n{detail}{hint}")
 
 
 def access_token(creds):

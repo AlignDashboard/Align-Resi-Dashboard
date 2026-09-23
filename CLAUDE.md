@@ -6,6 +6,26 @@ Static dashboard published with GitHub Pages, fed by a daily metrics pipeline.
 each one is waiting on. Read it after this file when picking up work — it is
 where state that used to arrive as a pasted handoff note now lives.
 
+`scripts/open_items_digest.py` turns that file into a PDF of what is still
+open, owner-blocked items first and the live-and-uncertain ones above those. It
+decides nothing itself — a row is closed when its Item cell is struck through,
+which is the file's own way of recording a close without renumbering, and the
+`Live and uncertain` column is read as written. `open_items_state.json` is the
+previous run, committed so a scheduled run in a fresh checkout can still say
+what moved; the PDF is gitignored and rebuilt every run.
+`--html` writes the same document without the file wrapper, for the web copy;
+a 6am routine republishes that to one fixed URL so the link survives while the
+contents move, and it must always publish with that url rather than creating a
+second artifact. `scripts/test_open_items_digest.py` is the guard — 31 fixture-free checks, the
+load-bearing three (the positional item column, the close convention, escaping
+before formatting) verified by mutation. **Clear `__pycache__` between mutation
+runs**, the same trap the parser tests record.
+
+`LANDING_DRIVE_PACKET.md` is the working document for the `Landing`
+tab (the filename predates the rename): which export feeds which card, where in Drive it goes, and what has
+actually arrived. Its current-state section is generated — refresh it with
+`python scripts/landing_drive_status.py --write` rather than editing it.
+
 ## Workflow
 
 **Commit and push small changes directly to `main`. Do not open a pull request
@@ -23,15 +43,42 @@ ask for the PR; do not open one preemptively.
 | Path | Purpose |
 | --- | --- |
 | `docs/index.html` | The whole dashboard: markup, CSS, and Chart.js rendering in one file |
-| `docs/metrics.json.enc` | Data the page fetches at load, sealed — written by the pipeline, not by hand. The plaintext `docs/metrics.json` beside it is a working copy and is gitignored |
-| `docs/unlock.js` | Opens the sealed data in the browser; shared by both pages |
+| `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
 | `docs/data.html` | Two views behind the same gate: the **data-flow** chain, and the **tables** holding every number the JSON carries |
-| `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand. Sealed like the rest |
+| `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json`; `gmail_drive_filing.js` is the Apps Script that files reports into Drive in the first place |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
 
-## Refreshing The Landing
+### A report can name a building any of three ways
+
+`build_metrics.load_properties()` routes a report to a property on its Yardi
+`codes`, its `aliases`, **and its own `name`** — all three, lowercased.
+
+The name was missing until 2026-09-22, and the gap was invisible because the
+four buildings a report had ever named happened to carry their own names in
+`aliases` as well. The comp export does not play along: it names each building
+as the market names it, so the section reading `335 Third Street` parsed, tied
+out against its own arithmetic, and then **routed nowhere** — one
+`[warn] unknown property code` line and the whole Oakland comp set gone, on the
+tab whose job is to check somebody else's number. Twenty-four of the
+twenty-eight properties were one export away from the same thing.
+
+A string two properties both claim is **refused, not resolved**: whichever
+sorted last would win and nothing downstream could tell. `test_comps.py` checks
+both halves — every property routes by its own name, and a shared name raises —
+each verified by mutation.
+
+## Refreshing the analyst workbook extract
+
+**`landing.json` no longer feeds a tab.** A workbook-fed `The Landing` tab sat
+beside the Drive-fed one until 2026-09-18, when the owner removed it and the
+survivor took the plain name `Landing`. Everything below still runs, and is
+still worth running, because the extract fills **four scorecard cells no Drive
+report answers yet** — `Concession Load %`, `NOI Margin %`, `Controllable
+OpEx/Unit` and `Month to Month Leases` — through `populate_scorecard.py
+--from-landing`. The rest of what it extracts is written, published and on the
+data page as the `t-l-*` tables; no card draws it.
 
 `docs/landing.json` is generated from the analyst workbook, not by the daily
 cron. To refresh with new reports:
@@ -75,7 +122,7 @@ file used to say:
   a sheet per month from January 2024 forward plus the `MTM` roster, so one file
   is the whole history rather than a weekly increment.
 
-Both now feed the **Trade-outs card on the `Landing (Drive)` tab**, which is the
+Both now feed the **Trade-outs card on the `Landing` tab**, which is the
 first card on that tab drawing two Drive reports at once. See **The two leasing
 parsers** below.
 
@@ -87,24 +134,87 @@ landing page's Insights card) and `Source Renewal Tracker` are new. The
 renewal/holdover scenario models charge a recurring incremental-vacancy haircut
 on the new run-rate instead of one-time make-ready/downtime costs.
 
-## The Drive-Only Landing Tab
+## The Landing Tab
 
-`Landing (Drive)` sits beside `The Landing` and shows the same building with the
-V37 workbook taken out of it: every number on it comes from a report the Gmail
-filer drops into Drive and the pipeline parses, so **dropping a fresh direct
-export in Drive is the whole refresh**. The Landing tab is still the fuller
-view — it just cannot move on its own, because refreshing it means pasting into
-grey tabs, recalculating in Excel and re-running `extract_landing.py`.
+Every number on it comes from a report the Gmail filer drops into Drive and the
+pipeline parses, so **dropping a fresh direct export in Drive is the whole
+refresh**. `LANDING_DRIVE_PACKET.md` is the list of those exports and where each
+one goes.
+
+It was `Landing (Drive)`, beside a workbook-fed `The Landing` that showed the
+same building with the V37 workbook still in it. That tab came off on
+2026-09-18 and this one took the plain name. What went with it: eleven cards
+(Operating Summary, KPI Scorecard — The Landing, the Leased tile row, Loss to
+Lease, Trade-outs, Rollover Schedule, Expense Load & NOI, Expense Deep Dive,
+Largest Unit Gaps, Delinquency, Insights Scorecard), `loadLanding()` and the
+scenario-input helpers only it used.
+
+Three things the removal is careful about:
+
+- **The ids keep their `d-` prefix.** `cdOpSummary`, `dopTbl`, `dkpisSc` and the
+  rest are named for a split that no longer exists, and renaming them would
+  touch `lineage.json`'s card index, `data.html`'s deep links and every anchor
+  in between for no change a reader sees.
+- **CSS written for the removed tab was retargeted, not deleted, where the
+  surviving card has the same shape.** `#cNoi` → `#cdNoi` and the deep dive's
+  toggle geometry (`#cExpDeep` → `#cdExpDeep`, `#lcExpMonth` → `#dexpMonth`)
+  were written against the workbook tab's ids and so **never matched the Drive
+  card at all** — the Expense Deep Dive's period toggle had the jumping-button
+  bug that rule exists to prevent, and now does not. The compound selectors the
+  two tabs shared (`#lopTbl table.dt, #dopTbl table.dt`, `:is(#lgTbl, #dgTbl)`)
+  were narrowed by hand: a regex over a comma-separated selector list splits it
+  in the wrong places, which is how the tables' text-align was broken once
+  before.
+- **`renderExpenseDeep`'s `wb` branch is kept.** The removed tab was its only
+  caller, so every live mount passes `null` — but it is the renderer's only
+  no-statement fallback and the shape a second source would mount through.
 
 The rule is applied **per number, not per card**. A card is on the tab only if
 every figure on it would move on the next pipeline run.
+
+### A card that cannot be drawn says so
+
+**Every section on this tab renders inside `section(id, fn)`.** A throw in one
+used to take out every card below it, because the tab is one long function of
+sequential IIFEs and an exception unwinds the lot.
+
+That is not hypothetical. On 2026-09-21 the delinquency card looked up
+`SCD_DRIVE_FEEDS.find(f => f.prefix === "")` — the family the AR cells had
+lived in until G3 closed the same week and moved them to `delq_`. The lookup
+returned `undefined`, `scdFeedIsDrive` read `.prefix` off it, and
+**Delinquency, Unit Inventory and What Feeds This Tab all stopped appearing**.
+Three cards gone, one line in the console, nothing on the page to say why —
+and it read as though the cards had been deliberately removed.
+
+Two things now stand between a renamed field and a page that looks redesigned:
+
+- **`scdFeedIsDrive` returns `false` for a family the list no longer carries**
+  rather than throwing. A feed that does not exist cannot be Drive-fed, which
+  is an answer, not an error.
+- **`section()` contains a throw to its own card**, which falls back to the
+  page's own no-data mark — a rule, `— NOT AVAILABLE`, and a line saying the
+  data is missing or has moved and that nothing else on the tab is affected. A
+  tile row gets a single `—` tile instead, so the row keeps its shape. The
+  error still goes to the console: this hides nothing, it just stops one
+  missing feed reading as ten missing cards. An `async` section (the feeds
+  card awaits `lineage.json`) has its rejection caught too, since a `try` around
+  a promise-returning call catches nothing.
+
+Verified by putting the original bug back: the blast radius is one card, the
+other nine draw in full, and the console still carries the TypeError.
+
+**`--check` would not have caught this**, and it is worth being clear why:
+`build_lineage` verifies that a card anchor *exists in the markup*, which
+`cdDelq` always did. Nothing checks that the code filling it still runs. The
+browser check that opens every tab and asserts no page errors is what catches
+this class, which is why it is worth keeping in the loop.
 
 | Card | Drive source |
 | --- | --- |
 | Operating Summary | T12 statement → `metrics.json` `monthly_pl` — a period select on the left, comparison boxes on the right |
 | Loss to Lease | one card, two halves: the monthly series from the T12 statement (`rent_capture`) over today's gap in figures from `rent_roll` |
 | Four KPI tiles | `scorecard.json` — Leased %, Trade-out %, Budget variance, Delinquency, each with its grade |
-| Trade-outs | `leasing` — new leases from the weekly workbook, renewals from the tracker |
+| Trade-outs | `lease_tradeout` for the new-lease series, `leasing.renewals` for the renewal side |
 | Rollover Schedule | `rent_roll` — lease expirations by month |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
@@ -182,7 +292,7 @@ currently owned, laid out in the workbook's own groups with its bands. It is
 four tiles now, in the same row shape as the statement's tiles below them —
 **Leased %, Trade-out %, Budget variance, Delinquency**. Nothing changed in
 `scorecard.json`, in `populate_scorecard.py` or on any other tab; the other
-cells are on The Landing's own card and the portfolio scorecard as before.
+cells are on the Scorecard tab as before.
 
 Two things the grid did that a bare number does not, and both are kept:
 
@@ -192,12 +302,61 @@ Two things the grid did that a bare number does not, and both are kept:
   link hint — is on hover, composed by the same `scCellTitle` the scorecard tab
   uses, so the two cannot word it differently. A cell that is reported but not
   graded gets no grade word rather than an invented one.
+
+  **A below-target tile prints its value red** (`.kpi .v.below`); exceeding and
+  in-range keep the amber, so red on this page means one thing rather than "not
+  the usual colour". The colour follows the grid's own rule for what may be
+  coloured at all — a report supplied the number *and* the published band could
+  place it — so a `value_only` cell (a figure the band cannot grade, e.g. a
+  property in lease-up) stays amber even where the workbook's hand-set symbol
+  says below, and an absent `—` is never red. Verified by mutation: dropping the
+  graded check turns the lease-up case red and fails that check. The subtitle
+  still says "below target" in words, since the grid's legend went with it and
+  colour alone is not a label.
 - **The Drive gate.** `scdFeedIsDrive` is asked per tile exactly as the grid
   asked it, so a cell whose family the workbook wrote last reads `— not
   Drive-fed today` rather than quietly borrowing a workbook number — and that
   is told apart from `— awaiting the feed`, a cell no report has ever filled.
 
-Two details worth knowing:
+### Every tile names the window it covers
+
+Both tile rows carry the period on the label line, in amber (`.kpi .k .per`),
+because a month and a year are different measures rather than one measure with
+a footnote. The eight tiles on this tab cover five different windows:
+
+| Tile | Window |
+| --- | --- |
+| Operating revenue, NOI margin | `monthly` — the statement's newest month |
+| `T12 NOI` | `annual` — the trailing twelve, span in the subtitle |
+| Controllable / door | `annualised` — that month ×12, per the band's basis |
+| Leased %, Delinquency | `point in time` — a snapshot, not a period |
+| Trade-out % | `trailing 3 mo` — read from `tradeout_months`, the window the band was written for |
+| Budget variance | the real window from `budget_as_of`, e.g. `Jan-Aug 2026` |
+
+The four scorecard tiles state theirs per tile because the window is a property
+of the **feed**, not of the cell, and `scorecard.json` records it for only one
+of them. Budget variance is that one and reads `budget_as_of`, so it lengthens
+by a month as statements land instead of going stale. A tile with no value gets
+no period: naming the window of a number that is not there would read as though
+something had been measured. The hover adds `Covers: <window>` under the feed.
+
+**Finding the words for this turned up a real error.** `T12 NOI` was summing
+the whole stitched run and calling it T12. The run is not twelve months — the
+join keeps every month any statement reports, so The Landing's is Aug 25–Aug 26,
+**thirteen** — and the tile read **$10,694,302 against a true trailing twelve of
+$9,928,681, 7.7% high**, on the tile most likely to be quoted. Worse, it
+contradicted the T12 column of the Operating Summary directly beneath it, which
+has always sliced twelve. The window is now taken from the **end** of the series
+and named for the months it actually covers (`T12` at twelve, `T<n>` before
+that), which is the rule `renderRentCapture` already applies to its own
+footnote. The two now agree to the cent: $14.33M revenue and $9.93M NOI over
+Sep 25–Aug 26 on both.
+
+Note the monthly tiles swing hard, which is what makes the label load-bearing:
+Aug 2026 books enough reversals (taxes −$118,781, utilities −$31,450) to read a
+**96.2% NOI margin** for the month against 69.3% on the T12 beside it.
+
+Two more details worth knowing:
 
 - **Budget variance prints the percentage, with the dollars beneath it.** The
   published cell is `+$116,402/+12.1%`, two figures spliced, and at 20px that is
@@ -208,9 +367,10 @@ Two details worth knowing:
   underspend are not the same news.
 - **Trade-out % does not jump to the Trade-outs card.** Every tile jumps to the
   card showing the working behind its own number; where no card on this tab
-  draws that feed, the jump goes to `What Feeds This Tab`. The tile's 34.9% is
-  the EliseAI export's trailing month, the card's 82.8% is the weekly leasing
-  workbook and the renewal tracker — two feeds, two windows, two definitions,
+  draws that feed, the jump goes to `What Feeds This Tab`. The tile's 39.8% is
+  the Yardi tradeout report's trailing quarter, the card's 82.8% is the weekly
+  leasing workbook and the renewal tracker — two feeds, two windows, two
+  definitions,
   and landing a reader on one from the other under the same name is the
   disagreement this tab exists to avoid. Leased % is the same case (the tile is
   `100 − exposure` from the export, Unit Inventory is the rent roll's 97.7%),
@@ -219,6 +379,38 @@ Two details worth knowing:
 
 `SCD_RATE_ONLY` went with the grid: its only consumer was the grid's `# of
 Renewals` cell, which is not one of the four tiles.
+
+### The Delinquency card's headings
+
+The left column is **one heading per bar, carrying that bar's own value** —
+`$5,121 / 31-60 DAYS` and so on. It used to hold three derived stats (the rate,
+the past-30 total, the over-90 figure); the total was the three bars added up
+and the over-90 was one of them, so only the rate was not already on the chart,
+and it sits in its own `.statrow` above the row.
+
+**Each heading is placed at its bar's centre, read from the chart's own y
+scale** (`chart.scales.y.getPixelForValue(i)`), from a plugin hook that fires on
+every layout. Spreading them evenly down the block misses: Chart.js insets the
+plot area by the x-axis labels at the bottom and by nothing at the top. The
+chart's own y-axis labels come off with them — a heading beside a bar names it,
+and printing the bucket twice on one row is noise — and the `stacked` fallback
+puts them back, for a width narrow enough that the chart wraps onto its own
+line and there is nothing left to line up with.
+
+The **eyebrow is the report's as-of date and nothing else**. A `YYYY-MM-DD`
+string handed to `new Date()` parses as UTC midnight and renders a day early
+west of Greenwich, so the parts are passed to the constructor separately; this
+is the one place on the page formatting a date with no time in it.
+
+**`.chartwrap` carries `min-width: 0`**, which is the same trap `.grid > *`
+guards against one level further in: a flex item's default min-width is its own
+content's, and a Chart.js canvas holds the pixel width it last rendered at, so
+a chartwrap in a flex row never shrinks — it keeps its first-render width at
+every viewport below it. That wrapped the delinquency row at every width under
+1440 (leaving the headings lining up with a chart 222px further down) and held
+Unit Inventory's chart at 902px inside a 340px card, **scrolling the whole page
+sideways by 555px at phone width**. Both were fixed by the one rule; it is a
+no-op for a chartwrap in normal block flow, where min-width is already 0.
 
 Since `1819adb` and `2f34b17` moved `monthly_pl` and the expense ratio onto the
 statement's **total expenses** line, everything on this card reconciles: NOI
@@ -254,6 +446,319 @@ the list: it wanted the statement's revenue detail lines, and the parser now
 reads them — see the rent-capture section below. The rent roll's arrival the
 same day had already closed three rows before that.
 
+## The Market Comps Tab
+
+`Market Comps` sits beside `Landing` and is the only tab drawing a
+report about **the market** rather than about an Align building. It exists for
+one reason: the Yardi **market rent** column is set by the property team, it is
+the denominator of loss to lease on the Landing tab and of the whole Rent
+Capture block, and until 2026-09-18 nothing in the pipeline could tell whether
+it was right.
+
+It can now. The Landing's rent roll of 2026-09-11 carries a market rent table
+**9.7% above what the submarket supports** — $176,953 a month, $2.12M a year —
+and the same file dates the step to between 2026-08-25 and 2026-09-11.
+
+**That step was intended** (owner, 2026-09-18), and more like it are expected
+over the following months. So the tab is not an audit finding, and its prose
+does not read as one: it measures how far ahead of its submarket a deliberately
+aggressive table sits, and — through days on market and concessions — whether
+the market is paying it. Two consequences are worth holding on to:
+
+- **A moving table needs a moving reference.** The comp file is one vintage. A
+  table that steps again while the comp set stays at 2026-09-15 reports a gap
+  that is partly just a stale reference, so this feed wants a regular export
+  cadence rather than the single drop it has. Nothing in the pipeline can tell
+  the two apart, which is why the `One vintage` line in the tab's own limits
+  block matters more than it reads.
+- **The premium baseline will eventually absorb the policy.** `premium.median`
+  is taken across every quarter in the file, and a building that now runs
+  20–30% over its ring by design will, given enough quarters, pull that median
+  up — and the comp-implied figure with it, shrinking the reported gap while
+  the building moves *further* above the market. A median over fourteen
+  quarters takes years to flip, so this is a slow drift rather than a live
+  problem, but it is the one way this tab could quietly stop reporting the
+  thing it was built to report. The footnote's own trailing-run detector is
+  what would show it first.
+
+### Four readings of one number
+
+The verdict card is deliberately four figures for one number, and three of them
+are the building's own:
+
+| Reading | The Landing | vs comp-implied |
+| --- | --- | --- |
+| Rent roll 2026-09-11 — the market rent column, unit by unit | $2,004,929 | **+9.7%** |
+| Unit directory 2026-08-25 — each plan's published range, midpoint | $1,805,509 | −1.2% |
+| T12 statement Aug 2026 — gross market rent potential, the same table booked as revenue | $1,804,359 | −1.3% |
+| Comp-implied — comp median by bedroom × this building's own premium | $1,827,976 | — |
+
+A single comparison against the comps could only say a number looks high. Three
+internal copies that agree with the market and disagree with the fourth **date
+the change**, which is what makes it actionable rather than arguable: the
+directory and the GL agree to 0.06% with each other and sit inside 1.5% of the
+comps, so whatever moved, moved after 2026-08-25.
+
+The statement's own gross potential says the same thing over thirteen months:
+$5,164/unit in Aug 2025, $5,768 by Jun 2026 — then **+12.1% in Jul, +6.1% in
+Aug, and +11.1% again by the roll**. +32.2% in three months, against a comp set
+that moved 2–6% over the same stretch.
+
+### How the comp-implied figure is built
+
+Per bedroom, because that is the unit the market quotes in and the only one
+size-match can be checked on:
+
+| | Units | Building | Comp median (n) | Market rent | Yardi's own |
+| --- | --- | --- | --- | --- | --- |
+| 1 bed | 137 | 639 sf | $5,646 at 627 sf (60) | $5,992 | $5,738 |
+| 2 bed | 110 | 981 sf | $7,475 at 982 sf (48) | $7,932 | $8,044 |
+| 3 bed | 16 | 1250 sf | 2 listings — not priced | $8,410 (Yardi's) | $8,410 |
+
+The size match is near exact on the two bedrooms that matter (+1.9% and 0.0%),
+which is what lets a median rent be compared without adjusting it. Three things
+the build-up is careful about:
+
+- **The premium is the subject's own, and it is bed-weighted.** A comp median is
+  the middle of the submarket; a building that has asked 6% over that middle for
+  three years is worth 6% over it today. The figure is the median of the
+  quarterly premium across the whole file (+6.1% over 13 quarters), taken **per
+  bedroom** and weighted back together by the subject's own listing counts — a
+  pooled ratio moves with the unit MIX as much as with price, and 2025Q1 reads
+  −16.0% pooled against −3.6% bed-weighted purely because of what happened to be
+  vacant. A median rather than a mean, so the quarter being measured can sit
+  inside the baseline without moving it.
+- **A bedroom the ring cannot price keeps the building's own rent.** The
+  submarket has two 3-bed listings; two asking prices is not a market
+  (`MIN_BED_FOR_IMPLIED`). Those 16 units stay in the total at Yardi's own
+  figure, so the gap the tab reports is the one that survives leaving them
+  alone.
+- **The answer carries its own sensitivity.** The same build-up at every ring
+  the export is cut into: **+12.9%** against the nine buildings inside 0.75 mi,
+  **+9.7%** against the seventeen inside 1.35 mi, **+19.0%** against all 33 in
+  the file. A gap that survives three comp sets is a finding; one that does not
+  is a choice of radius.
+
+Restated on a comp-supported market rent, the published **loss to lease falls
+from 36.5% to 30.4%** — still far above the band's 10% ceiling, so this does not
+answer A8's band question, but it moves the number A8 is arguing about. And with
+further steps expected, that KPI climbs with each one: its denominator is now a
+pricing position rather than a measurement, which is the live half of A14.
+
+### The market's own answer, which agrees
+
+Two figures on the same export, neither of them a rent:
+
+- **Days on market: 44 against the ring's 26** (91 closed listings against
+  1,056, trailing twelve months). The building takes 69% longer to let a unit.
+- **Concessions: none advertised, against 22% of the ring.** So the gap on an
+  effective-rent basis is wider than the asking figures show.
+
+One unit has been listed at $6,323 since 2026-04-15 — 153 days.
+
+### What the tab cannot say, and says so
+
+`cmcMethod` is the honesty block, and every line of it is read from the file
+rather than typed: asking rents are not signed rents; the 3-bed units are
+unverified and named; floor, view and finish are not controlled (the premium is
+the stand-in for whatever this building is actually worth over its neighbours);
+it is a single vintage until a second export lands; and **only aggregates are
+published** — the listing rows are a licensed vendor dataset, and everything
+`docs/` holds is downloadable by anyone who can open the page, which is the same
+reasoning that keeps resident names out of `data/`.
+
+### The feed
+
+`HelloData - Simple - <market> Comps.xlsx` in the Drive **`Comps`** folder, two
+flat tables: `Property Data` (one row per building) and `Availability` (one row
+per listing, three years deep). `parse_comps.py` cuts it from each Align
+building's point of view — every property in `config/properties.json` that
+appears in the file gets its own section and its own comp set, so Chorus and
+Madelon are on the tab's property select already.
+
+**The export arrives as a pair**, and the second file is `HelloData - Full -
+…xlsx`: the same market as a twenty-sheet formatted workbook with no parseable
+table in it. The entry's `file_glob` is `*` so it claims **both** — a narrower
+pattern is how `Landing 2026 Resi Budget.xlsx` went unread for weeks — and the
+parser then *skips* the formatted one with a line saying which file it is and
+that nothing is missing. A skip with a reason, not an error, because both files
+belong in that folder.
+
+#### Two markets, and ninety extracts of them
+
+The folder is organised by **market, then by which of the paired exports it
+is**, because those are the two things a reader picks between and neither is a
+property of the other:
+
+    Comps/
+      San Francisco/ Simple/   Full/
+      Oakland/       Simple/   Full/
+      Archive/       San Francisco - Full/   Oakland - Full/
+
+San Francisco is the Mid Market / Mission / Dogpatch–Mission Bay set that
+covers The Landing, Chorus and Madelon; Oakland is **335 Third Street**, whose
+ring is Jack London Square. `fetch_drive`'s folder pass descends **two** levels
+for exactly this shape — see *Folders organise; filenames route*.
+
+`Simple/` holds **every extract**, not the newest one: 46 for Oakland and 45
+for San Francisco as of 2026-09-21, and more arrive hourly. They are not copies
+of each other and they are not successive slices of a window either — each is
+the same three-year history as the vendor understood it on its own as-of date.
+Three things follow, and the first two were found the hard way:
+
+- **A later extract is not a superset of an earlier one.** HelloData revises
+  its own history. Of the 739 listings in the 2026-08-11 Oakland file, 43 are
+  absent from the 2026-09-20 one — and every one of those 43 is a unit still in
+  the newer file under a revised `First Listed` date. No building and no unit
+  went away; the dates moved.
+- **Arrival order does not track vintage, and not by a little.** A copy that
+  landed 2026-09-21 carries an as-of of **2026-08-05**, six weeks behind one
+  that landed three days earlier. So `store_comps` keeps the newest **`as_of`**
+  and refuses to go backwards, and says so in the log when it refuses. Reading
+  "whichever parsed last" would have moved the Market Comps tab to an August
+  reading of the market with nothing on the page to say so — on the one tab
+  built to check somebody else's number.
+- **The ledger is published.** `vintages` on each `comps.json` is every as-of
+  the store has been offered, so the tab's own limits block counts the extracts
+  rather than claiming one. That is the `One vintage` caveat A14 asked about,
+  answered from the data instead of retyped.
+
+Only the `Full` twins are archived, in `Comps/Archive/` — `Archive` is in
+`NEVER_SWEEP`, so neither pass reads it. Nothing is deleted; they are simply
+2–4 MB apiece, no parser reads them, and fetching ninety of them daily is the
+kind of cost open item A15 is about. The newest of each stays live under
+`<market>/Full/` for anyone who wants to open one, and **the entry's
+`skip_subfolders: ["Full"]` keeps those out of the download too** — an archive
+guard would have been the wrong tool there, since those files are current
+rather than superseded. It is matched by folder name at any depth, like
+`NEVER_SWEEP`, and logged every run for the same reason.
+
+**The filer writes this tree itself**, market folder and kind folder both, from
+the export's own name — see *Two folders are split inside* below. It does not
+yet do so in Drive, because the deployed script is sixteen days behind the repo
+(A16's dead credential, consequence recorded as C9).
+
+**There is no total row to tie out against.** Every other parser here checks
+itself against the report's own arithmetic; a comp export has none, so two
+structural reconciliations stand in and both refuse the file:
+
+- **Every building in `Availability` must be described in `Property Data`.** The
+  rings are built by distance and the coordinates live only in that table, so a
+  listing whose building is missing drops silently out of every ring and the
+  comp set quietly becomes whatever happened to be described.
+- **`Days on Market` must reconcile to the listing's own dates** — `(removed −
+  first listed) + 1`, which holds on all 6,096 closed listings in the first
+  file. If the column stops meaning that, half the evidence that an asking rent
+  is too high is measuring nothing.
+
+Four more things it is careful about:
+
+- **Align's own buildings are not comps.** Three of the 36 buildings in the file
+  are Align's. They are excluded by resolving each building against
+  `config/properties.json` — the property master, not the export's own
+  `Management Company` string, which is free text — so a property added there
+  leaves the comp sets without anyone remembering this file exists.
+- **A floorplan row is not a unit** (`Is Floorplan`), and counting them weights a
+  building by how many plans it publishes.
+- **A listing is current only on the file's own as-of date.** Every row carries
+  the snapshot that observed it, three years deep, and the market in this file
+  moved +64% across that span.
+- **The ring is cut on every bedroom the MARKET has**, not only the ones the
+  subject has listed. A building can go three years without listing one of its
+  bedroom types, and falling back to Yardi's rent because nobody collected the
+  market is a different thing from falling back because the market is too thin
+  to read. Only the second is a finding.
+
+**A building is not a person.** The parser publishes building names under
+`building`, not `name`: `name` is in `build_metrics.PII_FIELDS` and the central
+scrub drops it from everything on its way to `data/`, which emptied the comp
+table on the first run. Weakening a scrub that exists to keep residents out of a
+public file, in order to publish a comp table, would be the wrong way round.
+
+`scripts/test_comps.py` holds it down — 58 fixture-free checks against exports
+built in a temp dir. The eight load-bearing guards were each verified by
+mutation (the two reconciliations, the floorplan skip, the as-of cut, the Align
+exclusion, the bed-weighted premium, the thin-bedroom fallback and the
+market-wide ring). **Clear `__pycache__` between mutation runs** — the same trap
+the leasing parsers' tests record.
+
+Tables: `t-comps-<slug>`, `t-compstrend-<slug>` and `t-compscheck-<slug>` on the
+data page, under a `Market Comps` group.
+
+### Refreshing the tab on its own, daily
+
+`scripts/refresh_comps.py <file-or-dir> [--landed-at ISO] [--dry-run]` parses
+comp exports and rewrites **only** `metrics["comps"]`, leaving every other
+block in `docs/metrics.json` exactly as it found it (checked, not assumed).
+
+It exists because the daily cron cannot carry this feed on its own. The export
+arrives several times a day, for every market Align asks for; the cron runs
+once, takes about five hours, and its push-retry loop replays whatever it built
+over anything newer (A15). So "the comps tab is refreshed daily" needs
+something that runs the one feed and touches nothing else.
+
+It is the same code either way: the block is built by
+`build_metrics.comps_block`, which both callers use, so the published figures
+cannot depend on which of the two wrote them. Three things it is careful about,
+all of which a scheduled caller depends on:
+
+- **An older export cannot walk the tab backwards.** `store_comps` keeps the
+  newest `as_of`, which matters more here than anywhere — a scheduled run is
+  handed whatever *arrived*, and arrival order does not track vintage in this
+  feed.
+- **A file it cannot read is skipped, not fatal.** The export is a pair and the
+  formatted twin has no parseable table, so a batch that died on the first
+  unreadable file would die on every batch.
+- **`--dry-run` writes nothing**, which is how the run asks "is there a newer
+  vintage?" before touching the repo.
+
+**`.github/workflows/refresh_comps.yml` runs it daily**, at 21:30 UTC — after
+`update.yml` has normally finished, so the two are not usually building at
+once. It is `fetch_drive.py --only market_comps` then `refresh_comps.py`, and
+it commits only when a vintage actually moved: a no-change run leaves the tree
+byte-identical, so a quiet day produces no commit at all.
+
+Its push race is handled the opposite way to `update.yml`'s, and deliberately.
+That one replays its own output onto the new main, because rebuilding it costs
+five hours. This one's inputs are still on the runner and rebuilding costs
+seconds, so it **resets to main and re-runs the refresh** — `store_comps` then
+reads whatever stores main now carries and keeps the newest as-of either way.
+Replaying output is what A15 is about; replaying the computation is safe.
+
+`--only <report_type>` is new with it: the daily pipeline never passes it and is
+unchanged, but the whole fetch has taken four and a half hours and this feed
+arrives several times a day. A scoped run also skips the unmapped-folder scan,
+which walks every folder in the drop tree and is most of what the scan costs.
+An unknown type is refused rather than quietly fetching nothing.
+
+**A Claude Routine is not the tool for this, and it was tried.** One existed
+alongside the workflow for about an hour on 2026-09-22 and was deleted, because
+a fired Routine session here starts with neither half of what the job needs: no
+Google Drive connector (`create_trigger` refuses the `connectors` parameter for
+this org, and the fired session reports Drive as `enabledInChat: false`) and no
+repo source (it is created with `sources: []`, and the session has no
+`add_repo` tool or working checkout). Both would have to be attached by hand in
+the claude.ai Routines UI, and neither is reachable from the API.
+
+The workflow needs none of that — it has the pipeline's own service account and
+the repo it runs in. And the case the Routine was meant to cover barely exists:
+a new market arrives as a new subfolder inside `Comps`, which the two-level
+descent picks up by itself, and a genuinely new top-level folder is still
+reported every day by `update.yml`'s unmapped-folder scan. Worth knowing before
+anyone reaches for a Routine here again.
+
+### A property with no rent roll still gets a check
+
+The headline is the newest Yardi reading of the table, which is normally the
+rent roll — per-unit, current, and the denominator loss to lease actually uses.
+Where no roll has reached the pipeline the **unit directory stands in** and the
+card names which reading it measured rather than going blank: Chorus reads
+**−4.3%**, i.e. its published table sits *under* the market, which is the
+opposite finding and worth having. The loss-to-lease restatement needs the roll
+and is left out there. A property with no directory at all gets the market side
+of the tab and a card saying why the check cannot be made — that is Madelon
+today.
+
 ## Refreshing The KPI Scorecard
 
 `docs/scorecard.json` comes from the KPI scorecard workbook, in two steps that
@@ -264,11 +769,37 @@ must run **in this order**:
    ranges and the Palma lease-up overrides. **This resets every measured value
    to null**, which is why it goes first.
 `OMITTED_METRICS` in `extract_scorecard.py` is the list of grid columns the
-dashboard does not publish at all — `# of offers that are 30 days` as of
-2026-08-28. They are dropped at extraction rather than hidden on the page, so no
-downstream table carries a KPI with no home, and their published range goes with
-them. The workbook keeps its own column either way, and the extractor warns if a
-name in the list stops matching a column.
+dashboard does not publish at all — `# of offers that are 30 days` (2026-08-28)
+and `# of accepted/pending offers` (2026-09-17, owner's call). They are dropped
+at extraction rather than hidden on the page, so no downstream table carries a
+KPI with no home, and their published range goes with them. The workbook keeps
+its own column either way, and the extractor warns if a name in the list stops
+matching a column.
+
+**`populate_scorecard.prune_omitted` applies the same list on every fill**, so
+the live page does not wait for a workbook refresh. Extraction is the real
+fix, but it needs the `.xlsx` and is run by hand, so a KPI removed today would
+otherwise sit on the page for as long as that takes; the daily cron runs
+`populate_scorecard`, so the page catches up on its own and the next
+re-extraction is a no-op rather than a correction. It removes only the metric —
+the coverage counts and `by_metric` are left to `recompute`, so the grid and
+the figures under it cannot disagree.
+
+It **reads** the list out of `extract_scorecard.py`'s source rather than
+importing it: that file has no `__main__` guard and opens the workbook at
+module level, so importing it would demand the `.xlsx` in CI. One list read
+from the one place it is defined still beats a second copy, and it is the same
+idiom `test_routing.load_rules()` uses on the `.js`. `omitted_metrics()`
+returns **`None`, not an empty set**, when the read fails — mutation shows why
+that matters and how little separates the two: an empty set prunes nothing
+*and says nothing*, so the removal quietly stops working while every count
+still adds up. `scripts/test_scorecard_omissions.py` is the guard — 23
+fixture-free checks.
+
+Removing `# of accepted/pending offers` moved **no graded figure**: it was a
+hand-set symbol no report had ever measured, so `scored` and `at_or_above`
+are untouched at 31 and 64.52%, and only the cell counts fall — 27 KPIs to 26,
+135 cells to 130, the five lost cells all previously `awaiting a feed`.
 
 2. `python scripts/populate_scorecard.py --from-landing` — fills the measured
    numbers a report can actually answer and re-derives those cells' status from
@@ -334,6 +865,14 @@ while in-place rent moved +0.07%. The cell now measures what the band says it
 measures; whether the band's 10% ceiling is right for that measurement is still
 open (A9 is its sibling for the controllable basket).
 
+**The comp export answers the first half of that warning.** `Market rent
+potential` is not merely aspirational — as of the 2026-09-11 roll it is **9.7%
+above what the submarket supports**, and the same three feeds that carry the
+table date the change to after 2026-08-25. So the cell's 37% is measured
+correctly against a denominator that is itself too high: restated on a
+comp-supported market rent it reads **30.4%**. See **The Market Comps Tab**.
+That narrows A8 without closing it: 30% is still three times the ceiling.
+
 `--from-landing` also fills **`NOI Margin %`** the same way — the current
 month's NOI over revenue from the Expense & NOI series behind that card, to one
 decimal. Note the direction of the caveat is the opposite of loss to lease's:
@@ -348,15 +887,23 @@ graded, per the owner; `noi_margin_ttm` is recorded beside it in
 through the T12 statement's newest month) actual controllable operating
 expense against the same months of the year's budget, printed as **`$
 nominal/% variance`**, signed, positive meaning an overspend. The budget is
-the Yardi `12_Month_Budget_Accrual.xlsx` in the Drive **`Budgets`** folder —
+any budget in the Drive **`Budgets`** folder — `12_Month_Budget_Accrual.xlsx`
+is the Yardi export's own name, but not the only one that arrives: a budget
+uploaded by hand is named whatever the person named it. The entry's
+`name_patterns` is therefore the single word `budget`, matching the filer's
+own `/budget/` rule rather than any export's filename, because a pattern
+narrower than the filer's means a file the filer puts in this folder that the
+pipeline then refuses to claim — routed correctly and never read. That is what
+`Landing 2026 Resi Budget.xlsx` hit on 2026-09-16, and `test_routing.py`'s
+check 10 is what now fails when the two halves drift apart. It is
 the T12 statement's own layout on the JPM tree, so `parse_budget.py` reuses
 the T12 parser's anchors, COA translation and Align-tree grouping (and its
 to-the-cent tie-out), refusing a file with no `Budget` marker row or a period
 that is not Jan–Dec of one year. Both sides of the variance are the **same
 basket**: the Align-grouped buckets less `NOT_CONTROLLABLE`, actuals from
 `data/<slug>/expense_buckets.json`, plan from `data/<slug>/budget.json`, with
-the all-exclusions-found guard on each and a refusal when the budget's year
-does not match the statement's. The band grades the **absolute magnitude**,
+the all-exclusions-found guard on each and a refusal when no plan on file
+covers the statement's year. The band grades the **absolute magnitude**,
 per its own "how" (a 12% underspend flags exactly like a 12% overrun). The
 Landing reads **+$116,402/+12.1%** for Jan–Jul 2026, below; the workbook's
 hand-set symbol said in-range and is kept in `status_workbook`. The signed
@@ -369,8 +916,16 @@ both sides are Drive reports — so its provenance is recorded under its own
 **`budget_`** family rather than the unprefixed one, and `budget_` is
 registered in `SC_FEED_PREFIXES` (and `data.html`'s matching list) so the
 budget's own Drive arrival shows on the page, and in `SCD_DRIVE_FEEDS` so the
-`Landing (Drive)` tab carries the cell. It needs no `fromDrive` predicate:
+`Landing` tab carries the cell. It needs no `fromDrive` predicate:
 unlike the delinquency pair, nothing else writes this KPI.
+
+`data/<slug>/budget.json` now holds **one point per budget year** rather than a
+single plan, so this fill picks the plan for the **statement's own year** —
+taking the newest would grade this year's actuals against next year's plan. See
+**Budget vs Actual (Portfolio tab)** below for why the years accumulate. The
+figure above is Jan–Jul 2026 against the statement that ended Jul 2026; the
+statement has since moved to Aug 2026, so the next `populate_scorecard` run
+will restate it on the Jan–Aug window.
 
 `--from-landing` also fills **`Concession Load %`** — the current month's
 concessions over **market rent potential less loss to lease less vacancy
@@ -432,6 +987,66 @@ figure unpublished rather than quietly counting taxes as controllable.
 so running it out of the documented order no longer drops the other feeds'
 `bldg_*` and `eliseai_*` keys — and with them their arrival times.
 
+### The Scorecard tab's property filter
+
+A **Property:** select sits in the card head on the `Scorecard` tab. `All
+properties` is the default and renders exactly the matrix that card has always
+shown; picking one narrows the matrix to that property's row **and recomputes
+the head from that property alone** — a headline reading "HEALTH ACROSS 5
+PROPERTIES · 65%" over a single row is a figure that gets quoted at the wrong
+scale.
+
+The head is not a second opinion on the published numbers. It comes from
+`scRollUp(p, SC.groups)` — the same function the property tabs use — over
+**every** group rather than the property-tab subset in `SC_HIDDEN_GROUPS`, and
+that reproduces `scorecard.json`'s own per-property `scored` / `counts` /
+`coverage` / `at_or_above` exactly (checked in-browser against The Landing:
+13 of 27 graded, 6/3/4, 69%).
+
+Three things it does deliberately:
+
+- **The chart stays portfolio-wide.** It ranks every property by the share of
+  its graded KPIs at or above target, which is where the selected property
+  *sits against the others* — a question filtering would destroy rather than
+  answer. (The Portfolio view's copy says so in its note; this tab has no note
+  block — see below.)
+- **The filter is a view of this card, not of the data.** Only a mount that
+  declares `ids.select` gets one, so the Portfolio view's copy of the same
+  matrix — same function, same `scorecard.json` — has no select and never
+  filters.
+- **The single-property figure is coloured, the portfolio's is not.** Worst
+  state across one building's cells is unambiguous (`scTone`), which is why the
+  property tabs colour theirs; an average across five buildings has no band
+  that turns it into a verdict, which is why the portfolio's stays plain.
+
+A property with **no slug** — on the scorecard but not yet in the property
+master, which the note already names — is still selectable, keyed on its label.
+It gets no "data last updated" line rather than the portfolio's, because
+`scUpdatedEl` reads a falsy slug as "every feed".
+
+**This tab carries no closing note.** The standing paragraph that used to end
+the card came off 2026-09-16, by request. `ids.note` is optional now: a mount
+that does not declare one renders without it, and `renderScorecard` returns
+before building it — the Portfolio view's copy of the same matrix still passes
+`poscNote` and still prints the full prose, as do the property tabs through
+`renderPropertyScorecard`.
+
+What that paragraph carried is still on the card, which is why dropping it
+loses nothing material: coverage (`31 of 135 graded · 12 reported, not graded ·
+92 awaiting a feed`) is in the eyebrow, the `reported, not graded` and
+`awaiting a feed` markers are in the legend, and each cell's band, feed and
+as-of date are on its own hover through `scCellTitle`. Three things were only
+there — "most below-target KPIs", the Palma lease-up-override sentence and the
+source workbook's filename — and those are a click away under `Data ↗`. The
+load-failure path still reports through the eyebrow (`SCORECARD UNAVAILABLE`),
+which is why it does not depend on a note block existing.
+
+The `<h2>` moved inside a `.card-head` to make room for the select. That is
+also what keeps the corner `Data ↗` link clear: `.card > h2` no longer matches
+it and `.card-head` carries the 62px inset instead, so the two rules do not
+double up — see the "Reserve the corner" CSS note. Verified with an overlap
+probe at 1440 / 1100 / 900 / 700 / 390px.
+
 ### EliseAI leasing data
 
 Two feeds, per the owner's design: the **weekly EliseAI funnel report**
@@ -489,10 +1104,16 @@ count is not the numerator of the rate, `bldg_basis` says so, and the **rate** i
 what the band grades. A property with no renewal tracker (Chorus, Madelon) keeps
 the rate alone — `RENEWAL_COUNT_SOURCE` is the lookup, so adding one is a line.
 
-It fills nine KPIs where the export column means what the KPI means — Leased %
+It fills eight KPIs where the export column means what the KPI means — Leased %
 (from `100 − Exposure Rate`, which matches the KPI's definition better than
-`Occupancy Rate`), Trade-out %, Closing Ratio, # of Renewals, % Increase, Total
-Deliquency, AI Containment Rate, Avg First Response Time, and the T/L/A triple.
+`Occupancy Rate`), Closing Ratio, # of Renewals, % Increase, Total Deliquency,
+AI Containment Rate, Avg First Response Time, and the T/L/A triple.
+
+It filled **Trade-out %** as well until 2026-09-17, when that cell moved to the
+Yardi lease tradeout report — see below. Nothing in this script changed: rule 1
+already refuses a cell another feed owns, and `owned_by_other_feeds()` finds the
+new one by reading every non-`bldg_` `*kpis` key in `measured[slug]`, which is
+what "excluded by default rather than by remembering" buys.
 
 Four rules keep it from overwriting better data or asserting what it cannot:
 
@@ -531,6 +1152,130 @@ reports without writing; `--received-at` records a real arrival time. The CSV
 now lands in the Drive `EliseAI Reports` folder and `update.yml` runs this
 script on the newest one automatically, passing Drive's `landed_at` as the
 arrival — the hand-off step only exists for a CSV that never reached Drive.
+
+### The lease tradeout report
+
+`LeaseTradeoutReport-<property>.XLS` in the Drive **`Historical Tradeout
+Reports`** folder is the Yardi lease tradeout report, and since 2026-09-17 it is
+what fills **`Trade-out %`** — the tile on the `Landing` tab and the
+scorecard cell behind it. The Landing's first file covers 2024-08-01 to
+2026-09-16: 247 new leases, each with the lease it replaced beside it.
+
+It is the only feed with a trade-out **history**. The weekly leasing workbook
+covers a fortnight, and the EliseAI building-metrics export publishes a rate
+with no rows behind it at all, on a trailing month. This one carries the rows,
+so the window is a choice the pipeline makes rather than whatever an export
+happened to cover:
+
+| Window | The Landing |
+| --- | --- |
+| T3 (**graded**) | **39.8%**, 26 leases, Jul–Sep 2026 |
+| T6 | 32.5%, 68 leases |
+| T12 | 30.7%, 121 leases |
+| The whole file | 23.4%, 247 leases, Aug 2024 – Sep 2026 |
+
+**Trailing three months, because that is the basis the published band was
+written for.** The export this replaced was a trailing *one* — open item B6,
+"a volatile month swings the grade more than the bands assume". B6 is closed for
+this KPI and still open for Closing Ratio and # of Renewals, which the export
+still fills. `TRADEOUT_WINDOW` in `populate_scorecard.py` is the one constant.
+
+**The percentage is rent-weighted, never the mean of the per-lease rates.**
+The report's own figure is total current effective rent over total previous
+effective rent, and that is what is graded. The mean of its own `Trade Out %`
+column is a different number — **70.1% against the weighted 23.4%** over the
+same 247 leases — because a concession drives a *previous* effective rent toward
+zero and the ratio explodes: one lease reads $86 previous against a $62,716
+concession and prints 6,136%. A mean of ratios over a denominator that can
+approach zero is not a rate. Both are published (`mean_pct` beside `pct`, and
+`tradeout_mean` on the scorecard) so the two are on the record rather than
+confused — the Trade-outs card's *other* feed reports a mean, and these are not
+interchangeable.
+
+Four things the parser is careful about, each of which publishes a number
+rather than an error:
+
+- **The header is two rows and half its names appear twice.** `Rate Type`,
+  `Lease Start`, `Term`, `Prem`, `Gross Rent`, `Conc` and `Eff Rent` sit once
+  under `Current Lease` and again under `Previous Lease`; only the merged
+  banner above tells them apart, and only its first cell carries text. So the
+  group row is forward-filled and joined to the column row. Matching the column
+  row alone takes whichever came first and **inverts the sign of the whole
+  report** — and a file read that way still ties out against itself.
+- **Yardi names it `.XLS` and writes an `.xlsx`.** The bytes start `PK\x03\x04`.
+  openpyxl refuses a path ending `.xls` before it looks at the file, so the
+  parser reads the bytes and dispatches on the magic number; a genuine OLE2
+  `.xls` is named as such rather than left to fail further in. The folder's
+  `file_glob` is `*` for the same reason — neither extension describes it.
+- **`(2.5%)` is a negative percentage**, parenthesised with the sign marker
+  *outside* the percent sign, while the dollar column on the same row uses
+  `-$78`. A pattern expecting `)` before `%` drops 42 of the 247 leases to
+  `None` and averages only the positive ones, which is invisible.
+- **Every figure ties out against the file's own `Grand Total:` row** on current
+  effective rent, previous effective rent and trade-out dollars. A file that
+  cannot reproduce its own total is refused — silently dropping a floor-plan
+  section would understate the building. The `Subtotal:`/`Average:`/`Total:`
+  rows are skipped by label first, so a subtotal is never read as a
+  1,458-month lease.
+
+**Leases accumulate; files do not supersede each other.** The window is chosen
+at export time, so the next file's may be narrower, wider or offset, and taking
+the newest whole would throw away every lease outside it. `store_lease_tradeout`
+keys on `(unit, signed date, previous lease start)` — a unit can turn over twice
+inside one window (102 does), so unit and date alone are not unique — and each
+file's own period and tie-out stay in `files`, because a tie-out is a statement
+about one export and stops meaning anything once several are merged.
+
+The cell records under its own **`tradeout_`** family (registered in
+`SC_FEED_PREFIXES`, `data.html`'s matching list and `SCD_DRIVE_FEEDS`), and
+**both fill paths read the same published aggregate**, so like the rent roll's
+loss to lease it has no last-run-wins race. Taking the cell also removes it from
+every other family's `*kpis` list: `bldg_kpis` still *named* Trade-out % from
+before this feed existed, and the page picks a cell's feed by whichever family
+lists it — so the tile went on hovering "EliseAI building-metrics export · as of
+2026-08-31" over a figure from a report of 2026-09-16. That is the over-report
+this file warns about, fixed in the data rather than worked around on the page.
+
+`scripts/test_lease_tradeout.py` holds it down — 38 fixture-free checks against
+workbooks built in a temp dir. The five load-bearing guards (the forward-filled
+header, the parenthesised negative, the magic-number open, the Grand Total
+tie-out and the skipped subtotal rows) were each verified by mutation; removing
+any one of them fails a check. **Clear `__pycache__` between mutation runs** —
+the same trap the leasing parsers' tests record.
+
+Table: `t-tradeout-<slug>` on the data page, which carries every month, the
+three windows and the weighted-vs-mean note.
+
+**It feeds the Trade-outs card too, not just the tile.** That card's teal series
+was the weekly leasing workbook, which carries **one week per file** — four weeks
+on file meant four leases in two months, two lonely bars against three years of
+renewal offers. It is the tradeout report's 26 months now, and the card fills.
+
+| | Weekly workbook | Tradeout report |
+| --- | --- | --- |
+| New leases on the 24-month axis | 4, in 2 months | **231, in 24 months** |
+| Average new-lease trade-out | 71.1% | **25.5%** |
+
+The two also *measure* slightly differently, which is why the card says so: the
+report works on **effective** rent, net of concessions on both the new lease and
+the one it replaced, where the workbook compares rent to prior rate. A previous
+lease bought down by a concession therefore shows a larger trade-out here.
+
+**Both series moved to rent-weighted**, and the plain mean went to the tooltip —
+the swap of what the card used to do. The report's own percentage is the
+weighted one, so the card and the tile now grade the same statistic; and the mean
+cannot carry this axis, since Nov 2024 reads 550.9% as a mean against 55.7%
+weighted. On the renewal side the two agree to within half a point every month,
+so that series moved in name only.
+
+**Weighting protects a month only when there are enough leases in it.** Sep 2026
+reads **149%** on two leases in a half month — the report's window ends on the
+16th — and one of those two replaced a lease whose $3,678 gross carried a $2,207
+concession, i.e. $1,471 effective. That one lease carries the month. The bar is
+drawn rather than capped or dropped, because it is the report's own arithmetic
+and the tile's T3 window includes it; the footnote names it, computed against the
+series' own median and lease counts so it cannot go stale as months arrive. The
+same note names the part month.
 
 ### The unit directory
 
@@ -641,7 +1386,7 @@ and a roll naming its property below the unit rows must still route.
 
 `parse_daily_leasing.py` and `parse_renewal_tracker.py` were written against
 real exports on 2026-09-11, and both publish to the **Trade-outs card** on the
-`Landing (Drive)` tab through the `leasing` block in `metrics.json`.
+`Landing` tab through the `leasing` block in `metrics.json`.
 
 **`parse_daily_leasing`** reads the NEW LEASES block on the `Weekly_Leases`
 sheet into per-lease trade-outs, and `store_daily_leasing` accumulates one entry
@@ -693,9 +1438,9 @@ The monthly offer counts tie out against the 2026-09-08 weekly email's own
 renewal table — 18 / 7 / 13 / 6 for September through December — which is an
 independent check on the whole chain.
 
-**The card averages both sides the same way, which the workbook-fed one cannot.**
-The Landing's Trade-outs card draws its new-lease side as a plain mean and its
-renewal side rent-weighted — its own footnote says the workbook's offer data
+**The card averages both sides the same way, which the workbook-fed one could
+not.** The removed tab's Trade-outs card drew its new-lease side as a plain mean
+and its renewal side rent-weighted — its own footnote said the workbook's offer data
 "carry no per-renewal rows to average". `parse_renewal_tracker` reads those rows,
 so `mean_increase` sits beside `wtd_increase` on every month and the Drive card
 plots one mean against another, with the weighted figure on the tooltip. Two
@@ -794,18 +1539,52 @@ Switching the select **keeps the comparison where the new set still offers it** 
 Current Month with T12 showing stays on T12 when it becomes T3. Prev Month is
 not in T3's set, so that pair falls to T6.
 
-**Both columns are annual run rates**, each period's own total scaled to a full
-year (a month ×12, a T3 ×4). The old card could put a month beside a T3 only by
-multiplying the month by three; that trick does not generalise to an arbitrary
-pair, and T3 against T6 needs it. The run rate does, and it means the variance
-reads the same way whichever pair is showing. It is the frame the variance is
-taken in, not a forecast — the note says so.
+**Every pair is an annual run rate — each period's own total scaled to twelve
+months — except Current Month against Prev Month**, which is left as reported.
+Both headings carry their own multiplier, because either side can be scaled and
+a figure twelve times August under a header reading `Current Month (Aug 26)`
+would be read as August:
 
-Four data columns: the two run rates, then the variance in **dollars** and in
+| Pair | Left column | Right column |
+| --- | --- | --- |
+| Current Month vs Prev Month | Aug as reported | Jul as reported |
+| Current Month vs T3 | `Current Month (Aug 26) ×12` | `T3 (Jun 26–Aug 26) ×4` |
+| Current Month vs T12 | `Current Month (Aug 26) ×12` | `T12 (Sep 25–Aug 26)` |
+| T3 vs T6 | `T3 (Jun 26–Aug 26) ×4` | `T6 (Mar 26–Aug 26) ×2` |
+| T3 vs T12 | `T3 (Jun 26–Aug 26) ×4` | `T12 (Sep 25–Aug 26)` |
+
+Annualizing is what lets windows of different lengths sit side by side: a month
+against a quarter is otherwise three times the period as well as a different
+one, and the variance reads as both at once. The exception is the pair that
+needs none of it — a month against the month before is already like for like,
+and the actual month-over-month totals are what that pair is read for.
+
+**The variance percentages do not depend on this at all.** Scaling both columns
+by the same factor cancels, so only the magnitudes and the `Variance $` column
+move; the shape of the card is unchanged. Two of the five pairs were already
+annualized (both T12 comparisons cover twelve months by definition) and the
+month-against-month pair is untouched, so the owner's 2026-09-17 call moved
+exactly two: Current Month vs T3 and T3 vs T6.
+
+`scaling(base, cmp)` is the one function that decides it, returning the target
+window and a multiplier per column. The table and the note under it both read
+it, so they cannot describe different arithmetic — which they could when each
+recomputed the multiplier for itself.
+
+**One caveat the card cannot fix.** An accrual statement books reversals in the
+month it finds them, and Aug 2026 carries a −$118,781 tax true-up: total
+expenses read $48,572 for that month against $365,241 in July. Annualized that
+is $583k against a T3 of $2.99M — an 80.5% "saving" painted green, which is a
+timing difference and not money unspent. The percentage was the same before
+this change; annualizing only makes the dollar figure larger. Budget vs Actual
+on the Portfolio tab names the reversal months for the same reason.
+
+Four data columns: the two periods, then the variance in **dollars** and in
 **percent**. A percentage alone hides the size of the thing — 15% on the expense
-row is $759k a year. Both are coloured by favourability rather than by sign, so
-less expense is green, and both use the same typographic minus, since they sit
-in adjacent columns at 15px and a hyphen beside a minus is visible.
+row is $55k over a month and $660k over a year. Both are coloured by
+favourability rather than by sign, so less expense is green, and both use the
+same typographic minus, since they sit in adjacent columns at 15px and a hyphen
+beside a minus is visible.
 
 A window is **offered only when the series holds it** — `avail()` checks the
 window starts at or after the first month rather than clamping, and it filters
@@ -813,8 +1592,9 @@ the boxes as well as the select. Clamping would print "T12" over eight months of
 data, which is the kind of label that gets quoted. Twelve months today, so both
 choices and every box are live; a shorter run simply offers fewer.
 
-`renderOpSummary` is shared with The Landing tab, so both cards changed
-together. That is the point of it being shared — see the Drive-only tab section.
+`renderOpSummary` was shared with the workbook-fed Landing tab until that came
+off on 2026-09-18, so both cards always changed together. It is still written to
+serve any mount rather than one card.
 
 ## The T12 statement's two expense anchors
 
@@ -827,7 +1607,7 @@ one a published figure used has to be recorded rather than inferred:
 | `549999-9999` (jpm) | TOTAL EXPENSES — operating plus the non-operating 52xxxx region |
 
 **Everything the pipeline publishes now reads the outer one**: the Operating
-Summary card (the top box on The Landing tab, moved 2026-09-03), the Expense
+Summary card (the top box on the Landing tab, moved 2026-09-03), the Expense
 Ratio card (moved the same day), and the expense buckets behind the Expense Deep
 Dive, which had tied out against `549999-9999` all along. So the three cards
 drawing this statement cover the same expense load, which they did not before.
@@ -862,8 +1642,13 @@ NOI line and then `6000-0000 OTHER EXPENSES` in sections with no grand total. So
 a statement on that tree publishes no total-expense row and falls back to the
 operating anchor — which means **the ratio is not comparable across account
 trees**: Palma's 56.1% is recoverable opex, The Landing's 33.3% is total
-expenses. That is why the basis is published per property and the card's eyebrow
-reads off the selected one, rather than one basis line printed over both.
+expenses. That is why the basis is published per property, and why the Expense
+Ratio card carries each line's own on its tooltip and in its footnote rather
+than printing one basis over both. Until 2026-09-17 that card showed one
+property at a time and the eyebrow carried the selected one's basis; the
+properties are toggles now, so the eyebrow flags the disagreement
+(`TWO EXPENSE BASES`) and the per-property prose moved down to the lines
+themselves.
 
 Which anchor a point used is recorded on the point:
 
@@ -899,6 +1684,329 @@ re-lengthen as statements re-arrive on the current anchor.
 statements built in a temp dir by `test_expense_buckets`' own builders, no
 network and no fixtures. Each guard has a check that fails when the guard is
 removed (verified by mutation).
+
+## Expense Ratio (Portfolio tab)
+
+The card reads **the series the `Landing` tab draws**: each property's
+monthly ratio off the stitched `monthly_pl` run, opex over revenue, exactly as
+that tab's Expense Load & NOI card computes it. And the property dropdown is a
+row of toggles, so the buildings are read against each other rather than one at
+a time. Both changed 2026-09-17, by request.
+
+**The source change is not a restyle.** The `expense_ratio` block's own
+`trend_values` are one point per *statement*, so The Landing's line was **two
+points** where its P&L carries thirteen months, and it lengthened only when a
+new file landed rather than as the stitch grows. A property with a single
+statement fell back to that statement's twelve months and could never show
+more. Reading `monthly_pl` instead gives every month the pipeline has stitched.
+
+Checked before switching, and this is what makes it a change of *source* rather
+than of measurement: the ratio off `monthly_pl` reproduces the block's
+published `latest_monthly_ratio` **to the tenth on every overlapping month, for
+both properties**. The Landing simply gains the thirteenth month (Aug 25,
+32.6%) that the newest statement alone does not carry.
+
+`test_monthly_pl.py` pins that agreement, because the card now shows one
+store's line beside another store's headline figure: if the two stopped
+describing the same expense row, the line would disagree with the number next
+to it and nothing on the page would say so. Two checks, both verified by
+mutation — the published monthly ratio must equal `monthly_pl`'s own
+opex/revenue, and the two stores must record the same `expense_scope` and
+`expense_anchor`.
+
+**The T12 figures moved to the left column, one per property shown.** They are
+the block's own `ratio_t12` and stay the headline, because a single accrual
+month swings hard: The Landing reads **3.8% for Aug 26** on the tax reversal
+and **52.9% for Apr 26** on the annual assessment, against a T12 of 30.7%. The
+footnote says so and points at the figures rather than at the line. It was a
+single 40px number with a dropdown beside it; with toggles there can be several
+at once, so the figure shrinks and the column grows rather than the card having
+to pick one building to headline.
+
+Everything the **Expense Trend** section above says about the union month axis,
+the `null`-not-zero gaps, `spanGaps`, the mixed-anchor flag and the typographic
+minus applies here for the same reasons — the two cards are twins now. The
+anchor disagreement matters more on this one, though, because a *ratio* invites
+direct comparison in a way two dollar lines do not: The Landing's 30.7% is
+total expenses over total revenue and Palma's 56.1% is recoverable opex over
+operating revenue, which is the `not comparable across account trees` point
+made under **The T12 statement's two expense anchors**. So the eyebrow flags it,
+each tooltip line carries its own basis, and the footnote names both.
+
+**One colour per property across the tab.** `propColor` keys the line colour on
+the slug and is seeded from `monthly_pl` before any card mounts, so a building
+is the same colour on Expense Trend and Expense Ratio. A building that is amber
+on one card and teal on the other is worse than no colour at all, and the two
+cards used to pick their palettes independently.
+
+The card's `Data ↗` keeps `t-expratio-*` as its primary — those are the T12
+figures — and gains `t-monthlypl-*`, where the line's numbers live. The
+`t-expratio-<slug>` table went back to its own job with the change: it used to
+publish whichever of the block's two series the card happened to draw, and now
+publishes **both**, each row saying which it is, since the card draws neither.
+
+## Expense Trend (Portfolio tab)
+
+One line per property, over the union of their statement months, each property
+selectable on a checkbox above the chart. Full width since 2026-09-17: it was
+the left half of a row shared with `PSF vs Other Properties`, and removing that
+card left it alone against an empty half. Fourteen monthly ticks were crowded
+at half width anyway. Until 2026-09-17 the card was three
+hand-typed expense categories for **one** building — Marketing, Utilities and
+General & Admin, with taxes and insurance left out so monthly movement stayed
+visible — and it moved only when someone edited `metrics.json`. It is now
+derived, and `expense_trend` came off the `manual` list on the data-flow page
+with it.
+
+The series is `monthly_pl`'s own `opex`, not a second reading of the statement:
+`expense_trend()` in `build_metrics.py` is handed the same `pl_props` the
+Operating Summary is published from, so a month on this card and the same month
+on that one cannot disagree.
+
+Three things it is careful about, and each would be invisible in the numbers:
+
+- **The axis is the union of the properties' months, keyed on `YYYY-MM`.** The
+  statements do not cover the same window — The Landing's runs Aug 25–Aug 26
+  and Palma's Jul 25–Jun 26 — so aligning the series by position would plot
+  Palma's July against The Landing's August and draw the one-month offset as a
+  swing in spending. A property with no statement for a month gets `null`, not
+  zero, and `spanGaps` stays false so the line stops rather than being drawn
+  across the gap.
+- **The labels carry the year.** `monthly_pl`'s own labels are the bare month,
+  which is unambiguous over one statement's twelve columns. This axis is
+  fourteen months across two calendar years and holds two Julys, so it reads
+  `Jul 25` / `Jul 26`. The data page's table publishes the month **key** in its
+  own column for the same reason.
+- **The lines are not all the same expense row.** The Landing's is total
+  expenses (`549999-9999`); Palma's is recoverable operating opex, because the
+  Align tree has no counterpart to that row — see **The T12 statement's two
+  expense anchors** above. `mixed_scope` is the pipeline saying so, and the
+  card puts it in the eyebrow (`TWO EXPENSE BASES`), on every tooltip line and
+  in the footnote, rather than printing one basis over two different expense
+  loads. It is the same trap the Expense Ratio card carries a per-property
+  basis for.
+
+**The card names its own outliers, and they are mostly timing.** An accrual
+statement books true-ups and reversals in the month it finds them, so the
+biggest features on this chart are not spending: The Landing reads **$624k for
+Apr 26** (the annual tax assessment lands in one month) and **$49k for Aug 26**
+(its reversal — the same $48,572 the Budget vs Actual note describes), against
+a $365k run rate; Palma runs **−$94k in Jun 26**. Without a word about them the
+chart reads as a collapse and a blowout. The footnote is computed from the
+series against **each line's own median** — a shared threshold would flag every
+month of the smaller building — so it cannot go stale as months arrive, and it
+names the months without asserting a cause this card has not checked.
+
+Two smaller things:
+
+- **The grid hides itself below two properties.** A control that cannot change
+  anything is worse than no control — the same rule the Budget vs Actual basket
+  row follows. Unticking everything is allowed and the footnote says so rather
+  than leaving an empty chart unexplained.
+- **The minus is the typographic one in all three places it can appear** — the
+  y ticks, the tooltip and the footnote. A reversal month is genuinely negative
+  here, and Chart.js's default tick prints a hyphen, which would sit on the
+  same card as the footnote's minus.
+
+`scripts/test_monthly_pl.py` covers it — the union axis, null-not-zero, the
+per-line scope and the mixed flag. The two load-bearing ones were verified by
+mutation: aligning by position instead of by month key fails the alignment and
+the null checks, and never flagging a mixed anchor fails the flag check.
+
+## Budget vs Actual (Portfolio tab)
+
+The Portfolio tab's `Budget vs Actual` card has **two views**, on a `Total` /
+`Categories` toggle in its head, both over the statement's trailing twelve
+months.
+
+### Total — the default
+
+Two lines over the whole expense basket: the plan **dashed and muted**, the
+actual **solid in the page's accent**. The plan is a yardstick rather than a
+series, which is the same idiom the Categories view's net line uses.
+
+Where the category boxes sit in the other view, Total lists **every month's
+variance and the two totals that get quoted**:
+
+| Summary | Window | The Landing |
+| --- | --- | --- |
+| **YTD** | calendar year to date — Jan through the statement's newest month | **−$99k**, −3.3% of $3.04M |
+| **T12** | the window the chart draws, Sep–Aug | **−$44k**, −1.0% of $4.45M |
+
+Both are on the card because they are **different windows, not two goes at one
+figure** — and YTD is deliberately the scorecard's own window, so the two are
+comparable once you also match the basket (the KPI takes the controllable one;
+see the presets below).
+
+The monthly figures are coloured by **favourability, not by sign** — over plan
+red, under plan green — the way the Operating Summary's variance columns are.
+On expense, less than planned is the good direction whatever the arithmetic
+sign.
+
+**Total always draws every category.** The basket presets are a Categories-view
+control, and a "total" that quietly left four groups out would not be one — so
+the note reads it as the whole basket whatever `hidden` happens to hold from a
+previous visit to the other view.
+
+### Categories
+
+One bar a month, actual less plan, **stacked into the same Align-tree
+categories the Expense Deep Dive uses** and painted in the same colours, so a
+reader can move between the two cards without relearning which colour is what.
+Above the line is an overspend, below it an underspend.
+
+The card drew the plan and the actual as two bars side by side until
+2026-09-16, and was variance-only until the Total view arrived later the same
+day. Twenty-four bars a screen answered "how big is this building" — which the
+Expense Deep Dive already answers — where the difference answers "how far off
+the plan was it", which nothing else did. Total is the default because that is
+the card's first question; Categories is where you go once the answer is yes
+and the next one is which category did it.
+
+A dashed **net line** rides over the bars. A month with offsetting misses
+stacks positives up and negatives down and leaves its net in neither
+direction, so without the line the card cannot answer "did this month run
+over" at a glance. The net **follows the checkbox grid** rather than staying
+on the whole basket: unticking Taxes and leaving a line drawn through
+$270k of tax reversal would put it a screen away from the bars it claims to
+summarise.
+
+The shared palette is a real shared thing rather than two copies:
+`BUCKET_PAL`, `bucketColor` and `bucketOrder` in `index.html` are what both
+cards call. The order is the deep dive's own — largest first, `Other` last,
+computed once from the actuals — so toggling categories never re-sorts and
+nothing is repainted under the reader. A category only the *budget* names is
+appended after and steps past any hue already spoken for.
+
+### The two basket presets
+
+A **Basket** row sits above the per-category grid with two boxes —
+**Controllable** and **Non-controllable** — each switching its whole group of
+categories. They are the same split the scorecard's `Budget Variance %` grades
+on, off the same shared `NOT_CONTROLLABLE`, so "controllable" means one thing
+on this page.
+
+They are worth having because **the two baskets point opposite ways**, and the
+whole basket hides it:
+
+| Basket | Sep 25–Aug 26 variance |
+| --- | --- |
+| Whole | **−$44k** on $4.45M — a 1.0% **under**spend |
+| Controllable | **+$170k** on $1.66M — a 10.3% **over**spend |
+| Non-controllable | **−$214k** on $2.79M — a 7.6% underspend, nearly all of it Aug's tax reversal |
+
+So the building is running 10% over on what a PM is answerable for, and the
+headline reads 1% under because a tax true-up in the newest month more than
+covers it. That is the card's most useful reading and it was invisible until
+the presets existed.
+
+Three things about how they behave:
+
+- **Tri-state.** A box standing for a group is not on or off when only some of
+  its categories are shown, so it reads `mixed` and draws a dash — a tick there
+  would be a lie. `ckGrid` gained that third state and a repaint-all, because a
+  grid that drives another grid has to redraw the one it drove.
+- **They hand over rather than empty the chart.** Turning off the only group
+  still showing switches the other one on as it goes — which is what "show me
+  one or the other" wants, and the only case the two boxes behave as a pair
+  rather than independently. Every other click is plain: not-fully-on turns the
+  group fully on, fully-on turns it off.
+- **The note follows them.** It reported the whole basket whatever was ticked
+  until the presets arrived, which was defensible when the only reason to untick
+  anything was to see past Taxes. The point of a Controllable preset is to get
+  the controllable variance, so the figures, the months-that-ran-over list and
+  the closing comparison against the scorecard all recompute from what is shown
+  and the sentence names which basket it is talking about.
+
+A group with no members is not offered, and with fewer than two the row hides
+itself: a property whose account groups name no tax, insurance, utilities or
+management fee has nothing for the non-controllable box to switch, and an empty
+control that does nothing is worse than no control.
+
+### One definition of "controllable" on the page
+
+`NOT_CONTROLLABLE` was written out **twice** in `index.html` as prefix-anchored
+regexes, and a third time in `populate_scorecard.py` as substrings. That is one
+definition in three copies, and two of them were not the same rule: `/^tax/`
+misses **`Real estate & other taxes`**, which is what the Align tree calls that
+group. Checked against the real bucket names — The Landing matches 4 of 4 either
+way, so nothing it publishes moves, but **Palma matches 3 of 4 on the prefix
+rule**, which trips the all-exclusions-found guard and withholds its
+controllable figures for a name the pipeline reads without trouble.
+
+There is now one `NOT_CONTROLLABLE` on the page, matched as the pipeline
+matches it, with `isNotControllable()` and `controllableMissing()` beside it;
+both existing callers and the presets read it.
+
+Both sides are the same basket by construction. `parse_budget` is a thin
+wrapper over the T12 parser, so a budget is grouped through the same COA
+mapping and refused unless its groups tie out against its **own** TOTAL
+EXPENSES row month by month — exactly as the actuals are. One grouping, two
+files, each checked against itself.
+
+**Budgets are kept per YEAR, not per property.** A budget is a calendar year
+and the window this card draws is not: the statement runs Sep–Aug today, so a
+store that held only the newest year would leave four months of the window
+with no plan and the card would report a gap where the file that answers it
+had simply been overwritten. `store_budget` keys on the year and accumulates,
+the way `expense_buckets` keeps a point per statement period; re-filing a year
+replaces that year's point, so re-processing a re-export is idempotent and the
+year before is untouched.
+
+`metrics.json`'s `budget` block therefore publishes **explicit `YYYY-MM`
+keys** rather than the statement's bare `Jan`..`Dec` labels. Bare labels cannot
+say which year a month belongs to and this series spans two by design.
+
+### Three things both views are careful about
+
+Each would be invisible in the numbers:
+
+- **A month in a year with no budget on file publishes `null`.** Zero would
+  read as a plan of nothing and turn an unplanned month into a 100% overspend.
+  Categories draws no bar there, Total breaks the plan line and its list says
+  `no plan`, and both leave the month out of their totals rather than counting
+  it as a saving.
+- **A category a *planned* year does not name is a real zero.** That year's
+  buckets tie out against its own total expenses, so nothing is missing from
+  it — the plan for that category is nil, not unknown. The distinction is the
+  whole reason the two cases are `0` and `null` rather than both blank.
+- **Reversal months are drawn, not absorbed, and are named as timing.** An
+  accrual statement books reversals and true-ups in the month it finds them,
+  and the newest month carries most of them — Aug 2026 reads Taxes −$118,781
+  and Utilities −$31,450 for a net of $48,572, which `monthly_pl` agrees with.
+  Against plan that is a −$276k "underspend" in one month, which is a timing
+  difference and not money unspent; the note says which months carry credits
+  and says exactly that. It is also what sets the y scale for all twelve
+  months, which is why the note points at the Taxes checkbox.
+
+**This card and the scorecard's `Budget Variance %` measure different things
+off the same two files, and can point opposite ways.** The card is the whole
+expense basket over the statement's twelve months — Sep 25–Aug 26 nets
+**−$44k on a plan of $4.45M, a 1.0% underspend**, though **nine of the twelve
+months ran over** (worst Mar 26 +$64k, Dec 25 +$62k, Feb 26 +$59k) and the
+year only nets down because of Aug's tax reversal. The KPI is the
+*controllable* basket — taxes, insurance, utilities and the management fee
+taken out — over the calendar year to date. Taxes are ~46% of the basket, so
+they are most of the difference between the two. The card says so on its face
+rather than leaving a reader to find it.
+
+`budget_variance_ytd` picks the plan for the **statement's own year**, not the
+newest one on file. With several years stored, taking the newest would measure
+this year's actuals against next year's plan and publish the difference as a
+variance.
+
+Both plans reached the pipeline as `Landing 2025 Resi Budget.xlsx` and
+`Landing 2026 Resi Budget.xlsx`, in the Drive `Budgets` folder. The 2026 file
+is the plan the earlier `12_Month_Budget_Accrual.xlsx` carried, to the cent on
+all thirteen buckets and on both the revenue and operating-expense lines —
+which is corroboration rather than coincidence, since the two exports name
+different property codes in their header (four against one). The four codes
+were the report's filter, not its scope.
+
+`scripts/test_budget_vs_actual.py` holds it down — 23 fixture-free checks
+against budgets and a statement built in a temp dir. The load-bearing three
+(per-year storage, null-not-zero for an unplanned month, and picking the
+statement's year) were each verified by mutation.
 
 ## The statement's rental-income section (Loss to Lease)
 
@@ -1030,9 +2138,10 @@ Set `AUTO_FOLDER.ENABLED = false` to go back to everything unmatched landing in
 
 `fetch_drive.py` runs **two passes**, and the difference matters:
 
-1. **The folder pass** — every active entry's own folder, as always. This is what
-   the Gmail filer's organisation is for, and it is unchanged. Drive stays
-   browsable, one folder per report type, for pulling source data by hand.
+1. **The folder pass** — every active entry's own folder, **and two levels of
+   subfolders inside it**. This is what the Gmail filer's organisation is for.
+   Drive stays browsable, one folder per report type, for pulling source data
+   by hand.
 2. **The rescue sweep** — then every other folder in the drop tree, `_Unsorted`
    included, looking for unclaimed files matching an entry's `name_patterns`.
 
@@ -1046,17 +2155,40 @@ report still reaches its parser, and the log says where it was found
 `name_patterns` is opt-in per entry, matched case-insensitively, and only
 `active` entries take part. An entry without it stays strictly folder-bound.
 
+**A registered folder's own subfolders are read as part of it**, two levels
+deep. The sweep is no backstop for a file below the top level, because it walks
+the drop tree's top level too — so before the descent existed such a file was
+invisible to *both* passes and the folder simply reported empty, with nothing
+in the log to say otherwise. That is what `Budgets/Landing/` did on
+2026-09-16: two budgets sat in a per-property subfolder the owner had made,
+and neither pass could see them. Those two were moved back up into `Budgets`
+by hand, so the descent is not what is carrying them today — it is what stops
+the next such grouping from stranding a report, the same way the rescue sweep
+stopped a misfiled name from stranding one.
+
+**Two levels, because that is what the groupings are.** Budgets is grouped once,
+by property. The comp exports are grouped twice — by market and then by which of
+the paired exports it is (`Comps/Oakland/Simple/`) — so a one-level walk would
+report `Comps` as holding nothing while ninety files sat under it. A fixed
+depth, not a recursion, and never into a `NEVER_SWEEP` name: an archive nested
+inside a live folder is still an archive, and walking arbitrarily deep would
+eventually find one under a name the list does not know. `MAX_SUBFOLDER_DEPTH`
+is the one constant, and a folder deeper than it gets a `[warn]` line rather
+than silence — an unread folder that says nothing is exactly how
+`Budgets/Landing/` stranded two budgets. `test_fetch_sweep.py` covers all of
+it, each guard verified by mutation.
+
 The sweep is scoped, and each limit exists for a reason:
 
 | Limit | Why |
 | --- | --- |
 | Never the `reference` tree | The library holds superseded copies on purpose. `Archive Reports` has a July rent roll beside four other July exports; sweeping it would publish a seven-week-old rent roll as current |
-| Never a folder in `NEVER_SWEEP` | Belt to the tree's braces — an archive stays safe even if it is moved into the drop tree |
+| Never a folder in `NEVER_SWEEP` (`Archive Reports`, `Archive`) | Belt to the tree's braces — an archive stays safe even if it is moved into the drop tree, which `Comps/Archive/` is. The folder pass checks the same list at every level, so an archive nested inside a live folder is skipped rather than descended into |
 | Never a file the folder pass took | `claimed` tracks Drive ids, so nothing is counted twice |
 | Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
 | Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |
 
-`scripts/test_fetch_sweep.py` holds this down — 12 checks against a stubbed Drive
+`scripts/test_fetch_sweep.py` holds this down — 24 checks against a stubbed Drive
 mirroring the real layout, no network or fixtures. Both archive protections are
 tested *independently*: removing either one alone fails a check, since the name
 guard would otherwise cover for the missing tree scoping.
@@ -1103,7 +2235,11 @@ name the same folders, so the two halves cannot drift apart.
 out of the `.js` directly, and asserts every rule's folder is a `drive_folder` in
 `report_map.json`, that no folder name contains `/`, that every `file_glob`
 starts with `*`, that the two trees agree, and that a list of real filenames
-still routes where it belongs. Run it after editing either file.
+still routes where it belongs. Check 7d extends that last one past the category
+folder: a real filename must land in the right *subfolder* of it, a name that
+cannot say must land at the top rather than in a guess, and the deepest split
+must stay within `fetch_drive`'s `MAX_SUBFOLDER_DEPTH`. Run it after editing
+either file.
 
 Two traps worth knowing:
 
@@ -1115,6 +2251,88 @@ Two traps worth knowing:
   in Drive and in `report_map.json` both. Renaming it means the Drive folder,
   `report_map.json` and the `.js` rule all change together; `test_routing.py`
   fails if only one moves.
+
+### Five folders are split inside, and `SPLIT_INSIDE` is how
+
+Since 2026-09-23 **`Rent Roll`, `Delinquency` and `Residential AR Analytics`
+split by property** as well (the last has no Drive folder yet: every delinquency
+summary so far matched the `Delinquency` rule first),
+off the same `PROPERTY_FOLDERS` table as the leasing reports. Yardi's rent roll
+names no property in its filename (`RentRoll09_15_2026.xlsx` — the building is
+only inside, at row 278), so in practice rolls stay at the top of `Rent Roll`;
+the delinquency summary names its building (`… - Chorus.xlsx`) and splits.
+Nothing downstream reads the subfolders, and one level is well within
+`MAX_SUBFOLDER_DEPTH`.
+
+Since 2026-09-21 (A11, owner's call) `Renewal Tracker`, `Prospect Reports`,
+`Daily Tracker` and `Daily Leasing Reports` are **one Drive folder** —
+`Daily Leasing Reports` — with a **subfolder per property inside it**.
+`Demographics` stays separate: it is a resident-profile export, not a leasing
+report.
+
+Four routing rules still point there, not one. The pipeline picks a parser by
+`name_patterns`, never by folder, so collapsing the four patterns into a single
+rule would file the families together and leave nothing able to tell a renewal
+tracker from a daily report.
+
+`Comps` is the second, and it is split **twice** — by market and then by which
+of the paired exports it is, matching the tree under *Two markets, and ninety
+extracts of them* above. So the filer writes
+`Comps/San Francisco/Simple/…` rather than dropping everything at the top.
+
+**Both splits happen at filing time, from the attachment's own name**, because
+that is the only place the market or the property is knowable. `SPLIT_INSIDE`
+in the `.js` maps a category folder to the tables it is split by, one segment
+per table — `PROPERTY_FOLDERS` for the leasing families, `COMP_MARKETS` then
+`COMP_KINDS` for the comps — and all three tables are the same
+`{folder, words}` shape matched by one `firstMatch_`, so a third split is a
+table and a line rather than a second mechanism.
+
+Three things about how it behaves:
+
+- **A partial read is not a partial file.** A comp export whose market matches
+  and whose kind does not lands at the **top** of `Comps` with a log line, not
+  in the market folder alone — a reader opening `Comps/Oakland/` would take it
+  for the whole of Oakland. Same rule as a leasing report with no property in
+  its name, and the same rule that kept the concession burn-off unattributed
+  for six weeks.
+- **Nothing downstream depends on it.** These subfolders are for a human
+  browsing Drive; attribution comes from the filename and the file's contents,
+  as it always has. A market nobody has listed still parses — it just sits at
+  the top of `Comps`, which `fetch_drive` reads first.
+- **`applySplit_` is shared with `resortExistingFiles`**, so a re-sort lands a
+  file exactly where an arrival would. It did not before, which meant running
+  the documented recovery step put files somewhere a fresh arrival never goes.
+
+**A rule's own `folder` still never carries a `/`.** Nesting is `SPLIT_INSIDE`'s
+job. A `/` is legal in a Drive folder name, so a rule naming
+`Comps/Oakland/Simple` would create one folder called that — the accident
+`test_routing.py` check 2 exists to catch, and the reason this is a table
+rather than a path.
+
+`PROPERTY_FOLDERS` is generated from `config/properties.json` and has the same
+contract `PROPERTY_WORDS` does — `test_routing.py` check 7b fails if a property
+is added to one and not the other, and check 7c fails if the four families stop
+sharing the folder. A building missing from the list files at the top for ever,
+which looks exactly like a report that has no property in its name. **That was
+the renewal trackers until 2026-09-23**: they name their building as a bare
+`Landing 2025 …`, and the master's words were only `The Landing` / `.Landing`,
+so the whole family filed at the top. `Landing` is an alias now (C10), and
+check 7d pins the tracker and the Landing daily tracker into `The Landing/`.
+The comp exclusion matches whole names, so the alias drops only a comp building
+called exactly "Landing".
+
+`COMP_MARKETS` has no such generator — there is no market list in the repo to
+generate it from — so check 7d pins it against real filenames instead, and
+**check 7d also holds the one cross-file contract that has no other guard**:
+the deepest split must be within `fetch_drive`'s `MAX_SUBFOLDER_DEPTH`. Add a
+third table to a split and every file under it is filed perfectly and never
+read again, with nothing anywhere to say so.
+
+Deploying it needs the `.js` pushed and `resortExistingFiles` run; **files
+already in the three old folders have to be moved by hand**, since that function
+only sees files loose in Report Lander or in `_Unsorted`. Nothing stops parsing
+meanwhile — the rescue sweep finds them by `name_patterns` wherever they sit.
 
 To deploy a routing change: edit the `.js`, run `test_routing.py`, commit, and
 get the code into the project — either by pasting it into `script.google.com` →
@@ -1176,8 +2394,8 @@ so the scorecard's per-cell links from `index.html` are unaffected.
 Each row also links **out**: a card name under "On the dashboard" goes to
 `index.html#<cardId>`, and the dashboard selects the owning tab and flashes the
 card. Every Portfolio card now carries an id for this (`cExpRatio`, `cExpTrend`,
-`cPsf`, `cTradeOutsPortfolio`); the Landing cards already had them, and the
-property tabs' scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
+`cBudgetActual`, `cTradeOutsPortfolio`); the Landing cards already had them, and
+the property tabs' scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
 
 **And every card links back.** Each card on the dashboard carries a small
 `Data ↗` in its **top-right corner** that jumps to where its own numbers live
@@ -1216,7 +2434,9 @@ Three details worth knowing:
   Drive T12 and the unit directory produce. The page claims to hold every
   number the JSON carries and did not, which is why the Operating Summary card
   had nowhere to link. `t-monthlypl-<slug>`, `t-buckets-<slug>` and
-  `t-unitdir-<slug>` now cover them.
+  `t-unitdir-<slug>` now cover them, and `t-budget-<slug>` covers the `budget`
+  block — every month of every year on file, not just the year in progress,
+  since the card's window crosses the calendar boundary.
 
 Regenerate with `python scripts/build_lineage.py` (`--check` verifies and writes
 nothing). `update.yml` runs it after the scorecard fills, so the published chain
@@ -1245,6 +2465,14 @@ reports what that run actually produced.
   which per-property files exist, the newest source filename, when it landed,
   which scorecard cells each feed ended up owning. A declared flow with no
   evidence is reported as waiting, not as working.
+- **A store this checkout cannot read falls back to what it published.**
+  `data/<slug>/rent_roll.json` and `delinquency.json` are gitignored (per-unit,
+  they arrive with names), so they exist only during a pipeline run — and
+  reading the stores alone reported the rent roll, live since 2026-09-11, as
+  `waiting` in every fresh clone. Every field the evidence needs is already in
+  the published aggregate, which IS committed, so `evidence_from_published`
+  reads it from there and the row says where it was read from. Closes open item
+  G4; a lineage page regenerated outside CI is now the same page CI writes.
 
 The script **refuses to write** on a card anchor `index.html` does not define, a
 table id `data.html` does not build, or a parser module named in the report map
@@ -1259,7 +2487,7 @@ Five statuses, and they are the page's whole argument:
 | `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
 | `waiting` | Parser written and registered; no file has ever arrived. **No flow is in this state today** — the rent roll was the last one and it landed 2026-09-11, closing C4 |
 | `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
-| `manual` | No feed at all — `expense_trend`, `psf_vs_peers`, `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run |
+| `manual` | No feed at all — `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run. Two blocks left this row on 2026-09-17: `expense_trend`, derived from the T12 statement now, and `psf_vs_peers`, whose card was removed |
 
 So the T12 points can report an arrival and not just a period,
 `store_expense_ratio` / `store_monthly_pl` / `store_expense_buckets` /
@@ -1280,20 +2508,56 @@ site within a minute or two. `.github/workflows/update.yml` regenerates
 Changes to `index.html` will not appear until they are on `main`. A hard refresh
 is often needed after a deploy, since the page caches aggressively.
 
+### The cron run re-syncs to `main` before it builds
+
+A scheduled run checks out `main` at **run start**, and the run is long — the
+Drive fetch alone was 4h34m on 2026-09-16. Everything after it therefore built
+the repo as it was that morning, and the push-retry loop's replay then put that
+output over whatever had landed since. Every step green, nothing in the log.
+
+That is not hypothetical. Run #86 checked out `b8bcf4d` at 15:20 and committed
+at 19:55; because its `build_metrics.py` predated the budget work it published a
+`metrics.json` with **no `budget` block** (the Budget vs Actual card read
+"no budget has reached the pipeline" with two budgets sitting parsed in Drive),
+rewrote `data/the-landing/budget.json` in the older single-year shape, and
+dropped a hand-added EliseAI day with the scorecard cells behind it — four
+commits undone.
+
+So `update.yml` re-syncs **once, immediately after the fetch**:
+`git fetch origin main` and, if it moved, `git reset --hard` onto it.
+`_downloads/` is gitignored, so the reports this run just fetched survive the
+reset and nothing is downloaded twice.
+
+**That placement rests on a premise that is false, and open item A15 is the
+evidence.** The premise was that everything below the re-sync is minutes rather
+than hours, so one sync closes almost the whole window. Run #88 on 2026-09-18
+fetched Drive in **2m26s** and then spent **4h54m in `build_metrics.py`**: the
+re-sync fired at 14:50:56 and correctly found main unmoved, the Market Comps
+work merged at 17:08, and at 19:44 the retry loop below replayed the run's
+stale `metrics.json` and `lineage.json` over it — blanking a live tab. The long
+pole is the build, not the fetch, and the guard covers the wrong one. Do not
+read this section as saying the window is closed; it is open for hours a day
+until A15 is taken.
+
+It takes the newer **data** as well as the newer code, which is the half that
+saves a hand-added feed: the build then accumulates onto the current stores
+rather than the run-start ones.
+
+**The retry loop's replay is a clobber, not a merge.** When the push is
+rejected it resets to `origin/main`, copies this run's own output back over the
+top and commits — so anything newer in those paths is overwritten by a build
+that never saw it. It warns and names each file first, which is how run #88 was
+diagnosed, but a warning inside a green run is not a signal anyone receives.
+
 ### Keeping data out of git history (migration, not yet active)
 
-Committing the data means every past month's financials stay in history forever.
-Encrypting them narrows that but does not close it: history still holds every
-**plaintext** version committed before the sealing, and the sealed versions after
-it all open under whichever password sealed them.
-`.github/workflows/deploy.yml` is the structural fix: it deploys `docs/` to Pages
-from an artifact assembled at run time, taking the site shell from `main` and the
-data from a `data` branch that keeps no history at all.
+Committing the data JSON means every past month's financials stay readable in
+history forever. `.github/workflows/deploy.yml` fixes that: it deploys `docs/`
+to Pages from an artifact assembled at run time, taking the site shell from
+`main` and the data JSON from a `data` branch.
 
 `docs/lineage.json` travels with the other three data files — `update.yml`
-commits it, `publish_data.sh` publishes it and `deploy.yml` overlays it. All four
-move in their **sealed** form (`*.json.enc`); the plaintext is gitignored and
-never leaves the runner.
+commits it, `publish_data.sh` publishes it and `deploy.yml` overlays it.
 
 `scripts/publish_data.sh` writes that branch as a **single commit with no
 parent**, force-replacing it each time, so only the current data exists in git —
@@ -1319,158 +2583,13 @@ After flipping it, in order:
 
 1. `scripts/publish_data.sh` — create the `data` branch.
 2. Confirm the site still loads, then stop committing data to `main`: drop
-   `docs/*.json.enc` from tracking and change `update.yml` to publish to the
-   `data` branch instead of committing. (The *plaintext* half of this step is
-   already done — `docs/*.json` came out of tracking when the data was sealed,
-   and `check_no_pii.py` now fails if it goes back in.)
+   `docs/*.json` from tracking and change `update.yml` to publish to the `data`
+   branch instead of committing.
 3. `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`, to
    remove the data already in history. Tested on a throwaway clone: 63 commits →
    40, every data path gone from every commit, site shell and scripts intact.
    Read the script's header first — it rewrites history, needs a force-push, and
    **cannot un-publish anything that was already public.**
-
-## The data files are encrypted
-
-`docs/metrics.json` and its three siblings are neither published nor committed.
-What ships is `docs/metrics.json.enc` — AES-256-GCM ciphertext under a key
-derived from the dashboard password by 600,000 rounds of PBKDF2-HMAC-SHA256 —
-and the gate is what opens it. There is no password constant in `index.html` any
-more, because there is nothing left for one to do: typing the password derives
-the key, and a wrong password is simply a file that does not decrypt.
-
-That is what the old gate never was. The password was a readable line in a public
-repository, and the data it stood in front of was one `curl` away from anyone who
-never met the gate at all.
-
-| Piece | What |
-| --- | --- |
-| `scripts/crypto_data.py` | Seals and opens the files, and is where the envelope format is defined. `encrypt` / `decrypt` / `check` / `rotate` |
-| `docs/unlock.js` | The reader half — WebCrypto only, no library — shared by `index.html` and `data.html` so the two cannot disagree about a format |
-| `docs/*.json.enc` | What is committed and served |
-| `docs/*.json` | The plaintext the pipeline reads and rewrites between runs. **Gitignored** |
-| `scripts/test_encryption.py` | 42 fixture-free checks, including running `unlock.js` itself under Node against files Python sealed |
-
-### The protection is exactly as good as the passphrase
-
-Nothing else is holding it up. The ciphertext is public, so an attacker takes a
-copy once and guesses offline at whatever rate their hardware allows — no rate
-limit, no lockout, nobody watching, and as long as they like. 600,000 iterations
-make each guess cost real time; they do not make a guessable password safe.
-
-**`AlignExecs` is what this was first sealed under** — the password that was
-already sitting in `index.html` in public, kept so the site would keep working
-the moment this deployed. It would fall to a targeted wordlist in seconds.
-Rotating it is the step that turns this from a mechanism into protection:
-
-    python scripts/crypto_data.py rotate        # prompts for the old, then the new
-
-Then set the new value as the **`DASHBOARD_PASSWORD` repository secret**, or the
-next pipeline run cannot open its own data. `rotate` refuses a new password under
-12 characters, and opens every file before rewriting any — a rotation that
-half-finished would leave no single password able to read the set.
-
-Two more things encryption does not do. It does not reach backwards: every
-version committed before this is still in git history in the clear, which is what
-`scripts/purge_data_history.sh` is for (open item E3). And it does not survive
-the password: anyone who has it can hand the data on, and a copy of today's
-ciphertext stays readable under today's password forever, whatever it is rotated
-to later.
-
-### The envelope
-
-JSON, so GitHub Pages can serve it as a static file, and self-describing so the
-reader needs nothing but the file:
-
-    {"v":1, "alg":"AES-256-GCM", "kdf":"PBKDF2-HMAC-SHA256", "iter":600000,
-     "salt":"<b64>", "iv":"<b64>", "ct":"<b64>", "aad":"align-dashboard/v1/metrics.json"}
-
-Every choice in it is there so the browser half needs no library: WebCrypto does
-PBKDF2 and AES-GCM natively, and Python's `AESGCM.encrypt` returns
-ciphertext‖tag, which is exactly what `SubtleCrypto.decrypt` expects. Four things
-worth knowing:
-
-- **One salt per run, a fresh IV per file.** One derivation therefore opens all
-  four, which matters because the derivation is deliberately expensive. IVs are
-  never shared — reusing one under a single key breaks GCM outright.
-- **The filename is bound in as additional authenticated data.** Without it,
-  `scorecard.json.enc` served under `metrics.json`'s name decrypts happily and
-  the page draws one file's numbers under another's heading. With it, a swapped
-  file fails to open. Tested on both sides.
-- **Unchanged data is not re-sealed.** Salt and IV are random, so a plain
-  re-encrypt writes different bytes every night and the daily cron would commit a
-  diff on days nothing moved. `encrypt` opens the existing envelope first and
-  leaves it alone when the plaintext matches — which is also why `--replace`
-  deletes the plaintext *outside* that branch, since an already-current envelope
-  is exactly the run that would otherwise leave a clear copy behind.
-- **The iteration count lives in the envelope**, not in the reader, so the cost
-  can be raised by re-encrypting without touching the page.
-
-### The pipeline round-trips through the plaintext
-
-This is why the secret is not optional. `build_metrics` reloads the previous
-`docs/metrics.json` to carry the hand-authored blocks through, and
-`populate_scorecard` merges into the existing `docs/scorecard.json` rather than
-replacing it — so a run has to read last run's output. `update.yml` therefore
-opens the sealed files immediately after installing dependencies and re-seals
-them at the end:
-
-    check the key is present  ->  decrypt  ->  fetch/build/fill  ->  check_no_pii
-                              ->  encrypt --replace  ->  check  ->  commit *.enc
-
-The key check is first on purpose: without it the run cannot read the data it
-exists to update, and discovering that after fetching Drive and rebuilding
-everything wastes the whole run. It **fails** rather than carrying on, because
-the alternative — carrying on and committing plaintext — quietly undoes all of
-this.
-
-`check_no_pii.py` runs on the **plaintext**, before the encrypt step, which is
-the only point at which it can mean anything; once sealed there is nothing for it
-to read. It says `SEALED` rather than `PASS` when it can only see ciphertext, so
-it cannot pass for the wrong reason, and it now fails outright on a plaintext
-`docs/*.json` that is tracked or staged — in a 100,000-line JSON diff that is
-invisible otherwise.
-
-### Three modes, and the page is told which one it is in
-
-| Mode | What it means |
-| --- | --- |
-| `encrypted` | `docs/*.json.enc` is present. The gate derives a key and opens them. This is the live site |
-| `plain` | No `.enc`, but `docs/*.json` is there — a local checkout that ran the pipeline and did not seal it. It loads, with no gate, under a red **UNSEALED DATA** banner |
-| `missing` | Neither. An honest error rather than an empty dashboard |
-
-`plain` exists because the pipeline writes plaintext and a developer should not
-have to seal it to look at the page. The banner is not decoration: an unsealed
-build that looked identical to a sealed one is how an unsealed one gets deployed.
-It cannot reach production anyway — `check_no_pii` refuses to commit the
-plaintext and `deploy.yml` refuses to publish an artifact containing it.
-
-Other things the page does:
-
-- **The session key is the derived key, not the password**, kept in
-  `sessionStorage` so `data.html` opens without a second prompt. It is
-  non-extractable once imported, and it is dropped when the salt changes — the
-  daily run re-seals, so a tab left open across it re-prompts rather than
-  showing nothing.
-- **`sessionStorage` is per tab.** A new tab gets the gate again. That is the
-  behaviour, not a bug.
-- **`crypto.subtle` only exists in a secure context.** HTTPS or `localhost`;
-  opening the file over `file://` gives no crypto at all. Serve `docs/` with
-  `python3 -m http.server` to look at it locally — which the page says, rather
-  than failing as `undefined`.
-- **`scorecard.json` had to become lazy.** It was fetched at script-parse time,
-  before the gate had been passed — harmless when the file was public, and
-  impossible now that opening it needs the key the gate produces. Callers that
-  ask for data before unlocking **park** rather than fail, which is what lets
-  the several top-level render calls in `index.html` keep their shape.
-
-`scripts/test_encryption.py` covers the failures that would otherwise be
-invisible, since ciphertext looks equally opaque whether it is protecting
-anything or not: a wrong password appearing to work, a tampered file opening
-anyway, one file's ciphertext serving as another's, plaintext surviving inside
-the envelope, a nightly re-seal churning the repo, a half-finished rotation. It
-also runs `docs/unlock.js` under Node against files `crypto_data.py` sealed —
-two implementations of one format drift the moment either is edited alone, and
-the symptom is a live dashboard that shows nothing to anybody.
 
 ## Tenant names must not leave the pipeline
 
@@ -1495,26 +2614,22 @@ Raw reports are gitignored (`_downloads/`, `*.xlsx`, `tests/fixtures/`,
 **Anything the page displays is in a file anyone with the URL can download.**
 There is no "visible on the page but not otherwise accessible" on a static site
 — the page fetches JSON over HTTP. That is why names are dropped from the data
-entirely rather than merely hidden from a table.
-
-The data being encrypted now does **not** relax this, and the rule is unchanged.
-The password is shared with everyone who reads the dashboard, so "encrypted" here
-means "readable by every viewer" — which is the wrong bar for a resident's name.
-And the ciphertext is public and permanent: a password that leaks once exposes
-every copy ever published, retroactively. Names stay out of the data.
+entirely rather than merely hidden from a table. Displaying them would require
+encrypting the JSON or putting the site behind real auth.
 
 ## Notes
 
-- The page is no longer gated by a password constant — there is no constant.
-  The password is the decryption key for `docs/*.json.enc`; see **The data files
-  are encrypted** above, including the part about rotating it, which is what
-  makes any of it worth having.
-- `index.html` is the only place the password is entered. Unlocking puts the
-  derived key in `sessionStorage`; `data.html` borrows it and redirects to
-  `index.html?next=data.html` when there is none, so the data tables are not a
-  second way in — and now cannot be, since without the key there is nothing
-  there to read. Any new gated page should call `AlignUnlock.load()` rather than
-  fetching JSON itself or adding its own password field.
+- The page is gated by a client-side password constant in `index.html`. This is
+  visibility deterrence, not encryption — the source is public and readable. Do
+  not treat it as protecting anything. Real financials need client-side
+  encryption of `metrics.json` first.
+- `index.html` is the only place the password is entered. Unlocking sets
+  `sessionStorage["align-unlocked"]`; `data.html` requires that marker and
+  redirects to `index.html?next=data.html` without it, so the data tables are
+  not a second way in. The unlock lasts the browser session, not forever. Any
+  new gated page should follow the same pattern rather than adding its own
+  password field — and note the marker is client-side like the gate itself, so
+  it deters, it does not protect.
 - `metrics.json` values flow into the DOM. When rendering anything from it,
   prefer `textContent` / `createElement` over `innerHTML` so pipeline data
   cannot inject markup.

@@ -129,8 +129,8 @@
     },
     {
       "week_ending": "2026-09-13",
-      "source_file": "2026-09-12 Daily Report- Week Ending 9.13.26.xlsx",
-      "landed_at": "2026-09-13T01:28:31.087Z",
+      "source_file": "2026-09-15 Daily Report- Week Ending 9.13.26.xlsx",
+      "landed_at": "2026-09-15T20:28:38.296Z",
       "totals": {
         "leases": 1,
         "lease_rent": 10000,
@@ -168,6 +168,61 @@
           "check": "week-ending date found",
           "ok": true,
           "note": "2026-09-13 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 54 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "The Landing (from the Weekly_Leases header)"
+        }
+      ],
+      "problems": []
+    },
+    {
+      "week_ending": "2026-09-20",
+      "source_file": "2026-09-21 Daily Report- Week Ending 9.20.26.xlsx",
+      "landed_at": "2026-09-21T23:28:31.515Z",
+      "totals": {
+        "leases": 1,
+        "lease_rent": 6195,
+        "prior_rent": 2914,
+        "tradeout_amount": 3281,
+        "tradeout_pct_mean": 1.125944,
+        "sqft": 618,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "734",
+          "unit_type": null,
+          "floor_plan": "LAA1",
+          "beds_baths": "1B1B",
+          "sqft": 618,
+          "lease_rent": 6195,
+          "prior_rent": 2914,
+          "tradeout_amount": 3281,
+          "tradeout_pct": 1.125944,
+          "concession": 0,
+          "net_rent": 6195,
+          "move_in": "2026-10-24",
+          "term": "13"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 1,
+          "leases": 1
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-09-20 (from the filename)"
         },
         {
           "check": "stopped at a section marker",

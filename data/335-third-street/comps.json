@@ -1,0 +1,960 @@
+{
+  "property_code": "335 Third Street",
+  "subject": {
+    "building": "335 Third Street",
+    "address": "335 3rd Street",
+    "city": "Oakland",
+    "zip": "94607",
+    "units": 38,
+    "year_built": 2026,
+    "lat": 37.79546,
+    "lng": -122.27316
+  },
+  "as_of": "2026-09-21",
+  "primary_radius_mi": 1.35,
+  "excluded_related": [],
+  "subject_by_bed": {
+    "1": {
+      "n": 28,
+      "median_rent": 2557.5,
+      "mean_rent": 2588.96,
+      "median_sqft": 602.0,
+      "median_psf": 4.2483
+    }
+  },
+  "rings": [
+    {
+      "radius_mi": 0.75,
+      "primary": false,
+      "properties": 9,
+      "listings": 100,
+      "by_bed": {
+        "0": {
+          "n": 17,
+          "median_rent": 2250.0,
+          "mean_rent": 2272.35,
+          "median_sqft": 521.0,
+          "median_psf": 4.3647
+        },
+        "1": {
+          "n": 59,
+          "median_rent": 2755.0,
+          "mean_rent": 2710.51,
+          "median_sqft": 639.0,
+          "median_psf": 4.3834
+        },
+        "2": {
+          "n": 21,
+          "median_rent": 3662.0,
+          "mean_rent": 3798.19,
+          "median_sqft": 1052.0,
+          "median_psf": 3.6301
+        },
+        "3": {
+          "n": 3,
+          "median_rent": 3899.0,
+          "mean_rent": 4152.67,
+          "median_sqft": 1082.0,
+          "median_psf": 3.6035
+        }
+      }
+    },
+    {
+      "radius_mi": 1.35,
+      "primary": true,
+      "properties": 9,
+      "listings": 100,
+      "by_bed": {
+        "0": {
+          "n": 17,
+          "median_rent": 2250.0,
+          "mean_rent": 2272.35,
+          "median_sqft": 521.0,
+          "median_psf": 4.3647
+        },
+        "1": {
+          "n": 59,
+          "median_rent": 2755.0,
+          "mean_rent": 2710.51,
+          "median_sqft": 639.0,
+          "median_psf": 4.3834
+        },
+        "2": {
+          "n": 21,
+          "median_rent": 3662.0,
+          "mean_rent": 3798.19,
+          "median_sqft": 1052.0,
+          "median_psf": 3.6301
+        },
+        "3": {
+          "n": 3,
+          "median_rent": 3899.0,
+          "mean_rent": 4152.67,
+          "median_sqft": 1082.0,
+          "median_psf": 3.6035
+        }
+      }
+    },
+    {
+      "radius_mi": null,
+      "primary": false,
+      "properties": 9,
+      "listings": 100,
+      "by_bed": {
+        "0": {
+          "n": 17,
+          "median_rent": 2250.0,
+          "mean_rent": 2272.35,
+          "median_sqft": 521.0,
+          "median_psf": 4.3647
+        },
+        "1": {
+          "n": 59,
+          "median_rent": 2755.0,
+          "mean_rent": 2710.51,
+          "median_sqft": 639.0,
+          "median_psf": 4.3834
+        },
+        "2": {
+          "n": 21,
+          "median_rent": 3662.0,
+          "mean_rent": 3798.19,
+          "median_sqft": 1052.0,
+          "median_psf": 3.6301
+        },
+        "3": {
+          "n": 3,
+          "median_rent": 3899.0,
+          "mean_rent": 4152.67,
+          "median_sqft": 1082.0,
+          "median_psf": 3.6035
+        }
+      }
+    }
+  ],
+  "size_match": {
+    "1": {
+      "subject_sqft": 602.0,
+      "comp_sqft": 639.0,
+      "gap": -0.0579,
+      "like_for_like": true
+    }
+  },
+  "premium": {
+    "median": -0.0819,
+    "quarters": 1,
+    "first": "2023Q2",
+    "last": "2026Q3",
+    "beds": [
+      1
+    ],
+    "basis": "median of the quarterly premium in asking $/sqft over 1 quarter(s) where both sides listed at least 5 units, each quarter taken per bedroom and weighted back together by the subject's own listing counts"
+  },
+  "quarters": [
+    {
+      "key": "2023Q2",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.5362,
+      "comp_n": 3,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2023Q3",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.7145,
+      "comp_n": 21,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2023Q4",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.956,
+      "comp_n": 12,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2024Q1",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.3821,
+      "comp_n": 9,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2024Q2",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.0091,
+      "comp_n": 62,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2024Q3",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.3957,
+      "comp_n": 16,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2024Q4",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.6545,
+      "comp_n": 19,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2025Q1",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.6392,
+      "comp_n": 20,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2025Q2",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.8983,
+      "comp_n": 26,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2025Q3",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.711,
+      "comp_n": 44,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2025Q4",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.5,
+      "comp_n": 33,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2026Q1",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.2657,
+      "comp_n": 39,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2026Q2",
+      "subject_psf": 4.2276,
+      "subject_n": 38,
+      "comp_psf": 4.6047,
+      "comp_n": 38,
+      "premium": -0.0819,
+      "premium_beds": 1,
+      "by_bed": {
+        "1": {
+          "premium": -0.0819,
+          "subject_n": 38,
+          "comp_n": 38
+        }
+      }
+    },
+    {
+      "key": "2026Q3",
+      "subject_psf": 3.7375,
+      "subject_n": 1,
+      "comp_psf": 4.5563,
+      "comp_n": 43,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    }
+  ],
+  "months": [
+    {
+      "key": "2023-06",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.5362,
+      "comp_n": 3,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-07",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.4689,
+      "comp_n": 4,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-08",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.3646,
+      "comp_n": 7,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-09",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.9052,
+      "comp_n": 10,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-10",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.1916,
+      "comp_n": 3,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-11",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.9144,
+      "comp_n": 4,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-12",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.6677,
+      "comp_n": 5,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-01",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.0225,
+      "comp_n": 1,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-02",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.5,
+      "comp_n": 3,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-03",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.3821,
+      "comp_n": 5,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-04",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.3304,
+      "comp_n": 2,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-05",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.0408,
+      "comp_n": 55,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-06",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.1455,
+      "comp_n": 5,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-07",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.5827,
+      "comp_n": 4,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-08",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.2682,
+      "comp_n": 6,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-09",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.2367,
+      "comp_n": 6,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-10",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.4126,
+      "comp_n": 8,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-11",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.8914,
+      "comp_n": 4,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-12",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.6545,
+      "comp_n": 7,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-01",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.8324,
+      "comp_n": 11,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-02",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.4885,
+      "comp_n": 4,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-03",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.6814,
+      "comp_n": 5,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-04",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.2606,
+      "comp_n": 8,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-05",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.1695,
+      "comp_n": 7,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-06",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.609,
+      "comp_n": 11,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-07",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.711,
+      "comp_n": 14,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-08",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.8759,
+      "comp_n": 16,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-09",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.572,
+      "comp_n": 14,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-10",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.3584,
+      "comp_n": 8,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-11",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.7318,
+      "comp_n": 15,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-12",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 3.5427,
+      "comp_n": 10,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-01",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.2657,
+      "comp_n": 17,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-02",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.125,
+      "comp_n": 14,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-03",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.1861,
+      "comp_n": 8,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-04",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.488,
+      "comp_n": 12,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-05",
+      "subject_psf": 4.2276,
+      "subject_n": 38,
+      "comp_psf": 4.5569,
+      "comp_n": 18,
+      "premium": -0.0723,
+      "premium_beds": 1
+    },
+    {
+      "key": "2026-06",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.7898,
+      "comp_n": 8,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-07",
+      "subject_psf": 3.7375,
+      "subject_n": 1,
+      "comp_psf": 4.5154,
+      "comp_n": 19,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-08",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.5563,
+      "comp_n": 15,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2026-09",
+      "subject_psf": null,
+      "subject_n": 0,
+      "comp_psf": 4.7808,
+      "comp_n": 9,
+      "premium": null,
+      "premium_beds": 0
+    }
+  ],
+  "days_on_market": {
+    "subject_median": 101.0,
+    "subject_n": 11,
+    "comp_median": 41.5,
+    "comp_n": 248,
+    "since": "2025-09-01"
+  },
+  "concessions": {
+    "subject_share": 1.0,
+    "subject_n": 28,
+    "comp_share": 0.85,
+    "comp_n": 100
+  },
+  "comps": [
+    {
+      "building": "311 2Nd St",
+      "address": "311 2nd Street",
+      "year_built": 2009,
+      "units": 1,
+      "miles": 0.072,
+      "listings": 3,
+      "by_bed": {
+        "1": {
+          "n": 1,
+          "median_rent": 2800.0,
+          "median_sqft": 714.0
+        },
+        "2": {
+          "n": 2,
+          "median_rent": 4550.0,
+          "median_sqft": 1250.5
+        }
+      }
+    },
+    {
+      "building": "Modera Jack London Square",
+      "address": "378 Embarcadero West",
+      "year_built": 2019,
+      "units": 134,
+      "miles": 0.096,
+      "listings": 9,
+      "by_bed": {
+        "0": {
+          "n": 3,
+          "median_rent": 2095.0,
+          "median_sqft": 376.0
+        },
+        "1": {
+          "n": 5,
+          "median_rent": 2751.0,
+          "median_sqft": 604.0
+        },
+        "3": {
+          "n": 1,
+          "median_rent": 4960.0,
+          "median_sqft": 1286.0
+        }
+      }
+    },
+    {
+      "building": "Channel House",
+      "address": "40 Harrison Street",
+      "year_built": 2021,
+      "units": 333,
+      "miles": 0.152,
+      "listings": 60,
+      "by_bed": {
+        "0": {
+          "n": 13,
+          "median_rent": 2250.0,
+          "median_sqft": 521.0
+        },
+        "1": {
+          "n": 29,
+          "median_rent": 2876.0,
+          "median_sqft": 711.0
+        },
+        "2": {
+          "n": 16,
+          "median_rent": 3668.5,
+          "median_sqft": 1052.0
+        },
+        "3": {
+          "n": 2,
+          "median_rent": 3749.0,
+          "median_sqft": 1082.0
+        }
+      }
+    },
+    {
+      "building": "200 2Nd St",
+      "address": "200 2nd Street",
+      "year_built": 2006,
+      "units": 75,
+      "miles": 0.165,
+      "listings": 0,
+      "by_bed": {}
+    },
+    {
+      "building": "Link Apartments\u00ae Four12",
+      "address": "412 Madison Street",
+      "year_built": 2024,
+      "units": 157,
+      "miles": 0.292,
+      "listings": 16,
+      "by_bed": {
+        "1": {
+          "n": 15,
+          "median_rent": 2755.0,
+          "median_sqft": 508.0
+        },
+        "2": {
+          "n": 1,
+          "median_rent": 3455.0,
+          "median_sqft": 836.0
+        }
+      }
+    },
+    {
+      "building": "Updated Modern Building in Jack London Squ",
+      "address": "777 Broadway",
+      "year_built": 2018,
+      "units": 51,
+      "miles": 0.336,
+      "listings": 6,
+      "by_bed": {
+        "1": {
+          "n": 5,
+          "median_rent": 2605.0,
+          "median_sqft": 592.0
+        },
+        "2": {
+          "n": 1,
+          "median_rent": 3640.0,
+          "median_sqft": 1039.0
+        }
+      }
+    },
+    {
+      "building": "1 Embarcadero W #252",
+      "address": "1 Embarcadero West",
+      "year_built": 1974,
+      "units": null,
+      "miles": 0.406,
+      "listings": 2,
+      "by_bed": {
+        "1": {
+          "n": 2,
+          "median_rent": 2400.0,
+          "median_sqft": 668.0
+        }
+      }
+    },
+    {
+      "building": "5 Embarcadero W.",
+      "address": "5 Embarcadero West",
+      "year_built": 1974,
+      "units": 1,
+      "miles": 0.406,
+      "listings": 2,
+      "by_bed": {
+        "0": {
+          "n": 1,
+          "median_rent": 2000.0,
+          "median_sqft": 476.0
+        },
+        "1": {
+          "n": 1,
+          "median_rent": 2200.0,
+          "median_sqft": 668.0
+        }
+      }
+    },
+    {
+      "building": "Portobello Condominiums",
+      "address": "7 Embarcadero West",
+      "year_built": 1974,
+      "units": 48,
+      "miles": 0.411,
+      "listings": 2,
+      "by_bed": {
+        "1": {
+          "n": 1,
+          "median_rent": 2365.0,
+          "median_sqft": 688.0
+        },
+        "2": {
+          "n": 1,
+          "median_rent": 3200.0,
+          "median_sqft": 1050.0
+        }
+      }
+    }
+  ],
+  "subject_listings": {
+    "current": 28,
+    "oldest_days": 124,
+    "by_bed": {
+      "1": 28
+    }
+  },
+  "report_type": "market_comps",
+  "vendor": "HelloData",
+  "market": "San Francisco-Oakland-Hayward, CA",
+  "properties_in_file": 10,
+  "listings_in_file": 738,
+  "source_file": "2026-09-22 HelloData - Simple - 335 Third Street (2).xlsx",
+  "landed_at": "2026-09-22T17:28:31.107Z",
+  "checks": [
+    {
+      "check": "every listed building is described in 'Property Data'",
+      "ok": true,
+      "buildings": 10,
+      "missing": []
+    },
+    {
+      "check": "days on market reconciles to the listing's own dates",
+      "ok": true,
+      "closed_listings": 596,
+      "agree": 596,
+      "rate": 1.0,
+      "note": "(removed - first listed) + 1, inclusive of both ends"
+    },
+    {
+      "check": "floorplan summary rows are not counted as units",
+      "ok": true,
+      "skipped": 4,
+      "units_read": 738
+    },
+    {
+      "check": "listings with no price or no size are excluded",
+      "ok": true,
+      "excluded": 2
+    },
+    {
+      "check": "the current set is the file's own as-of date",
+      "ok": true,
+      "as_of": "2026-09-21",
+      "current": 128
+    },
+    {
+      "check": "Align's own buildings are out of the comp set",
+      "ok": true,
+      "excluded": [
+        "335 Third Street"
+      ]
+    }
+  ],
+  "problems": [],
+  "vintages": [
+    "2026-08-05",
+    "2026-08-06",
+    "2026-08-07",
+    "2026-08-08",
+    "2026-08-09",
+    "2026-08-10",
+    "2026-08-11",
+    "2026-08-12",
+    "2026-08-13",
+    "2026-08-14",
+    "2026-08-15",
+    "2026-08-16",
+    "2026-08-17",
+    "2026-08-18",
+    "2026-08-19",
+    "2026-08-20",
+    "2026-08-21",
+    "2026-08-22",
+    "2026-08-23",
+    "2026-08-24",
+    "2026-08-25",
+    "2026-08-26",
+    "2026-08-27",
+    "2026-08-28",
+    "2026-08-29",
+    "2026-08-30",
+    "2026-08-31",
+    "2026-09-01",
+    "2026-09-02",
+    "2026-09-03",
+    "2026-09-04",
+    "2026-09-05",
+    "2026-09-06",
+    "2026-09-07",
+    "2026-09-08",
+    "2026-09-10",
+    "2026-09-11",
+    "2026-09-12",
+    "2026-09-13",
+    "2026-09-14",
+    "2026-09-15",
+    "2026-09-17",
+    "2026-09-18",
+    "2026-09-19",
+    "2026-09-20",
+    "2026-09-21"
+  ]
+}
