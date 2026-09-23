@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refuse to push a sealed tree that also carries plaintext data. pre-commit does
+# not run on `rebase --continue` or `--no-verify`; this runs on what is pushed.
+exec python3 scripts/crypto_data.py pre-push

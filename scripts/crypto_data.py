@@ -666,12 +666,21 @@ def cmd_reseal(args, root, password=None, ring=None):
         password, ring = keyring_for(args, confirm=True)
     rels = select(root, args.files)
     plaintexts = {}
+    tracked = set(git(root, "ls-files", check=False).stdout.split())
     for rel in rels:
         enc, plain_p = root / (rel + SUFFIX), root / rel
         if enc.is_file():
             env, _ = read_env(root, rel)
             plaintexts[rel], _ = ring.open(env, rel)
-            if plain_p.is_file() and plain_p.read_bytes() != plaintexts[rel] and not args.force:
+            if rel in tracked and plain_p.is_file() and plain_p.read_bytes() != plaintexts[rel]:
+                # Plaintext committed beside its sealed copy -- a cutover race, a
+                # force-add, a rebase that re-added it. This is the case
+                # seal_data.yml exists to repair, so settle it rather than refuse:
+                # the one committed more recently is the current data.
+                if _commit_time(root, rel) > _commit_time(root, rel + SUFFIX):
+                    plaintexts[rel] = plain_p.read_bytes()
+                    print(f"   ADOPTED  {rel} (committed after its sealed copy)")
+            elif plain_p.is_file() and plain_p.read_bytes() != plaintexts[rel] and not args.force:
                 raise CryptoDataError(
                     f"{rel}: the working copy differs from the sealed copy. Seal or "
                     f"discard it first (encrypt, or decrypt --force), then reseal.")
@@ -686,6 +695,11 @@ def cmd_reseal(args, root, password=None, ring=None):
     save_state(root, state)
     print(f"{wrote} sealed, {same} already current under this password")
     return 0
+
+
+def _commit_time(root, path):
+    out = git(root, "log", "-1", "--format=%ct", "--", path, check=False).stdout.strip()
+    return int(out) if out.isdigit() else 0
 
 
 def cmd_rotate(args, root):
@@ -733,7 +747,10 @@ def cmd_check(args, root):
             plaintext, used = ring.open(env, rel)
             json.loads(plaintext)
             salts.add(env["salt"])
-            if used != password:
+            if used != password and not getattr(args, "allow_old", False):
+                # Strict by default (the check after a seal). The pre-flight passes
+                # --allow-old: files under the old password are a rotation in
+                # progress that this very run will complete, not a failure.
                 problems.append(f"{rel}: opens only under DASHBOARD_PASSWORD_OLD")
         except (CryptoDataError, ValueError) as exc:
             problems.append(str(exc))
@@ -865,8 +882,19 @@ def cmd_merge_driver(args, root):
             paths.append(str(q))
         res = subprocess.run(["git", "merge-file", "-p", *paths], capture_output=True)
     if res.returncode != 0:
+        # Leaving ours in place would leave a perfectly valid envelope with no
+        # conflict markers, and the natural `git add` + continue would then keep
+        # one side without a trace. So the file becomes something nothing will
+        # accept -- decrypt, check, pre-commit and the page all refuse it -- and
+        # an unresolved conflict fails loudly wherever it goes next.
+        pathlib.Path(ours_p).write_text(json.dumps({
+            "conflict": rel,
+            "resolve": "both sides changed the same lines. Take one side's .enc "
+                       "(git checkout --ours/--theirs), decrypt, redo the other "
+                       "side's change, encrypt --git."}) + "\n")
         print(f"[alignenc] {rel}: the two sides changed the same lines -- resolve by "
-              f"hand (decrypt, edit, encrypt --force)", file=sys.stderr)
+              f"hand (take one side, decrypt, redo the other's change, encrypt --git)",
+              file=sys.stderr)
         return 1
     try:
         json.loads(res.stdout)
@@ -896,6 +924,17 @@ def cmd_pre_commit(args, root):
         not (root / (r + SUFFIX)).is_file()
         # or an opened one that changed and was not re-sealed
         or (state.get(r) and state[r].get("plain") != sha((root / r).read_bytes())))]
+    bad_env = []
+    for f in staged:
+        if f.endswith(SUFFIX) and f[:-len(SUFFIX)] in rels:
+            try:
+                check_envelope(json.loads(git(root, "show", f":{f}").stdout), f)
+            except (CryptoDataError, ValueError):
+                bad_env.append(f)
+    if bad_env:
+        print("pre-commit: these staged sealed files are not envelopes -- an unresolved "
+              "merge conflict, or a broken file:\n  " + "\n  ".join(bad_env), file=sys.stderr)
+        return 1
     if not clear and not unsealed:
         return 0
     if clear:
@@ -912,6 +951,64 @@ def cmd_pre_commit(args, root):
     return 1
 
 
+def _tree_plaintext(root, sha):
+    """Sealed-set plaintext paths in a commit's tree, if that tree seals anything."""
+    names = git(root, "ls-tree", "-r", "--name-only", sha, check=False).stdout.split()
+    if not any(n.endswith(SUFFIX) for n in names):
+        return []                                   # an unsealed tree: nothing to protect
+    def sealable(n):
+        return any(fnmatch.fnmatch(n, g) for g in SEALED_GLOBS) and not never_sealed(n)
+    return sorted(n for n in names if sealable(n))
+
+
+def cmd_pre_push(args, root):
+    """git pre-push hook: refuse to push a sealed tree that also carries plaintext.
+
+    pre-commit does not run on `rebase --continue` or `commit --no-verify`, and a
+    conflict at the cutover resolves naturally into exactly this: the plaintext
+    re-added beside its sealed copy. Checked on what is actually being pushed.
+    """
+    bad = []
+    for line in sys.stdin.read().splitlines():
+        parts = line.split()
+        if len(parts) != 4 or set(parts[1]) == {"0"}:
+            continue                                # a deletion
+        bad += _tree_plaintext(root, parts[1])
+    if bad:
+        print("pre-push: refusing -- the commit being pushed carries plaintext data beside "
+              "the sealed copies, and this repository is public:\n  "
+              + "\n  ".join(sorted(set(bad))[:10]) +
+              "\nTake it out of the index (python3 scripts/crypto_data.py untrack), "
+              "commit, and push again.", file=sys.stderr)
+        return 1
+    return 0
+
+
+def cmd_same_key(args, root):
+    """Is <ref> sealed under the same key as this checkout? No password needed.
+
+    update.yml's push retry replays sealed files over main. If the password was
+    changed while the run was building, main is under a new key and the replay
+    would put some files back under the old one -- a split no single password
+    opens, or a retired password quietly restored.
+    """
+    ref = args.files[0] if args.files else "origin/main"
+    here = root / ("docs/metrics.json" + SUFFIX)
+    there = git(root, "show", f"{ref}:docs/metrics.json{SUFFIX}", check=False)
+    if there.returncode != 0 or not here.is_file():
+        return 0                                    # one side is not sealed yet
+    try:
+        a = json.loads(here.read_text())
+        b = json.loads(there.stdout)
+    except ValueError:
+        return 0
+    if (a.get("salt"), a.get("iter")) != (b.get("salt"), b.get("iter")):
+        print(f"::error::{ref} is sealed under a different key than this run: the password "
+              f"was changed while it ran. Not replaying -- rerun the workflow.", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_post_sync(args, root):
     """post-merge / post-checkout / post-rewrite: refresh working copies after a pull."""
     if mode(root) != "sealed" or not os.environ.get("DASHBOARD_PASSWORD"):
@@ -926,7 +1023,7 @@ def cmd_post_sync(args, root):
 
 COMMANDS = {"status": cmd_status, "decrypt": cmd_decrypt, "encrypt": cmd_encrypt,
             "reseal": cmd_reseal, "rotate": cmd_rotate, "check": cmd_check,
-            "untrack": cmd_untrack,
+            "untrack": cmd_untrack, "pre-push": cmd_pre_push, "same-key": cmd_same_key,
             "passphrase": cmd_passphrase, "install": cmd_install,
             "session-start": cmd_session_start, "textconv": cmd_textconv,
             "merge-driver": cmd_merge_driver, "pre-commit": cmd_pre_commit,
@@ -946,6 +1043,9 @@ def main(argv=None):
     ap.add_argument("--git", action="store_true",
                     help="stage the sealed copies and take the plaintext out of the index")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--allow-old", action="store_true",
+                    help="check: files that open only under DASHBOARD_PASSWORD_OLD are a "
+                         "rotation in progress, not a failure (the pre-flight)")
     args = ap.parse_args(argv)
 
     if args.root:

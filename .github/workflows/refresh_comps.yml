@@ -62,7 +62,7 @@ jobs:
             echo "::error::The DASHBOARD_PASSWORD repository secret is not set; the data is sealed."
             exit 1
           fi
-          python scripts/crypto_data.py check
+          python scripts/crypto_data.py check --allow-old
           python scripts/crypto_data.py decrypt
 
       - name: Fetch the comp exports from Google Drive
