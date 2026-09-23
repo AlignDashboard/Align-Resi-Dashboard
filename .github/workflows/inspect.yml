@@ -23,6 +23,11 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-latest
+    # Figures out of the (public) log: every python process in this job prints
+    # through scripts/ci_logs/sitecustomize.py, which masks currency, percentages
+    # and figure-shaped numbers. Local runs are unaffected.
+    env:
+      PYTHONPATH: ${{ github.workspace }}/scripts/ci_logs
     steps:
       - uses: actions/checkout@v4
 

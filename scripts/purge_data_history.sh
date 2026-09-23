@@ -18,32 +18,53 @@
 # BEFORE RUNNING
 #   1. Push everything you care about, and take a copy of the repo directory.
 #   2. Tell anyone else with a clone that they will need to re-clone.
-#   3. Confirm the live site does not depend on the paths being purged — after
-#      the switch to Actions-based Pages deployment it does not, because the data
-#      comes from the `data` branch instead.
+#   3. Confirm the live site does not depend on the paths being purged. Once the
+#      data is sealed it does not: only the PLAINTEXT is removed, and the sealed
+#      *.json.enc at the tip are kept (a pattern ending in .json does not match
+#      .json.enc). Before sealing, it would take the site's data with it.
+#   4. Run it in a fresh FULL clone (`git clone --mirror`), never a shallow one:
+#      rewriting a shallow graph and force-pushing silently misses history.
+#   5. Delete stale remote branches first (`git branch -r`). Each one carries the
+#      plaintext history up to its fork point, and `push --force --all` only
+#      rewrites the branches this clone has locally.
 #
 # Usage:
 #   scripts/purge_data_history.sh --dry-run     # show what would be rewritten
 #   scripts/purge_data_history.sh --yes-rewrite-history
 set -euo pipefail
 
+# The PLAINTEXT, and only the plaintext. Sealing the data (crypto_data.py)
+# protects every version committed from then on; every version committed before
+# it is still readable by anyone who clones, and that is what this removes. The
+# sealed *.json.enc are kept, so the tip keeps its data and the pipeline its
+# history. metrics_v3.json is an early root-level copy the list used to miss.
 PATHS=(
   docs/metrics.json
   docs/landing.json
   docs/scorecard.json
-  data
+  docs/lineage.json
+  metrics_v3.json
+)
+GLOBS=(
+  'data/*/*.json'
 )
 
 cd "$(git rev-parse --show-toplevel)"
 MODE="${1:---dry-run}"
 
-echo "paths to purge from all history:"
-printf '    %s\n' "${PATHS[@]}"
+echo "plaintext to purge from all history:"
+printf '    %s\n' "${PATHS[@]}" "${GLOBS[@]}"
 echo
-echo "commits currently touching them:"
+echo "commits touching them, across every ref:"
 for p in "${PATHS[@]}"; do
-  printf '    %-24s %s commits\n' "$p" "$(git rev-list --count HEAD -- "$p")"
+  printf '    %-24s %s commits\n' "$p" "$(git rev-list --count --all -- "$p")"
 done
+for g in "${GLOBS[@]}"; do
+  printf '    %-24s %s commits\n' "$g" "$(git rev-list --count --all -- ":(glob)$g")"
+done
+if [ -f "$(git rev-parse --git-dir)/shallow" ]; then
+  echo "::warning:: this clone is SHALLOW -- counts are lower bounds, and rewriting it would miss history"
+fi
 echo "repo size now: $(git count-objects -vH | awk '/size-pack/{print $2, $3}')"
 echo
 
@@ -69,8 +90,14 @@ fi
 command -v git-filter-repo >/dev/null 2>&1 || {
   echo "error: git-filter-repo not found. pip install git-filter-repo" >&2; exit 1; }
 
+if [ -f "$(git rev-parse --git-dir)/shallow" ]; then
+  echo "refusing: this clone is shallow. Use a fresh full clone (git clone --mirror)." >&2
+  exit 1
+fi
+
 args=()
 for p in "${PATHS[@]}"; do args+=(--path "$p"); done
+for g in "${GLOBS[@]}"; do args+=(--path-glob "$g"); done
 
 echo "rewriting history (this creates a fresh commit graph)…"
 git filter-repo --invert-paths "${args[@]}" --force
@@ -83,6 +110,7 @@ Remaining steps, done deliberately by you:
 
   1. Check the result:   git log --oneline | head
                          git log --all --oneline -- docs/landing.json   # expect nothing
+                         git ls-files '*.enc' | wc -l                   # sealed data still there
   2. filter-repo removes the remote to stop an accidental push. Re-add it:
                          git remote add origin <your remote url>
   3. Force-push every branch and tag:

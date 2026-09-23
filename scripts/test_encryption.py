@@ -1,32 +1,43 @@
 #!/usr/bin/env python3
-"""Guard tests for the sealed data files.
+"""Guard tests for the sealed data.
 
-Fixture-free: every file is built in a temp dir, no network and no real report.
-What is covered is the set of ways this could fail INVISIBLY -- which is most of
-them, because ciphertext looks equally opaque whether it is protecting anything
-or not:
+Fixture-free: every repository is built with `git init` in a temp dir, and no
+real report or real data file is read. Ciphertext looks equally opaque whether it
+is protecting anything or not, so what is covered is the set of ways this could
+fail INVISIBLY:
 
-  * a wrong password appearing to work, or a right one appearing not to
-  * a tampered file opening anyway (the GCM tag not actually being checked)
-  * one file's ciphertext being served under another's name
-  * plaintext surviving inside the envelope
-  * the daily run re-sealing unchanged data and committing a diff every night
+  * a wrong password appearing to work, or a tampered file opening anyway
+  * one file's ciphertext opening as another's -- including two properties'
+    stores that share a basename
+  * plaintext surviving inside an envelope, or reaching the git index
+  * a weak or already-public password getting baked in on the first seal
+  * the nightly run re-sealing unchanged data and committing a diff every day
+  * a stale working copy sealed over newer data (the checkout guard)
+  * a store rebuilt from nothing and sealed over its real history
   * a rotation half-finishing and leaving no single password able to open the set
-  * the key derivation drifting away from what unlock.js does in the browser
+  * two concurrent changes to one sealed file no longer merging
+  * the browser half drifting away from this one
 
 Run: python scripts/test_encryption.py
 """
 import base64
+import contextlib
+import io
 import json
 import os
 import pathlib
+import shutil
+import subprocess
 import sys
 import tempfile
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 import crypto_data as cd                   # noqa: E402
 
 PASS = FAIL = 0
+PW = "correct horse battery staple"
+PW2 = "a much longer replacement passphrase"
 
 
 def ok(name, cond, detail=""):
@@ -49,219 +60,420 @@ def raises(exc, fn, *a, **k):
     return False
 
 
-class Args:
-    """Stand-in for the argparse namespace, so the CLI paths are exercised too."""
-    def __init__(self, files=None, replace=False):
-        self.files = files or []
-        self.replace = replace
-        self.password_file = None
-        self.new_password_file = None
+def env(**kw):
+    """Set exactly these password variables for the duration of a block."""
+    for k in ("DASHBOARD_PASSWORD", "DASHBOARD_PASSWORD_OLD", "DASHBOARD_PASSWORD_NEW"):
+        os.environ.pop(k, None)
+    for k, v in kw.items():
+        os.environ[k] = v
 
 
-SAMPLE = {"meta": {"generated_at": "2026-09-15T11:00:00Z", "portfolio": "Align"},
-          "monthly_pl": [{"month": "2026-07", "revenue": 1327451.19}],
-          "secret_marker": "Zzyzx-Bellweather-9917"}
+def run(root, *argv):
+    """The CLI, in process, output swallowed. -> exit code."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+        rc = cd.main([*argv, "--root", str(root)])
+    run.last = out.getvalue()
+    return rc
 
 
-def write(path, doc):
-    pathlib.Path(path).write_text(json.dumps(doc), encoding="utf-8")
-    return str(path)
+run.last = ""
+
+MARKER = "Zzyzx-Bellweather-9917"
 
 
-# --------------------------------------------------------------- the format
+def pretty(obj):
+    return json.dumps(obj, indent=2) + "\n"
 
-def test_format():
+
+def make_repo(tmp, files):
+    root = pathlib.Path(tmp)
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    for k, v in [("user.email", "t@example.com"), ("user.name", "t"),
+                 ("commit.gpgsign", "false")]:
+        subprocess.run(["git", "-C", str(root), "config", k, v], check=True)
+    for rel, obj in files.items():
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(pretty(obj) if not isinstance(obj, str) else obj)
+    subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "init"], check=True)
+    return root
+
+
+def tracked(root):
+    return set(subprocess.run(["git", "-C", str(root), "ls-files"], capture_output=True,
+                              text=True).stdout.split())
+
+
+def enc(root, rel):
+    return json.loads((root / (rel + ".enc")).read_text())
+
+
+STANDARD = {
+    "docs/metrics.json": {"meta": {"generated_at": "2026-09-23T11:00:00Z"},
+                          "monthly_pl": [{"month": "2026-07", "revenue": 1327451.19}],
+                          "note": MARKER},
+    "docs/scorecard.json": {"meta": {"generated_at": "x"}, "k": 1},
+    "data/palma/monthly_pl.json": {"points": [{"m": "2026-07", "noi": 111}]},
+    "data/the-landing/monthly_pl.json": {"points": [{"m": "2026-07", "noi": 999}]},
+    "data/the-landing/rent_roll.json": {"units": [{"unit": "101", "resident": "x"}]},
+    "config/properties.json": {"properties": []},
+}
+
+
+# ------------------------------------------------------------------ the envelope
+
+def test_envelope():
     print("\nthe envelope")
     salt = b"0123456789abcdef"
-    key = cd.derive_key("correct horse battery staple", salt)
-    plain = json.dumps(SAMPLE).encode()
-    env = cd.seal(plain, key, "docs/metrics.json", salt)
+    key = cd.derive_key(PW, salt)
+    plain = pretty(STANDARD["docs/metrics.json"]).encode()
+    e = cd.seal(plain, key, "docs/metrics.json", salt)
 
-    ok("round trips", cd.unseal(env, "correct horse battery staple", "docs/metrics.json") == plain)
+    ok("round trips", cd.unseal(e, PW, "docs/metrics.json") == plain)
     ok("publishes its own parameters",
-       env["v"] == 1 and env["alg"] == "AES-256-GCM" and env["iter"] == cd.ITERATIONS,
-       env.get("iter"))
-    ok("iteration count is not token", cd.ITERATIONS >= 600_000, cd.ITERATIONS)
-
-    # The whole point: the plaintext must not be recoverable from the envelope.
-    blob = json.dumps(env)
+       e["v"] == 1 and e["alg"] == "AES-256-GCM" and e["iter"] == cd.ITERATIONS
+       and e["zip"] == "gzip", e)
+    ok("the iteration count is not token", cd.ITERATIONS >= 600_000)
+    ok("the path is what it is bound to",
+       e["aad"] == "align-dashboard/v1/docs/metrics.json", e["aad"])
+    blob = json.dumps(e)
     ok("no plaintext survives in the envelope",
-       "Zzyzx-Bellweather-9917" not in blob and "monthly_pl" not in blob
-       and "1327451" not in blob)
-    ok("the ciphertext is not merely base64 of the plaintext",
-       base64.b64decode(env["ct"]) != plain)
+       MARKER not in blob and "monthly_pl" not in blob and "1327451" not in blob)
+    ok("wrong password refused",
+       raises(cd.BadPassword, cd.unseal, e, PW + "x", "docs/metrics.json"))
+    ok("empty password refused", raises(cd.BadPassword, cd.unseal, e, "", "docs/metrics.json"))
 
-    ok("a wrong password is refused",
-       raises(cd.BadPassword, cd.unseal, env, "correct horse battery stapl", "docs/metrics.json"))
-    ok("an empty password is refused",
-       raises(cd.BadPassword, cd.unseal, env, "", "docs/metrics.json"))
+    big = ("x" * 50 + "\n") * 2000
+    eb = cd.seal(big.encode(), key, "docs/metrics.json", salt)
+    ok("compressed before sealing (repetitive JSON shrinks)",
+       len(base64.b64decode(eb["ct"])) < len(big) / 10, len(base64.b64decode(eb["ct"])))
 
 
 def test_tamper():
-    print("\ntampering")
+    print("\ntampering and swapping")
     salt = b"0123456789abcdef"
-    pw = "correct horse battery staple"
-    key = cd.derive_key(pw, salt)
-    plain = json.dumps(SAMPLE).encode()
-    env = cd.seal(plain, key, "docs/metrics.json", salt)
-
-    # Flip one bit of ciphertext. Without an authenticated mode this would
-    # decrypt to subtly wrong numbers instead of failing.
-    raw = bytearray(base64.b64decode(env["ct"]))
-    raw[10] ^= 0x01
-    bad = dict(env, ct=base64.b64encode(bytes(raw)).decode())
-    ok("a flipped ciphertext bit is caught",
-       raises(cd.BadPassword, cd.unseal, bad, pw, "docs/metrics.json"))
-
-    raw = bytearray(base64.b64decode(env["ct"]))
-    raw[-1] ^= 0x01                                        # the GCM tag itself
-    bad = dict(env, ct=base64.b64encode(bytes(raw)).decode())
-    ok("a flipped tag bit is caught",
-       raises(cd.BadPassword, cd.unseal, bad, pw, "docs/metrics.json"))
-
-    # The filename is authenticated, so metrics' ciphertext cannot be served as
-    # scorecard's. Without the AAD binding this opens happily and the page draws
-    # one file's numbers under another's name.
-    ok("one file's ciphertext will not open under another's name",
-       raises(cd.BadPassword, cd.unseal, env, pw, "docs/scorecard.json"))
-
-    ok("a downgraded version is refused, not guessed at",
-       raises(cd.CryptoDataError, cd.unseal, dict(env, v=0), pw, "docs/metrics.json"))
-    ok("a swapped algorithm is refused",
-       raises(cd.CryptoDataError, cd.unseal, dict(env, alg="AES-128-CBC"), pw, "docs/metrics.json"))
-    ok("a nonsense iteration count is refused",
-       raises(cd.CryptoDataError, cd.unseal, dict(env, iter=0), pw, "docs/metrics.json"))
+    key = cd.derive_key(PW, salt)
+    e = cd.seal(b'{"a": 1}', key, "data/palma/monthly_pl.json", salt)
+    for i, label in ((5, "ciphertext"), (-1, "GCM tag")):
+        raw = bytearray(base64.b64decode(e["ct"]))
+        raw[i] ^= 1
+        bad = dict(e, ct=base64.b64encode(bytes(raw)).decode())
+        ok(f"a flipped {label} bit is caught",
+           raises(cd.BadPassword, cd.unseal, bad, PW, "data/palma/monthly_pl.json"))
+    # The case the basename AAD could not catch: two properties, one filename.
+    ok("one property's store will not open as another's (same basename)",
+       raises(cd.BadPassword, cd.unseal, e, PW, "data/the-landing/monthly_pl.json"))
+    ok("nor as a different file", raises(cd.BadPassword, cd.unseal, e, PW, "docs/metrics.json"))
+    for field, val, why in (("v", 0, "version"), ("alg", "AES-128-CBC", "algorithm"),
+                            ("iter", 0, "iteration count"), ("zip", "lz4", "compression")):
+        ok(f"an unknown {why} is refused rather than guessed at",
+           raises(cd.CryptoDataError, cd.unseal, dict(e, **{field: val}), PW,
+                  "data/palma/monthly_pl.json"))
 
 
-def test_kdf_vector():
+def test_kdf():
     print("\nkey derivation (what unlock.js has to reproduce)")
-    # RFC-style published PBKDF2-HMAC-SHA256 vector. unlock.js asks WebCrypto for
-    # the same primitive with the same inputs, so pinning this pins the browser
-    # half too: if the derivation here ever drifts, the page stops opening files
-    # the pipeline sealed, and this is what says so first.
     got = cd.derive_key("password", b"salt", 1).hex()
     ok("matches the published PBKDF2-HMAC-SHA256 vector",
        got == "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b", got)
-    ok("derives 256 bits", len(cd.derive_key("x", b"y", 2)) == 32)
-    ok("the salt changes the key",
-       cd.derive_key("pw", b"a" * 16) != cd.derive_key("pw", b"b" * 16))
-    ok("the aad names the file, not the path",
-       cd.aad_for("docs/metrics.json") == b"align-dashboard/v1/metrics.json",
-       cd.aad_for("docs/metrics.json"))
+    ok("the salt changes the key", cd.derive_key("p", b"a" * 16, 2) != cd.derive_key("p", b"b" * 16, 2))
 
 
-# --------------------------------------------------------------- the commands
+# ------------------------------------------------------------------ the file set
 
-def test_encrypt_cli():
-    print("\nencrypt / decrypt")
-    os.environ["DASHBOARD_PASSWORD"] = "correct horse battery staple"
+def test_file_set():
+    print("\nwhat is sealed")
     with tempfile.TemporaryDirectory() as tmp:
-        a = write(pathlib.Path(tmp, "metrics.json"), SAMPLE)
-        b = write(pathlib.Path(tmp, "scorecard.json"), {"meta": {"generated_at": "x"}, "k": 1})
-
-        cd.cmd_encrypt(Args([a, b]))
-        ok("seals each file", os.path.exists(a + ".enc") and os.path.exists(b + ".enc"))
-
-        ea = json.loads(pathlib.Path(a + ".enc").read_text())
-        eb = json.loads(pathlib.Path(b + ".enc").read_text())
-        ok("one salt for the run, so one derivation opens both", ea["salt"] == eb["salt"])
-        ok("a distinct IV per file — sharing one would break GCM", ea["iv"] != eb["iv"])
-
-        # The daily cron commits whatever changed. Random salt and IV mean a
-        # naive re-encrypt writes different bytes every night, so the repo would
-        # take a commit a day on data that never moved.
-        before = pathlib.Path(a + ".enc").read_bytes()
-        cd.cmd_encrypt(Args([a, b]))
-        ok("unchanged plaintext is left alone, byte for byte",
-           pathlib.Path(a + ".enc").read_bytes() == before)
-
-        write(pathlib.Path(tmp, "metrics.json"), dict(SAMPLE, changed=True))
-        cd.cmd_encrypt(Args([a, b]))
-        ok("changed plaintext is re-sealed",
-           pathlib.Path(a + ".enc").read_bytes() != before)
-
-        os.remove(a)
-        cd.cmd_decrypt(Args([a, b]))
-        ok("decrypt restores the plaintext",
-           json.loads(pathlib.Path(a).read_text()).get("changed") is True)
-
-        ok("check passes on a good set", cd.cmd_check(Args([a, b])) == 0)
-
-        # --replace is what keeps the deployed artifact from carrying both.
-        cd.cmd_encrypt(Args([a, b], replace=True))
-        ok("--replace removes the plaintext", not os.path.exists(a) and not os.path.exists(b))
+        root = make_repo(tmp, STANDARD)
+        s = cd.sealed_set(root)
+        ok("the page's files are in it", {"docs/metrics.json", "docs/scorecard.json"} <= set(s), s)
+        ok("every per-property store is in it",
+           {"data/palma/monthly_pl.json", "data/the-landing/monthly_pl.json"} <= set(s), s)
+        ok("the unit-level, name-bearing stores are never in it",
+           "data/the-landing/rent_roll.json" not in s, s)
+        ok("config is not data", not any(r.startswith("config/") for r in s), s)
+        (root / "data/new-property").mkdir()
+        (root / "data/new-property/new_store.json").write_text("{}")
+        ok("a store that appears tomorrow is covered by default",
+           "data/new-property/new_store.json" in cd.sealed_set(root))
+    gi = (HERE.parent / ".gitignore").read_text().split()
+    ok("everything never sealed is gitignored outright",
+       all(p in gi for p in cd.NEVER_SEAL), [p for p in cd.NEVER_SEAL if p not in gi])
+    ok("every plaintext in the sealed set is gitignored",
+       all(p in gi for p in cd.PAGE_FILES) and "data/**/*.json" in gi,
+       [p for p in cd.PAGE_FILES + ["data/**/*.json"] if p not in gi])
 
 
-def test_wrong_password_cli():
-    print("\nwrong password through the commands")
+# ------------------------------------------------------------------ first seal
+
+def test_first_seal():
+    print("\nthe first seal (reseal --git on a plaintext repo)")
     with tempfile.TemporaryDirectory() as tmp:
-        a = write(pathlib.Path(tmp, "metrics.json"), SAMPLE)
-        os.environ["DASHBOARD_PASSWORD"] = "the right one entirely"
-        cd.cmd_encrypt(Args([a]))
-        os.remove(a)
-        os.environ["DASHBOARD_PASSWORD"] = "the wrong one entirely"
-        ok("decrypt refuses rather than writing rubbish",
-           raises(cd.BadPassword, cd.cmd_decrypt, Args([a])))
-        ok("and writes no plaintext when it refuses", not os.path.exists(a))
-        ok("check reports the failure", cd.cmd_check(Args([a])) == 1)
+        root = make_repo(tmp, STANDARD)
+        env(DASHBOARD_PASSWORD="short")
+        ok("a short password is refused", run(root, "reseal") == 1, run.last)
+        env(DASHBOARD_PASSWORD="AlignExecs")
+        ok("the password already public in this repo's history is refused",
+           run(root, "reseal") == 1 and "public" in run.last, run.last)
+        ok("and a refused seal writes nothing",
+           not list(root.rglob("*.enc")), list(root.rglob("*.enc")))
+
+        env(DASHBOARD_PASSWORD=PW)
+        ok("a strong password seals", run(root, "reseal", "--git", "--replace") == 0, run.last)
+        t = tracked(root)
+        ok("the sealed copies are staged",
+           {"docs/metrics.json.enc", "data/palma/monthly_pl.json.enc"} <= t, sorted(t))
+        ok("the plaintext is out of the index",
+           not ({"docs/metrics.json", "data/palma/monthly_pl.json"} & t), sorted(t))
+        ok("and off the disk (--replace)", not (root / "docs/metrics.json").exists())
+        ok("the name-bearing store was never sealed",
+           not (root / "data/the-landing/rent_roll.json.enc").exists())
+        salts = {enc(root, r)["salt"] for r in cd.sealed_set(root)}
+        ivs = [enc(root, r)["iv"] for r in cd.sealed_set(root)]
+        ok("one salt, so one derivation opens everything", len(salts) == 1, salts)
+        ok("a distinct IV per file", len(set(ivs)) == len(ivs))
+        ok("mode reads sealed", cd.mode(root) == "sealed")
+        ok("check passes", run(root, "check") == 0, run.last)
 
 
-def test_rotate():
-    print("\nrotation")
+def sealed_repo(tmp):
+    root = make_repo(tmp, STANDARD)
+    env(DASHBOARD_PASSWORD=PW)
+    assert run(root, "reseal", "--git", "--replace") == 0, run.last
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "seal"], check=True)
+    return root
+
+
+# ------------------------------------------------------------------ the cycle
+
+def test_cycle():
+    print("\ndecrypt -> edit -> encrypt")
     with tempfile.TemporaryDirectory() as tmp:
-        a = write(pathlib.Path(tmp, "metrics.json"), SAMPLE)
-        b = write(pathlib.Path(tmp, "scorecard.json"), {"meta": {}, "k": 2})
-        os.environ["DASHBOARD_PASSWORD"] = "the original password"
-        cd.cmd_encrypt(Args([a, b]))
+        root = sealed_repo(tmp)
+        ok("decrypt opens every working copy", run(root, "decrypt") == 0
+           and json.loads((root / "docs/metrics.json").read_text())["note"] == MARKER, run.last)
+        before = {r: (root / (r + ".enc")).read_bytes() for r in cd.sealed_set(root)}
+        run(root, "encrypt")
+        ok("nothing changed, so nothing is rewritten -- byte for byte",
+           all((root / (r + ".enc")).read_bytes() == b for r, b in before.items()))
 
-        os.environ["DASHBOARD_PASSWORD_NEW"] = "short"
-        ok("a short new password is refused outright",
-           raises(cd.CryptoDataError, cd.cmd_rotate, Args([a, b])))
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["note"] = "changed"
+        (root / "docs/metrics.json").write_text(pretty(m))
+        salt0 = enc(root, "docs/metrics.json")["salt"]
+        ok("a change seals", run(root, "encrypt") == 0, run.last)
+        ok("under the same salt, so a tab unlocked this morning still opens it",
+           enc(root, "docs/metrics.json")["salt"] == salt0)
+        ok("and only the changed file was rewritten",
+           (root / "docs/scorecard.json.enc").read_bytes() == before["docs/scorecard.json"])
 
-        os.environ["DASHBOARD_PASSWORD_NEW"] = "the original password"
-        ok("rotating to the same password is refused",
-           raises(cd.CryptoDataError, cd.cmd_rotate, Args([a, b])))
 
-        os.environ["DASHBOARD_PASSWORD_NEW"] = "a much longer replacement passphrase"
-        cd.cmd_rotate(Args([a, b]))
+def test_guard():
+    print("\nthe checkout guard")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        # A script that found no plaintext and started from nothing:
+        (root / "data/palma/monthly_pl.json").write_text(pretty({"points": []}))
+        ok("a store never opened here is refused -- it would overwrite its history",
+           run(root, "encrypt") == 1 and "never opened" in run.last, run.last)
 
-        ea = json.loads(pathlib.Path(a + ".enc").read_text())
-        ok("the old password no longer opens the files",
-           raises(cd.BadPassword, cd.unseal, ea, "the original password", a))
-        ok("the new password does",
-           json.loads(cd.unseal(ea, "a much longer replacement passphrase", a))["secret_marker"]
-           == "Zzyzx-Bellweather-9917")
-        eb = json.loads(pathlib.Path(b + ".enc").read_text())
-        ok("every file moved together — one salt, both re-sealed",
-           ea["salt"] == eb["salt"]
-           and cd.unseal(eb, "a much longer replacement passphrase", b))
+        run(root, "decrypt")
+        # Someone else pushes a newer sealed copy while this one is open:
+        newer = cd.seal(b'{"points": ["newer"]}\n', cd.derive_key(PW, base64.b64decode(
+            enc(root, "docs/scorecard.json")["salt"])), "docs/scorecard.json",
+            base64.b64decode(enc(root, "docs/scorecard.json")["salt"]))
+        (root / "docs/scorecard.json.enc").write_text(json.dumps(newer))
+        (root / "docs/scorecard.json").write_text(pretty({"k": "edited on a stale copy"}))
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["note"] = "also edited"
+        (root / "docs/metrics.json").write_text(pretty(m))
+        before_metrics = (root / "docs/metrics.json.enc").read_bytes()
+        ok("a stale working copy is refused", run(root, "encrypt") == 1
+           and "changed since it was opened" in run.last, run.last)
+        ok("and the refusal is all or nothing -- the good file was not sealed either",
+           (root / "docs/metrics.json.enc").read_bytes() == before_metrics)
+        ok("decrypt calls that a conflict rather than picking a side",
+           run(root, "decrypt") == 1 and "CONFLICT" in run.last, run.last)
+        ok("--force is the deliberate override", run(root, "encrypt", "--force") == 0, run.last)
 
-        # A rotation that rewrote some files before discovering it could not open
-        # the rest would leave no single password able to read the set.
-        c = write(pathlib.Path(tmp, "landing.json"), {"meta": {}})
-        os.environ["DASHBOARD_PASSWORD"] = "a much longer replacement passphrase"
-        cd.cmd_encrypt(Args([c]))
-        pathlib.Path(c + ".enc").write_text(json.dumps(
-            dict(json.loads(pathlib.Path(c + ".enc").read_text()), ct="AAAA")))
-        before = pathlib.Path(a + ".enc").read_bytes()
-        os.environ["DASHBOARD_PASSWORD_NEW"] = "yet another long replacement phrase"
-        ok("one unopenable file aborts the whole rotation",
-           raises(cd.BadPassword, cd.cmd_rotate, Args([a, b, c])))
-        ok("and leaves the others untouched",
-           pathlib.Path(a + ".enc").read_bytes() == before)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        run(root, "decrypt")
+        (root / "docs/metrics.json").write_text(pretty({"local": "work"}))
+        run(root, "decrypt")
+        ok("decrypt keeps local changes when the sealed copy has not moved",
+           json.loads((root / "docs/metrics.json").read_text()) == {"local": "work"})
+        # sealed copy moves on; an UNEDITED working copy is simply refreshed
+        salt = base64.b64decode(enc(root, "docs/scorecard.json")["salt"])
+        (root / "docs/scorecard.json.enc").write_text(json.dumps(cd.seal(
+            b'{"fresh": true}\n', cd.derive_key(PW, salt), "docs/scorecard.json", salt)))
+        run(root, "decrypt")
+        ok("and refreshes an unedited one when it has",
+           json.loads((root / "docs/scorecard.json").read_text()) == {"fresh": True})
+        run(root, "decrypt", "--force")
+        ok("decrypt --force discards local changes",
+           json.loads((root / "docs/metrics.json").read_text())["note"] == MARKER)
 
+
+def test_rotation():
+    print("\nrotation by changing the secret")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        old_salt = enc(root, "docs/metrics.json")["salt"]
+        env(DASHBOARD_PASSWORD=PW2)
+        ok("the new password alone cannot open the old seal", run(root, "decrypt") == 1)
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)
+        ok("with the old one as a fallback, it opens", run(root, "decrypt") == 0, run.last)
+        ok("and an ordinary encrypt re-keys EVERYTHING, changed or not",
+           run(root, "encrypt") == 0, run.last)
+        env(DASHBOARD_PASSWORD=PW2)
+        ok("afterwards the new password opens every file on its own",
+           run(root, "check") == 0, run.last)
+        ok("under a fresh salt", enc(root, "docs/metrics.json")["salt"] != old_salt)
+        env(DASHBOARD_PASSWORD=PW)
+        ok("and the old password opens nothing", run(root, "check") == 1)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        bad = enc(root, "docs/scorecard.json")
+        bad["ct"] = "AAAA"
+        (root / "docs/scorecard.json.enc").write_text(json.dumps(bad))
+        before = (root / "docs/metrics.json.enc").read_bytes()
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)
+        ok("reseal with one unopenable file fails", run(root, "reseal") == 1, run.last)
+        ok("and leaves every other file untouched",
+           (root / "docs/metrics.json.enc").read_bytes() == before)
+
+
+def test_check():
+    print("\ncheck")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        other = b"f" * 16
+        (root / "docs/scorecard.json.enc").write_text(json.dumps(
+            cd.seal(b"{}", cd.derive_key(PW, other), "docs/scorecard.json", other)))
+        ok("two salts are reported -- the browser would derive twice",
+           run(root, "check") == 1 and "salts" in run.last, run.last)
+
+
+def test_passphrase():
+    print("\npassphrase")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp)
+        run(root, "passphrase")
+        pp = run.last.strip()
+        ok("five groups of four", len(pp.split("-")) == 5 and all(len(g) == 4 for g in pp.split("-")), pp)
+        ok("strong enough to pass the seal's own check", raises(cd.CryptoDataError,
+           cd.check_new_password, pp) is False)
+        os.environ["GITHUB_ACTIONS"] = "true"
+        ok("refuses to print into a CI log", run(root, "passphrase") == 1)
+        del os.environ["GITHUB_ACTIONS"]
+
+
+# ------------------------------------------------------------------ git integration
+
+def gitc(root, *a, check=True):
+    return subprocess.run(["git", "-C", str(root), *a], capture_output=True, text=True,
+                          check=check, env=os.environ.copy())
+
+
+def test_git_integration():
+    print("\ngit: hooks, diff, merge")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp)
+        files = dict(STANDARD)
+        files["docs/metrics.json"] = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}
+        root = make_repo(tmp, files)
+        shutil.copytree(HERE, root / "scripts")               # hooks call scripts/crypto_data.py
+        shutil.copytree(HERE.parent / ".githooks", root / ".githooks")
+        shutil.copy(HERE.parent / ".gitattributes", root / ".gitattributes")
+        env(DASHBOARD_PASSWORD=PW)
+        run(root, "install")
+        run(root, "reseal", "--git", "--replace")
+        gitc(root, "add", "-A", ".gitattributes", ".githooks")
+        gitc(root, "commit", "-qm", "seal")
+
+        # pre-commit: a force-added plaintext is refused -- first UNEDITED, so the
+        # staged-plaintext rule is tested on its own and not covered for by the
+        # unsealed-change rule below (mutation found exactly that gap).
+        run(root, "decrypt")
+        gitc(root, "add", "-f", "docs/scorecard.json")
+        ok("pre-commit refuses staged plaintext even when it matches the sealed copy",
+           gitc(root, "commit", "-qm", "x", check=False).returncode != 0)
+        gitc(root, "restore", "--staged", "docs/scorecard.json")
+        (root / "docs/metrics.json").write_text(pretty({"a": 1}))
+        gitc(root, "add", "-f", "docs/metrics.json")
+        ok("pre-commit refuses staged plaintext",
+           gitc(root, "commit", "-qm", "x", check=False).returncode != 0)
+        gitc(root, "restore", "--staged", "docs/metrics.json")
+        ok("pre-commit refuses a commit that leaves a data change unsealed",
+           gitc(root, "commit", "--allow-empty", "-qm", "x", check=False).returncode != 0)
+        run(root, "decrypt", "--force")
+        ok("and passes once the change is sealed or discarded",
+           gitc(root, "commit", "--allow-empty", "-qm", "x", check=False).returncode == 0)
+        gitc(root, "tag", "base")          # both branches below fork from here
+
+        # textconv: git diff shows plaintext
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["b"] = 20
+        (root / "docs/metrics.json").write_text(pretty(m))
+        run(root, "encrypt", "--git")
+        d = gitc(root, "diff", "--cached").stdout
+        ok("git diff shows the change in the clear, where the password is present",
+           '"b": 20' in d, d[-400:])
+        gitc(root, "commit", "-qm", "b")
+
+        # merge driver: two branches change different lines of one sealed file
+        gitc(root, "checkout", "-qb", "other", "base")
+        run(root, "decrypt", "--force")
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["e"] = 50
+        (root / "docs/metrics.json").write_text(pretty(m))
+        run(root, "encrypt", "--git")
+        gitc(root, "commit", "-qm", "e")
+        gitc(root, "checkout", "-q", "-")
+        res = gitc(root, "merge", "-q", "--no-edit", "other", check=False)
+        ok("two changes to different lines of one sealed file merge cleanly",
+           res.returncode == 0, res.stdout + res.stderr)
+        merged = json.loads(cd.unseal(enc(root, "docs/metrics.json"), PW, "docs/metrics.json"))
+        ok("and the merged file carries both", merged.get("b") == 20 and merged.get("e") == 50, merged)
+        ok("post-merge refreshed the working copy",
+           json.loads((root / "docs/metrics.json").read_text()) == merged)
+
+        # a real conflict stops the merge instead of picking a side
+        gitc(root, "checkout", "-qb", "clash", "base")
+        run(root, "decrypt", "--force")
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["b"] = 999
+        (root / "docs/metrics.json").write_text(pretty(m))
+        run(root, "encrypt", "--git")
+        gitc(root, "commit", "-qm", "clash")
+        gitc(root, "checkout", "-q", "-")
+        res = gitc(root, "merge", "-q", "--no-edit", "clash", check=False)
+        ok("the same line changed on both sides is a conflict, not a silent pick",
+           res.returncode != 0)
+        gitc(root, "merge", "--abort", check=False)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = make_repo(tmp, STANDARD)
+        env()
+        ok("pre-commit is a no-op before the repository is sealed",
+           run(root, "pre-commit") == 0, run.last)
+        ok("textconv without a password says so rather than failing",
+           True)
+
+
+# ------------------------------------------------------------------ the browser half
 
 NODE_HARNESS = r"""
-// Runs docs/unlock.js outside a browser against files crypto_data.py sealed.
-// Node's WebCrypto is the same implementation the page uses, so this is a real
-// check that the two halves agree -- not a re-implementation of either.
 const fs = require("fs"), path = require("path");
-const DIR = process.argv[2], PW = process.argv[3], UNLOCK = process.argv[4];
+const [DIR, PW, UNLOCK, HOST] = process.argv.slice(2);
 globalThis.window = globalThis;
-globalThis.sessionStorage = {
-  _d: {}, getItem(k) { return k in this._d ? this._d[k] : null; },
-  setItem(k, v) { this._d[k] = String(v); }, removeItem(k) { delete this._d[k]; },
-};
+globalThis.location = { hostname: HOST };
+globalThis.sessionStorage = { _d: {}, getItem(k) { return k in this._d ? this._d[k] : null; },
+  setItem(k, v) { this._d[k] = String(v); }, removeItem(k) { delete this._d[k]; } };
 globalThis.fetch = async (url) => {
   const f = path.join(DIR, url);
   if (!fs.existsSync(f)) return { status: 404, ok: false, json: async () => null };
@@ -272,83 +484,205 @@ require(UNLOCK);
 (async () => {
   const out = {};
   out.mode = await AlignUnlock.detect();
-  out.wrongRejected = (await AlignUnlock.tryPassword(PW + "x")) === false;
-  out.rightAccepted = (await AlignUnlock.tryPassword(PW)) === true;
-  const doc = await AlignUnlock.load("metrics.json");
-  out.marker = doc.secret_marker;
-  try {
-    // scorecard.json sealed under the SAME key, but its ciphertext served as
-    // metrics.json's name must still fail: the filename is authenticated.
-    fs.copyFileSync(path.join(DIR, "scorecard.json.enc"), path.join(DIR, "swapped.json.enc"));
-    await AlignUnlock.load("swapped.json");
-    out.swapOpened = true;
-  } catch (e) { out.swapOpened = false; }
+  if (out.mode === "encrypted") {
+    out.wrongRejected = (await AlignUnlock.tryPassword(PW + "x")) === false;
+    out.rightAccepted = (await AlignUnlock.tryPassword(PW)) === true;
+    out.marker = (await AlignUnlock.load("metrics.json")).note;
+    out.second = (await AlignUnlock.load("scorecard.json")).k;
+    fs.copyFileSync(path.join(DIR, "scorecard.json.enc"), path.join(DIR, "lineage.json.enc"));
+    try { await AlignUnlock.load("lineage.json"); out.swapOpened = true; }
+    catch (e) { out.swapOpened = false; }
+  } else {
+    try { await AlignUnlock.load("metrics.json"); out.plainServed = true; }
+    catch (e) { out.plainServed = false; out.plainError = String(e.message); }
+  }
   console.log(JSON.stringify(out));
-})().catch(e => { console.log(JSON.stringify({ error: String(e && e.message || e) })); });
+})().catch(e => console.log(JSON.stringify({ error: String(e && e.message || e) })));
 """
 
 
-def test_browser_half_agrees():
-    """docs/unlock.js must open what crypto_data.py sealed.
-
-    Two implementations of one format drift silently the moment either is
-    edited alone -- and the symptom is a live dashboard that shows nothing to
-    anyone. Node's WebCrypto is the same primitive set the browser uses, so
-    running the page's own unlock.js here is a genuine cross-check rather than
-    a second opinion from the same code.
-    """
-    print("\nthe browser half (docs/unlock.js under Node)")
-    import shutil
-    import subprocess
+def node_run(site, pw, host):
     node = shutil.which("node")
-    if not node:
-        print("   SKIP node not installed — run the browser check by hand instead")
+    h = pathlib.Path(site, "_harness.js")
+    h.write_text(NODE_HARNESS)
+    res = subprocess.run([node, str(h), str(site), pw,
+                          str(HERE.parent / "docs" / "unlock.js"), host],
+                         capture_output=True, text=True, timeout=180)
+    try:
+        return json.loads(res.stdout.strip().splitlines()[-1])
+    except Exception:                                      # noqa: BLE001
+        return {"error": (res.stdout[-300:], res.stderr[-300:])}
+
+
+def test_browser_half():
+    print("\nthe browser half (docs/unlock.js under Node's WebCrypto)")
+    if not shutil.which("node"):
+        print("   SKIP node not installed")
         return
-    unlock = pathlib.Path(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "unlock.js")
-    if not unlock.is_file():
-        ok("docs/unlock.js exists", False, str(unlock))
-        return
-    pw = "correct horse battery staple"
-    os.environ["DASHBOARD_PASSWORD"] = pw
     with tempfile.TemporaryDirectory() as tmp:
-        a = write(pathlib.Path(tmp, "metrics.json"), SAMPLE)
-        b = write(pathlib.Path(tmp, "scorecard.json"), {"meta": {}, "k": 3})
-        cd.cmd_encrypt(Args([a, b]))
-        harness = pathlib.Path(tmp, "harness.js")
-        harness.write_text(NODE_HARNESS)
-        res = subprocess.run([node, str(harness), tmp, pw, str(unlock.resolve())],
-                             capture_output=True, text=True, timeout=180)
-        try:
-            got = json.loads(res.stdout.strip().splitlines()[-1])
-        except Exception:                                  # noqa: BLE001
-            ok("unlock.js ran", False, (res.stdout[-300:], res.stderr[-300:]))
-            return
+        root = sealed_repo(tmp)
+        site = root / "docs"
+        got = node_run(site, PW, "aligndashboard.github.io")
         ok("unlock.js sees the sealed files", got.get("mode") == "encrypted", got)
-        ok("it rejects a wrong password", got.get("wrongRejected") is True, got)
-        ok("it accepts the right one", got.get("rightAccepted") is True, got)
-        ok("and decrypts to exactly what Python sealed",
-           got.get("marker") == "Zzyzx-Bellweather-9917", got)
-        ok("the filename binding holds in the browser half too",
-           got.get("swapOpened") is False, got)
+        ok("rejects a wrong password", got.get("wrongRejected") is True, got)
+        ok("accepts the right one", got.get("rightAccepted") is True, got)
+        ok("decrypts and decompresses exactly what Python sealed", got.get("marker") == MARKER, got)
+        ok("a second file opens on the same derived key", got.get("second") == 1, got)
+        ok("the path binding holds in the browser too", got.get("swapOpened") is False, got)
+    with tempfile.TemporaryDirectory() as tmp:
+        site = pathlib.Path(tmp)
+        (site / "metrics.json").write_text(pretty({"meta": {}, "note": MARKER}))
+        got = node_run(site, PW, "aligndashboard.github.io")
+        ok("an unsealed build on a public host serves nothing",
+           got.get("mode") == "plain" and got.get("plainServed") is False, got)
+        got = node_run(site, PW, "localhost")
+        ok("but opens on localhost, for local work", got.get("plainServed") is True, got)
 
 
-def test_file_lists_agree():
-    print("\nthe three lists that describe one set of files")
+# ------------------------------------------------------------------ lists that must agree
+
+def test_agreement():
+    print("\nthe places that name the sealed set")
     import check_no_pii                                    # noqa: E402
-    ok("crypto_data and check_no_pii name the same four files",
-       sorted(cd.DATA_FILES) == sorted(check_no_pii.PUBLISHED),
-       (cd.DATA_FILES, check_no_pii.PUBLISHED))
-    sh = pathlib.Path(os.path.dirname(os.path.abspath(__file__)), "publish_data.sh").read_text()
-    ok("publish_data.sh publishes the sealed form of each",
-       all(f + ".enc" in sh for f in cd.DATA_FILES),
-       [f for f in cd.DATA_FILES if f + ".enc" not in sh])
+    ok("check_no_pii scans the page files crypto_data seals",
+       sorted(cd.PAGE_FILES) == sorted(check_no_pii.PUBLISHED))
+    js = (HERE.parent / "docs" / "unlock.js").read_text()
+    ok("unlock.js binds the same AAD prefix", cd.AAD_PREFIX in js)
+    ok("unlock.js knows the iteration floor is in the envelope, not hardcoded",
+       "600000" not in js.replace("600,000", ""))
+    sh = (HERE / "publish_data.sh").read_text()
+    ok("publish_data.sh publishes the sealed page files",
+       all(f + ".enc" in sh for f in cd.PAGE_FILES), [f for f in cd.PAGE_FILES if f + ".enc" not in sh])
+
+
+def test_entry_guard():
+    print("\nthe entry guard (no pipeline script runs on an unopened checkout)")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+
+        def refuses():
+            try:
+                with contextlib.redirect_stderr(io.StringIO()):
+                    cd.require_opened("test", root)
+            except SystemExit as e:
+                return e.code == 2
+            return False
+        ok("a sealed checkout with nothing opened is refused", refuses())
+        run(root, "decrypt")
+        ok("once opened, it passes", not refuses())
+        salt = base64.b64decode(enc(root, "docs/scorecard.json")["salt"])
+        (root / "docs/scorecard.json.enc").write_text(json.dumps(cd.seal(
+            b'{"newer": 1}\n', cd.derive_key(PW, salt), "docs/scorecard.json", salt)))
+        ok("a sealed copy that moved since opening makes the checkout stale -> refused",
+           refuses() and any("stale" in why for _, why in cd.unopened(root)))
+        run(root, "decrypt")
+        (root / "data/palma/monthly_pl.json").unlink()
+        ok("a working copy that went missing is refused", refuses())
+    with tempfile.TemporaryDirectory() as tmp:
+        root = make_repo(tmp, STANDARD)
+        ok("an unsealed checkout is never refused (nothing to open)", cd.unopened(root) == [])
+    guarded = ["build_metrics", "refresh_comps", "populate_scorecard", "populate_eliseai",
+               "populate_building_metrics", "build_lineage", "landing_drive_status",
+               "extract_landing", "extract_scorecard"]
+    missing = [g for g in guarded
+               if "crypto_data.require_opened" not in (HERE / f"{g}.py").read_text()]
+    ok("every script that reads last run's output calls it at its entry point", not missing, missing)
+    for g in ("refresh_comps", "populate_scorecard", "build_lineage"):
+        src = (HERE / f"{g}.py").read_text()
+        main_body = src[src.index("def main"):src.index('if __name__ == "__main__":')]
+        ok(f"{g}: in the entry point, not in main() -- tests drive main() directly",
+           "require_opened" not in main_body)
+
+
+# ------------------------------------------------------------------ the workflows
+
+def _steps(wf):
+    import yaml
+    d = yaml.safe_load((HERE.parent / ".github" / "workflows" / wf).read_text())
+    job = next(iter(d["jobs"].values()))
+    return [(st.get("name", ""), st.get("run", "") or "", st.get("env", {}) or {})
+            for st in job["steps"]]
+
+
+def _index(steps, pred):
+    return next((i for i, st in enumerate(steps) if pred(st)), None)
+
+
+def test_workflows():
+    """The ORDER of the steps is the design, and a reordered one looks fine.
+
+    Opened before the re-sync reset, a working copy is this morning's data under
+    tonight's sealed copy. Sealed after the commit, nothing is sealed. The PII
+    check after the seal reads nothing. None of those fails on its own.
+    """
+    print("\nthe workflows")
+    try:
+        import yaml                                        # noqa: F401
+    except ImportError:
+        print("   SKIP pyyaml not installed")
+        return
+    st = _steps("update.yml")
+    key = _index(st, lambda s: "crypto_data.py check" in s[1] and "DASHBOARD_PASSWORD" in s[1])
+    fetch = _index(st, lambda s: "fetch_drive.py" in s[1])
+    resync = _index(st, lambda s: "git reset" in s[1] and "Re-sync" in s[0])
+    opened = _index(st, lambda s: "crypto_data.py decrypt" in s[1])
+    build = _index(st, lambda s: "build_metrics.py" in s[1])
+    pii = _index(st, lambda s: "check_no_pii.py" in s[1])
+    seal = _index(st, lambda s: "crypto_data.py encrypt" in s[1])
+    commit = _index(st, lambda s: "git commit" in s[1])
+    ok("update.yml: the key is checked before the hours-long Drive fetch",
+       None not in (key, fetch) and key < fetch, (key, fetch))
+    ok("update.yml: opened AFTER the re-sync reset, and before the build",
+       None not in (resync, opened, build) and resync < opened < build, (resync, opened, build))
+    ok("update.yml: PII check on the plaintext, then seal, then commit",
+       None not in (pii, seal, commit) and pii < seal < commit, (pii, seal, commit))
+    ok("update.yml: the PII check refuses an unopened checkout",
+       "--require-open" in st[pii][1])
+    ok("update.yml: commits the sealed copies, never the plaintext names",
+       "metrics.json.enc" in st[commit][1] and 'PATHS="data docs/metrics.json docs' not in st[commit][1])
+    ok("update.yml: the push-retry replay re-stages through crypto_data",
+       "crypto_data.py encrypt --git" in st[commit][1])
+    ok("update.yml: every step that opens or seals has the key, and its fallback",
+       all("DASHBOARD_PASSWORD" in s[2] and "DASHBOARD_PASSWORD_OLD" in s[2]
+           for s in st if "crypto_data.py" in s[1]))
+
+    rc = _steps("refresh_comps.yml")
+    o = _index(rc, lambda s: "crypto_data.py decrypt" in s[1])
+    r = _index(rc, lambda s: "refresh_comps.py" in s[1])
+    c = _index(rc, lambda s: "git commit" in s[1])
+    ok("refresh_comps.yml: opened before the refresh", None not in (o, r) and o < r, (o, r))
+    retry = rc[c][1] if c is not None else ""
+    ok("refresh_comps.yml: the retry re-opens main's copies after its reset, before rebuilding",
+       retry.find("git reset --hard origin/main") < retry.find("crypto_data.py decrypt --force")
+       < retry.find("refresh_comps.py") and "crypto_data.py decrypt --force" in retry)
+    ok("refresh_comps.yml: commits the sealed metrics, not the plaintext",
+       'PATHS="docs/metrics.json.enc data"' in retry)
+
+    sd = _steps("seal_data.yml")
+    ok("seal_data.yml: reseals under the secret, with the old one as a fallback",
+       any("crypto_data.py reseal --git" in s[1] and "DASHBOARD_PASSWORD_OLD" in s[2] for s in sd))
+    ok("seal_data.yml: PII check before the seal",
+       _index(sd, lambda s: "check_no_pii.py" in s[1]) < _index(sd, lambda s: "reseal" in s[1]))
+    for wf in ("update.yml", "refresh_comps.yml", "seal_data.yml", "deploy.yml"):
+        raw = (HERE.parent / ".github" / "workflows" / wf).read_text()
+        ok(f"{wf}: never echoes a password into the (public) log",
+           "echo \"$DASHBOARD_PASSWORD" not in raw and "set -x" not in raw)
 
 
 def main():
-    for t in (test_format, test_tamper, test_kdf_vector, test_encrypt_cli,
-              test_wrong_password_cli, test_rotate, test_browser_half_agrees,
-              test_file_lists_agree):
-        t()
+    saved = {k: os.environ.get(k) for k in ("DASHBOARD_PASSWORD", "DASHBOARD_PASSWORD_OLD",
+                                            "DASHBOARD_PASSWORD_NEW")}
+    try:
+        for t in (test_envelope, test_tamper, test_kdf, test_file_set, test_first_seal,
+                  test_cycle, test_guard, test_rotation, test_check, test_passphrase,
+                  test_git_integration, test_browser_half, test_agreement, test_entry_guard,
+                  test_workflows):
+            t()
+    finally:
+        for k, v in saved.items():
+            os.environ.pop(k, None)
+            if v is not None:
+                os.environ[k] = v
     print(f"\n{PASS} passed, {FAIL} failed")
     sys.exit(1 if FAIL else 0)
 

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refuse a commit that carries plaintext data, or leaves a data change unsealed.
+# Installed by `python3 scripts/crypto_data.py install` (core.hooksPath=.githooks).
+exec python3 scripts/crypto_data.py pre-commit

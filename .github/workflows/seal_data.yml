@@ -1,0 +1,121 @@
+name: Seal dashboard data
+
+# Seals every data file under the DASHBOARD_PASSWORD repository secret, and is
+# how that password is set and changed -- from the browser, with no clone:
+#
+#   FIRST SEAL   add the DASHBOARD_PASSWORD secret, then run this (or push; see
+#                below). Every docs/*.json and data/**/*.json in the repository
+#                is sealed to <name>.enc and the plaintext leaves git.
+#
+#   NEW PASSWORD  set DASHBOARD_PASSWORD_OLD to the current password and
+#                DASHBOARD_PASSWORD to the new one, run this, then delete
+#                DASHBOARD_PASSWORD_OLD. Every file is opened under whichever of
+#                the two fits and re-sealed under the new one, all or nothing.
+#
+# It also runs on any push that carries PLAINTEXT data -- which, once sealed, is
+# only ever a mistake or the first merge -- so the window in which the repo holds
+# unsealed data is the length of one run. Pushes made by the other workflows use
+# GITHUB_TOKEN and never trigger this; they seal their own output.
+#
+# Nothing here prints a password: GitHub masks secrets in the log, and
+# crypto_data.py never echoes one. The log is public on a public repository.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "docs/metrics.json"
+      - "docs/landing.json"
+      - "docs/scorecard.json"
+      - "docs/lineage.json"
+      - "data/**/*.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seal-data
+  cancel-in-progress: false
+
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    # Figures out of the (public) log: every python process in this job prints
+    # through scripts/ci_logs/sitecustomize.py, which masks currency, percentages
+    # and figure-shaped numbers. Local runs are unaffected.
+    env:
+      PYTHONPATH: ${{ github.workspace }}/scripts/ci_logs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # A strong password is the whole of the protection -- the ciphertext is
+      # public and can be guessed at offline for ever -- so crypto_data.py
+      # refuses anything under 12 characters, and the password that sat in
+      # index.html in public, the moment it would first be sealed under.
+      - name: Check the secret is set
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+        run: |
+          if [ -z "${DASHBOARD_PASSWORD:-}" ]; then
+            echo "::error::Set the DASHBOARD_PASSWORD repository secret first:"
+            echo "::error::Settings -> Secrets and variables -> Actions -> New repository secret."
+            exit 1
+          fi
+
+      # On the plaintext, before it is sealed: the only point at which this can
+      # read anything. (On a rotation there is no plaintext to read; it says so.)
+      - name: Refuse to seal if personal data is in the data
+        run: python scripts/check_no_pii.py
+
+      - name: Seal everything under DASHBOARD_PASSWORD
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
+        run: |
+          python scripts/crypto_data.py reseal --git
+          python scripts/crypto_data.py check
+
+      - name: Commit and push
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
+        run: |
+          set -u
+          git config user.name  "dashboard-bot"
+          git config user.email "actions@github.com"
+          if git diff --staged --quiet; then
+            echo "Everything is already sealed under this password -- nothing to commit."
+            exit 0
+          fi
+          git commit -qm "Seal dashboard data ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push -q origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            # Lost a race. Sealing is cheap and idempotent, so redo it on the new
+            # main rather than replaying this run's files over it.
+            echo "::warning::push rejected; re-sealing on the current main"
+            sleep $((attempt * 5))
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            python scripts/check_no_pii.py || exit 1
+            python scripts/crypto_data.py reseal --git --force || exit 1
+            if git diff --staged --quiet; then
+              echo "main is already sealed under this password."
+              exit 0
+            fi
+            git commit -qm "Seal dashboard data ($(date -u +%Y-%m-%d))"
+          done
+          echo "::error::could not push after 4 attempts"
+          exit 1

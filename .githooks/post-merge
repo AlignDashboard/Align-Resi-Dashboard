@@ -1,0 +1,5 @@
+#!/bin/sh
+# After a pull, checkout or rebase the sealed copies may be newer than the working
+# copies on disk. Refresh the ones not edited here, so nothing stale gets sealed
+# over newer data. Never blocks: a refresh that cannot run just says so.
+python3 scripts/crypto_data.py post-sync --quiet || true

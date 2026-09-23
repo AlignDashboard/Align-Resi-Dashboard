@@ -23,6 +23,7 @@ first: everything else is a gap, but these are assertions.
 | A16 | **The filing script has not deployed since 2026-09-02 — the `CLASPRC_JSON` refresh token is dead.** Every run since has failed the same way, in seconds, on `invalid_grant` / `invalid_rapt`: a Workspace reauth policy expiring the token on a schedule, not anything in this repo. Runs #8 (09-04), #9 (09-17) and #10 (09-18) are identical; `test_routing.py`, `node --check` and the deployer's own 20 guard tests all pass first, so the repo copy is validated on every push and simply never sent. **Three routing rules have landed since the last good deploy and are not in the live project** — `Budgets`, `Historical Tradeout Reports` and `Comps` — so a report of one of those types arriving *by email* would be auto-named or left in `_Unsorted` rather than routed. All three have been fed by hand-placed files so far, and `fetch_drive`'s rescue sweep covers a misfiled name, which is why nothing has visibly broken. The fix is yours and takes three steps: `clasp login` as `dashboard@alignrealestate.com`, paste `~/.clasprc.json` into the `CLASPRC_JSON` secret, re-run the workflow. The deploy now prints exactly that on this error rather than Google's bare JSON | Any routing change reaching the filer. The script already in the project keeps running — it just stops being updated from here | **yes** — the repo and the deployed filer have been diverging for a fortnight |
 
 | A17 | ~~One click: add Google Drive to the `Market Comps — daily check across every market` Routine~~ **Moot 2026-09-22: the Routine is deleted.** It needed two things attached by hand that the API cannot set — the Drive connector (`create_trigger` refuses the parameter for this org) and a repo source (created with `sources: []`, and the fired session has no `add_repo` tool) — and it bought almost nothing: `.github/workflows/refresh_comps.yml` does the daily refresh with the pipeline's own service account, and the one case the Routine was for (a market the workflow cannot see) is already covered, since a new market is a subfolder inside `Comps` that the two-level descent reads by itself. The workflow proved it on its first run, finding newer vintages in all four markets | Nothing | no |
+| A18 | **Set the dashboard password: one repository secret, one Claude environment variable, one click.** Every data file is now sealed (`docs/*.json.enc`, `data/**/*.json.enc`) and the key is the password, so nothing reads or writes data without it. (1) Pick a passphrase: `python3 scripts/crypto_data.py passphrase` prints a strong one, and the seal refuses anything under 12 characters and the old `AlignExecs`. (2) Settings → Secrets and variables → Actions → New repository secret `DASHBOARD_PASSWORD`. (3) The same value as the environment variable `DASHBOARD_PASSWORD` in the Claude cloud environment the Routines run in, or the EliseAI daily and packet Routines cannot open the data. (4) Actions → **Seal dashboard data** → Run workflow. It also runs by itself on the first push that carries plaintext. Until it has run, the live page shows nothing, because an unsealed build on a public host fails closed, and `update.yml` and `refresh_comps.yml` fail in their first step | The live dashboard, the daily cron, the comps refresh, and every Routine that writes data | **yes**, until done: nothing publishes, and the data is still plaintext in the repo |
 ## B · Blocked on an answer from EliseAI
 
 | # | Item | What it blocks | Live and uncertain |
@@ -77,13 +78,15 @@ after. D3 joins them: the two box-score exports are its first samples.
 
 ## E · Keeping data out of git history
 
-Documented in CLAUDE.md and built but not activated. Strictly ordered.
+Documented in CLAUDE.md and built but not activated. Strictly ordered. Sealing the
+data (A18) changed what is at stake rather than settling it: new commits carry
+ciphertext, but history is unchanged.
 
 | # | Step |
 | --- | --- |
 | E1 | Settings → Pages → Build and deployment → Source → **GitHub Actions**. `deploy.yml` is not dormant before this: it runs on every push and loses a race with GitHub's own branch build, harmless only while both publish identical bytes. Once data comes from the `data` branch they would differ and the winner would be a coin toss |
-| E2 | `scripts/publish_data.sh` to create the `data` branch, confirm the site loads, then drop `docs/*.json` from tracking and change `update.yml` to publish to `data` instead of committing |
-| E3 | `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`. Rewrites history, needs a force-push, and cannot un-publish anything already public |
+| E2 | `scripts/publish_data.sh` to create the `data` branch, confirm the site loads, then drop `docs/*.json.enc` from tracking and change `update.yml` to publish to `data` instead of committing. The **plaintext** half is done: the first seal takes `docs/*.json` and `data/**/*.json` out of tracking, and `check_no_pii.py` fails if they return |
+| E3 | `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`. Rewrites history, needs a force-push, and cannot un-publish anything already public. **Sealing did not do this job**: every version committed before the first seal is still plaintext in history. `docs/lineage.json` was missing from the script's paths and has been added |
 
 ## F · Cosmetic, awaiting a yes/no
 
@@ -119,6 +122,23 @@ wrong-looking number on the page.
 | H2 | **The three workbook-fed KPIs cannot follow the statement at all.** Loss to Lease %, NOI Margin % and Concession Load % are read from `docs/landing.json`, which is refreshed by hand in Excel, so they are pinned to the workbook's last extract (Jul 2026) no matter how many statements arrive. The pipeline now carries the same series to the cent — `metrics.json` `rent_capture` is on Aug 2026, thirteen months — so all three could be sourced from it and would then move on their own. That is the rewiring of `facts_from_landing` flagged when the block was built: not hard, but it decides which feed owns those cells, so it wants doing with G3 rather than before it | Three KPIs that move when a report arrives rather than when someone opens Excel | contained — the figures are right for the month they name |
 
 ## Closed
+
+2026-09-23 — **all the data is sealed, not just the page's four files.** The first
+pass (2026-09-15) never reached `main`, and `main` grew new data and new writers
+while it waited. So this pass rebuilt it on current `main`, found by a
+five-angle sweep of every file, reader, writer and leak channel. It now seals
+every `docs/*.json` and every `data/**/*.json` store (29 files, about 945 KB of
+plaintext into 252 KB sealed). The two unit-level, name-bearing files are
+excluded on purpose; they stay gitignored and uncommitted in any form. Nothing
+is sealed under a password I chose or one already public: CI seals under the
+owner's secret (A18). The guards that matter are the ones that stop a wrong file
+being sealed where no diff can show it. They are the checkout guard (a stale or
+never-opened copy), the entry guard on every pipeline script (the eleven
+`if fp.exists() else <empty>` readers), the order of the workflow steps, and a
+page that fails closed. Each was verified by mutation. Real figures came out of
+the served pages' comments and strings. Figures in the markdown docs, commit
+messages, Actions logs and history cannot be sealed; making the repository
+private is the fix for those.
 
 2026-09-18 — **a lineage page regenerated outside CI no longer downgrades a
 gitignored feed (G4).** `evidence_for_store` read `data/<slug>/*.json`, and the
