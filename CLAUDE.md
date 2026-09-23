@@ -46,6 +46,7 @@ ask for the PR; do not open one preemptively.
 | `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
 | `docs/data.html` | Two views behind the same gate: the **data-flow** chain, and the **tables** holding every number the JSON carries |
 | `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand |
+| `docs/rental_tracker.enc.json` | The Rental Rate Tracker's lease data, **encrypted**; the Rental Rates tab decrypts it in the page. Written by `scripts/import_rental_tracker.py`, never by hand |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json`; `gmail_drive_filing.js` is the Apps Script that files reports into Drive in the first place |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
@@ -758,6 +759,106 @@ opposite finding and worth having. The loss-to-lease restatement needs the roll
 and is left out there. A property with no directory at all gets the market side
 of the tab and a card saying why the check cannot be made — that is Madelon
 today.
+
+## The Rental Rates Tab
+
+`Rental Rates` is the **Rental Rate Tracker** — a separate dashboard at
+`github.com/dbalduc/rental-rates` covering The Landing, Chorus, The Madelon,
+Ansel and The Fitzgerald — brought onto this one in its own chart format:
+per-building tiles, trade-out % and renewal % by lease date, the new-lease $/sqft
+trend, prior → new $/sqft per lease, the weekly summaries and the lease detail
+table, all under one Timeframe (Max / QTR / Month) and rent-basis (Effective /
+Gross) row. It replaced a two-card test built from the pipeline's own Landing
+feeds while the tracker's data was out of reach.
+
+**The data stays encrypted here, as it is at source** (owner's call, 2026-09-23).
+The tracker publishes only ciphertext that decrypts in the browser with its
+password, and everything `docs/` holds is readable by anyone with the URL — a
+plaintext copy would have published what its owner chose not to.
+`docs/rental_tracker.enc.json` is PBKDF2-SHA256 (600,000 iterations; the
+tracker's own is 200,000) into AES-256-GCM under **the tracker's password**, and
+the tab decrypts it with WebCrypto. The password is never in the repo, never
+sent anywhere and never stored: what `sessionStorage` keeps (`align-rt-key`) is
+the derived key for that one file, so a reload stays unlocked, a re-import (new
+salt) asks again, and **Lock** drops it. In the clear: the snapshot date, the
+import time and the row counts, so the tab can say what it holds and how old it
+is before it is unlocked.
+
+### Refreshing it
+
+    git clone --depth 1 https://github.com/dbalduc/rental-rates /tmp/rental-rates
+    RENTAL_TRACKER_PASSWORD=... python scripts/import_rental_tracker.py /tmp/rental-rates
+
+It needs `pycryptodome` (or `cryptography`); neither is in `requirements.txt`,
+since the cron never runs it. The tracker rebuilds daily — its repo is a single
+commit, force-replaced — and the tab's snapshot line turns red past a week, so a
+copy that has stopped being refreshed looks it. Automating the refresh means
+giving this repo's Actions the tracker's password as a secret: open item A18.
+
+The import **refuses rather than publishes**, and a refusal writes nothing, so
+the file keeps its last good copy:
+
+- **Free text never passes.** The tracker's renewal notes name residents —
+  209 of its 250 carry text, several with a tenant's name — so the output is a
+  whitelist, field by field (`LEASE`, `RENEWAL`, `WEEKLY`, `MTM`), and a field
+  nobody listed is dropped and counted rather than carried: a note column added
+  upstream tomorrow cannot reach this repo. It is **Tenant names must not leave
+  the pipeline** applied inside the encryption too — a password is one leak away
+  from being plaintext. The one prose that passes is the tracker's subtitle, its
+  own line on which system each building's numbers come from, and it is refused
+  if it carries an email or phone shape.
+- **Every value has a shape.** Real calendar dates; units and terms matching a
+  label pattern; numbers that are finite numbers, not text and not booleans. A
+  value that fails refuses the import and is **never echoed** — a field failing
+  its pattern is exactly the one that might be carrying text.
+- **Each row is checked against its own arithmetic** — a trade-out % against one
+  of its two rents over the prior, a renewal's increase against its two rates,
+  $/sqft against rent over footage. Warnings rather than refusals: the tracker
+  corrects source errors by hand, and says so in the notes this drops.
+- **Unchanged data leaves the file alone.** A fresh salt and IV make every
+  encryption differ, so re-encrypting identical data would commit a new
+  ciphertext and a new import time on every run.
+
+`scripts/test_rental_tracker.py` holds it down — 34 fixture-free checks against
+tracker pages built and encrypted in a temp dir. The four load-bearing guards
+(the whitelist, the unit pattern, the refusal, the unchanged-data skip) were each
+verified by mutation. **Clear `__pycache__` between mutation runs.**
+
+The file lives in **main, with the site shell**, not on the data branch:
+`deploy.yml` overlays only the four data files, and ciphertext is safe in history
+in a way the plaintext JSON is not.
+
+### Where it departs from the tracker, and why
+
+- **One small panel per building on shared axes, not five colours on one plot.**
+  No set of five colours clears the colour-vision floors for every pair on a
+  scatter (checked against the palette validator); a panel title always can.
+  Axes are shared within a card, so a height compares across buildings. The
+  colours (`--rt-1`..`--rt-5` on the two `:root` blocks) are each theme's own step
+  of one validated categorical order, and never carry identity alone.
+- **Every tile carries the rent-weighted trade-out beside the tracker's mean.**
+  The mean stays the headline, so the two dashboards agree — The Landing +43.6%
+  over 51 leases — and the weighted figure (+39.6%) is the statistic the Landing
+  tab grades; one concession-bought prior can swing a mean. It is taken over the
+  **same leases** as the mean, because the tracker withholds a trade-out on a
+  lease that does carry a prior (Chorus 2706).
+- **A cut is drawn as a cut.** The tracker stacks the change on the prior, so a
+  lease that came in below the one it replaced hangs below the axis. Here the
+  grey runs to the lower of the two rents and the gap is filled for a rise and
+  outlined for a cut — 12 leases across the snapshot.
+- **Occupancy is the newest week by date.** The tracker takes whichever weekly
+  row comes last in its file, which for The Landing is the 9/7 week, not 9/14.
+  Ansel has no weekly report; its figure is the one the tracker types in, and
+  the tile says nothing dates it.
+- **Trade-out % is as each source reports it, and that is not one basis.** In
+  the first snapshot only three leases have a gross and effective rent far
+  enough apart to tell: The Landing's follows effective rent, The Fitzgerald's
+  gross, and the third fits both. So the card counts what it can tell on the
+  data in front of it rather than asserting a rule per source.
+
+The data-flow page carries it as its own flow (origin `site`) with **no table
+behind it, on purpose**: the page could only show these numbers by decrypting
+them. Every card's `Data ↗` lands on that row instead.
 
 ## Refreshing The KPI Scorecard
 
@@ -2583,8 +2684,10 @@ After flipping it, in order:
 
 1. `scripts/publish_data.sh` — create the `data` branch.
 2. Confirm the site still loads, then stop committing data to `main`: drop
-   `docs/*.json` from tracking and change `update.yml` to publish to the `data`
-   branch instead of committing.
+   the four data files from tracking and change `update.yml` to publish to the
+   `data` branch instead of committing. **Not `docs/rental_tracker.enc.json`**,
+   which is ciphertext and belongs with the site shell — see **The Rental Rates
+   Tab**; a `docs/*.json` glob would take it too.
 3. `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`, to
    remove the data already in history. Tested on a throwaway clone: 63 commits →
    40, every data path gone from every commit, site shell and scripts intact.

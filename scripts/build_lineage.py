@@ -864,6 +864,57 @@ OTHER_FLOWS = [
         "evidence_kind": "scorecard_meta",
     },
     {
+        "id": "rental_tracker",
+        "example": "index.html (encrypted)",
+        "title": "Rental Rate Tracker",
+        "origin_kind": "site",
+        "source_label": "github.com/dbalduc/rental-rates",
+        "source_detail": "A separate dashboard, published encrypted: its pages decrypt "
+                         "in the browser with the tracker's password. Its owner rebuilds "
+                         "it daily.",
+        "carries": "Executed new leases and renewals across the tracker's buildings "
+                   "\u2014 unit, rent, prior rent, trade-out, $/sqft \u2014 with weekly "
+                   "occupancy and month-to-month counts. Its renewal notes name residents.",
+        "steps": [
+            {"script": "scripts/import_rental_tracker.py",
+             "does": "Decrypts a tracker page with the tracker's password, keeps only the "
+                     "fields the Rental Rates tab draws, and re-encrypts them under the "
+                     "same password. Run by hand.",
+             "checks": "A whitelist, field by field: free text never passes, so the notes "
+                       "are dropped, and a field nobody listed is dropped and counted rather "
+                       "than carried. A value that fails its pattern refuses the whole import, "
+                       "leaving the last good file. Each row is checked against its own "
+                       "arithmetic, and unchanged data leaves the file alone."},
+        ],
+        "stores": [],
+        "publishes": [
+            {"file": "rental_tracker.enc.json", "key": "the tracker's dataset, encrypted"},
+        ],
+        "dashboard": [
+            {"card": "Rental Rate Tracker", "tab": "Rental Rates", "anchor": "cRtLock"},
+            {"card": "By Property", "tab": "Rental Rates", "anchor": "cRtTiles"},
+            {"card": "Trade-out % by Lease Date", "tab": "Rental Rates", "anchor": "cRtTradeout"},
+            {"card": "New-Lease $/sqft \u2014 Trend", "tab": "Rental Rates", "anchor": "cRtPsfTrend"},
+            {"card": "Trade-out $/sqft \u2014 Prior \u2192 New", "tab": "Rental Rates",
+             "anchor": "cRtTradePsf"},
+            {"card": "Renewal % by Lease Date", "tab": "Rental Rates", "anchor": "cRtRenewal"},
+            {"card": "Renewal $/sqft \u2014 Prior \u2192 New", "tab": "Rental Rates",
+             "anchor": "cRtRenewPsf"},
+            {"card": "Weekly Summaries", "tab": "Rental Rates", "anchor": "cRtWeekly"},
+            {"card": "Lease Detail", "tab": "Rental Rates", "anchor": "cRtDetail"},
+        ],
+        # No table on data.html, on purpose: the numbers are encrypted at source
+        # and stay encrypted here, and this page could only show them by
+        # decrypting them. The cards link to this row instead.
+        "tables": [],
+        "note": "No table on this page holds these numbers, and none will: they are "
+                "encrypted at source and stay encrypted on the dashboard. The tab's own "
+                "Lease Detail and Weekly Summaries cards are the tables behind its "
+                "charts, once it is unlocked.",
+        "open_item": "A18",
+        "evidence_kind": "rental_tracker",
+    },
+    {
         "id": "handset",
         "example": 'docs/metrics.json',
         "title": "Hand-authored blocks in metrics.json",
@@ -1145,6 +1196,19 @@ def gather_evidence(flow):
         return evidence_from_scorecard("bldg_")
     if flow["id"] in ("delinquency", "delinquency_alt"):
         return evidence_from_scorecard("", want="Drive")
+    if kind == "rental_tracker":
+        # The plaintext half of the envelope: when it was imported, which
+        # snapshot, how much. Nothing about any lease is readable here.
+        env = _load_json("docs/rental_tracker.enc.json") or {}
+        if not env:
+            return []
+        c = env.get("counts") or {}
+        return [{"property": "all", "file": "docs/rental_tracker.enc.json",
+                 "as_of": env.get("snapshot"), "source_file": env.get("source"),
+                 "landed_at": env.get("imported_at"),
+                 "detail": f"{c.get('leases')} leases, {c.get('renewals')} renewals and "
+                           f"{c.get('weekly')} weekly rows across {c.get('properties')} "
+                           f"buildings, encrypted"}]
     if flow["id"] == "handset":
         m = _load_json("docs/metrics.json") or {}
         gen = (m.get("meta") or {}).get("generated_at")
@@ -1401,7 +1465,7 @@ def build():
     # mailbox, then the workbooks, then what has no feed at all; within each,
     # what is working before what is waiting. An alias route sorts next to the
     # flow it duplicates, since the page folds it in there.
-    origin_rank = {"drive": 0, "email": 1, "workbook": 2, "manual": 3}
+    origin_rank = {"drive": 0, "email": 1, "workbook": 2, "site": 3, "manual": 4}
     status_rank = {LIVE: 0, PARTIAL: 1, WAITING: 2, NO_PARSER: 3, MANUAL: 4}
     primary = {f["id"]: f for f in flows}
     def sort_key(f):
