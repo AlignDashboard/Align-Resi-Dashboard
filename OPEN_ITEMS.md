@@ -138,7 +138,11 @@ owner's secret (A20). The guards that matter are the ones that stop a wrong file
 being sealed where no diff can show it. They are the checkout guard (a stale or
 never-opened copy), the entry guard on every pipeline script (the eleven
 `if fp.exists() else <empty>` readers), the order of the workflow steps, and a
-page that fails closed. Each was verified by mutation. Real figures came out of
+page that fails closed. Each was verified by mutation. An adversarial review
+across five lenses (data loss, crypto, leaks, the browser, operations) then
+reproduced its findings against a bare origin; every confirmed one is fixed with a
+test that fails without the fix, except Safari before 16.4, which cannot open the
+gzip inside the envelope and is documented rather than worked around. Real figures came out of
 the served pages' comments and strings. Figures in the markdown docs, commit
 messages, Actions logs and history cannot be sealed; making the repository
 private is the fix for those.
