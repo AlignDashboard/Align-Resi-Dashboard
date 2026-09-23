@@ -376,6 +376,19 @@ def require_opened(who, root=None):
 # ------------------------------------------------------------------ passwords
 
 def check_new_password(pw):
+    # What the gate's <input type=password> cannot reproduce: control characters
+    # (it strips newlines), leading or trailing spaces (easy to lose when typing),
+    # and anything outside printable ASCII (a phone keyboard or a different
+    # Unicode normalisation turns it into other bytes). A password the page
+    # cannot type seals the dashboard shut while every check passes.
+    if any(not (0x20 <= ord(c) <= 0x7E) for c in pw):
+        raise CryptoDataError(
+            "the password has a character the page's password field cannot reproduce "
+            "(a line ending, a control character, or non-ASCII). Use printable ASCII -- "
+            "crypto_data.py passphrase prints one.")
+    if pw != pw.strip():
+        raise CryptoDataError("the password starts or ends with a space; nobody would type it "
+                              "back reliably. Remove it.")
     if pw.strip().lower() in KNOWN_PUBLIC:
         raise CryptoDataError(
             "that password is public -- it sat in index.html in this repository's "
@@ -397,7 +410,10 @@ def read_password(args, confirm=False, prompt="Dashboard password: ",
         return pw
     pw = os.environ.get(env_var)
     if pw:
-        return pw
+        # The same as the file path: a secret pasted with its line ending would
+        # otherwise seal under a key the page's password field can never produce
+        # (it strips CR/LF), while every check in CI passes.
+        return pw.strip("\r\n")
     if not sys.stdin.isatty():
         raise CryptoDataError(f"no password: set ${env_var}, pass --password-file, "
                               f"or run interactively")
@@ -535,9 +551,19 @@ def cmd_decrypt(args, root):
 def _seal_all(root, rels, ring, password, state, plaintexts, *, reason_same=True,
               replace=False, stage=False, quiet=False):
     """Write envelopes for {rel: plaintext}, skipping ones already current."""
-    salt, fresh = canonical_salt(root, rels, ring, password)
+    # Across every sealed file in the checkout, not just the ones being written:
+    # sealing one new store must join the salt the rest are under, not mint one.
+    salt, fresh = canonical_salt(root, sealed_set(root), ring, password)
     if fresh:
         check_new_password(password)       # raises before anything is written
+        sealed_now = {r for r in sealed_set(root) if (root / (r + SUFFIX)).is_file()}
+        outside = sorted(sealed_now - set(plaintexts))
+        if outside:
+            # A new key applied to some files only is a split the page cannot open.
+            raise CryptoDataError(
+                f"DASHBOARD_PASSWORD opens none of the sealed files, and {len(outside)} of them "
+                f"(e.g. {outside[0]}) are not being re-sealed here. To change the password, "
+                f"set DASHBOARD_PASSWORD_OLD and run reseal with no file list.")
     key = ring.key(password, salt, ITERATIONS)
     wrote = same = 0
     for rel in rels:
@@ -630,8 +656,8 @@ def cmd_encrypt(args, root):
     # the page cannot open. Minting a new key is only right when every sealed
     # file is being re-sealed with it -- a rotation, done by reseal or by a run
     # that opened everything under DASHBOARD_PASSWORD_OLD.
-    if todo and mode(root) == "sealed" and canonical_salt(root, rels, ring, password)[1]:
-        sealed_now = {r for r in rels if (root / (r + SUFFIX)).is_file()}
+    if todo and mode(root) == "sealed" and canonical_salt(root, sealed_set(root), ring, password)[1]:
+        sealed_now = {r for r in sealed_set(root) if (root / (r + SUFFIX)).is_file()}
         left = sorted(sealed_now - set(todo))
         if left:
             refused.append(f"DASHBOARD_PASSWORD opens none of the sealed files, and {len(left)} "
@@ -901,11 +927,25 @@ def cmd_merge_driver(args, root):
     except ValueError:
         print(f"[alignenc] {rel}: the merged text is not valid JSON", file=sys.stderr)
         return 1
-    # Re-seal under the salt the rest of the checkout uses, so a merge does not
-    # leave one file on its own key (the browser would have to derive twice).
-    salt, fresh = canonical_salt(root, sealed_set(root), ring, pw)
-    if fresh:
-        check_new_password(pw)
+    # Re-seal under the key the merged sides are already under -- theirs first,
+    # since that is where the rest of the set is coming from. The worktree is no
+    # guide mid-merge: it still holds ours, which during a rotation is the OLD key,
+    # and minting a fresh salt there would leave this one file on a key of its own.
+    salt = None
+    for side in (theirs_p, ours_p, base_p):
+        try:
+            e = json.loads(pathlib.Path(side).read_bytes() or b"null")
+        except ValueError:
+            continue
+        if isinstance(e, dict) and e.get("iter") == ITERATIONS and "salt" in e \
+                and ring.opens_under(e, rel, pw):
+            salt = _b64d(e["salt"])
+            break
+    if salt is None:
+        print(f"[alignenc] {rel}: neither side is sealed under DASHBOARD_PASSWORD -- one side "
+              f"predates a password change. Merge after resealing that side (reseal), so the "
+              f"result is not left on a key of its own.", file=sys.stderr)
+        return 1
     merged = seal(res.stdout, ring.key(pw, salt, ITERATIONS), rel, salt)
     pathlib.Path(ours_p).write_text(json.dumps(merged) + "\n")
     return 0

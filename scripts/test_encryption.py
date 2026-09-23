@@ -885,6 +885,71 @@ def test_review_round():
         env(DASHBOARD_PASSWORD=PW)
 
 
+def test_review_round_two():
+    print("\nreview round two: typeable passwords, subset seals, merges mid-rotation")
+    # --- [0] a secret pasted with its line ending seals under what the page can type
+    with tempfile.TemporaryDirectory() as tmp:
+        root = make_repo(tmp, STANDARD)
+        env(DASHBOARD_PASSWORD=PW + "\n")
+        sealed_ok = run(root, "reseal", "--git", "--replace") == 0
+        env(DASHBOARD_PASSWORD=PW)
+        ok("a secret with a trailing newline seals under the password as typed",
+           sealed_ok and (root / "docs/metrics.json.enc").is_file() and run(root, "check") == 0,
+           run.last)
+    for bad, why in ((PW + "\t", "a control character"), (" " + PW, "a leading space"),
+                     (PW + " ", "a trailing space"), ("pässwörd-lång-enough", "non-ASCII")):
+        ok(f"a password with {why} is refused -- the page's field cannot reproduce it",
+           raises(cd.CryptoDataError, cd.check_new_password, bad))
+
+    # --- [1] sealing one new store joins the salt the rest are under
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        (root / "data/newprop").mkdir(parents=True)
+        (root / "data/newprop/eliseai_daily.json").write_text(pretty({"days": [1]}))
+        ok("sealing only a brand-new store works", run(root, "encrypt",
+           "data/newprop/eliseai_daily.json", "--git") == 0, run.last)
+        ok("and it joins the set's salt instead of minting its own", run(root, "check") == 0, run.last)
+
+    # --- [2] a merge while a rotation is half-landed keeps the set on one key
+    with tempfile.TemporaryDirectory() as tmp:
+        files = dict(STANDARD)
+        files["docs/metrics.json"] = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}
+        root = make_repo(tmp, files)
+        shutil.copytree(HERE, root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(HERE.parent / ".githooks", root / ".githooks")
+        shutil.copy(HERE.parent / ".gitattributes", root / ".gitattributes")
+        env(DASHBOARD_PASSWORD=PW)
+        run(root, "install")
+        run(root, "reseal", "--git", "--replace")
+        gitc(root, "add", "-A", ".gitattributes", ".githooks")
+        gitc(root, "commit", "-qm", "seal", "--no-verify")
+        gitc(root, "tag", "base")
+        # L: a change made under the OLD password
+        run(root, "decrypt", "--force")
+        m = json.loads((root / "docs/metrics.json").read_text()); m["b"] = 20
+        (root / "docs/metrics.json").write_text(pretty(m))
+        run(root, "encrypt", "--git")
+        gitc(root, "commit", "-qm", "L", "--no-verify")
+        # R: the rotation lands
+        gitc(root, "checkout", "-qb", "R", "base")
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)
+        run(root, "decrypt", "--force")
+        assert run(root, "reseal", "--git") == 0, run.last
+        gitc(root, "commit", "-qm", "rotate", "--no-verify")
+        gitc(root, "checkout", "-q", "-")
+        res = gitc(root, "merge", "-q", "--no-edit", "--no-verify", "R", check=False)
+        env(DASHBOARD_PASSWORD=PW2)
+        ok("merging the rotation into a branch that changed a sealed file under the old key "
+           "leaves ONE key", res.returncode == 0 and run(root, "check") == 0,
+           (res.returncode, res.stderr[-200:], run.last[-200:]))
+        try:
+            kept = json.loads(cd.unseal(enc(root, "docs/metrics.json"), PW2, "docs/metrics.json"))["b"]
+        except (cd.CryptoDataError, KeyError, ValueError):
+            kept = None
+        ok("and keeps the branch's change", kept == 20, kept)
+        env(DASHBOARD_PASSWORD=PW)
+
+
 def main():
     saved = {k: os.environ.get(k) for k in ("DASHBOARD_PASSWORD", "DASHBOARD_PASSWORD_OLD",
                                             "DASHBOARD_PASSWORD_NEW")}
@@ -893,8 +958,15 @@ def main():
                   test_cycle, test_guard, test_rotation, test_check, test_passphrase,
                   test_git_integration, test_browser_half, test_agreement, test_entry_guard,
                   test_shrink_and_rekey,
-                  test_workflows, test_update_replay, test_review_round):
-            t()
+                  test_workflows, test_update_replay, test_review_round,
+                  test_review_round_two):
+            # One test crashing must not hide the rest -- a guard broken on purpose
+            # (mutation testing) often surfaces as an exception, and a suite that
+            # stops there reports every later check as simply absent.
+            try:
+                t()
+            except Exception as exc:                       # noqa: BLE001
+                ok(f"{t.__name__} ran to the end", False, f"{type(exc).__name__}: {exc}"[:300])
     finally:
         for k, v in saved.items():
             os.environ.pop(k, None)

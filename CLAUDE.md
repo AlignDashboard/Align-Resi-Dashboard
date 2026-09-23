@@ -2656,7 +2656,10 @@ ciphertext is public, so anyone can take a copy and guess offline for ever, with
 no rate limit and nobody watching. The 600,000 PBKDF2 rounds make each guess
 cost time. They do not make a guessable password safe. So the first seal refuses
 anything under 12 characters, and refuses `AlignExecs`, which sat in `index.html`
-in public. `crypto_data.py passphrase` prints a strong, typeable one (about 99
+in public. It also refuses anything the gate's password field cannot type back:
+control characters, a leading or trailing space, and anything outside printable
+ASCII. A secret pasted with its line ending is read without it, because the page
+strips newlines and would otherwise never match. `crypto_data.py passphrase` prints a strong, typeable one (about 99
 bits); it refuses to run inside Actions, where the log is public.
 
 It lives in exactly two places, and both must hold the same value:
@@ -2811,6 +2814,11 @@ closed at the point they would happen rather than left for a diff to show:
 - **The password itself.** Anyone who has it can hand the data on. A copy of
   today's ciphertext stays readable under today's password, whatever it is
   rotated to later.
+- **Old browsers.** The page needs `DecompressionStream`: Safari 16.4 or later,
+  or any current Chrome, Edge or Firefox. An iPhone stuck on iOS 15 (6s, 7,
+  first SE) cannot open it and is told so. The page files could be sealed
+  uncompressed instead. That costs roughly six times the repository growth,
+  since every change stores the whole ciphertext.
 - **The key in the browser.** The derived key, never the password, sits in the
   tab's `sessionStorage` so `data.html` opens without a second prompt. Any script
   on the origin could read it, and GitHub Pages shares one origin across an
