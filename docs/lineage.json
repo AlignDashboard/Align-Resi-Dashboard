@@ -344,6 +344,96 @@
    "primary": "t-sc-matrix",
    "holds": "KPI Scorecard matrix"
   },
+  "cRtLock": {
+   "card": "Rental Rate Tracker",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtTiles": {
+   "card": "By Property",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtTradeout": {
+   "card": "Trade-out % by Lease Date",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtPsfTrend": {
+   "card": "New-Lease $/sqft \u2014 Trend",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtTradePsf": {
+   "card": "Trade-out $/sqft \u2014 Prior \u2192 New",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtRenewal": {
+   "card": "Renewal % by Lease Date",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtRenewPsf": {
+   "card": "Renewal $/sqft \u2014 Prior \u2192 New",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtWeekly": {
+   "card": "Weekly Summaries",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
+  "cRtDetail": {
+   "card": "Lease Detail",
+   "tab": "Rental Rates",
+   "tables": [],
+   "flows": [
+    "rental_tracker"
+   ],
+   "primary": "f-rental_tracker",
+   "holds": null
+  },
   "cTradeOutsPortfolio": {
    "card": "Trade Outs",
    "tab": "Portfolio",
@@ -370,10 +460,10 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-23T17:46:51.076054+00:00",
+  "generated_at": "2026-09-23T22:02:25.454465+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 13,
+   "live": 14,
    "partial": 3,
    "waiting": 1,
    "no-parser": 8,
@@ -1244,11 +1334,11 @@
    "evidence": [
     {
      "property": "the-landing",
-     "file": "data/the-landing/rent_roll.json",
+     "file": "metrics.json rent_roll",
      "as_of": "2026-09-11",
      "source_file": "RentRoll09_11_2026.xlsx",
      "landed_at": "2026-09-11T18:33:04.600Z",
-     "detail": null
+     "detail": "read from the published aggregate \u2014 this store is gitignored (per-unit) and exists only during a pipeline run"
     }
    ],
    "status": "live"
@@ -1954,17 +2044,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-22",
+     "as_of": "2026-09-23",
      "source_file": null,
-     "landed_at": "2026-09-22T15:37:25Z",
-     "detail": "41 day(s) recorded"
+     "landed_at": "2026-09-23T15:38:09Z",
+     "detail": "42 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-22",
+     "as_of": "2026-09-23",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-22T15:37:25Z",
+     "landed_at": "2026-09-23T15:38:09Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2155,6 +2245,93 @@
      "source_file": "102ebfe0-The_Landing_Dashboard_V37.xlsx",
      "landed_at": "2026-08-03T21:15:23.385441+00:00",
      "detail": "extract run; the workbook has no arrival time of its own, so this is when it was extracted"
+    }
+   ],
+   "status": "live"
+  },
+  {
+   "id": "rental_tracker",
+   "example": "index.html (encrypted)",
+   "title": "Rental Rate Tracker",
+   "origin_kind": "site",
+   "source_label": "github.com/dbalduc/rental-rates",
+   "source_detail": "A separate dashboard, published encrypted: its pages decrypt in the browser with the tracker's password. Its owner rebuilds it daily.",
+   "carries": "Executed new leases and renewals across the tracker's buildings \u2014 unit, rent, prior rent, trade-out, $/sqft \u2014 with weekly occupancy and month-to-month counts. Its renewal notes name residents.",
+   "steps": [
+    {
+     "script": "scripts/import_rental_tracker.py",
+     "does": "Decrypts a tracker page with the tracker's password, keeps only the fields the Rental Rates tab draws, and re-encrypts them under the same password. Daily at 15:00 UTC in refresh_rental_tracker.yml, once the password is an Actions secret; by hand otherwise.",
+     "checks": "A whitelist, field by field: free text never passes, so the notes are dropped, and a field nobody listed is dropped and counted rather than carried. A value that fails its pattern refuses the whole import, leaving the last good file. Each row is checked against its own arithmetic, and unchanged data leaves the file alone."
+    }
+   ],
+   "stores": [],
+   "publishes": [
+    {
+     "file": "rental_tracker.enc.json",
+     "key": "the tracker's dataset, encrypted"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Rental Rate Tracker",
+     "tab": "Rental Rates",
+     "anchor": "cRtLock"
+    },
+    {
+     "card": "By Property",
+     "tab": "Rental Rates",
+     "anchor": "cRtTiles"
+    },
+    {
+     "card": "Trade-out % by Lease Date",
+     "tab": "Rental Rates",
+     "anchor": "cRtTradeout"
+    },
+    {
+     "card": "New-Lease $/sqft \u2014 Trend",
+     "tab": "Rental Rates",
+     "anchor": "cRtPsfTrend"
+    },
+    {
+     "card": "Trade-out $/sqft \u2014 Prior \u2192 New",
+     "tab": "Rental Rates",
+     "anchor": "cRtTradePsf"
+    },
+    {
+     "card": "Renewal % by Lease Date",
+     "tab": "Rental Rates",
+     "anchor": "cRtRenewal"
+    },
+    {
+     "card": "Renewal $/sqft \u2014 Prior \u2192 New",
+     "tab": "Rental Rates",
+     "anchor": "cRtRenewPsf"
+    },
+    {
+     "card": "Weekly Summaries",
+     "tab": "Rental Rates",
+     "anchor": "cRtWeekly"
+    },
+    {
+     "card": "Lease Detail",
+     "tab": "Rental Rates",
+     "anchor": "cRtDetail"
+    }
+   ],
+   "tables": [],
+   "note": "No table on this page holds these numbers, and none will: they are encrypted at source and stay encrypted on the dashboard. The tab's own Lease Detail and Weekly Summaries cards are the tables behind its charts, once it is unlocked.",
+   "open_item": "A18",
+   "registered": null,
+   "parser": null,
+   "documented": true,
+   "evidence": [
+    {
+     "property": "all",
+     "file": "docs/rental_tracker.enc.json",
+     "as_of": "2026-09-23",
+     "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
+     "landed_at": "2026-09-23T20:36:27Z",
+     "detail": "163 leases, 250 renewals and 51 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
