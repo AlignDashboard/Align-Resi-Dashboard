@@ -75,7 +75,7 @@ jobs:
       # On the plaintext, before it is sealed: the only point at which this can
       # read anything. (On a rotation there is no plaintext to read; it says so.)
       - name: Refuse to seal if personal data is in the data
-        run: python scripts/check_no_pii.py
+        run: python scripts/check_no_pii.py --sealing
 
       - name: Seal everything under DASHBOARD_PASSWORD
         env:
@@ -112,7 +112,7 @@ jobs:
             sleep $((attempt * 5))
             git fetch -q origin main
             git reset -q --hard origin/main
-            python scripts/check_no_pii.py || exit 1
+            python scripts/check_no_pii.py --sealing || exit 1
             python scripts/crypto_data.py reseal --git --force || exit 1
             if git diff --staged --quiet; then
               echo "main is already sealed under this password."

@@ -56,7 +56,7 @@ jobs:
             echo "::error::Secrets and variables -> Actions -> New repository secret."
             exit 1
           fi
-          python scripts/crypto_data.py check
+          python scripts/crypto_data.py check --allow-old
 
       - name: Fetch reports from Google Drive
         env:
@@ -290,6 +290,9 @@ jobs:
               echo "::warning::main and this run both changed these; this run's output wins (A15):"
               echo "$both" | sed 's/^/  /'
             fi
+            # Never replay across a password change: main may have been re-keyed
+            # while this run built, and restoring its files would split the set.
+            python scripts/crypto_data.py same-key origin/main || exit 1
             tmp=$(mktemp -d)
             for p in $KEPT; do
               [ -e "$p" ] && cp -a --parents "$p" "$tmp/" 2>/dev/null || true

@@ -111,7 +111,7 @@ def pass1_structural():
     print(f"   ({n} data/ store(s) scanned)")
 
 
-def pass2_tracked():
+def pass2_tracked(sealing=False):
     print("2. tracked files — raw reports or per-unit output in git")
     tracked = subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout.split()
     # --diff-filter=ACMR: what the commit ADDS. Without it, staging the removal
@@ -146,6 +146,11 @@ def pass2_tracked():
         return
     for label, files in (("tracked", tracked), ("staged", staged)):
         clear = sorted(f for f in files if f in sealed_set)
+        if clear and sealing:
+            # seal_data.yml: sealing is exactly what takes these out of git, so
+            # finding them is the job, not a failure. Pass 1 still scanned them.
+            print(f"   NOTE {len(clear)} {label} plaintext data file(s) -- about to be sealed")
+            continue
         if clear:
             print(f"   FAIL {label} plaintext data: {clear[:6]}{' …' if len(clear) > 6 else ''}")
             problems.append(
@@ -250,6 +255,8 @@ def pass3_values(source):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--source", help="a source report to take real names from")
+    ap.add_argument("--sealing", action="store_true",
+                    help="seal_data.yml: tracked plaintext is what this run seals, not a failure")
     ap.add_argument("--require-open", action="store_true",
                     help="fail when a sealed file has no working copy to scan (use in CI, "
                          "after the decrypt step)")
@@ -258,7 +265,7 @@ if __name__ == "__main__":
     os.chdir(subprocess.run(["git", "rev-parse", "--show-toplevel"],
                             capture_output=True, text=True).stdout.strip() or ".")
     pass1_structural()
-    pass2_tracked()
+    pass2_tracked(sealing=a.sealing)
     if a.require_open and sealed_unscanned:
         problems.append(f"{len(sealed_unscanned)} sealed file(s) had no working copy to scan, "
                         f"e.g. {sealed_unscanned[0]} — run crypto_data.py decrypt first, or "

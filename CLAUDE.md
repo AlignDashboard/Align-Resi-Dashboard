@@ -2677,9 +2677,18 @@ closed.
 `DASHBOARD_PASSWORD` to the new one, run **Seal dashboard data**, update the
 Claude environment variable, and delete `DASHBOARD_PASSWORD_OLD`. Every run opens
 under whichever of the two fits and seals under the new one, so even the daily
-cron completes a rotation on its own. A rotation mints a fresh salt, so every
-open browser tab drops back to the gate, which is expected. Locally,
-`crypto_data.py rotate` prompts for both.
+cron completes a rotation on its own: its pre-flight is `check --allow-old`,
+which treats files still under the old password as a rotation in progress. A
+rotation mints a fresh salt, so every open browser tab drops back to the gate,
+which is expected. Locally, `crypto_data.py rotate` prompts for both.
+
+**Rotate when no cron is running** (`update.yml` starts 11:00 UTC and runs for
+hours; `refresh_comps.yml` runs at 21:30). A job's secrets are fixed when it
+starts. A run still building under the old password therefore cannot re-open a
+re-keyed `main`. Its push retry checks `crypto_data.py same-key origin/main`
+and refuses to replay across a key change. Replaying would put its files back
+under the retired password, a split no single password opens. So it fails
+loudly, and you rerun it.
 
 Every workflow **requires** the secret and fails in its first steps without it.
 There is no unsealed fallback mode, because the only thing such a mode could do
@@ -2733,7 +2742,22 @@ closed at the point they would happen rather than left for a diff to show:
   concurrent push.
 - **CI has no git hooks**, so each workflow runs `crypto_data.py pre-commit` by
   hand before every `git commit`, retries included. No plaintext gets into a
-  commit, whatever the ignore rules say.
+  commit, whatever the ignore rules say, and every staged `.enc` must be a
+  well-formed envelope.
+- **pre-push.** `pre-commit` does not run on `rebase --continue` or
+  `--no-verify`. The natural resolution of a cutover race re-adds the plaintext
+  beside its sealed copy, so `.githooks/pre-push` refuses to push any sealed
+  tree that carries plaintext.
+- **Committed plaintext is repaired, not jammed.** If plaintext reaches `main`
+  anyway, the push triggers **Seal dashboard data**. Its PII check runs with
+  `--sealing`, since sealing is what removes the plaintext, and `reseal` adopts
+  whichever of the plaintext and its sealed copy was committed later, then seals
+  it and takes the plaintext out of git.
+- **A merge conflict cannot pass for a resolution.** When the merge driver cannot
+  merge one sealed file, it leaves a deliberate non-envelope
+  (`{"conflict": ...}`) rather than one side's valid ciphertext. `decrypt`,
+  `check`, `pre-commit` and the page all refuse it, so an unresolved conflict
+  fails where it is committed instead of silently keeping one side.
 - **The entry guard.** Eleven readers in `build_metrics` load last run's output as
   `json.load(open(fp)) if fp.exists() else <empty>`. Faced with only a sealed
   copy they would not fail — they would start over. So every script that reads

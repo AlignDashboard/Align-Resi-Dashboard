@@ -461,6 +461,12 @@ def test_git_integration():
         res = gitc(root, "merge", "-q", "--no-edit", "clash", check=False)
         ok("the same line changed on both sides is a conflict, not a silent pick",
            res.returncode != 0)
+        left = json.loads((root / "docs/metrics.json.enc").read_text())
+        ok("and the conflicted file is NOT a valid envelope (no silent one-side resolution)",
+           "conflict" in left and "ct" not in left, list(left)[:4])
+        gitc(root, "add", "docs/metrics.json.enc")
+        ok("so committing it unresolved is refused by pre-commit",
+           gitc(root, "commit", "-qm", "unresolved", check=False).returncode != 0)
         gitc(root, "merge", "--abort", check=False)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -790,6 +796,95 @@ def test_update_replay():
            r.stdout[-400:])
 
 
+def test_review_round():
+    """The four failures the adversarial review reproduced against a bare origin."""
+    print("\nreview round: cutover plaintext, rotation mid-run, rotation pre-flight")
+    # --- [0] plaintext committed beside its sealed copy: refused at push, repaired by reseal
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        run(root, "decrypt")
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["note"] = "edited as plaintext before the seal reached this session"
+        (root / "docs/metrics.json").write_text(pretty(m))
+        gitc(root, "add", "-f", "docs/metrics.json")
+        env_ = dict(os.environ, GIT_COMMITTER_DATE="2099-01-01T00:00:00Z",
+                    GIT_AUTHOR_DATE="2099-01-01T00:00:00Z")
+        subprocess.run(["git", "-C", str(root), "commit", "-qm", "plaintext", "--no-verify"],
+                       check=True, env=env_)
+        head = gitc(root, "rev-parse", "HEAD").stdout.strip()
+        r = subprocess.run([sys.executable, str(HERE / "crypto_data.py"), "pre-push", "--root", str(root)],
+                           input=f"refs/heads/main {head} refs/heads/main {'0' * 40}\n",
+                           capture_output=True, text=True)
+        ok("pre-push refuses a sealed tree that carries plaintext beside it", r.returncode == 1,
+           r.stderr[-200:])
+        import check_no_pii as cnp                         # noqa: E402
+        ok("seal_data's own PII check does not fail on the thing it is there to fix",
+           subprocess.run([sys.executable, str(HERE / "check_no_pii.py"), "--sealing"], cwd=root,
+                          capture_output=True).returncode == 0)
+        ok("the ordinary PII check does fail on it",
+           subprocess.run([sys.executable, str(HERE / "check_no_pii.py")], cwd=root,
+                          capture_output=True).returncode == 1)
+        ok("reseal adopts the plaintext committed after its sealed copy",
+           run(root, "reseal", "--git") == 0 and "ADOPTED" in run.last, run.last)
+        ok("and the sealed copy now carries that newer content",
+           json.loads(cd.unseal(enc(root, "docs/metrics.json"), PW, "docs/metrics.json"))["note"]
+           .startswith("edited as plaintext"))
+        ok("with the plaintext out of the index", "docs/metrics.json" not in
+           set(gitc(root, "ls-files").stdout.split()))
+
+    # --- [2] the pre-flight accepts a rotation in progress; the post-seal check does not
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)
+        ok("check --allow-old passes while every file is still under the old password",
+           run(root, "check", "--allow-old") == 0, run.last)
+        ok("the strict check still reports it", run(root, "check") == 1)
+        env(DASHBOARD_PASSWORD=PW)
+
+    # --- [1] a password change while the cron built: no replay across keys
+    try:
+        import yaml                                        # noqa: F401
+    except ImportError:
+        print("   SKIP pyyaml not installed")
+        return
+    step = _commit_step()
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        seed = sealed_repo(tmp / "seed")
+        subprocess.run(["git", "-C", str(seed), "branch", "-M", "main"], check=True)
+        subprocess.run(["git", "clone", "-q", "--bare", str(seed), str(tmp / "origin.git")], check=True)
+
+        def clone(name):
+            c = tmp / name
+            subprocess.run(["git", "clone", "-q", str(tmp / "origin.git"), str(c)], check=True)
+            for k, v in [("user.email", "t@example.com"), ("user.name", name),
+                         ("commit.gpgsign", "false")]:
+                subprocess.run(["git", "-C", str(c), "config", k, v], check=True)
+            shutil.copytree(HERE, c / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+            return c
+        cron, owner = clone("cron"), clone("owner")
+        env(DASHBOARD_PASSWORD=PW)
+        run(cron, "decrypt")
+        m = json.loads((cron / "docs/metrics.json").read_text())
+        m["cron"] = "built under the old password"
+        (cron / "docs/metrics.json").write_text(pretty(m))
+        run(cron, "encrypt", "--git")
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)       # the owner rotates mid-run
+        assert run(owner, "reseal", "--git") == 0, run.last
+        gitc(owner, "commit", "-qm", "rotate")
+        gitc(owner, "push", "-q", "origin", "HEAD:main")
+        env(DASHBOARD_PASSWORD=PW)                                    # the cron's job still has the old one
+        r = subprocess.run(["bash", "-c", step], cwd=cron, capture_output=True, text=True,
+                           env=dict(os.environ), timeout=120)
+        ok("the cron refuses to replay across a password change",
+           r.returncode != 0 and "different key" in (r.stdout + r.stderr), (r.returncode, r.stderr[-300:]))
+        check = clone("check")
+        env(DASHBOARD_PASSWORD=PW2)
+        ok("and main is still wholly under the new password -- no split, no retired key restored",
+           run(check, "check") == 0, run.last)
+        env(DASHBOARD_PASSWORD=PW)
+
+
 def main():
     saved = {k: os.environ.get(k) for k in ("DASHBOARD_PASSWORD", "DASHBOARD_PASSWORD_OLD",
                                             "DASHBOARD_PASSWORD_NEW")}
@@ -798,7 +893,7 @@ def main():
                   test_cycle, test_guard, test_rotation, test_check, test_passphrase,
                   test_git_integration, test_browser_half, test_agreement, test_entry_guard,
                   test_shrink_and_rekey,
-                  test_workflows, test_update_replay):
+                  test_workflows, test_update_replay, test_review_round):
             t()
     finally:
         for k, v in saved.items():
