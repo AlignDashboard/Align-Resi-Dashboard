@@ -68,7 +68,9 @@ it as `<name>.enc` (see **The data is sealed** below). So in any session:
    arrived in between.
 4. **Never commit a plaintext data file, and never put a figure in a commit
    message.** The repository and its history are public; commit messages cannot
-   be sealed or taken back.
+   be sealed or taken back. The `commit-msg` hook refuses a message carrying
+   currency, a percentage or a figure-shaped number (`ALIGN_ALLOW_FIGURES=1`
+   for a number that is not data).
 
 ### A report can name a building any of three ways
 
@@ -2772,7 +2774,10 @@ closed at the point they would happen rather than left for a diff to show:
   alone. `refresh_comps.yml`'s retry re-opens main's copies after its own reset
   (`decrypt --force`). `test_encryption.py` pins both orders.
 - **The page fails closed.** An unsealed build shows nothing on any host but
-  `localhost`, where it opens under a red UNSEALED banner. The scorecard used to
+  this machine (`localhost`, `127.0.0.1`, `0.0.0.0`), where it opens under a red
+  banner. Locally a *decrypted* working copy also wins over the sealed file beside
+  it, so a rebuilt `metrics.json` is what you verify, not the last sealed
+  numbers; add `?sealed` to the URL to test the real gate. The scorecard used to
   be fetched at script-parse time and rendered into the hidden DOM before anyone
   typed a password. It is lazy now: callers park until the key exists.
 - **`check_no_pii.py`** scans the plaintext, `data/` included, before the seal.
@@ -2784,8 +2789,10 @@ closed at the point they would happen rather than left for a diff to show:
   prints the sealed figures: every filled KPI, comp-implied rents, tie-out
   amounts inside parser errors. Every workflow therefore puts
   `scripts/ci_logs/` on `PYTHONPATH`. Its `sitecustomize.py` masks currency,
-  percentages and figure-shaped numbers in everything any Python process in the
-  job prints, tracebacks included. Dates, filenames and small counts survive. It
+  percentages, comma-grouped numbers, any decimal and any integer of four or more
+  digits other than a year, in everything any Python process in the job prints,
+  tracebacks included. Dates, years, filenames and counts under a thousand
+  survive. It
   is off outside Actions; `ALIGN_LOG_REDACT=0` turns it off inside. The cost is
   that a CI failure's amounts are not in its log: rerun locally, where they are.
   `test_log_redact.py` covers it.
@@ -2795,9 +2802,12 @@ closed at the point they would happen rather than left for a diff to show:
 - **History.** Every version committed before the first seal is still plaintext in
   git. `scripts/purge_data_history.sh` removes it (open item E3). It removes the
   plaintext only: its patterns end in `.json`, so the sealed `.json.enc` at the
-  tip survive. It refuses to run in a shallow clone. It cannot un-publish copies
-  already taken, and every stale remote branch keeps its own history until it is
-  deleted.
+  tip survive. It also strips any sealed blob in history that opens under a
+  password already public (`crypto_data.py scan-public`), which is what the first
+  pass's envelopes are. It refuses to run in a shallow clone. It cannot
+  un-publish copies already taken. Every stale remote branch keeps its own
+  history until it is deleted, and GitHub's `refs/pull/*` survive any
+  force-push; the dry run lists them.
 - **A bad rotation is recoverable from history.** If a password change seals
   under something nobody can type, the previous commit's `*.enc` still open under
   the previous password. Check them out, then reseal with

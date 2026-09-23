@@ -1,0 +1,4 @@
+#!/bin/sh
+# No figures in commit messages: this repository is public, and messages can
+# never be sealed or withdrawn. ALIGN_ALLOW_FIGURES=1 overrides.
+exec python3 scripts/crypto_data.py commit-msg "$1"

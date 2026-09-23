@@ -950,6 +950,157 @@ def test_review_round_two():
         env(DASHBOARD_PASSWORD=PW)
 
 
+NODE_SCENARIOS = r"""
+const fs = require("fs"), path = require("path");
+const [DIR, PW, UNLOCK, HOST, SCENARIO, SEARCH, PW2] = process.argv.slice(2);
+globalThis.window = globalThis;
+globalThis.location = { hostname: HOST, search: SEARCH || "" };
+globalThis.sessionStorage = { _d: {}, getItem(k) { return k in this._d ? this._d[k] : null; },
+  setItem(k, v) { this._d[k] = String(v); }, removeItem(k) { delete this._d[k]; } };
+let failNext = SCENARIO === "flaky" ? 1 : 0, requests = 0;
+globalThis.fetch = async (url) => {
+  requests++;
+  if (failNext > 0) { failNext--; throw new TypeError("Failed to fetch"); }
+  const f = path.join(DIR, url);
+  if (!fs.existsSync(f)) return { status: 404, ok: false, json: async () => null };
+  const t = fs.readFileSync(f, "utf8");
+  return { status: 200, ok: true, json: async () => JSON.parse(t) };
+};
+require(UNLOCK);
+(async () => {
+  const out = {};
+  if (SCENARIO === "flaky") {
+    try { await AlignUnlock.detect(); out.first = "ok"; } catch (e) { out.first = "failed"; }
+    out.mode = await AlignUnlock.detect();
+    out.opened = await AlignUnlock.tryPassword(PW);
+  } else if (SCENARIO === "rotate") {
+    out.mode = await AlignUnlock.detect();            // gate shown, envelope fetched
+    fs.readdirSync(path.join(DIR, "_rotated")).forEach(f =>
+      fs.copyFileSync(path.join(DIR, "_rotated", f), path.join(DIR, f)));   // rotation lands
+    out.newOpens = await AlignUnlock.tryPassword(PW2);
+    try { out.second = (await AlignUnlock.load("scorecard.json")).k; } catch (e) { out.second = String(e.message); }
+  } else if (SCENARIO === "conflict") {
+    out.mode = await AlignUnlock.detect();
+    try { await AlignUnlock.tryPassword(PW); out.msg = "opened"; } catch (e) { out.msg = String(e.message); }
+  } else {
+    out.mode = await AlignUnlock.detect();
+    // Sealed, load() rightly parks until a key exists -- nothing to read here.
+    if (out.mode !== "encrypted") {
+      try { out.note = (await AlignUnlock.load("metrics.json")).note; } catch (e) { out.note = "ERR " + e.message; }
+    }
+  }
+  console.log(JSON.stringify(out));
+})().catch(e => console.log(JSON.stringify({ error: String(e && e.message || e) })));
+"""
+
+
+def node_scenario(site, scenario, host="aligndashboard.github.io", search="", pw=PW, pw2=PW2):
+    h = pathlib.Path(site, "_scenarios.js")
+    h.write_text(NODE_SCENARIOS)
+    res = subprocess.run([shutil.which("node"), str(h), str(site), pw,
+                          str(HERE.parent / "docs" / "unlock.js"), host, scenario, search, pw2],
+                         capture_output=True, text=True, timeout=180)
+    try:
+        return json.loads(res.stdout.strip().splitlines()[-1])
+    except Exception:                                      # noqa: BLE001
+        return {"error": (res.stdout[-300:], res.stderr[-300:])}
+
+
+def test_browser_review():
+    print("\nthe browser half, from the review: stale gates, flaky fetches, conflicts, local copies")
+    if not shutil.which("node"):
+        print("   SKIP node not installed")
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        site = root / "docs"
+        # a gate open across a rotation accepts the NEW password
+        rot = pathlib.Path(tmp, "rot")
+        shutil.copytree(root, rot, ignore=shutil.ignore_patterns(".git"))
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)
+        run(rot, "decrypt"); run(rot, "reseal")
+        env(DASHBOARD_PASSWORD=PW)
+        (site / "_rotated").mkdir()
+        for f in rot.glob("docs/*.enc"):
+            shutil.copy(f, site / "_rotated" / f.name)
+        got = node_scenario(site, "rotate")
+        ok("a gate left open across a rotation opens with the NEW password",
+           got.get("newOpens") is True and got.get("second") == 1, got)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        got = node_scenario(root / "docs", "flaky")
+        ok("a failed first request is retried, not remembered as 'not published'",
+           got.get("first") == "failed" and got.get("mode") == "encrypted" and got.get("opened") is True, got)
+        (root / "docs/metrics.json.enc").write_text(json.dumps({"conflict": "docs/metrics.json"}))
+        got = node_scenario(root / "docs", "conflict")
+        ok("a conflict placeholder is named as one, not as a wrong password or a changed key",
+           "merge" in got.get("msg", "") and "atob" not in got.get("msg", ""), got)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        run(root, "decrypt")
+        m = json.loads((root / "docs/metrics.json").read_text()); m["note"] = "WORKING COPY"
+        (root / "docs/metrics.json").write_text(pretty(m))
+        got = node_scenario(root / "docs", "local", host="127.0.0.1")
+        ok("locally, a decrypted working copy wins over the sealed file beside it",
+           got.get("mode") == "plain" and got.get("note") == "WORKING COPY", got)
+        got = node_scenario(root / "docs", "local", host="127.0.0.1", search="?sealed")
+        ok("and ?sealed tests the real gate instead", got.get("mode") == "encrypted", got)
+        got = node_scenario(root / "docs", "local", host="aligndashboard.github.io")
+        ok("on a public host the working copy is never used", got.get("mode") == "encrypted", got)
+    with tempfile.TemporaryDirectory() as tmp:
+        site = pathlib.Path(tmp)
+        (site / "metrics.json").write_text(pretty({"meta": {}, "note": MARKER}))
+        got = node_scenario(site, "local", host="0.0.0.0")
+        ok("0.0.0.0 -- the URL http.server prints -- counts as local", got.get("note") == MARKER, got)
+
+
+def test_leaks_review():
+    print("\nleaks review: commit messages, envelopes under a public password")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp)
+        shutil.copytree(HERE, root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        msg = root / "MSG"
+        for text, want, why in (
+                ("EliseAI daily: the queue cleared, NOI now $1,234,567", 1, "a dollar figure"),
+                ("Budget variance moved to +22.2%", 1, "a percentage"),
+                ("Seal the data files and document the setup (A18)", 0, "a plain description"),
+                ("Auto-update metrics (2026-09-23)", 0, "the bot's own dated message"),
+                ("Serve on 0.0.0.0 and pin Python 3.12", 0, "an IP and a version number"),
+                ("Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>", 0,
+                 "the attribution trailer"),
+                ("off by 4321.50 on the tie-out", 1, "a two-decimal amount"),
+                ("rent roll total 1234567", 1, "a bare large integer")):
+            msg.write_text(text + "\n# a comment line with $9,999 is ignored\n")
+            ok(f"commit-msg: {why} -> {'refused' if want else 'accepted'}",
+               run(root, "commit-msg", str(msg)) == want, run.last[-150:])
+        os.environ["ALIGN_ALLOW_FIGURES"] = "1"
+        msg.write_text("a number that is not data: 1,000,000 iterations\n")
+        ok("ALIGN_ALLOW_FIGURES=1 lets one through", run(root, "commit-msg", str(msg)) == 0)
+        del os.environ["ALIGN_ALLOW_FIGURES"]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        # what the first pass did: sealed under the public password, basename AAD, no gzip
+        salt = b"s" * 16
+        key = cd.derive_key(cd.KNOWN_PUBLIC_PASSWORDS[0], salt)
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        iv = b"i" * 12
+        legacy = {"v": 1, "alg": cd.ALG, "kdf": cd.KDF, "iter": cd.ITERATIONS,
+                  "salt": base64.b64encode(salt).decode(), "iv": base64.b64encode(iv).decode(),
+                  "ct": base64.b64encode(AESGCM(key).encrypt(iv, b'{"old": 1}',
+                                                             b"align-dashboard/v1/lineage.json")).decode()}
+        (root / "docs/lineage.json.enc").write_text(json.dumps(legacy))
+        gitc(root, "add", "docs/lineage.json.enc")
+        gitc(root, "commit", "-qm", "legacy", "--no-verify")
+        out = root / "public-blobs"
+        run(root, "scan-public", str(out))
+        ids = out.read_text().split()
+        ok("scan-public finds an envelope sealed under the public password, in history",
+           len(ids) == 1, run.last[-200:])
+        ok("and not the ones sealed under the real password",
+           "1 sealed blob" in run.last, run.last[-120:])
+
+
 def main():
     saved = {k: os.environ.get(k) for k in ("DASHBOARD_PASSWORD", "DASHBOARD_PASSWORD_OLD",
                                             "DASHBOARD_PASSWORD_NEW")}
@@ -959,7 +1110,8 @@ def main():
                   test_git_integration, test_browser_half, test_agreement, test_entry_guard,
                   test_shrink_and_rekey,
                   test_workflows, test_update_replay, test_review_round,
-                  test_review_round_two):
+                  test_review_round_two, test_browser_review,
+                  test_leaks_review):
             # One test crashing must not hide the rest -- a guard broken on purpose
             # (mutation testing) often surfaces as an exception, and a suite that
             # stops there reports every later check as simply absent.

@@ -2309,7 +2309,8 @@ let SC = null;                       // parsed scorecard.json, shared by both vi
 let _scPromise = null;
 const scJson = () => (_scPromise = _scPromise || AlignUnlock.load("scorecard.json")
   .then(doc => (SC = doc))
-  .catch(e => { reportDataError("scorecard.json", e); return (SC = null); }));
+  // A failure is reported but not remembered: the next view to ask retries.
+  .catch(e => { reportDataError("scorecard.json", e); _scPromise = null; return (SC = null); }));
 
 // Colour swatch for the legend — status is carried by colour alone, no
 // symbols, so the legend shows the same fill the chips use. In range is
@@ -3184,7 +3185,7 @@ async function renderOpSummary(slug, ids) {
     return e;
   };
   // The same judgement in money. A percentage alone hides the size of the
-  // thing: 15% on the expense row is $55k over a month and $660k over a year,
+  // thing: 15% on an expense row is a very different sum over a month than over a year,
   // and on nothing much is nothing much.
   const dcell = (diff, goodWhenUp) => {
     const favourable = goodWhenUp ? diff > 0 : diff < 0;
@@ -6019,8 +6020,15 @@ async function loadComps() {
    a public host: the page must never be what displays unsealed data.
    ============================================================ */
 (async function boot() {
-  let mode = "missing";
-  try { mode = await AlignUnlock.detect(); } catch (e) { /* handled below */ }
+  let mode;
+  try { mode = await AlignUnlock.detect(); }
+  catch (e) {
+    // A failed request is not a missing file: say so, so a weak signal is not
+    // read as "nothing published". Unlock retries the fetch.
+    errEl.textContent = "Could not reach the data — check the connection, then try again.";
+    pwInput.focus();
+    return;
+  }
   if (mode === "plain") {
     if (AlignUnlock.isLocal()) { AlignUnlock.plainBanner(); reveal(); return; }
     document.getElementById("gateSub").textContent =
