@@ -61,8 +61,10 @@
 
   function isLocal() {
     var h = (global.location && global.location.hostname) || "";
-    return h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "[::1]"
-      || /\.localhost$/.test(h);
+    // 0.0.0.0 is what `python3 -m http.server` prints, and only this machine
+    // can reach it.
+    return h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "::1"
+      || h === "[::1]" || /\.localhost$/.test(h);
   }
 
   // Callers asking for data before the gate is passed PARK here rather than fail.
@@ -90,11 +92,28 @@
 
   // Memoised: the gate opens metrics.json.enc to test the password and the
   // dashboard then wants the same file; one download is enough.
+  // A network failure is NOT remembered: a phone on a weak signal that lost one
+  // request would otherwise report "not published" for the life of the page.
   function envelope(name) {
     if (!(name in state.envelopes)) {
-      state.envelopes[name] = fetchJson(name + ENC).catch(function () { return null; });
+      var p = fetchJson(name + ENC);
+      state.envelopes[name] = p;
+      p.catch(function () { if (state.envelopes[name] === p) delete state.envelopes[name]; });
     }
     return state.envelopes[name];
+  }
+
+  // Shape before anything else, so an unresolved merge conflict ({"conflict": ...})
+  // or a truncated file is named as what it is -- not as a wrong password, a
+  // changed key, or a raw atob error.
+  function wellFormed(env) {
+    return !!env && env.v === 1 && env.alg === "AES-256-GCM" && env.kdf === "PBKDF2-HMAC-SHA256"
+      && typeof env.salt === "string" && typeof env.iv === "string" && typeof env.ct === "string"
+      && typeof env.iter === "number" && (!env.zip || env.zip === "gzip");
+  }
+  function malformed(name) {
+    return new Error(name + ".enc is not a readable sealed file — an unresolved merge "
+      + "conflict or a broken publish. Nothing is wrong with your password.");
   }
 
   // Must stay identical to crypto_data.derive_key: PBKDF2-HMAC-SHA256 over the
@@ -156,14 +175,30 @@
 
   /* ---------- public ---------- */
 
+  // ?sealed on a local URL tests the real gate against the sealed files even
+  // when working copies sit beside them.
+  function forceSealed() {
+    return /(^|[?&])sealed(=|&|$)/.test((global.location && global.location.search || "").slice(1));
+  }
+
   function detect() {
     if (state.mode) return Promise.resolve(state.mode);
-    return envelope("metrics.json").then(function (env) {
-      if (env) return (state.mode = "encrypted");
-      return fetchJson("metrics.json").then(function (doc) {
-        return (state.mode = doc ? "plain" : "missing");
-      }, function () { return (state.mode = "missing"); });
+    // On this machine a decrypted working copy is what you are working on, so it
+    // wins over the sealed file beside it -- otherwise a rebuilt metrics.json is
+    // "verified" against the last sealed numbers with nothing saying so.
+    var local = isLocal() && !forceSealed()
+      ? fetchJson("metrics.json").then(function (doc) { return doc; }, function () { return null; })
+      : Promise.resolve(null);
+    return local.then(function (working) {
+      if (working) { state.working = true; return (state.mode = "plain"); }
+      return envelope("metrics.json").then(function (env) {
+        if (env) return (state.mode = "encrypted");
+        return fetchJson("metrics.json").then(function (doc) {
+          return (state.mode = doc ? "plain" : "missing");
+        });
+      });
     });
+    // A rejection (network) leaves state.mode unset, so the next call probes again.
   }
 
   // Resolves true when the password opens the sealed metrics file (and keeps the
@@ -171,8 +206,13 @@
   // no network — is thrown, so the gate can say what actually happened instead of
   // blaming the typist.
   function tryPassword(password) {
+    // Fetched afresh on every attempt: a gate left open across a re-seal or a
+    // password change would otherwise test the password against yesterday's
+    // envelope -- rejecting the new password, or unlocking a stale file.
+    delete state.envelopes["metrics.json"];
     return envelope("metrics.json").then(function (env) {
       if (!env) throw new Error("metrics.json.enc is not published — nothing to unlock.");
+      if (!wellFormed(env)) throw malformed("metrics.json");
       // Derived once, used twice: imported for this page, and the same bits kept
       // for data.html. Deriving again would pay the deliberate cost twice.
       return deriveBits(password, env.salt, env.iter).then(function (bits) {
@@ -198,7 +238,9 @@
     var stored = readStoredKey();
     if (!stored) return Promise.resolve(false);
     return envelope("metrics.json").then(function (env) {
-      if (!env || env.salt !== stored.salt || env.iter !== stored.iter) { clearKey(); return false; }
+      if (!wellFormed(env) || env.salt !== stored.salt || env.iter !== stored.iter) {
+        clearKey(); return false;
+      }
       return importKey(b64ToBytes(stored.bits)).then(function (key) {
         return openEnvelope(env, key, "metrics.json").then(function (doc) {
           adopt(env, key, doc);
@@ -217,9 +259,9 @@
       if (mode === "missing") throw new Error(name + " is not published");
       if (mode === "plain") {
         if (!isLocal()) {
-          throw new Error("This deployment has not been sealed yet, so it shows nothing. "
-            + "The data is encrypted by the Seal dashboard data workflow once the "
-            + "DASHBOARD_PASSWORD secret is set.");
+          throw new Error("This deployment has not been sealed yet, so it shows nothing "
+            + "(unsealed data opens only on localhost). The data is encrypted by the Seal "
+            + "dashboard data workflow once the DASHBOARD_PASSWORD secret is set.");
         }
         return fetchJson(name).then(function (doc) {
           if (!doc) throw new Error(name + " is missing");
@@ -228,6 +270,7 @@
       }
       return whenKeyed().then(function () { return envelope(name); }).then(function (env) {
         if (!env) throw new Error(name + ENC + " is missing");
+        if (!wellFormed(env)) throw malformed(name);
         if (env.salt !== state.salt || env.iter !== state.iter) {
           throw new Error(name + " is sealed under a different key than the one this tab "
             + "unlocked — the password was changed. Reload and enter the new one.");
@@ -247,8 +290,11 @@
     if (document.getElementById("align-plain-banner")) return;
     var bar = document.createElement("div");
     bar.id = "align-plain-banner";
-    bar.textContent = "UNSEALED DATA — this local build is serving plaintext docs/*.json "
-      + "with no password protection. Public hosts refuse to show it.";
+    bar.textContent = state.working
+      ? "LOCAL WORKING COPY — showing your plaintext docs/*.json, not the sealed files. "
+        + "Add ?sealed to the URL to test the real gate."
+      : "UNSEALED DATA — this local build is serving plaintext docs/*.json with no password "
+        + "protection. Public hosts refuse to show it.";
     bar.setAttribute("style", ["position:sticky", "top:0", "z-index:9999",
       "background:#b3261e", "color:#fff", "font:600 12px/1.5 ui-sans-serif,system-ui,sans-serif",
       "letter-spacing:.4px", "padding:8px 14px", "text-align:center"].join(";"));

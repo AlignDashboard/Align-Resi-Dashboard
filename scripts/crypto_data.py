@@ -81,6 +81,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import secrets
 import subprocess
 import sys
@@ -126,8 +127,11 @@ SEALED_GLOBS = PAGE_FILES + ["data/**/*.json"]
 # and by anyone at all the day the password leaks.
 NEVER_SEAL = ["data/*/rent_roll.json", "data/*/delinquency.json"]
 
-# Passwords that are public already, in this repository's history.
-KNOWN_PUBLIC = {"alignexecs"}
+# Passwords that are public already, in this repository's history. The first
+# pass sealed four files under this one; scan-public finds those blobs so the
+# history purge can strip them.
+KNOWN_PUBLIC_PASSWORDS = ["AlignExecs"]
+KNOWN_PUBLIC = {p.lower() for p in KNOWN_PUBLIC_PASSWORDS}
 
 
 class CryptoDataError(Exception):
@@ -848,7 +852,8 @@ def cmd_session_start(args, root):
           "the plaintext as usual; before committing a data change run "
           "`python3 scripts/crypto_data.py encrypt --git`. After a pull, run "
           "`python3 scripts/crypto_data.py decrypt` (git hooks do both where installed). "
-          "Never commit plaintext docs/*.json or data/**/*.json.")
+          "Never commit plaintext docs/*.json or data/**/*.json, and never put a figure "
+          "in a commit message: the repository is public and messages cannot be sealed.")
     return rc
 
 
@@ -1049,6 +1054,87 @@ def cmd_same_key(args, root):
     return 0
 
 
+# What a commit message may not carry. Narrower than the CI log redaction on
+# purpose: a log can lose a version number or an IP without harm, but a hook that
+# refused "Python 3.12", "0.0.0.0" or the "Claude Opus 5.5" attribution trailer
+# would refuse nearly every commit and be switched off within a day.
+FIGURE_IN_MESSAGE = re.compile(
+    r"[-+\u2212]?\$\s?\d"                              # currency
+    r"|\d\s?%"                                          # a percentage
+    r"|(?<![\w.])\d{1,3}(?:,\d{3})+(?![\d])"             # 1,234 -- grouped
+    r"|(?<![\w.])\d{3,}\.\d{2}(?![\d.])"                  # 1234.56 -- an amount (not "3.12")
+    r"|(?<![\w.:-])(?!(?:19|20)\d\d(?!\d))\d{4,}(?![\w.-])")  # 12345 -- not a year
+TRAILER = re.compile(r"^[A-Z][\w-]*: ")                  # Co-Authored-By:, Claude-Session: ...
+
+
+def cmd_commit_msg(args, root):
+    """git commit-msg hook: no figures in a commit message.
+
+    The repository is public and commit messages can never be sealed or taken
+    back -- they are copied into every clone and into public archives.
+    ALIGN_ALLOW_FIGURES=1 lets a message through, for a number that is not data.
+    """
+    if os.environ.get("ALIGN_ALLOW_FIGURES") == "1" or not args.files:
+        return 0
+    text = pathlib.Path(args.files[0]).read_text(encoding="utf-8", errors="replace")
+    lines = [l for l in text.splitlines()
+             if not l.startswith("#") and not TRAILER.match(l) and FIGURE_IN_MESSAGE.search(l)]
+    if not lines:
+        return 0
+    print("commit-msg: this message carries figures, and commit messages in this public "
+          "repository can never be sealed or withdrawn:\n  " + "\n  ".join(lines[:6]) +
+          "\nDescribe the change and name the cell or item instead. (ALIGN_ALLOW_FIGURES=1 "
+          "overrides, for a number that is not data.)", file=sys.stderr)
+    return 1
+
+
+def cmd_scan_public(args, root):
+    """Find sealed blobs anywhere in history that open under a PUBLIC password.
+
+    The first encryption pass sealed four files under the password that sat in
+    index.html. Anything sealed under a known password is effectively plaintext,
+    and the history purge -- which keeps *.json.enc on purpose -- would keep it.
+    Writes the blob ids for `git filter-repo --strip-blobs-with-ids`.
+    """
+    _need_aes()
+    out = git(root, "rev-list", "--all", "--objects").stdout.splitlines()
+    blobs = {}
+    for line in out:
+        parts = line.split(" ", 1)
+        if len(parts) == 2 and parts[1].endswith(SUFFIX):
+            blobs.setdefault(parts[0], parts[1])
+    found = []
+    for sha_, path in sorted(blobs.items()):
+        try:
+            env = json.loads(git(root, "cat-file", "blob", sha_).stdout)
+            salt, iv, ct = _b64d(env["salt"]), _b64d(env["iv"]), _b64d(env["ct"])
+            iters = int(env["iter"])
+        except Exception:                              # noqa: BLE001
+            continue
+        rel = path[:-len(SUFFIX)]
+        # today's binding (the path) and the first pass's (the basename)
+        aads = [aad_for(rel), f"align-dashboard/v1/{os.path.basename(rel)}".encode()]
+        for pw in KNOWN_PUBLIC_PASSWORDS:
+            key = derive_key(pw, salt, iters)
+            if any(_opens(key, iv, ct, a) for a in aads):
+                found.append((sha_, path))
+                break
+    for sha_, path in found:
+        print(f"   PUBLIC-KEY {sha_}  {path}")
+    if args.files:
+        pathlib.Path(args.files[0]).write_text("".join(f"{s_}\n" for s_, _ in found))
+    print(f"{len(found)} sealed blob(s) in history open under a password that is public")
+    return 0
+
+
+def _opens(key, iv, ct, aad):
+    try:
+        AESGCM(key).decrypt(iv, ct, aad)
+        return True
+    except Exception:                                  # noqa: BLE001
+        return False
+
+
 def cmd_post_sync(args, root):
     """post-merge / post-checkout / post-rewrite: refresh working copies after a pull."""
     if mode(root) != "sealed" or not os.environ.get("DASHBOARD_PASSWORD"):
@@ -1064,6 +1150,7 @@ def cmd_post_sync(args, root):
 COMMANDS = {"status": cmd_status, "decrypt": cmd_decrypt, "encrypt": cmd_encrypt,
             "reseal": cmd_reseal, "rotate": cmd_rotate, "check": cmd_check,
             "untrack": cmd_untrack, "pre-push": cmd_pre_push, "same-key": cmd_same_key,
+            "commit-msg": cmd_commit_msg, "scan-public": cmd_scan_public,
             "passphrase": cmd_passphrase, "install": cmd_install,
             "session-start": cmd_session_start, "textconv": cmd_textconv,
             "merge-driver": cmd_merge_driver, "pre-commit": cmd_pre_commit,

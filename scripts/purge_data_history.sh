@@ -65,6 +65,13 @@ done
 if [ -f "$(git rev-parse --git-dir)/shallow" ]; then
   echo "::warning:: this clone is SHALLOW -- counts are lower bounds, and rewriting it would miss history"
 fi
+# Sealed blobs anywhere in history that open under a password already public:
+# effectively plaintext, and kept by the *.json.enc rule above unless stripped.
+PUBLIC_BLOBS="$(mktemp)"
+python3 scripts/crypto_data.py scan-public "$PUBLIC_BLOBS" | tail -1
+echo
+echo "pull-request refs GitHub keeps (a force-push cannot rewrite these):"
+git ls-remote origin 'refs/pull/*' 2>/dev/null | awk '{print "    " $2}' || true
 echo "repo size now: $(git count-objects -vH | awk '/size-pack/{print $2, $3}')"
 echo
 
@@ -98,6 +105,8 @@ fi
 args=()
 for p in "${PATHS[@]}"; do args+=(--path "$p"); done
 for g in "${GLOBS[@]}"; do args+=(--path-glob "$g"); done
+# and the envelopes sealed under a public password, found above
+[ -s "$PUBLIC_BLOBS" ] && args+=(--strip-blobs-with-ids "$PUBLIC_BLOBS")
 
 echo "rewriting history (this creates a fresh commit graph)…"
 git filter-repo --invert-paths "${args[@]}" --force
@@ -117,4 +126,7 @@ Remaining steps, done deliberately by you:
                          git push --force --all origin
                          git push --force --tags origin
   4. Tell collaborators to re-clone. Old clones will not merge cleanly.
+  5. refs/pull/*/head (listed above) are GitHub's own and survive any force-push:
+     old pull requests keep their plaintext history, fetchable by anyone. Only
+     GitHub Support can remove them -- or making the repository private hides them.
 MSG

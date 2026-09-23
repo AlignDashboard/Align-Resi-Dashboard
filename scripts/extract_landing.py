@@ -278,7 +278,10 @@ u531_hdr = find_row(dq, "UNIT 531 - COLLECTIONS STATUS", exact=False, required=F
 if u531_hdr:
     b1 = find_row(dq, "balance owed,", after=u531_hdr, exact=False)
     b2 = find_row(dq, "balance owed,", after=b1 + 1, exact=False)
-    data["delinquency"]["unit_531"] = {
+    # Keyed "tracked_unit", not by its number: the key name reaches the public
+    # page source (data.html reads it), and a unit number there says which
+    # household is being chased for arrears.
+    data["delinquency"]["tracked_unit"] = {
         "status": scalar(dq, "Resident status per Yardi", value_col=4, after=u531_hdr),
         "memo": scalar(dq, "Delinquency memo from the property", value_col=4,
                        after=u531_hdr),
@@ -292,7 +295,7 @@ if u531_hdr:
                                value_col=4, after=u531_hdr),
     }
 else:
-    data["delinquency"]["unit_531"] = None
+    data["delinquency"]["tracked_unit"] = None
 
 # ---- holdovers (the MTM tab) --------------------------------------------
 # V37 renamed the tab and reworked the repricing model: each unit now carries

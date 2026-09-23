@@ -2,8 +2,8 @@
 
 The repository is public, so its Actions logs are public too -- and the pipeline
 prints the very figures the data files are sealed to protect: every filled KPI
-("Budget Variance % +$123,955/+11.1%"), comp-implied rents, revenue per month,
-tie-out amounts inside parser errors. Sealing the files while printing their
+(a line like "Budget Variance % +$NNN,NNN/+NN.N%"), comp-implied rents, revenue
+per month, tie-out amounts inside parser errors. Sealing the files while printing their
 contents to a public log would leave the job half done.
 
 Rather than touching dozens of print statements (and every future one), this
@@ -12,21 +12,26 @@ this directory on PYTHONPATH, so it applies to every python process a job starts
 subprocesses and tracebacks included. It does nothing outside Actions, so local
 runs print everything as before; set ALIGN_LOG_REDACT=0 to switch it off in CI.
 
-What is masked: currency, percentages, comma-grouped numbers, decimals with two
-or more places, and bare integers of five digits or more. What is kept: dates,
-times, filenames, small counts, workflow commands (::error:: etc.). A count of
-leases is not the problem; a rent is.
+What is masked: currency, percentages, comma-grouped numbers, any decimal, and
+bare integers of four or more digits (signed or not) other than years. What is
+kept: dates, times, years, filenames, counts under a thousand, workflow commands
+(::error:: etc.). A count of leases is not the problem; a rent is.
 """
 import os
 import re
 import sys
 
 PATTERNS = [
-    (re.compile(r"[-+−]?\$\s?[-−]?\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB](?![a-zA-Z]))?"), "$‹…›"),
-    (re.compile(r"[-+−]?\d+(?:\.\d+)?\s?%"), "‹…›%"),
-    (re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\w)"), "‹n›"),
-    (re.compile(r"(?<![\w.-])[-−]?\d+\.\d{2,}(?![\w.])"), "‹n›"),
-    (re.compile(r"(?<![\w.-])\d{5,}(?![\w-])"), "‹n›"),
+    # currency, with or without a sign, grouping, decimals or a k/M suffix
+    (re.compile(r"[-+\u2212]?\$\s?[-\u2212]?\d[\d,]*(?:\.\d+)?(?:\s?[kKmMbB](?![a-zA-Z]))?"), "$\u2039\u2026\u203a"),
+    # percentages
+    (re.compile(r"[-+\u2212]?\d+(?:\.\d+)?\s?%"), "\u2039\u2026\u203a%"),
+    # comma-grouped numbers
+    (re.compile(r"(?<![\w.])[-\u2212]?\d{1,3}(?:,\d{3})+(?:\.\d+)?(?!\d)"), "\u2039n\u203a"),
+    # any decimal -- one place is enough: inspect's ratios print as "Aug=32.6"
+    (re.compile(r"(?<![\w.:])[-\u2212]?\d+\.\d+(?!\d)"), "\u2039n\u203a"),
+    # bare integers of four or more digits, signed or not -- except years
+    (re.compile(r"(?<![\w.:])[-\u2212]?(?!(?:19|20)\d\d(?!\d))\d{4,}(?![\w-])"), "\u2039n\u203a"),
 ]
 
 
