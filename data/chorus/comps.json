@@ -1,0 +1,1410 @@
+{
+  "property_code": "Chorus",
+  "subject": {
+    "building": "Chorus",
+    "address": "30 Otis Street",
+    "city": "San Francisco",
+    "zip": "94103",
+    "units": 416,
+    "year_built": 2021,
+    "lat": 37.7728,
+    "lng": -122.4195
+  },
+  "as_of": "2026-09-21",
+  "primary_radius_mi": 1.35,
+  "excluded_related": [
+    "The Landing",
+    "The Madelon"
+  ],
+  "subject_by_bed": {
+    "0": {
+      "n": 9,
+      "median_rent": 4445.0,
+      "mean_rent": 4424.78,
+      "median_sqft": 470.0,
+      "median_psf": 9.0275
+    },
+    "1": {
+      "n": 12,
+      "median_rent": 5370.0,
+      "mean_rent": 5398.17,
+      "median_sqft": 573.0,
+      "median_psf": 8.8524
+    },
+    "2": {
+      "n": 8,
+      "median_rent": 8495.0,
+      "mean_rent": 8538.75,
+      "median_sqft": 1011.0,
+      "median_psf": 8.3808
+    },
+    "3": {
+      "n": 2,
+      "median_rent": 8957.0,
+      "mean_rent": 8957.0,
+      "median_sqft": 1146.0,
+      "median_psf": 7.8159
+    }
+  },
+  "rings": [
+    {
+      "radius_mi": 0.75,
+      "primary": false,
+      "properties": 14,
+      "listings": 234,
+      "by_bed": {
+        "0": {
+          "n": 53,
+          "median_rent": 3744.0,
+          "mean_rent": 3717.0,
+          "median_sqft": 470.0,
+          "median_psf": 7.7798
+        },
+        "1": {
+          "n": 79,
+          "median_rent": 4610.0,
+          "mean_rent": 4690.03,
+          "median_sqft": 637.0,
+          "median_psf": 7.194
+        },
+        "2": {
+          "n": 102,
+          "median_rent": 6680.5,
+          "mean_rent": 6604.54,
+          "median_sqft": 1015.5,
+          "median_psf": 6.4073
+        }
+      }
+    },
+    {
+      "radius_mi": 1.35,
+      "primary": true,
+      "properties": 20,
+      "listings": 287,
+      "by_bed": {
+        "0": {
+          "n": 62,
+          "median_rent": 3758.5,
+          "mean_rent": 3757.5,
+          "median_sqft": 470.0,
+          "median_psf": 7.8822
+        },
+        "1": {
+          "n": 104,
+          "median_rent": 4747.5,
+          "mean_rent": 4801.33,
+          "median_sqft": 641.0,
+          "median_psf": 7.3173
+        },
+        "2": {
+          "n": 121,
+          "median_rent": 6625.0,
+          "mean_rent": 6617.16,
+          "median_sqft": 1025.0,
+          "median_psf": 6.3833
+        }
+      }
+    },
+    {
+      "radius_mi": null,
+      "primary": false,
+      "properties": 33,
+      "listings": 403,
+      "by_bed": {
+        "0": {
+          "n": 79,
+          "median_rent": 3820.0,
+          "mean_rent": 3931.68,
+          "median_sqft": 471.0,
+          "median_psf": 8.0319
+        },
+        "1": {
+          "n": 159,
+          "median_rent": 5016.0,
+          "mean_rent": 5074.31,
+          "median_sqft": 632.0,
+          "median_psf": 7.6205
+        },
+        "2": {
+          "n": 163,
+          "median_rent": 6935.0,
+          "mean_rent": 6955.6,
+          "median_sqft": 1001.0,
+          "median_psf": 6.6809
+        },
+        "3": {
+          "n": 2,
+          "median_rent": 14895.0,
+          "mean_rent": 14895.0,
+          "median_sqft": 1265.0,
+          "median_psf": 11.7747
+        }
+      }
+    }
+  ],
+  "size_match": {
+    "0": {
+      "subject_sqft": 470.0,
+      "comp_sqft": 470.0,
+      "gap": 0.0,
+      "like_for_like": true
+    },
+    "1": {
+      "subject_sqft": 573.0,
+      "comp_sqft": 641.0,
+      "gap": -0.1061,
+      "like_for_like": false
+    },
+    "2": {
+      "subject_sqft": 1011.0,
+      "comp_sqft": 1025.0,
+      "gap": -0.0137,
+      "like_for_like": true
+    }
+  },
+  "premium": {
+    "median": 0.1848,
+    "quarters": 13,
+    "first": "2023Q2",
+    "last": "2026Q3",
+    "beds": [
+      0,
+      1,
+      2
+    ],
+    "basis": "median of the quarterly premium in asking $/sqft over 13 quarter(s) where both sides listed at least 5 units, each quarter taken per bedroom and weighted back together by the subject's own listing counts"
+  },
+  "quarters": [
+    {
+      "key": "2023Q2",
+      "subject_psf": 6.3544,
+      "subject_n": 2,
+      "comp_psf": 4.6715,
+      "comp_n": 16,
+      "premium": null,
+      "premium_beds": 0,
+      "by_bed": {}
+    },
+    {
+      "key": "2023Q3",
+      "subject_psf": 5.8889,
+      "subject_n": 10,
+      "comp_psf": 4.4025,
+      "comp_n": 107,
+      "premium": 0.3673,
+      "premium_beds": 2,
+      "by_bed": {
+        "1": {
+          "premium": 0.1965,
+          "subject_n": 4,
+          "comp_n": 38
+        },
+        "2": {
+          "premium": 0.504,
+          "subject_n": 5,
+          "comp_n": 51
+        }
+      }
+    },
+    {
+      "key": "2023Q4",
+      "subject_psf": 5.4362,
+      "subject_n": 16,
+      "comp_psf": 5.1302,
+      "comp_n": 208,
+      "premium": 0.0955,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": -0.0055,
+          "subject_n": 5,
+          "comp_n": 82
+        },
+        "1": {
+          "premium": 0.1091,
+          "subject_n": 5,
+          "comp_n": 64
+        },
+        "2": {
+          "premium": 0.1683,
+          "subject_n": 6,
+          "comp_n": 62
+        }
+      }
+    },
+    {
+      "key": "2024Q1",
+      "subject_psf": 6.167,
+      "subject_n": 12,
+      "comp_psf": 4.8598,
+      "comp_n": 182,
+      "premium": 0.3315,
+      "premium_beds": 2,
+      "by_bed": {
+        "1": {
+          "premium": 0.2424,
+          "subject_n": 5,
+          "comp_n": 94
+        },
+        "2": {
+          "premium": 0.4205,
+          "subject_n": 5,
+          "comp_n": 51
+        }
+      }
+    },
+    {
+      "key": "2024Q2",
+      "subject_psf": 6.1207,
+      "subject_n": 12,
+      "comp_psf": 4.8196,
+      "comp_n": 166,
+      "premium": 0.2741,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.1881,
+          "subject_n": 3,
+          "comp_n": 23
+        },
+        "1": {
+          "premium": 0.3155,
+          "subject_n": 6,
+          "comp_n": 76
+        },
+        "2": {
+          "premium": 0.2773,
+          "subject_n": 3,
+          "comp_n": 67
+        }
+      }
+    },
+    {
+      "key": "2024Q3",
+      "subject_psf": 6.0914,
+      "subject_n": 12,
+      "comp_psf": 4.853,
+      "comp_n": 198,
+      "premium": 0.2454,
+      "premium_beds": 2,
+      "by_bed": {
+        "1": {
+          "premium": 0.2788,
+          "subject_n": 7,
+          "comp_n": 89
+        },
+        "2": {
+          "premium": 0.1674,
+          "subject_n": 3,
+          "comp_n": 79
+        }
+      }
+    },
+    {
+      "key": "2024Q4",
+      "subject_psf": 7.1683,
+      "subject_n": 23,
+      "comp_psf": 5.1826,
+      "comp_n": 157,
+      "premium": 0.2642,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.1855,
+          "subject_n": 8,
+          "comp_n": 24
+        },
+        "1": {
+          "premium": 0.3521,
+          "subject_n": 11,
+          "comp_n": 75
+        },
+        "2": {
+          "premium": 0.18,
+          "subject_n": 4,
+          "comp_n": 58
+        }
+      }
+    },
+    {
+      "key": "2025Q1",
+      "subject_psf": 6.4871,
+      "subject_n": 19,
+      "comp_psf": 5.2327,
+      "comp_n": 218,
+      "premium": 0.2552,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.3141,
+          "subject_n": 4,
+          "comp_n": 52
+        },
+        "1": {
+          "premium": 0.2795,
+          "subject_n": 9,
+          "comp_n": 84
+        },
+        "2": {
+          "premium": 0.1793,
+          "subject_n": 6,
+          "comp_n": 82
+        }
+      }
+    },
+    {
+      "key": "2025Q2",
+      "subject_psf": 6.3039,
+      "subject_n": 20,
+      "comp_psf": 5.462,
+      "comp_n": 315,
+      "premium": 0.1529,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.0358,
+          "subject_n": 3,
+          "comp_n": 77
+        },
+        "1": {
+          "premium": 0.1832,
+          "subject_n": 11,
+          "comp_n": 127
+        },
+        "2": {
+          "premium": 0.1557,
+          "subject_n": 6,
+          "comp_n": 111
+        }
+      }
+    },
+    {
+      "key": "2025Q3",
+      "subject_psf": 6.5244,
+      "subject_n": 34,
+      "comp_psf": 5.4319,
+      "comp_n": 390,
+      "premium": 0.18,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.1689,
+          "subject_n": 10,
+          "comp_n": 87
+        },
+        "1": {
+          "premium": 0.186,
+          "subject_n": 16,
+          "comp_n": 165
+        },
+        "2": {
+          "premium": 0.1818,
+          "subject_n": 8,
+          "comp_n": 138
+        }
+      }
+    },
+    {
+      "key": "2025Q4",
+      "subject_psf": 6.3917,
+      "subject_n": 38,
+      "comp_psf": 5.6656,
+      "comp_n": 305,
+      "premium": 0.1372,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.1655,
+          "subject_n": 10,
+          "comp_n": 68
+        },
+        "1": {
+          "premium": 0.103,
+          "subject_n": 19,
+          "comp_n": 135
+        },
+        "2": {
+          "premium": 0.178,
+          "subject_n": 9,
+          "comp_n": 102
+        }
+      }
+    },
+    {
+      "key": "2026Q1",
+      "subject_psf": 6.4341,
+      "subject_n": 50,
+      "comp_psf": 6.1817,
+      "comp_n": 337,
+      "premium": 0.0297,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.0056,
+          "subject_n": 13,
+          "comp_n": 68
+        },
+        "1": {
+          "premium": 0.0067,
+          "subject_n": 24,
+          "comp_n": 149
+        },
+        "2": {
+          "premium": 0.0964,
+          "subject_n": 13,
+          "comp_n": 120
+        }
+      }
+    },
+    {
+      "key": "2026Q2",
+      "subject_psf": 7.3327,
+      "subject_n": 36,
+      "comp_psf": 6.9843,
+      "comp_n": 387,
+      "premium": 0.0041,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.0265,
+          "subject_n": 13,
+          "comp_n": 98
+        },
+        "1": {
+          "premium": -0.0662,
+          "subject_n": 14,
+          "comp_n": 164
+        },
+        "2": {
+          "premium": 0.0808,
+          "subject_n": 9,
+          "comp_n": 125
+        }
+      }
+    },
+    {
+      "key": "2026Q3",
+      "subject_psf": 8.4748,
+      "subject_n": 44,
+      "comp_psf": 7.0444,
+      "comp_n": 461,
+      "premium": 0.1848,
+      "premium_beds": 3,
+      "by_bed": {
+        "0": {
+          "premium": 0.1519,
+          "subject_n": 13,
+          "comp_n": 132
+        },
+        "1": {
+          "premium": 0.1664,
+          "subject_n": 22,
+          "comp_n": 168
+        },
+        "2": {
+          "premium": 0.2771,
+          "subject_n": 9,
+          "comp_n": 161
+        }
+      }
+    }
+  ],
+  "months": [
+    {
+      "key": "2023-06",
+      "subject_psf": 6.3544,
+      "subject_n": 2,
+      "comp_psf": 4.6715,
+      "comp_n": 16,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-07",
+      "subject_psf": 5.7004,
+      "subject_n": 3,
+      "comp_psf": 4.2187,
+      "comp_n": 26,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-08",
+      "subject_psf": 5.4134,
+      "subject_n": 2,
+      "comp_psf": 4.5765,
+      "comp_n": 45,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2023-09",
+      "subject_psf": 6.0593,
+      "subject_n": 5,
+      "comp_psf": 4.2258,
+      "comp_n": 36,
+      "premium": 0.5992,
+      "premium_beds": 1
+    },
+    {
+      "key": "2023-10",
+      "subject_psf": 5.368,
+      "subject_n": 7,
+      "comp_psf": 4.2123,
+      "comp_n": 11,
+      "premium": 0.1794,
+      "premium_beds": 1
+    },
+    {
+      "key": "2023-11",
+      "subject_psf": 5.9109,
+      "subject_n": 7,
+      "comp_psf": 5.1357,
+      "comp_n": 127,
+      "premium": 0.0578,
+      "premium_beds": 2
+    },
+    {
+      "key": "2023-12",
+      "subject_psf": 5.3706,
+      "subject_n": 2,
+      "comp_psf": 5.1436,
+      "comp_n": 70,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-01",
+      "subject_psf": 5.9148,
+      "subject_n": 2,
+      "comp_psf": 4.9341,
+      "comp_n": 61,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-02",
+      "subject_psf": 6.0984,
+      "subject_n": 5,
+      "comp_psf": 4.6926,
+      "comp_n": 37,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-03",
+      "subject_psf": 6.7617,
+      "subject_n": 5,
+      "comp_psf": 4.8418,
+      "comp_n": 84,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-04",
+      "subject_psf": 6.2928,
+      "subject_n": 3,
+      "comp_psf": 4.8705,
+      "comp_n": 53,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-05",
+      "subject_psf": 5.8081,
+      "subject_n": 4,
+      "comp_psf": 4.8097,
+      "comp_n": 65,
+      "premium": 0.2773,
+      "premium_beds": 1
+    },
+    {
+      "key": "2024-06",
+      "subject_psf": 6.3872,
+      "subject_n": 5,
+      "comp_psf": 4.7561,
+      "comp_n": 48,
+      "premium": 0.3522,
+      "premium_beds": 1
+    },
+    {
+      "key": "2024-07",
+      "subject_psf": 5.351,
+      "subject_n": 4,
+      "comp_psf": 4.9708,
+      "comp_n": 73,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-08",
+      "subject_psf": 6.7002,
+      "subject_n": 3,
+      "comp_psf": 4.7373,
+      "comp_n": 66,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2024-09",
+      "subject_psf": 6.1786,
+      "subject_n": 5,
+      "comp_psf": 4.7706,
+      "comp_n": 59,
+      "premium": 0.4008,
+      "premium_beds": 1
+    },
+    {
+      "key": "2024-10",
+      "subject_psf": 7.1683,
+      "subject_n": 7,
+      "comp_psf": 5.2074,
+      "comp_n": 60,
+      "premium": 0.0661,
+      "premium_beds": 2
+    },
+    {
+      "key": "2024-11",
+      "subject_psf": 6.922,
+      "subject_n": 11,
+      "comp_psf": 5.003,
+      "comp_n": 45,
+      "premium": 0.2851,
+      "premium_beds": 2
+    },
+    {
+      "key": "2024-12",
+      "subject_psf": 7.1722,
+      "subject_n": 5,
+      "comp_psf": 5.1955,
+      "comp_n": 52,
+      "premium": null,
+      "premium_beds": 0
+    },
+    {
+      "key": "2025-01",
+      "subject_psf": 8.129,
+      "subject_n": 4,
+      "comp_psf": 5.1306,
+      "comp_n": 62,
+      "premium": 0.5762,
+      "premium_beds": 1
+    },
+    {
+      "key": "2025-02",
+      "subject_psf": 6.1023,
+      "subject_n": 8,
+      "comp_psf": 5.0382,
+      "comp_n": 56,
+      "premium": 0.2604,
+      "premium_beds": 2
+    },
+    {
+      "key": "2025-03",
+      "subject_psf": 6.4581,
+      "subject_n": 7,
+      "comp_psf": 5.4706,
+      "comp_n": 100,
+      "premium": 0.1656,
+      "premium_beds": 1
+    },
+    {
+      "key": "2025-04",
+      "subject_psf": 6.4739,
+      "subject_n": 8,
+      "comp_psf": 5.4416,
+      "comp_n": 92,
+      "premium": 0.3079,
+      "premium_beds": 2
+    },
+    {
+      "key": "2025-05",
+      "subject_psf": 5.972,
+      "subject_n": 4,
+      "comp_psf": 5.5687,
+      "comp_n": 104,
+      "premium": 0.1718,
+      "premium_beds": 1
+    },
+    {
+      "key": "2025-06",
+      "subject_psf": 6.077,
+      "subject_n": 8,
+      "comp_psf": 5.4586,
+      "comp_n": 119,
+      "premium": 0.0384,
+      "premium_beds": 1
+    },
+    {
+      "key": "2025-07",
+      "subject_psf": 6.3415,
+      "subject_n": 16,
+      "comp_psf": 5.5028,
+      "comp_n": 137,
+      "premium": 0.1739,
+      "premium_beds": 3
+    },
+    {
+      "key": "2025-08",
+      "subject_psf": 7.151,
+      "subject_n": 9,
+      "comp_psf": 5.4719,
+      "comp_n": 122,
+      "premium": 0.1069,
+      "premium_beds": 2
+    },
+    {
+      "key": "2025-09",
+      "subject_psf": 6.3092,
+      "subject_n": 9,
+      "comp_psf": 5.323,
+      "comp_n": 131,
+      "premium": 0.1775,
+      "premium_beds": 2
+    },
+    {
+      "key": "2025-10",
+      "subject_psf": 6.2419,
+      "subject_n": 5,
+      "comp_psf": 5.4555,
+      "comp_n": 120,
+      "premium": 0.1497,
+      "premium_beds": 1
+    },
+    {
+      "key": "2025-11",
+      "subject_psf": 6.5822,
+      "subject_n": 7,
+      "comp_psf": 5.7899,
+      "comp_n": 83,
+      "premium": 0.1381,
+      "premium_beds": 2
+    },
+    {
+      "key": "2025-12",
+      "subject_psf": 6.3328,
+      "subject_n": 26,
+      "comp_psf": 5.9441,
+      "comp_n": 102,
+      "premium": 0.0998,
+      "premium_beds": 3
+    },
+    {
+      "key": "2026-01",
+      "subject_psf": 6.3438,
+      "subject_n": 20,
+      "comp_psf": 5.8779,
+      "comp_n": 132,
+      "premium": 0.054,
+      "premium_beds": 3
+    },
+    {
+      "key": "2026-02",
+      "subject_psf": 6.7394,
+      "subject_n": 17,
+      "comp_psf": 6.541,
+      "comp_n": 94,
+      "premium": 0.0183,
+      "premium_beds": 3
+    },
+    {
+      "key": "2026-03",
+      "subject_psf": 6.5242,
+      "subject_n": 13,
+      "comp_psf": 6.2321,
+      "comp_n": 111,
+      "premium": 0.0285,
+      "premium_beds": 2
+    },
+    {
+      "key": "2026-04",
+      "subject_psf": 7.9978,
+      "subject_n": 9,
+      "comp_psf": 6.8114,
+      "comp_n": 97,
+      "premium": -0.0495,
+      "premium_beds": 2
+    },
+    {
+      "key": "2026-05",
+      "subject_psf": 6.5824,
+      "subject_n": 13,
+      "comp_psf": 7.0852,
+      "comp_n": 146,
+      "premium": -0.0349,
+      "premium_beds": 3
+    },
+    {
+      "key": "2026-06",
+      "subject_psf": 8.2008,
+      "subject_n": 14,
+      "comp_psf": 7.0125,
+      "comp_n": 144,
+      "premium": 0.0308,
+      "premium_beds": 3
+    },
+    {
+      "key": "2026-07",
+      "subject_psf": 8.4518,
+      "subject_n": 9,
+      "comp_psf": 7.1138,
+      "comp_n": 165,
+      "premium": 0.1383,
+      "premium_beds": 2
+    },
+    {
+      "key": "2026-08",
+      "subject_psf": 8.5471,
+      "subject_n": 21,
+      "comp_psf": 7.006,
+      "comp_n": 183,
+      "premium": 0.1647,
+      "premium_beds": 2
+    },
+    {
+      "key": "2026-09",
+      "subject_psf": 8.4748,
+      "subject_n": 14,
+      "comp_psf": 6.9738,
+      "comp_n": 113,
+      "premium": 0.2077,
+      "premium_beds": 3
+    }
+  ],
+  "days_on_market": {
+    "subject_median": 31.5,
+    "subject_n": 150,
+    "comp_median": 29.0,
+    "comp_n": 1350,
+    "since": "2025-09-01"
+  },
+  "concessions": {
+    "subject_share": 1.0,
+    "subject_n": 31,
+    "comp_share": 0.1812,
+    "comp_n": 287
+  },
+  "comps": [
+    {
+      "building": "The Brady",
+      "address": "1 Brady Street",
+      "year_built": 2022,
+      "units": 444,
+      "miles": 0.083,
+      "listings": 58,
+      "by_bed": {
+        "0": {
+          "n": 20,
+          "median_rent": 3807.0,
+          "median_sqft": 499.5
+        },
+        "1": {
+          "n": 10,
+          "median_rent": 4515.5,
+          "median_sqft": 610.5
+        },
+        "2": {
+          "n": 28,
+          "median_rent": 6057.5,
+          "median_sqft": 997.0
+        }
+      }
+    },
+    {
+      "building": "Fifteen Fifty",
+      "address": "1550 Mission Street",
+      "year_built": 2020,
+      "units": 550,
+      "miles": 0.094,
+      "listings": 7,
+      "by_bed": {
+        "0": {
+          "n": 1,
+          "median_rent": 4495.0,
+          "median_sqft": 528.0
+        },
+        "1": {
+          "n": 1,
+          "median_rent": 6225.0,
+          "median_sqft": 764.0
+        },
+        "2": {
+          "n": 5,
+          "median_rent": 7450.0,
+          "median_sqft": 1098.0
+        }
+      }
+    },
+    {
+      "building": "Ansel",
+      "address": "1699 Market Street",
+      "year_built": 2019,
+      "units": 160,
+      "miles": 0.136,
+      "listings": 10,
+      "by_bed": {
+        "0": {
+          "n": 2,
+          "median_rent": 4526.0,
+          "median_sqft": 484.0
+        },
+        "1": {
+          "n": 5,
+          "median_rent": 4844.0,
+          "median_sqft": 621.0
+        },
+        "2": {
+          "n": 3,
+          "median_rent": 7591.0,
+          "median_sqft": 917.0
+        }
+      }
+    },
+    {
+      "building": "The Oak",
+      "address": "55 Oak Street",
+      "year_built": 2021,
+      "units": 109,
+      "miles": 0.155,
+      "listings": 0,
+      "by_bed": {}
+    },
+    {
+      "building": "Vara Apartments",
+      "address": "1400 Mission Street",
+      "year_built": 2013,
+      "units": 3,
+      "miles": 0.238,
+      "listings": 0,
+      "by_bed": {}
+    },
+    {
+      "building": "Olume Apartments",
+      "address": "1401 Mission Street",
+      "year_built": 2016,
+      "units": 121,
+      "miles": 0.244,
+      "listings": 11,
+      "by_bed": {
+        "0": {
+          "n": 2,
+          "median_rent": 3591.5,
+          "median_sqft": 393.5
+        },
+        "1": {
+          "n": 8,
+          "median_rent": 4340.0,
+          "median_sqft": 533.0
+        },
+        "2": {
+          "n": 1,
+          "median_rent": 5246.0,
+          "median_sqft": 888.0
+        }
+      }
+    },
+    {
+      "building": "NEMA",
+      "address": "8 10th Street",
+      "year_built": 2014,
+      "units": 754,
+      "miles": 0.253,
+      "listings": 48,
+      "by_bed": {
+        "0": {
+          "n": 19,
+          "median_rent": 3518.0,
+          "median_sqft": 476.0
+        },
+        "1": {
+          "n": 11,
+          "median_rent": 5050.0,
+          "median_sqft": 845.0
+        },
+        "2": {
+          "n": 18,
+          "median_rent": 7207.5,
+          "median_sqft": 1376.0
+        }
+      }
+    },
+    {
+      "building": "100 Van Ness",
+      "address": "100 Van Ness Avenue",
+      "year_built": 2014,
+      "units": 418,
+      "miles": 0.281,
+      "listings": 31,
+      "by_bed": {
+        "0": {
+          "n": 1,
+          "median_rent": 4140.0,
+          "median_sqft": 439.0
+        },
+        "1": {
+          "n": 13,
+          "median_rent": 4810.0,
+          "median_sqft": 680.0
+        },
+        "2": {
+          "n": 17,
+          "median_rent": 7152.0,
+          "median_sqft": 1084.0
+        }
+      }
+    },
+    {
+      "building": "Venn on Market",
+      "address": "1844 Market Street",
+      "year_built": 2013,
+      "units": 113,
+      "miles": 0.284,
+      "listings": 4,
+      "by_bed": {
+        "1": {
+          "n": 4,
+          "median_rent": 5189.0,
+          "median_sqft": 682.0
+        }
+      }
+    },
+    {
+      "building": "150 Van Ness",
+      "address": "150 Van Ness Avenue",
+      "year_built": 2018,
+      "units": 420,
+      "miles": 0.304,
+      "listings": 27,
+      "by_bed": {
+        "1": {
+          "n": 12,
+          "median_rent": 4308.5,
+          "median_sqft": 611.0
+        },
+        "2": {
+          "n": 15,
+          "median_rent": 6500.0,
+          "median_sqft": 977.0
+        }
+      }
+    },
+    {
+      "building": "The Civic",
+      "address": "101-103 Polk Street",
+      "year_built": 2015,
+      "units": 162,
+      "miles": 0.347,
+      "listings": 9,
+      "by_bed": {
+        "1": {
+          "n": 5,
+          "median_rent": 4298.0,
+          "median_sqft": 626.0
+        },
+        "2": {
+          "n": 4,
+          "median_rent": 6303.5,
+          "median_sqft": 922.0
+        }
+      }
+    },
+    {
+      "building": "Avalon Hayes Valley",
+      "address": "325 Octavia Street",
+      "year_built": 2015,
+      "units": 182,
+      "miles": 0.348,
+      "listings": 12,
+      "by_bed": {
+        "0": {
+          "n": 4,
+          "median_rent": 3735.0,
+          "median_sqft": 449.0
+        },
+        "1": {
+          "n": 2,
+          "median_rent": 4962.5,
+          "median_sqft": 623.5
+        },
+        "2": {
+          "n": 6,
+          "median_rent": 7167.5,
+          "median_sqft": 1127.0
+        }
+      }
+    },
+    {
+      "building": "HQ",
+      "address": "1532 Harrison Street",
+      "year_built": 2021,
+      "units": 136,
+      "miles": 0.381,
+      "listings": 2,
+      "by_bed": {
+        "0": {
+          "n": 2,
+          "median_rent": 3077.5,
+          "median_sqft": 377.5
+        }
+      }
+    },
+    {
+      "building": "Vance",
+      "address": "830 Eddy Street",
+      "year_built": 2021,
+      "units": 137,
+      "miles": 0.718,
+      "listings": 15,
+      "by_bed": {
+        "0": {
+          "n": 2,
+          "median_rent": 3548.0,
+          "median_sqft": 461.0
+        },
+        "1": {
+          "n": 8,
+          "median_rent": 4131.0,
+          "median_sqft": 607.0
+        },
+        "2": {
+          "n": 5,
+          "median_rent": 6536.0,
+          "median_sqft": 970.0
+        }
+      }
+    },
+    {
+      "building": "One Henry Adams",
+      "address": "1 Henry Adams Street",
+      "year_built": 2016,
+      "units": 241,
+      "miles": 0.904,
+      "listings": 13,
+      "by_bed": {
+        "0": {
+          "n": 2,
+          "median_rent": 4089.5,
+          "median_sqft": 479.0
+        },
+        "1": {
+          "n": 6,
+          "median_rent": 4928.5,
+          "median_sqft": 709.5
+        },
+        "2": {
+          "n": 5,
+          "median_rent": 6170.0,
+          "median_sqft": 1014.0
+        }
+      }
+    },
+    {
+      "building": "The George",
+      "address": "434 Minna Street",
+      "year_built": 2021,
+      "units": 302,
+      "miles": 0.916,
+      "listings": 11,
+      "by_bed": {
+        "0": {
+          "n": 6,
+          "median_rent": 4148.5,
+          "median_sqft": 387.0
+        },
+        "1": {
+          "n": 1,
+          "median_rent": 5228.0,
+          "median_sqft": 614.0
+        },
+        "2": {
+          "n": 4,
+          "median_rent": 6996.0,
+          "median_sqft": 941.0
+        }
+      }
+    },
+    {
+      "building": "The Fitzgerald",
+      "address": "2095 Bryant Street",
+      "year_built": 2023,
+      "units": 63,
+      "miles": 0.99,
+      "listings": 4,
+      "by_bed": {
+        "1": {
+          "n": 4,
+          "median_rent": 5925.0,
+          "median_sqft": 637.5
+        }
+      }
+    },
+    {
+      "building": "Alta Potrero",
+      "address": "1301 16th Street",
+      "year_built": 2020,
+      "units": 172,
+      "miles": 1.157,
+      "listings": 8,
+      "by_bed": {
+        "1": {
+          "n": 6,
+          "median_rent": 5944.0,
+          "median_sqft": 717.5
+        },
+        "2": {
+          "n": 2,
+          "median_rent": 7674.0,
+          "median_sqft": 1145.0
+        }
+      }
+    },
+    {
+      "building": "Potrero 1010",
+      "address": "1010 16th Street",
+      "year_built": 2016,
+      "units": 453,
+      "miles": 1.293,
+      "listings": 16,
+      "by_bed": {
+        "0": {
+          "n": 1,
+          "median_rent": 3820.0,
+          "median_sqft": 449.0
+        },
+        "1": {
+          "n": 8,
+          "median_rent": 4352.5,
+          "median_sqft": 618.5
+        },
+        "2": {
+          "n": 7,
+          "median_rent": 6450.0,
+          "median_sqft": 1028.0
+        }
+      }
+    },
+    {
+      "building": "Mason on Mariposa",
+      "address": "1601 Mariposa Street",
+      "year_built": 2020,
+      "units": 239,
+      "miles": 1.297,
+      "listings": 1,
+      "by_bed": {
+        "2": {
+          "n": 1,
+          "median_rent": 7900.0,
+          "median_sqft": 1025.0
+        }
+      }
+    }
+  ],
+  "subject_listings": {
+    "current": 31,
+    "oldest_days": 381,
+    "by_bed": {
+      "0": 9,
+      "1": 12,
+      "2": 8,
+      "3": 2
+    }
+  },
+  "report_type": "market_comps",
+  "vendor": "HelloData",
+  "market": "San Francisco-Oakland-Hayward, CA",
+  "properties_in_file": 36,
+  "listings_in_file": 6550,
+  "source_file": "2026-09-22 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (3).xlsx",
+  "landed_at": "2026-09-22T23:28:31.610Z",
+  "checks": [
+    {
+      "check": "every listed building is described in 'Property Data'",
+      "ok": true,
+      "buildings": 36,
+      "missing": []
+    },
+    {
+      "check": "days on market reconciles to the listing's own dates",
+      "ok": true,
+      "closed_listings": 6090,
+      "agree": 6090,
+      "rate": 1.0,
+      "note": "(removed - first listed) + 1, inclusive of both ends"
+    },
+    {
+      "check": "floorplan summary rows are not counted as units",
+      "ok": true,
+      "skipped": 238,
+      "units_read": 6550
+    },
+    {
+      "check": "listings with no price or no size are excluded",
+      "ok": true,
+      "excluded": 125
+    },
+    {
+      "check": "the current set is the file's own as-of date",
+      "ok": true,
+      "as_of": "2026-09-21",
+      "current": 458
+    },
+    {
+      "check": "Align's own buildings are out of the comp set",
+      "ok": true,
+      "excluded": [
+        "Chorus",
+        "The Landing",
+        "The Madelon"
+      ]
+    }
+  ],
+  "problems": [],
+  "vintages": [
+    "2026-08-04",
+    "2026-08-05",
+    "2026-08-06",
+    "2026-08-07",
+    "2026-08-08",
+    "2026-08-09",
+    "2026-08-10",
+    "2026-08-11",
+    "2026-08-12",
+    "2026-08-13",
+    "2026-08-14",
+    "2026-08-15",
+    "2026-08-16",
+    "2026-08-17",
+    "2026-08-18",
+    "2026-08-19",
+    "2026-08-20",
+    "2026-08-21",
+    "2026-08-22",
+    "2026-08-23",
+    "2026-08-24",
+    "2026-08-25",
+    "2026-08-26",
+    "2026-08-27",
+    "2026-08-28",
+    "2026-08-29",
+    "2026-08-30",
+    "2026-08-31",
+    "2026-09-01",
+    "2026-09-02",
+    "2026-09-03",
+    "2026-09-04",
+    "2026-09-05",
+    "2026-09-06",
+    "2026-09-07",
+    "2026-09-08",
+    "2026-09-10",
+    "2026-09-11",
+    "2026-09-12",
+    "2026-09-13",
+    "2026-09-14",
+    "2026-09-15",
+    "2026-09-17",
+    "2026-09-18",
+    "2026-09-19",
+    "2026-09-21"
+  ]
+}

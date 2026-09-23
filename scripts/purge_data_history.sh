@@ -27,16 +27,10 @@
 #   scripts/purge_data_history.sh --yes-rewrite-history
 set -euo pipefail
 
-# The PLAINTEXT paths, which is what is in history and what matters. The data is
-# published sealed now (docs/*.json.enc), but every version committed before that
-# is still readable in history by anyone who clones — encrypting today does not
-# reach backwards. lineage.json was missing from this list and is committed like
-# the other three.
 PATHS=(
   docs/metrics.json
   docs/landing.json
   docs/scorecard.json
-  docs/lineage.json
   data
 )
 

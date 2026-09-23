@@ -54,7 +54,8 @@ UNSCORED = {"Split Between 30/60/90"}
 # here rather than hidden on the page, so nothing downstream carries a column
 # with no home: not the matrix, not a property's row, not the thresholds table,
 # not the coverage counts. The workbook keeps its own column either way.
-OMITTED_METRICS = {"# of offers that are 30 days"}
+OMITTED_METRICS = {"# of offers that are 30 days",
+                   "# of accepted/pending offers"}
 
 # Grid columns the dashboard publishes under a different name. The workbook's own
 # header is left alone; this is only what the JSON and the page call the KPI, and

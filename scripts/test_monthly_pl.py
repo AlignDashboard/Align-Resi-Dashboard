@@ -224,6 +224,98 @@ def main():
         run4, _ = bm.ratio_trend([pt("Jul 2026", 33.3, "total")], "fixture")
         ok("a single point survives", len(run4) == 1, len(run4))
 
+        # --- the two published ratio series must agree ---
+        #
+        # Since 2026-09-17 the Portfolio tab's Expense Ratio card draws its
+        # line from monthly_pl -- opex over revenue, the series the Landing
+        # (Drive) tab draws -- while the T12 figures beside it are still the
+        # expense_ratio block's own. So the card shows one store's line beside
+        # another store's headline, and if the two ever stopped describing the
+        # same expense row nothing on the page would say so: the line would
+        # simply disagree with the number next to it. They come from one
+        # anchor decision today; this is the check that they still do.
+        rr = store(tmp, [jpm], slug="agree", fn=bm.store_expense_ratio)
+        pp = store(tmp, [jpm], slug="agree")
+        derived = [round(100 * pp["opex"][i] / pp["revenue"][i], 1)
+                   if pp["revenue"][i] else None
+                   for i in range(len(pp["revenue"]))]
+        ok("the card's line reproduces the published monthly ratio",
+           derived == rr["monthly_ratio"], (derived[:3], rr["monthly_ratio"][:3]))
+        ok("both series sit on the same anchor",
+           (rr["expense_scope"], rr["expense_anchor"])
+           == (pp["expense_scope"], pp["expense_anchor"]),
+           ((rr["expense_scope"], rr["expense_anchor"]),
+            (pp["expense_scope"], pp["expense_anchor"])))
+
+        # --- the Expense Trend block: several properties on one axis ---
+        #
+        # The card plots one line per building, so the two ways it can lie are
+        # about alignment and about basis. Both are checked here rather than
+        # in the browser, because both look perfectly plausible on the chart.
+        landing = {"slug": "the-landing", "name": "The Landing",
+                   "period_end": "Aug 2026",
+                   "months": ["2025-08", "2025-09", "2025-10"],
+                   "opex": [371065.03, 352141.61, 360000.0],
+                   "expense_scope": "total",
+                   "expense_anchor": t12.JPM_EXP_ALL,
+                   "basis": "jpm total expenses"}
+        palma = {"slug": "palma", "name": "Palma", "period_end": "Sep 2026",
+                 "months": ["2025-07", "2025-08", "2025-09"],
+                 "opex": [158188.94, 144683.36, 150000.0],
+                 "expense_scope": "operating", "expense_anchor": None,
+                 "basis": "align recoverable opex"}
+
+        et = bm.expense_trend([landing, palma])
+        ok("the axis is the union of the properties' months, in order",
+           et["months"] == ["2025-07", "2025-08", "2025-09", "2025-10"],
+           et["months"])
+        ok("labels carry the year, since the axis can hold two Julys",
+           et["labels"][0] == "Jul 25" and et["labels"][-1] == "Oct 25",
+           et["labels"])
+
+        by_slug = {p["slug"]: p for p in et["properties"]}
+        # The load-bearing one. Aligning by POSITION would put Palma's July
+        # under The Landing's August and read the offset as a swing in
+        # spending; every value has to land on its own month key.
+        ok("each line is aligned to the axis by month key, not by position",
+           by_slug["the-landing"]["data"] == [None, 371065.03, 352141.61, 360000.0]
+           and by_slug["palma"]["data"] == [158188.94, 144683.36, 150000.0, None],
+           {k: v["data"] for k, v in by_slug.items()})
+        ok("a month a property has no statement for is null, not zero",
+           by_slug["the-landing"]["data"][0] is None
+           and by_slug["palma"]["data"][3] is None,
+           (by_slug["the-landing"]["data"][0], by_slug["palma"]["data"][3]))
+        ok("each line reports the window it actually covers",
+           by_slug["palma"]["first_month"] == "2025-07"
+           and by_slug["palma"]["last_month"] == "2025-09",
+           (by_slug["palma"]["first_month"], by_slug["palma"]["last_month"]))
+
+        # The second load-bearing one. These two lines are not the same
+        # expense row -- the Align tree has no counterpart to 549999-9999 --
+        # so the card has to be told, or it prints one basis over two
+        # different expense loads.
+        ok("a mixed pair of anchors is flagged",
+           et["mixed_scope"] is True, et["mixed_scope"])
+        ok("each line carries its own scope and anchor",
+           by_slug["the-landing"]["expense_scope"] == "total"
+           and by_slug["the-landing"]["expense_anchor"] == t12.JPM_EXP_ALL
+           and by_slug["palma"]["expense_scope"] == "operating"
+           and by_slug["palma"]["expense_anchor"] is None,
+           {k: (v["expense_scope"], v["expense_anchor"]) for k, v in by_slug.items()})
+        ok("one anchor throughout is not flagged as mixed",
+           bm.expense_trend([landing])["mixed_scope"] is False)
+
+        # The card is the statement series itself, not a second reading of it.
+        ok("the published line is the property's own opex series",
+           [v for v in by_slug["the-landing"]["data"] if v is not None]
+           == landing["opex"],
+           by_slug["the-landing"]["data"])
+
+        empty = bm.expense_trend([])
+        ok("no statements yet publishes an empty block rather than crashing",
+           empty["available"] is False and empty["months"] == []
+           and empty["properties"] == [], empty)
+
         ok("basis prose follows the scope",
            "549999-9999" in bm.ratio_basis("total", "549999-9999")
            and "Recoverable" in bm.ratio_basis("operating", None),

@@ -120,29 +120,31 @@ DRIVE_FLOWS = {
             {"file": "metrics.json", "key": "expense_ratio"},
             {"file": "metrics.json", "key": "monthly_pl"},
             {"file": "metrics.json", "key": "expense_buckets"},
+            {"file": "metrics.json", "key": "expense_trend"},
             {"file": "metrics.json", "key": "rent_capture"},
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
         ],
         "dashboard": [
+            # Its T12 figures are the expense_ratio block's; since 2026-09-17
+            # its line is the monthly ratio off monthly_pl, the same series the
+            # Landing tab draws, so both tables belong on it.
             {"card": "Expense Ratio", "tab": "Portfolio", "anchor": "cExpRatio",
-             "tables": ["t-expratio-*"]},
-            {"card": "Operating Summary", "tab": "The Landing", "anchor": "cOpSummary",
-             "tables": ["t-monthlypl-*"]},
-            {"card": "Expense Deep Dive", "tab": "The Landing", "anchor": "cExpDeep",
-             "primary": "t-l-buckets",
-             "tables": ["t-buckets-*", "t-l-opps"]},
-            {"card": "Expense Load & NOI — controllable/door", "tab": "The Landing",
-             "anchor": "cNoi", "primary": "t-l-noi", "tables": ["t-buckets-*"]},
-            # The Drive-only tab. Same statement, same three cards, none of the
-            # workbook: the Landing tab overlays the analyst numbers on these,
-            # this one shows the statement on its own.
-            {"card": "Operating Summary", "tab": "Landing (Drive)",
+             "primary": "t-expratio-*",
+             "tables": ["t-expratio-*", "t-monthlypl-*"]},
+            # Every property's expense line on one axis, derived from the same
+            # stitched series the Operating Summary reads rather than typed in.
+            {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",
+             "primary": "t-exptrend", "tables": ["t-exptrend", "t-monthlypl-*"]},
+            # The Landing tab. A second, workbook-fed tab carried the same
+            # three cards with the analyst numbers overlaid until 2026-09-18;
+            # these show the statement on its own.
+            {"card": "Operating Summary", "tab": "Landing",
              "anchor": "cdOpSummary", "primary": "t-monthlypl-*",
              "tables": ["t-monthlypl-*"]},
-            {"card": "Expense Load & NOI", "tab": "Landing (Drive)",
+            {"card": "Expense Load & NOI", "tab": "Landing",
              "anchor": "cdNoi", "primary": "t-monthlypl-*",
              "tables": ["t-monthlypl-*", "t-buckets-*", "t-unitdir-*"]},
-            {"card": "Expense Deep Dive", "tab": "Landing (Drive)",
+            {"card": "Expense Deep Dive", "tab": "Landing",
              "anchor": "cdExpDeep", "primary": "t-buckets-*",
              "tables": ["t-buckets-*", "t-monthlypl-*"]},
             # The statement's own rental-income section. The analyst workbook's
@@ -151,24 +153,78 @@ DRIVE_FLOWS = {
             # so the card needs no rent roll and belongs on this tab. The
             # Landing tab's copy of the card still draws the workbook, and is
             # declared under analyst_workbook rather than here.
-            {"card": "Loss to Lease", "tab": "Landing (Drive)",
+            {"card": "Loss to Lease", "tab": "Landing",
              "anchor": "cdRentCapture", "primary": "t-rentcap-*",
              "tables": ["t-rentcap-*"]},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
         ],
-        "tables": ["t-expratio-*"],
+        "tables": ["t-expratio-*", "t-exptrend"],
         "note": "The one Drive report that reaches the dashboard as a chart in "
                 "its own right. Its monthly revenue also becomes the "
                 "denominator under the delinquency KPI.",
         "open_item": "A10",
     },
+    ("Historical Tradeout Reports", "lease_tradeout"): {
+        "id": "lease_tradeout",
+        "example": "LeaseTradeoutReport-<property>.XLS",
+        "title": "Yardi lease tradeout report",
+        "carries": "One row per new lease with the lease it replaced beside "
+                   "it — current and previous effective rent, the concession "
+                   "on each, and the report's own trade-out in dollars and "
+                   "percent — over whatever window the export was run for. The "
+                   "only feed with a trade-out history of its own.",
+        "steps": [
+            {"script": "scripts/parse_lease_tradeout.py",
+             "does": "Reads the two-row header by joining the forward-filled "
+                     "group banner to the column name, so the Current and "
+                     "Previous halves cannot be swapped, and dates each lease "
+                     "by its App/Signed date — the field the report says it "
+                     "selected on.",
+             "checks": "Leases tie out against the file's own Grand Total row "
+                       "on current effective rent, previous effective rent and "
+                       "trade-out dollars; a file that does not reproduce its "
+                       "own total is refused rather than published."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Accumulates leases by (unit, signed date, previous lease "
+                     "start) in data/<slug>/lease_tradeout.json and publishes "
+                     "the monthly series plus the T3/T6/T12 windows.",
+             "checks": "Accumulated rather than replaced, because the window is "
+                       "chosen at export time and the next file's may be "
+                       "narrower. Re-filing a window replaces its leases."},
+            {"script": "scripts/populate_scorecard.py",
+             "does": "Fills Trade-out % from the trailing-3-month window, "
+                     "rent-weighted, on both --from-landing and "
+                     "--from-pipeline.",
+             "checks": "Three months because that is the basis the published "
+                       "band was written for; the EliseAI export it replaced "
+                       "was a trailing one (open item B6). Weighted, never the "
+                       "mean of the per-lease rates."},
+        ],
+        "stores": ["data/<slug>/lease_tradeout.json"],
+        "publishes": [
+            {"file": "metrics.json", "key": "lease_tradeout"},
+            {"file": "scorecard.json", "key": "Trade-out %"},
+        ],
+        "dashboard": [
+            # A tile in a row, like the budget's — no corner to hang a link in.
+            {"card": "Trade-out % tile", "tab": "Landing",
+             "anchor": "dkpisSc", "tile": True},
+            {"card": "KPI Scorecard — Trade-out %", "tab": "Scorecard",
+             "anchor": "cScorecard", "primary": "t-sc-matrix",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
+        ],
+        "tables": ["t-tradeout-*", "t-sc-measured", "t-sc-arrivals"],
+    },
     ("Budgets", "budget"): {
         "id": "budget",
-        "example": '12_Month_Budget_Accrual.xlsx',
+        "example": '<Property> <year> Resi Budget.xlsx / 12_Month_Budget_Accrual.xlsx',
         "title": "12-month budget",
         "carries": "The year's plan in the T12 statement's own shape: twelve "
-                   "budgeted months of revenue and expense on the JPM tree.",
+                   "budgeted months of revenue and expense on the JPM tree. "
+                   "One file per calendar year; the owner groups them by "
+                   "property one level down (Budgets/Landing/), which the "
+                   "fetch's folder pass reads as part of the folder.",
         "steps": [
             {"script": "scripts/parse_budget.py",
              "does": "Reuses the T12 parser's anchors, COA translation and "
@@ -177,8 +233,13 @@ DRIVE_FLOWS = {
              "checks": "Buckets tie out against the file's own TOTAL EXPENSES "
                        "to the cent, per month, like the actuals."},
             {"script": "scripts/build_metrics.py",
-             "does": "Stores the plan per property as data/<slug>/budget.json.",
-             "checks": "Central scrub in store_report, as everywhere."},
+             "does": "Keeps one point per budget YEAR in data/<slug>/budget.json "
+                     "and publishes metrics.json's budget block on explicit "
+                     "YYYY-MM keys, so a T12 window that crosses the calendar "
+                     "boundary has a plan for every month of it.",
+             "checks": "Re-filing a year replaces that year's point rather than "
+                       "the file, so a re-export is idempotent and the year "
+                       "before is not overwritten. Central scrub as everywhere."},
             {"script": "scripts/populate_scorecard.py --from-landing",
              "does": "Grades calendar-YTD actual controllable opex against the "
                      "same months of the plan, printed as $ nominal/% variance; "
@@ -189,22 +250,99 @@ DRIVE_FLOWS = {
         ],
         "stores": ["data/<slug>/budget.json"],
         "publishes": [
+            {"file": "metrics.json", "key": "budget"},
             {"file": "scorecard.json", "key": "Budget Variance %"},
         ],
         "dashboard": [
+            {"card": "Budget vs Actual", "tab": "Portfolio",
+             "anchor": "cBudgetActual", "primary": "t-budget-*",
+             "tables": ["t-budget-*", "t-buckets-*"]},
             {"card": "KPI Scorecard — Budget Variance %", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
             # The one cell this flow fills is a tile on the Drive-only tab: the
             # percentage, with the nominal dollars under it, since the published
             # cell splices the two and a tile cannot carry both at 20px.
-            {"card": "Budget variance tile", "tab": "Landing (Drive)",
+            {"card": "Budget variance tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
         ],
-        "tables": ["t-sc-measured", "t-sc-arrivals"],
+        "tables": ["t-budget-*", "t-sc-measured", "t-sc-arrivals"],
         "note": "Actuals come from the same T12 statement the Expense Deep "
                 "Dive draws; the budget is the comparison, not a new actuals "
-                "source.",
+                "source. That is also why the Budget vs Actual card can stack "
+                "both sides into the same categories: one basket, grouped "
+                "once, tied out on each side against its own file.",
+    },
+    ("Comps", "market_comps"): {
+        "id": "market_comps",
+        "example": 'HelloData - Simple - <market> Comps.xlsx',
+        "title": "Market comp export (HelloData)",
+        "carries": "Every building in the submarket and every unit it has "
+                   "listed for three years: bedrooms, size, asking and "
+                   "effective rent, first listed, removed, days on market.",
+        "steps": [
+            {"script": "scripts/parse_comps.py",
+             "does": "Cuts the market from each Align building's point of "
+                     "view: comp rings by distance, median asking rent by "
+                     "bedroom, the quarterly asking-$/sqft series against the "
+                     "ring, days on market and concession share. Publishes "
+                     "aggregates only \u2014 the listing rows are a licensed "
+                     "vendor dataset and everything in docs/ is downloadable.",
+             "checks": "A comp export has no total row, so two structural "
+                       "reconciliations stand in: every listed building must "
+                       "be described in the Property Data table (the rings are "
+                       "built from its coordinates), and Days on Market must "
+                       "reconcile to each listing's own dates. Align's own "
+                       "buildings are excluded from every comp set by "
+                       "resolving them against config/properties.json."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Joins the market to the building: applies the comp "
+                     "median for each bedroom, plus the subject's own "
+                     "long-run premium to its ring, to the unit directory's "
+                     "bedroom mix, and sets that against the three copies of "
+                     "the Yardi market rent table the pipeline already holds "
+                     "\u2014 the rent roll's column, the directory's plan "
+                     "table and the statement's gross market rent potential.",
+             "checks": "A bedroom the ring has fewer than five listings for "
+                       "keeps the building's own figure and is named as "
+                       "unverified, rather than being priced off a handful of "
+                       "asking rents. The formatted twin of the export is "
+                       "skipped by name of its own layout, with a reason, "
+                       "rather than half-read."},
+        ],
+        "stores": ["data/<slug>/comps.json"],
+        "publishes": [
+            {"file": "metrics.json", "key": "comps"},
+        ],
+        "dashboard": [
+            {"card": "Market Rent Check", "tab": "Market Comps",
+             "anchor": "cmcVerdict", "primary": "t-compscheck-*",
+             "tables": ["t-compscheck-*", "t-comps-*"]},
+            {"card": "Asking Rent vs The Submarket", "tab": "Market Comps",
+             "anchor": "cmcDivergence", "primary": "t-compstrend-*",
+             "tables": ["t-compstrend-*"]},
+            {"card": "What The Market Would Pay", "tab": "Market Comps",
+             "anchor": "cmcBuildUp", "primary": "t-compscheck-*",
+             "tables": ["t-compscheck-*", "t-unitdir-*"]},
+            {"card": "How It Is Actually Leasing", "tab": "Market Comps",
+             "anchor": "cmcEvidence", "primary": "t-comps-*",
+             "tables": ["t-comps-*"]},
+            {"card": "The Comp Set", "tab": "Market Comps",
+             "anchor": "cmcSet", "primary": "t-comps-*",
+             "tables": ["t-comps-*"]},
+            {"card": "What This Tab Cannot Say", "tab": "Market Comps",
+             "anchor": "cmcMethod", "primary": "t-comps-*",
+             "tables": ["t-comps-*", "t-compstrend-*"]},
+        ],
+        "tables": ["t-comps-*", "t-compstrend-*", "t-compscheck-*"],
+        "note": "The only feed here about the MARKET rather than about an "
+                "Align building, and the only thing the Yardi market rent "
+                "column can be checked against \u2014 that column is set by "
+                "the property team, and it is the denominator of loss to "
+                "lease on both Landing tabs and of the rent-capture series. "
+                "The export arrives as a pair of near-identical names; the "
+                "entry claims both on purpose, so a renamed export cannot go "
+                "unread, and the formatted one is skipped with a reason.",
     },
     ("Rent Roll", "rent_roll"): {
         "id": "rent_roll",
@@ -229,16 +367,16 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/rent_roll.json  (gitignored — unit level)"],
         "publishes": [{"file": "metrics.json", "key": "rent_roll"}],
         "dashboard": [
-            {"card": "Loss to Lease", "tab": "Landing (Drive)", "anchor": "cdRentCapture",
+            {"card": "Loss to Lease", "tab": "Landing", "anchor": "cdRentCapture",
              "primary": "t-rentroll-*", "tables": ["t-rentroll-*", "t-rollover-*"],
              "holds": "Loss to lease, occupancy and the rollover cohorts"},
-            {"card": "Rollover Schedule", "tab": "Landing (Drive)", "anchor": "cdRollover",
+            {"card": "Rollover Schedule", "tab": "Landing", "anchor": "cdRollover",
              "primary": "t-rollover-*", "tables": ["t-rollover-*"],
              "holds": "Lease expirations by month"},
-            {"card": "Largest Unit Gaps", "tab": "Landing (Drive)", "anchor": "cdGaps",
+            {"card": "Largest Unit Gaps", "tab": "Landing", "anchor": "cdGaps",
              "primary": "t-gaps-*", "tables": ["t-gaps-*", "t-unitdir-*"],
              "holds": "Top units by annual gap to market"},
-            {"card": "Unit Inventory", "tab": "Landing (Drive)", "anchor": "cdInventory",
+            {"card": "Unit Inventory", "tab": "Landing", "anchor": "cdInventory",
              "primary": "t-occupancy-*", "tables": ["t-occupancy-*", "t-unitdir-*"],
              "holds": "The leased/vacant split on the bedroom bars"},
         ],
@@ -288,14 +426,14 @@ DRIVE_FLOWS = {
             # The Drive-only tab shows the rate and the 30/60/90 split -- the
             # two cells this report fills. The per-unit aging behind them stops
             # in data/, so that tab has no aging chart of its own.
-            {"card": "Delinquency", "tab": "Landing (Drive)",
+            {"card": "Delinquency", "tab": "Landing",
              "anchor": "cdDelq", "primary": "t-sc-measured",
              "tables": ["t-sc-measured", "t-sc-arrivals"]},
             # The Drive-only tab's KPI grid came off 2026-09-15; Total
             # Deliquency is a tile there now, beside the card above it.
-            {"card": "Delinquency tile", "tab": "Landing (Drive)",
+            {"card": "Delinquency tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
@@ -361,16 +499,13 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard (all properties)", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
-            {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
-             "anchor": "cLandingScorecard", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
             # The Drive-only tab carried eight of this export's cells on a KPI
             # grid until 2026-09-15. Two of them are tiles there now -- Leased %
             # and Trade-out % -- and the other six are on the cards above,
             # unchanged.
-            {"card": "Leased % and Trade-out % tiles", "tab": "Landing (Drive)",
+            {"card": "Leased % and Trade-out % tiles", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
             {"card": "KPI Scorecard — Chorus", "tab": "Chorus",
              "anchor": "psc-chorus", "primary": "t-sc-measured",
@@ -381,10 +516,6 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard — 335 Third St", "tab": "335 Third St",
              "anchor": "psc-335-third-street", "primary": "t-sc-measured",
              "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
-            # A tile in a row, not a card: it has no corner to hang a link in,
-            # so it belongs on the flow page and not in the card index.
-            {"card": "Leased tile", "tab": "The Landing", "anchor": "lkpis",
-             "tile": True},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The widest feed on the page: it is the only one that says "
@@ -458,16 +589,13 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/unit_directory.json"],
         "publishes": [{"file": "metrics.json", "key": "unit_directory"}],
         "dashboard": [
-            {"card": "Largest Unit Gaps — beds and plan sq ft",
-             "tab": "The Landing", "anchor": "cGaps", "primary": "t-l-units",
-             "tables": ["t-unitdir-*"]},
             # On the Drive-only tab the directory is the whole card rather than
             # one join onto the workbook's unit list: floorplans, bedrooms,
             # square footage and the door count under controllable/door.
-            {"card": "Unit Inventory", "tab": "Landing (Drive)",
+            {"card": "Unit Inventory", "tab": "Landing",
              "anchor": "cdInventory", "primary": "t-unitdir-*",
              "tables": ["t-unitdir-*"]},
-            {"card": "What Feeds This Tab", "tab": "Landing (Drive)",
+            {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
         ],
         "tables": ["t-l-units"],
@@ -527,7 +655,7 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/leasing_detail.json"],
         "publishes": [{"file": "metrics.json", "key": "leasing"}],
         "dashboard": [
-            {"card": "Trade-outs", "tab": "Landing (Drive)", "anchor": "cdTradeOuts",
+            {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
              "primary": "t-tradeouts-*", "tables": ["t-tradeouts-*", "t-renewals-*"],
              "holds": "New-lease trade-outs by month"},
         ],
@@ -565,7 +693,7 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/renewal_tracker.json"],
         "publishes": [{"file": "metrics.json", "key": "leasing"}],
         "dashboard": [
-            {"card": "Trade-outs", "tab": "Landing (Drive)", "anchor": "cdTradeOuts",
+            {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
              "primary": "t-renewals-*", "tables": ["t-renewals-*", "t-tradeouts-*"],
              "holds": "Renewal offers by month, and the month-to-month roster"},
         ],
@@ -653,7 +781,10 @@ OTHER_FLOWS = [
         ],
         "stores": [],
         "publishes": [
-            {"file": "landing.json", "key": "the whole Landing view"},
+            # Still written by extract_landing.py, still published, still on
+            # the data page as the t-l-* tables -- but no card has drawn it
+            # since the workbook-fed Landing tab came off on 2026-09-18.
+            {"file": "landing.json", "key": "the whole workbook extract (no card draws it)"},
             {"file": "scorecard.json", "key": "Loss to Lease %"},
             {"file": "scorecard.json", "key": "NOI Margin %"},
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
@@ -662,33 +793,22 @@ OTHER_FLOWS = [
             {"file": "scorecard.json", "key": "Split Between 30/60/90 (The Landing)"},
         ],
         "dashboard": [
-            {"card": "Loss to Lease", "tab": "The Landing", "anchor": "cRentCapture",
-             "tables": ["t-l-capture", "t-l-capture-ttm", "t-l-revcompare"]},
-            {"card": "Trade-outs", "tab": "The Landing", "anchor": "cTradeOuts",
-             "tables": ["t-l-leases", "t-l-offers", "t-l-lease-summary",
-                        "t-l-renewact", "t-l-bands"]},
-            {"card": "Rollover Schedule", "tab": "The Landing", "anchor": "cRollover",
-             "tables": ["t-l-rollover"]},
-            {"card": "Expense Load & NOI", "tab": "The Landing", "anchor": "cNoi",
-             "tables": ["t-l-noi", "t-l-noi-ttm", "t-l-tax"]},
-            {"card": "Largest Unit Gaps", "tab": "The Landing", "anchor": "cGaps",
-             "tables": ["t-l-units", "t-l-hold-units", "t-l-hold-summary",
-                        "t-l-inputs", "t-l-meta"]},
-            {"card": "Delinquency", "tab": "The Landing", "anchor": "cDelinquency",
-             "tables": ["t-l-delq-aging", "t-l-delq-top", "t-l-delq-summary",
-                        "t-l-delq-531"]},
-            {"card": "Insights Scorecard", "tab": "The Landing", "anchor": "cInsights",
-             "tables": ["t-l-insights", "t-l-flags"]},
-            {"card": "KPI Scorecard — The Landing", "tab": "The Landing",
-             "anchor": "cLandingScorecard", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix"]},
+            # Eight cards on a workbook-fed Landing tab until 2026-09-18.
+            # What the workbook still puts on the dashboard is the scorecard
+            # cells it fills through populate_scorecard --from-landing; the
+            # rest of landing.json is written, published and on the data page,
+            # but nothing draws it.
+            {"card": "KPI Scorecard — four measured cells", "tab": "Scorecard",
+             "anchor": "cScorecard", "primary": "t-sc-measured",
+             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-matrix"]},
         ],
         "tables": ["t-l-capture", "t-l-noi", "t-l-renewal", "t-l-units",
                    "t-l-delq-aging", "t-l-rollover", "t-l-insights", "t-l-meta"],
         "note": "The workbook is fed by the same Yardi reports the Drive "
-                "pipeline collects — pasted in rather than fetched. It is why "
-                "The Landing has a full view while the rent roll has never "
-                "reached the pipeline.",
+                "pipeline collects — pasted in rather than fetched. It carried "
+                "the whole Landing view until the pipeline could draw the "
+                "building on its own; what is left is the four scorecard cells "
+                "no Drive report answers yet.",
         "evidence_kind": "landing",
         "sub_sources": [
             {"tab": "Source CY25 / Source Aug25-Jul26", "report": "12-month accrual statement",
@@ -751,8 +871,9 @@ OTHER_FLOWS = [
         "source_label": "docs/metrics.json, edited directly",
         "source_detail": "Blocks the pipeline preserves rather than "
                          "regenerates.",
-        "carries": "Expense Trend's three series, the PSF comp set, the trade-"
-                   "out placeholder, and the eleven planned-metric cards.",
+        "carries": "The trade-out placeholder and the eleven planned-metric "
+                   "cards. Expense Trend left this list on 2026-09-17: it is "
+                   "derived from the T12 statement now.",
         "steps": [
             {"script": "scripts/build_metrics.py",
              "does": "Loads the existing metrics.json and writes only the "
@@ -762,26 +883,19 @@ OTHER_FLOWS = [
         ],
         "stores": [],
         "publishes": [
-            {"file": "metrics.json", "key": "expense_trend"},
-            {"file": "metrics.json", "key": "psf_vs_peers"},
             {"file": "metrics.json", "key": "trade_outs"},
             {"file": "metrics.json", "key": "placeholders"},
         ],
         "dashboard": [
-            {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",
-             "tables": ["t-exptrend"]},
-            {"card": "PSF vs Other Properties", "tab": "Portfolio", "anchor": "cPsf",
-             "tables": ["t-psf"]},
             {"card": "Trade Outs", "tab": "Portfolio", "anchor": "cTradeOutsPortfolio",
              "tables": ["t-tradeouts"]},
             {"card": "Planned Metrics", "tab": "Portfolio", "anchor": "placeholderGrid",
              "tables": ["t-placeholders"]},
         ],
-        "tables": ["t-exptrend", "t-psf", "t-tradeouts", "t-placeholders"],
-        "note": "No feed stands behind these. The PSF figures are hand-entered "
-                "with no known date and say so on the card; Trade Outs is an "
-                "empty state waiting on AIRM and the weekly leasing report.",
-        "open_item": "A4",
+        "tables": ["t-tradeouts", "t-placeholders"],
+        "note": "No feed stands behind these. Trade Outs is an empty state "
+                "waiting on AIRM and the weekly leasing report.",
+        "open_item": "D5",
         "force_status": MANUAL,
     },
 ]
@@ -868,7 +982,62 @@ def _points_evidence(slug, doc):
             "detail": f"{len(pts)} statement period(s) accumulated"}
 
 
-def evidence_for_store(store_paths):
+def _years_evidence(slug, doc):
+    """budget.json keeps one point per calendar YEAR rather than per period.
+
+    The newest year is the arrival; the detail names every year held, because
+    a store that accumulates years is answering "is there a plan for the month
+    I am looking at" and one date cannot say that.
+    """
+    yrs = doc.get("years") if isinstance(doc, dict) else None
+    if not yrs:
+        return None
+    last = sorted(yrs, key=lambda y: y.get("year") or 0)[-1]
+    held = ", ".join(str(y.get("year")) for y in sorted(
+        yrs, key=lambda y: y.get("year") or 0))
+    return {"property": slug, "as_of": last.get("as_of"),
+            "source_file": last.get("source_file"),
+            "landed_at": last.get("landed_at"),
+            "detail": f"{len(yrs)} budget year(s) on file ({held})"}
+
+
+def evidence_from_published(publishes, have):
+    """Arrivals for a store this checkout cannot read, from what it published.
+
+    `data/<slug>/rent_roll.json` and `delinquency.json` are gitignored -- they
+    are per-unit and arrive with resident names -- so they exist only during a
+    pipeline run. Reading the stores alone therefore reports a live feed as
+    having never arrived in any fresh clone, and publishes a map saying so:
+    the rent roll landed 2026-09-11 and would read `waiting` here. Every field
+    the evidence needs (as_of, source_file, landed_at) is already in the
+    published aggregate, which IS committed, so fall back to it and say where
+    it was read from rather than leaving the row out. `have` is the set of
+    slugs the stores themselves answered for, so this never overrides a real
+    file. Closes open item G4.
+    """
+    m = _load_json("docs/metrics.json") or {}
+    rows = []
+    for pub in publishes or []:
+        if pub.get("file") != "metrics.json":
+            continue
+        block = m.get(pub.get("key")) or {}
+        for pr in (block.get("properties") or []):
+            slug = pr.get("slug")
+            if not slug or slug in have or not pr.get("as_of"):
+                continue
+            have.add(slug)
+            rows.append({"property": slug,
+                         "file": "metrics.json " + pub["key"],
+                         "as_of": pr.get("as_of"),
+                         "source_file": pr.get("source_file"),
+                         "landed_at": pr.get("landed_at"),
+                         "detail": "read from the published aggregate — this "
+                                   "store is gitignored (per-unit) and exists "
+                                   "only during a pipeline run"})
+    return rows
+
+
+def evidence_for_store(store_paths, publishes=None):
     """What the pipeline actually wrote, for the stores a flow declares.
 
     One row per property, not per file: a T12 statement writes four files for
@@ -888,8 +1057,9 @@ def evidence_for_store(store_paths):
                 "files": [],
             })
             row["files"].append(clean.replace("<slug>", slug))
-            if "points" in doc:
-                ev = _points_evidence(slug, doc)
+            if "points" in doc or "years" in doc:
+                ev = (_points_evidence(slug, doc) if "points" in doc
+                      else _years_evidence(slug, doc))
                 if ev:
                     row["as_of"] = row["as_of"] or ev["as_of"]
                     row["detail"] = row["detail"] or ev["detail"]
@@ -903,7 +1073,8 @@ def evidence_for_store(store_paths):
     for slug, row in sorted(by_prop.items()):
         row["file"] = ", ".join(row.pop("files"))
         rows.append(row)
-    return rows
+    rows += evidence_from_published(publishes, set(by_prop))
+    return sorted(rows, key=lambda r: r["property"])
 
 
 def evidence_from_scorecard(prefix, want=None):
@@ -980,7 +1151,7 @@ def gather_evidence(flow):
         return [{"property": "portfolio", "file": "docs/metrics.json",
                  "as_of": None, "source_file": None, "landed_at": gen,
                  "detail": "carried through the last pipeline run untouched"}]
-    return evidence_for_store(flow.get("stores") or [])
+    return evidence_for_store(flow.get("stores") or [], flow.get("publishes"))
 
 
 def derive_status(flow, evidence, registered_active):

@@ -1,0 +1,107 @@
+name: Refresh Market Comps
+
+# The Market Comps tab's feed is the only one that arrives several times a day,
+# for every market Align asks for. `update.yml` would pick it up -- it fetches
+# the same folder -- but it runs once, has taken four and a half hours, and its
+# retry loop replays whatever it built over anything newer (open item A15). So
+# "the comps tab is refreshed daily" cannot rest on that run alone.
+#
+# This does the one feed and touches nothing else: `fetch_drive.py --only
+# market_comps` pulls just that folder, and `refresh_comps.py` rewrites only
+# `metrics["comps"]`, through the same `build_metrics.comps_block` the pipeline
+# uses. Every other block in metrics.json is left exactly as it was found.
+#
+# It runs after update.yml has normally finished (that one starts 11:00 UTC and
+# has ended between 16:00 and 20:00), so the two are not usually building at
+# once. If they overlap anyway, the push race below re-runs the refresh on the
+# new main rather than replaying this run's output over it.
+
+on:
+  schedule:
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Two of these building at once would race on the same two paths for no gain.
+concurrency:
+  group: refresh-comps
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch the comp exports from Google Drive
+        env:
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: python scripts/fetch_drive.py --only market_comps
+
+      - name: Refresh the comps block
+        run: |
+          set -eu
+          if [ -z "$(ls -A _downloads/market_comps 2>/dev/null)" ]; then
+            echo "No comp exports in Drive this run — nothing to refresh."
+            exit 0
+          fi
+          # --dry-run first, so the log says what the run decided and why. The
+          # export's own as-of is the only thing that orders these: arrival
+          # order does not track vintage, and a file that landed today can be
+          # six weeks stale.
+          python scripts/refresh_comps.py _downloads/market_comps --dry-run
+          python scripts/refresh_comps.py _downloads/market_comps
+
+      - name: Refuse to commit if personal data leaked into the output
+        run: python scripts/check_no_pii.py
+
+      - name: Commit and push
+        run: |
+          set -u
+          PATHS="docs/metrics.json data"
+          git config user.name  "dashboard-bot"
+          git config user.email "actions@github.com"
+          git add -A $PATHS
+          if git diff --staged --quiet; then
+            echo "No newer vintage in any market — nothing to commit."
+            exit 0
+          fi
+          MSG="Refresh market comps ($(date -u +%Y-%m-%d))"
+          git commit -qm "$MSG"
+          for i in 1 2 3 4; do
+            if git push; then
+              echo "pushed."
+              exit 0
+            fi
+            # Lost a race. Unlike update.yml, this run's output is CHEAP to
+            # reproduce and its inputs are still on disk, so it replays the
+            # computation on the new main rather than the output over it --
+            # store_comps then reads whatever stores main now carries and keeps
+            # the newest as-of either way.
+            echo "::warning::push rejected; rebuilding the comps block on the current main"
+            git fetch origin main
+            git reset --hard origin/main
+            python scripts/refresh_comps.py _downloads/market_comps || exit 1
+            python scripts/check_no_pii.py || exit 1
+            git add -A $PATHS
+            if git diff --staged --quiet; then
+              echo "main already carries this vintage — nothing left to push."
+              exit 0
+            fi
+            git commit -qm "$MSG"
+            sleep $((i * 5))
+          done
+          echo "::error::could not push after 4 attempts"
+          exit 1

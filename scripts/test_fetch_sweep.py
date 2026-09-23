@@ -47,8 +47,9 @@ def _stub_google():
     sys.modules["googleapiclient.http"].MediaIoBaseDownload = object
 
 
-def run(fd, tree, reports="R", reference=None):
+def run(fd, tree, reports="R", reference=None, argv=None):
     """Run fetch_drive.main() against `tree` and return its manifest."""
+    sys.argv = ["fetch_drive.py"] + list(argv or [])
     fd._service = lambda: None
     fd._list_children = lambda svc, pid, mime=None: [
         {"id": i, "name": n, "mimeType": m,
@@ -73,7 +74,7 @@ LIVE = {
         ("_Unsorted", "u"), ("Rent Roll", "rr"), ("T12 Expenses", "t12"),
         ("Delinquency", "dq"), ("EliseAI Reports", "el"),
         ("Concession Burnoff", "cb"), ("Residential AR Analytics", "ar"),
-        ("Property Status", "ps")]],
+        ("Property Status", "ps"), ("Budgets", "bg")]],
     "L": [(FOLDER, "Building Info", "bi"), (FOLDER, "Archive Reports", "arch")],
     "t12": [(FILE, "12_Month_Statement_Accrual.xlsx", "t1")],
     "dq":  [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d1")],
@@ -82,6 +83,13 @@ LIVE = {
             (FILE, "metrics-building-2026-08-31.csv", "e2")],
     "cb":  [(FILE, "2026-08-10 ConcessionBurnOff08_10_2026.xlsx", "c1")],
     "bi":  [(FILE, "UnitDirectory08_25_2026.xlsx", "b1")],
+    # the owner grouped budgets by property one level down on 2026-09-16.
+    # Those two files have since been moved back up into Budgets by hand, so
+    # this is the shape the descent EXISTS for rather than today's Drive -- a
+    # grouping nobody has to undo by hand the next time someone makes one.
+    "bg": [(FOLDER, "Landing", "bgl")],
+    "bgl": [(FILE, "Landing 2025 Resi Budget.xlsx", "g1"),
+            (FILE, "Landing 2026 Resi Budget.xlsx", "g2")],
     "rr": [], "ps": [],
     # stranded in _Unsorted: two the pipeline can read, six it cannot
     "u": [(FILE, "2026-08-25 leasing_funnel_report_2026-08-25.xlsx", "f1"),
@@ -143,6 +151,17 @@ def main():
     check("the unit directory still comes from the reference tree",
           any(e["report_type"] == "unit_directory" and e["found_in"] == "Building Info"
               for e in man))
+    # Budgets/Landing/ -- the owner groups a feed's files by property once
+    # there is more than one building's worth. Both years have to arrive, or
+    # the Budget vs Actual card's T12 window loses the months only the older
+    # plan covers.
+    budgets = {e["name"] for e in man if e["report_type"] == "budget"}
+    check("a registered folder's subfolder is read as part of it",
+          budgets == {"Landing 2025 Resi Budget.xlsx",
+                      "Landing 2026 Resi Budget.xlsx"})
+    check("a file found one level down says which subfolder it sat in",
+          all(e["found_in"] == "Budgets/Landing"
+              for e in man if e["report_type"] == "budget"))
 
     print("\n2. an archive inside the DROP tree is still never swept")
     man = run(fd, {"R": [(FOLDER, "Archive Reports", "arch"), (FOLDER, "Rent Roll", "rr")],
@@ -162,7 +181,89 @@ def main():
               reference="L")
     check("a library folder with no special name is still not swept", not man)
 
-    print("\n4. one filename, two report types -> reported, not guessed")
+    print("\n4. the descent into a registered folder is bounded")
+    # An archive nested inside a live folder is still an archive. Without the
+    # NEVER_SWEEP check in contents(), the July rent roll below is republished
+    # as the current one -- the exact failure the sweep's tree scoping exists
+    # to prevent, arriving through the folder pass instead.
+    man = run(fd, {"R": [(FOLDER, "Rent Roll", "rr")],
+                   "rr": [(FOLDER, "Archive Reports", "arch"),
+                          (FILE, "RentRoll09_11_2026.xlsx", "r1")],
+                   "arch": [(FILE, "2026-07-14 RentRoll07_14_2026.xlsx", "a1")]})
+    check("an archive nested inside a live folder is not descended into",
+          {e["name"] for e in man} == {"RentRoll09_11_2026.xlsx"})
+
+    # Two levels, because that is what the groupings are. The comp exports are
+    # grouped by market and then by which of the paired exports it is, so a
+    # one-level walk reports Comps as empty while ninety files sit under it --
+    # and reports it in silence, since the folder itself is registered and the
+    # sweep only walks the drop tree's top level.
+    # The archived folder below holds a SIMPLE export on purpose, so the two
+    # protections are tested independently: the Full twin is kept out by the
+    # entry's skip_subfolders and the archived one by NEVER_SWEEP, and removing
+    # either guard fails only its own check.
+    comps = {"R": [(FOLDER, "Comps", "cp")],
+             "cp": [(FOLDER, "Oakland", "oak"), (FOLDER, "Archive", "carch")],
+             "oak": [(FOLDER, "Simple", "osim"), (FOLDER, "Full", "oful")],
+             "osim": [(FILE, "2026-09-21 HelloData - Simple - 335 Third Street.xlsx", "s1")],
+             "oful": [(FILE, "2026-09-21 HelloData - Full - 335 Third Street.xlsx", "s2")],
+             "carch": [(FOLDER, "Oakland - Simple", "oarch")],
+             "oarch": [(FILE, "2026-08-04 HelloData - Simple - 335 Third Street.xlsx", "s3")]}
+    man = run(fd, comps)
+    check("a file two levels down is read",
+          {e["name"] for e in man} ==
+          {"2026-09-21 HelloData - Simple - 335 Third Street.xlsx"})
+    check("a file two levels down says which path it sat in",
+          [e["found_in"] for e in man] == ["Comps/Oakland/Simple"])
+    # The archived vintages are the reason the descent is safe to lengthen at
+    # all. They are real exports matching the entry's own patterns, one folder
+    # away from the live ones, and republishing one would move the Market Comps
+    # tab back to an August reading of the market.
+    check("an Archive two levels down is not descended into",
+          not any(e["name"].startswith("2026-08-04") for e in man))
+    # skip_subfolders is not an archive guard: Comps/<market>/Full holds the
+    # CURRENT formatted twin, filed there for people to open. No parser reads
+    # it and it is 2-4 MB a file, so the fetch should not carry it.
+    check("skip_subfolders keeps a live but unparsed subfolder out",
+          not any(" - Full - " in e["name"] for e in man))
+
+    # A fixed depth, not a recursion: anything deeper is a tree nobody
+    # described, and walking it would eventually find somebody's archive under
+    # a name NEVER_SWEEP does not know.
+    man = run(fd, {"R": [(FOLDER, "Rent Roll", "rr")],
+                   "rr": [(FOLDER, "2026", "y26")],
+                   "y26": [(FOLDER, "Q3", "q3")],
+                   "q3": [(FOLDER, "Sep", "sep")],
+                   "sep": [(FILE, "RentRoll09_11_2026.xlsx", "r1")]})
+    check("the descent stops at two levels", not man)
+
+    print("\n4b. --only narrows the run to one feed")
+    # The whole fetch has taken four and a half hours; the comp export arrives
+    # several times a day. A scoped run is what lets a second schedule refresh
+    # one feed without paying for the other twenty-eight.
+    scoped = {"R": [(FOLDER, "Comps", "cp"), (FOLDER, "Rent Roll", "rr"),
+                    (FOLDER, "Delinquency", "dq")],
+              "cp": [(FILE, "2026-09-21 HelloData - Simple - 335 Third Street.xlsx", "s1")],
+              "rr": [(FILE, "RentRoll09_11_2026.xlsx", "r1")],
+              "dq": [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d1")]}
+    man = run(fd, scoped, argv=["--only", "market_comps"])
+    check("--only fetches just that feed",
+          {e["report_type"] for e in man} == {"market_comps"},
+          )
+    # Unscoped, the same tree brings back all three -- so the check above is
+    # measuring the flag rather than a tree that only had comps in it.
+    man = run(fd, scoped)
+    check("...and the same tree unscoped brings back the others",
+          {e["report_type"] for e in man} == {"market_comps", "rent_roll", "ar_analytics"})
+    # A typo in the flag is a run that silently fetches nothing.
+    try:
+        run(fd, scoped, argv=["--only", "market_comp"])
+        refused = False
+    except SystemExit:
+        refused = True
+    check("a report type nothing declares is refused, not silently empty", refused)
+
+    print("\n5. one filename, two report types -> reported, not guessed")
     real = json.loads((ROOT / "config" / "report_map.json").read_text())
     for e in real["subfolders"]:
         if e["report_type"] == "rent_roll":
@@ -179,7 +280,7 @@ def main():
         fd.json.load = original
     check("an ambiguous filename is refused", not man)
 
-    print("\n5. the same filename in two folders does not overwrite on disk")
+    print("\n6. the same filename in two folders does not overwrite on disk")
     man = run(fd, {"R": [(FOLDER, "Delinquency", "dq"), (FOLDER, "_Unsorted", "u")],
                    "dq": [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d1")],
                    "u":  [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d9")]})

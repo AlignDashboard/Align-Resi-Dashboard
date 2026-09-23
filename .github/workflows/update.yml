@@ -8,7 +8,15 @@ on:
   workflow_dispatch: {}   # allows manual "Run workflow" from the Actions tab
 
 permissions:
-  contents: write          # needed to commit the sealed metrics + data/ back
+  contents: write          # needed to commit metrics.json + data/ back
+
+# Two runs overlapping is one way the commit step ends up racing itself, and a
+# second run rebuilding the same day's data buys nothing. Queue rather than
+# cancel: a run that has already fetched Drive and rebuilt should be allowed to
+# finish and push.
+concurrency:
+  group: update-metrics
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -25,32 +33,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Checked first, not when the encrypt step is reached: without it this run
-      # cannot read the data it is meant to update, and finding that out after
-      # fetching Drive and rebuilding everything wastes the whole run. Failing
-      # is deliberate — the alternative, carrying on and committing plaintext,
-      # would quietly undo the encryption.
-      - name: Check the data key is available
-        env:
-          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
-        run: |
-          if [ -z "${DASHBOARD_PASSWORD:-}" ]; then
-            echo "::error::DASHBOARD_PASSWORD is not set. The published data files are"
-            echo "::error::encrypted, so this run cannot read or rewrite them. Add the"
-            echo "::error::repository secret (Settings -> Secrets and variables -> Actions)."
-            exit 1
-          fi
-          echo "data key present"
-
-      # The repo holds only docs/*.json.enc. The pipeline reads and rewrites the
-      # plaintext — build_metrics carries the hand-authored blocks through from
-      # the previous metrics.json, and populate_scorecard merges into the
-      # existing scorecard.json — so it is opened here and re-sealed at the end.
-      - name: Open the sealed data files
-        env:
-          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
-        run: python scripts/crypto_data.py decrypt
-
       - name: Fetch reports from Google Drive
         env:
           GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
@@ -61,12 +43,63 @@ jobs:
           GDRIVE_REFERENCE_FOLDER_ID: ${{ secrets.GDRIVE_REFERENCE_FOLDER_ID }}
         run: python scripts/fetch_drive.py
 
+      # The checkout above is taken at run START, and the Drive fetch is hours
+      # of it -- 4h34m on 2026-09-16. So by the time anything is built, main
+      # can carry code and data this run has never seen, and everything below
+      # would then rebuild the repo as it was this morning and push that over
+      # the day's work. That is not hypothetical: run #86 checked out b8bcf4d
+      # at 15:20, committed at 19:55, and because its build_metrics predated
+      # the budget block it published a metrics.json with no budget in it,
+      # rewrote data/the-landing/budget.json in the older single-year shape,
+      # and dropped a hand-added EliseAI day -- four commits undone with every
+      # step green and nothing in the log to say so.
+      #
+      # Everything from here to the commit is minutes, not hours, so re-syncing
+      # once, here, closes almost the whole window. The reports this run just
+      # fetched are safe: _downloads/ is gitignored, so a reset does not touch
+      # them and nothing is downloaded twice. The residual minutes are what the
+      # push retry below already replays over.
+      - name: Re-sync to main before building
+        run: |
+          set -euo pipefail
+          before=$(git rev-parse HEAD)
+          if ! git fetch -q origin main; then
+            echo "::warning::could not fetch main; building on $before as checked out"
+            exit 0
+          fi
+          after=$(git rev-parse FETCH_HEAD)
+          if [ "$before" = "$after" ]; then
+            echo "Code and data are current ($before)."
+            exit 0
+          fi
+          echo "::warning::main moved during the Drive fetch; rebuilding on it"
+          git log --oneline "$before..$after" 2>/dev/null | sed 's/^/  /' || true
+          git reset -q --hard "$after"
+          git log -1 --format='building on %h %s'
+
       - name: Build metrics
         run: python scripts/build_metrics.py
 
+      # The statement-derived cells --from-landing owns alone -- NOI Margin %,
+      # Concession Load %, Controllable OpEx/Unit, Budget Variance %, Month to
+      # Month Leases -- used to move only when someone ran this by hand, so they
+      # published July figures for a month after the August statement landed
+      # (open item H1).
+      #
+      # It runs BEFORE the --from-pipeline loop, not after, and the order is the
+      # whole point. Both paths fill the same two delinquency cells and the last
+      # run wins; a --from-landing run going last is what put a six-week-old
+      # workbook tab in front of a same-week Drive AR report on 2026-09-03,
+      # moving the published rate from 6.7% to 4.6% with nothing failing and
+      # nothing saying so (open item G3). Going first, its figures stand where
+      # no Drive feed owns the cell and are overwritten where one does.
+      - name: Fill workbook-derived KPI values into the scorecard
+        run: python scripts/populate_scorecard.py --from-landing
+
       # The measured KPI values have to be filled here, not locally: the reports
       # only exist on this runner. build_metrics has just written the scrubbed
-      # data/<slug>/delinquency.json that this reads.
+      # data/<slug>/delinquency.json that this reads. This is also what takes
+      # the delinquency cells back from the step above, per G3.
       - name: Fill measured KPI values into the scorecard
         run: |
           set -euo pipefail
@@ -110,48 +143,92 @@ jobs:
       - name: Build the data lineage
         run: python scripts/build_lineage.py
 
-      # Runs on the PLAINTEXT, which is the only point at which it can mean
-      # anything — once sealed there is nothing for it to read. Hence the order:
-      # check, then encrypt, then commit.
+      # The packet PDF lives in Drive for the people who pull the Yardi exports
+      # and do not read this repo. It is regenerated from
+      # LANDING_DRIVE_PACKET.md every run so the two cannot disagree, and the
+      # upload REPLACES the file already there rather than adding one, so the
+      # link stays the same. Both steps no-op without their secret.
+      #
+      # The PDF is not committed: it carries Drive folder links, and this repo
+      # is public. build/ is gitignored for that reason.
+      - name: Rebuild the packet PDF
+        run: |
+          pip install --quiet markdown
+          python scripts/landing_drive_status.py --write
+          python scripts/publish_packet_pdf.py
+
+      - name: Upload the packet PDF to Drive
+        env:
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
+          GDRIVE_PACKET_FOLDER_ID: ${{ secrets.GDRIVE_PACKET_FOLDER_ID }}
+        run: python scripts/upload_packet_pdf.py
+
       - name: Refuse to commit if personal data leaked into the output
         run: python scripts/check_no_pii.py
 
-      # --replace leaves no plaintext behind, so there is nothing for the commit
-      # step to pick up by accident even if the ignore rules were edited.
-      - name: Seal the data files
-        env:
-          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
-        run: |
-          python scripts/crypto_data.py encrypt --replace
-          python scripts/crypto_data.py check
-
       - name: Commit changes
         run: |
+          set -u
+          PATHS="data docs/metrics.json docs/scorecard.json docs/lineage.json"
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A data docs/metrics.json.enc docs/scorecard.json.enc docs/lineage.json.enc 2>/dev/null \
-            || git add docs/metrics.json.enc docs/scorecard.json.enc docs/lineage.json.enc
+          git add -A $PATHS 2>/dev/null \
+            || git add docs/metrics.json docs/scorecard.json docs/lineage.json
           if git diff --staged --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "Auto-update metrics ($(date -u +%Y-%m-%d))"
-            # The commit only exists on this runner, so a transient 500 from
-            # GitHub on push throws away the whole day's build — reports fetched,
-            # metrics rebuilt, PII checked — with nothing left to recover from.
-            # (Observed 2026-08-13.) Retry with backoff, rebasing between tries
-            # in case the remote moved.
-            for attempt in 1 2 3 4 5; do
-              if git push; then
-                echo "Pushed on attempt $attempt."
-                exit 0
-              fi
-              if [ "$attempt" -eq 5 ]; then
-                echo "::error::push failed after $attempt attempts"
-                exit 1
-              fi
-              delay=$((2 ** attempt))
-              echo "Push failed; retrying in ${delay}s."
-              sleep "$delay"
-              git pull --rebase origin main || true
-            done
+            exit 0
           fi
+          MSG="Auto-update metrics ($(date -u +%Y-%m-%d))"
+          git commit -qm "$MSG"
+          # The commit only exists on this runner, so a transient 500 from
+          # GitHub on push throws away the whole day's build — reports fetched,
+          # metrics rebuilt, PII checked — with nothing left to recover from.
+          # (Observed 2026-08-13.) Hence the retry.
+          #
+          # What it must NOT do between tries is `git pull --rebase`. Every path
+          # here is regenerated output, so a push that lost a race conflicts on
+          # the very files the run just wrote. The rebase then stops on the
+          # conflict, `|| true` swallows it, and the loop spins in a half-rebase
+          # — "Pulling is not possible because you have unmerged files", then a
+          # detached HEAD it cannot push from. That is not hypothetical: it is
+          # why nothing published between 2026-09-13 and 2026-09-15.
+          #
+          # These paths are this run's product, not a document two authors edit,
+          # so the answer is to replay them onto the new main rather than merge
+          # them line by line — a three-way merge of regenerated JSON yields a
+          # file no run ever wrote. Reset to the remote, restore this run's
+          # files over it, commit again. The commit that landed mid-run keeps
+          # its place in history; only the generated files are overwritten, and
+          # the log names them.
+          for attempt in 1 2 3 4 5; do
+            if git push -q origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::push failed after $attempt attempts"
+              exit 1
+            fi
+            delay=$((2 ** attempt))
+            echo "Push failed; retrying in ${delay}s."
+            sleep "$delay"
+            git fetch -q origin main || continue
+            moved=$(git diff --name-only HEAD origin/main -- $PATHS 2>/dev/null || true)
+            if [ -n "$moved" ]; then
+              echo "::warning::main moved under this run; replaying this run's output over:"
+              echo "$moved" | sed 's/^/  /'
+            fi
+            tmp=$(mktemp -d)
+            for p in $PATHS; do
+              [ -e "$p" ] && cp -a --parents "$p" "$tmp/" 2>/dev/null || true
+            done
+            git reset -q --hard origin/main
+            cp -a "$tmp/." . && rm -rf "$tmp"
+            git add -A $PATHS 2>/dev/null \
+              || git add docs/metrics.json docs/scorecard.json docs/lineage.json
+            if git diff --staged --quiet; then
+              echo "Remote already carries this run's output; nothing left to push."
+              exit 0
+            fi
+            git commit -qm "$MSG"
+          done

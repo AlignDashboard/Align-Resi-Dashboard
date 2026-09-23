@@ -663,9 +663,10 @@
       "offered_rent": 90061.0,
       "wtd_increase": 0.133798,
       "statuses": {
+        "MTM": 1,
         "Notice": 10,
         "Renewed": 7,
-        "Waiting For Response": 3
+        "Waiting For Response": 2
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -683,10 +684,10 @@
       "offered_rent": 104608.5,
       "wtd_increase": 0.190194,
       "statuses": {
-        "Notice": 8,
-        "Offer Accepted": 3,
-        "Renewed": 5,
-        "Waiting For Response": 3
+        "Notice": 9,
+        "Offer Accepted": 2,
+        "Renewed": 7,
+        "Waiting For Response": 1
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -706,9 +707,9 @@
       "statuses": {
         "MTM": 1,
         "Notice": 2,
-        "Offer Accepted": 2,
+        "Offer Accepted": 5,
         "Renewed": 1,
-        "Waiting For Response": 14
+        "Waiting For Response": 11
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -730,8 +731,8 @@
     "2025-07 appears on two sheets ('July 2025 (2)' with 21 offers and 'July 2025' with 21); the fuller one is used",
     "1 sheet(s) were skipped because their header could not be matched \u2014 they are older layouts, and their months are absent from the series rather than wrong: MTM"
   ],
-  "source_file": "2026-09-08 Chorus 2026 Renewal Tracker.xlsx",
-  "landed_at": "2026-09-08T23:29:03.240Z",
+  "source_file": "2026-09-14 Chorus 2026 Renewal Tracker.xlsx",
+  "landed_at": "2026-09-14T19:28:39.872Z",
   "checks": [
     {
       "check": "month sheets read",

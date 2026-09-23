@@ -25,13 +25,18 @@ tests/fixtures/
 
 # clasp writes this at deploy time; it carries the Apps Script project id
 .clasp.json
+config/drive_folders.local.json
+build/
 
-# The published data, in the clear. docs/*.json.enc is what is committed and
-# served; these are the working copies the pipeline reads and writes between
-# runs, and the repository is public, so committing them would hand over every
-# number the encryption exists to protect.
-# Regenerate with:  python scripts/crypto_data.py decrypt
-docs/metrics.json
-docs/landing.json
-docs/scorecard.json
-docs/lineage.json
+# Per-machine Claude Code settings (tool allowlists and the like). Machine
+# state, not project config -- the shared half belongs in .claude/settings.json.
+.claude/settings.local.json
+
+# Browser-verification tooling. Driving docs/ in a real browser (the check
+# CLAUDE.md asks for on any UI change) means installing Playwright, and npm
+# puts it wherever it was run -- docs/node_modules, which Pages would then
+# publish. Test dependency, never project code.
+node_modules/
+
+# Rebuilt from OPEN_ITEMS.md on every run; the state file beside it is tracked
+open_items_digest.pdf

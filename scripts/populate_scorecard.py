@@ -99,6 +99,7 @@ Usage:
 import argparse
 from datetime import datetime
 import json
+import re
 import os
 import sys
 
@@ -116,6 +117,16 @@ KPI_CTRL = "Controllable OpEx/Unit"
 KPI_MTM = "Month to Month Leases"
 KPI_CONC = "Concession Load %"
 KPI_BV = "Budget Variance %"
+KPI_TO = "Trade-out %"
+
+# Which trailing window of the Lease Tradeout Report answers Trade-out %.
+# THREE, because that is the basis the published band was written for -- the
+# ranges sheet grades a trailing 3 months, and until this feed existed the cell
+# came from the EliseAI export on a trailing ONE month (open item B6: "a
+# volatile month swings the grade more than the bands assume"). The report
+# carries every lease with its signed date, so the window is a choice here
+# rather than whatever an export happened to cover. One constant to change.
+TRADEOUT_WINDOW = 3
 
 # The rent roll's own classification, as the workbook reads it: every unit is in
 # exactly one of these. There is no separate month-to-month state, so a unit the
@@ -135,6 +146,32 @@ NOT_CONTROLLABLE = ("tax", "insurance", "utilit", "management fee")
 # fill restates "how" from what it actually excluded and keeps the sheet's own
 # wording beside it, rather than publishing a definition the number does not
 # follow.
+# A9, owner 2026-09-21: "Rebracket". The published cutoffs ($7,200 / $8,600)
+# were bracketed around the OLD basket's $7,784/unit T12 actual -- a basket that
+# counted utilities as controllable. The basket has excluded utilities and the
+# management fee since 2026-08-28, under which the same twelve months read
+# $6,939/unit, so the band was grading a smaller basket against a bigger
+# basket's yardstick and "exceeding" meant the basket had shrunk.
+#
+# The band is SHIFTED, not rescaled: both cutoffs move down by the same $845
+# the basket itself moved ($7,784 - $6,939), keeping the band's $1,400 width.
+# Width is a tolerance in dollars per unit per year, and taking a cost category
+# out of the basket is not a statement about how much variance is acceptable.
+# Rescaling by the ratio instead would give $6,419 / $7,666 and a $1,247 width;
+# the two agree to within $70 on the green cutoff, so nothing here turns on the
+# choice, but it is a choice and it is the owner's to overrule.
+#
+# Rounded to the nearest $100, as the workbook's own cutoffs are. The new actual
+# sits in range exactly as the old actual did against the old band, which is the
+# point: this restates the yardstick, it does not re-grade the building.
+CONTROLLABLE_CUTOFFS = {"green": 6400, "red": 7800}
+CONTROLLABLE_BAND_NOTE = (
+    "Rebracketed 2026-09-21 (A9) to the basket the cell actually grades: the "
+    "workbook's $7,200/$8,600 bracketed a $7,784/unit actual on a basket that "
+    "counted utilities as controllable. Both cutoffs shift down by the $845 the "
+    "basket moved, keeping the $1,400 width; The Landing's T12 on the live "
+    "basket is $6,939/unit.")
+
 CONTROLLABLE_HOW = ("Operating expense less taxes, insurance, utilities and the "
                     "management fee, per unit, current month x12")
 # The owner's equation (2026-09-03): concessions over the T12 statement's rent
@@ -223,25 +260,43 @@ def budget_variance_ytd(slug):
         return {"why": "no budget in data/ for this property"}
     if not os.path.exists(epath):
         return {"why": "no T12 statement grouped by account for this property"}
-    bud = json.load(open(bpath))
-    out = {"source": bud.get("source_file"), "received_at": bud.get("landed_at")}
-
-    def no(why):
-        return dict(out, why=why)
+    # budget.json holds one point per budget year (see build_metrics.store_budget);
+    # files written before that change are a single flat plan, so read both.
+    raw = json.load(open(bpath))
+    years = raw.get("years") if isinstance(raw, dict) else None
+    if years is None:
+        years = [raw] if isinstance(raw, dict) and raw.get("year") is not None else []
+    if not years:
+        return {"why": "budget file carries no plan"}
 
     pts = (json.load(open(epath)) or {}).get("points") or []
-    if not pts or not bud.get("buckets"):
-        return no("budget or statement carries no bucket detail")
+    if not pts:
+        return {"why": "no T12 statement grouped by account for this property"}
     pt = pts[-1]
     try:
         end_mon, end_year = pt["period_end"].split()
         n = MONTHS.index(end_mon) + 1              # Jul -> 7 months of YTD
     except (ValueError, KeyError, AttributeError):
-        return no(f"cannot read the statement's period end "
-                  f"({pt.get('period_end')!r})")
-    if bud.get("year") != int(end_year):
-        return no(f"budget is for {bud.get('year')}, the statement ends in "
-                  f"{end_year}")
+        return {"why": f"cannot read the statement's period end "
+                       f"({pt.get('period_end')!r})"}
+
+    # The KPI is calendar-YTD, so the plan that answers it is the statement's
+    # own year -- not simply the newest one on file. Since budgets are kept per
+    # year, picking the wrong one would compare this year's actuals against
+    # last year's plan and read the difference as a variance.
+    bud = next((y for y in years if y.get("year") == int(end_year)), None)
+    if bud is None:
+        return {"source": years[-1].get("source_file"),
+                "received_at": years[-1].get("landed_at"),
+                "why": f"no {end_year} budget on file "
+                       f"(held: {', '.join(str(y.get('year')) for y in years)})"}
+    out = {"source": bud.get("source_file"), "received_at": bud.get("landed_at")}
+
+    def no(why):
+        return dict(out, why=why)
+
+    if not bud.get("buckets"):
+        return no("budget or statement carries no bucket detail")
     labels = pt.get("labels") or []
     if len(labels) < n or labels[-n] != "Jan":
         return no("the statement's last twelve months do not reach back to "
@@ -267,6 +322,34 @@ def pct0(v):
     return f"{v * 100:.0f}%"
 
 
+def restate_controllable_band(thresholds):
+    """Put the rebracketed cutoffs (A9) on the threshold, keeping the sheet's.
+
+    Restated here rather than edited into scorecard.json because
+    extract_scorecard resets every band from the ranges sheet on each
+    re-extraction, so a hand-edited band would silently revert -- the same
+    reason the `how` is restated.
+
+    MUST run before the classify loop. It did not, once: the band was rewritten
+    in the post-fill block and the cells were still graded against the sheet's
+    old cutoffs, so one run published $6,757 as "exceeding" beside a band whose
+    own ceiling for exceeding was $6,400. A file that disagrees with itself is
+    worse than either band alone.
+    """
+    t = (thresholds or {}).get(KPI_CTRL)
+    if not t or t.get("green_cutoff") == CONTROLLABLE_CUTOFFS["green"]:
+        return None
+    for key in ("green_cutoff", "red_cutoff", "exceeding", "in_range", "below",
+                "basis"):
+        t.setdefault(key + "_workbook", t.get(key))
+    g, r = CONTROLLABLE_CUTOFFS["green"], CONTROLLABLE_CUTOFFS["red"]
+    t["green_cutoff"], t["red_cutoff"] = g, r
+    t["exceeding"], t["in_range"], t["below"] = (
+        f"\u2264 ${g:,}", f"${g:,} \u2013 ${r:,}", f"> ${r:,}")
+    t["basis"] = CONTROLLABLE_BAND_NOTE
+    return (t["green_cutoff_workbook"], t["red_cutoff_workbook"], g, r)
+
+
 def classify(value, t):
     """Status from the workbook's published band. None if it cannot be decided."""
     if value is None or not t:
@@ -286,6 +369,57 @@ def classify(value, t):
 
 # the three past-due buckets, in the order they are printed
 SPLIT_LABELS = ["31-60", "61-90", "90+"]
+
+
+def lease_tradeout(slug, path="docs/metrics.json"):
+    """Trade-out over the trailing TRADEOUT_WINDOW months, or (None, why).
+
+    From the Yardi Lease Tradeout Report — the only feed with a trade-out
+    history of its own, one row per new lease with the lease it replaced
+    beside it. Read from the published aggregate in metrics.json, like the
+    rent roll's loss to lease, so CI and a local run see the same figure.
+
+    **Weighted, never the mean of the per-lease rates.** The report's own
+    percentage is total current effective rent over total previous effective
+    rent, and that is what is graded here. The mean of its per-lease column is
+    a different number entirely -- 70.1% against the weighted 23.4% over The
+    Landing's first file -- because a concession drives a previous effective
+    rent toward zero and the ratio explodes: one lease reads $86 previous
+    against a $62,716 concession and prints 6,136%. A mean of ratios over a
+    denominator that can approach zero is not a rate. It is recorded beside
+    the figure so the two are never mistaken for one another.
+    """
+    if not os.path.exists(path):
+        return None, "no docs/metrics.json to read the trade-out report from"
+    block = (json.load(open(path)) or {}).get("lease_tradeout") or {}
+    pr = next((x for x in (block.get("properties") or [])
+               if x.get("slug") == slug), None)
+    if pr is None:
+        return None, f"no lease tradeout report published for {slug}"
+    win = (pr.get("windows") or {}).get(f"t{TRADEOUT_WINDOW}")
+    if not win or win.get("pct") is None:
+        return None, (f"the trade-out report holds no trailing "
+                      f"{TRADEOUT_WINDOW} months for {slug}")
+    allw = pr.get("all") or {}
+    return {
+        "pct": win["pct"],
+        "leases": win["leases"],
+        "window_start": win.get("window_start"),
+        "window_end": win.get("window_end"),
+        "complete": win.get("complete"),
+        "months": TRADEOUT_WINDOW,
+        "all_pct": allw.get("pct"),
+        "all_leases": allw.get("leases"),
+        "mean_pct": win.get("mean_pct"),
+        "period_start": pr.get("period_start"),
+        "period_end": pr.get("period_end"),
+        "rate_type": pr.get("rate_type"),
+        "tradeout_basis": pr.get("tradeout_basis"),
+        "lease_date_basis": pr.get("lease_date_basis"),
+        "source": pr.get("source_file"),
+        "as_of": pr.get("as_of"),
+        "received_at": pr.get("landed_at"),
+    }, None
 
 
 def rent_roll_ltl(slug, path="docs/metrics.json"):
@@ -346,6 +480,10 @@ def facts_from_landing(path="docs/landing.json"):
     rc = doc.get("rent_capture") or {}
     ltl_series, months = rc.get("ltl_pct") or [], rc.get("months") or []
     rr_ltl, rr_ltl_why = rent_roll_ltl("the-landing")
+    # Trade-out %, from the Drive tradeout report. Like loss to lease it is
+    # filled identically on both paths from one published aggregate, so
+    # whichever run goes last writes the same number.
+    to_win, to_why = lease_tradeout("the-landing")
     # NOI margin, likewise from the monthly series behind the Expense Load & NOI
     # card rather than its TTM column. Note the published band's own basis says
     # T12: a single accrual month swings hard (Apr 2026 reads 47.0% on that
@@ -395,12 +533,29 @@ def facts_from_landing(path="docs/landing.json"):
                    f"delinquency block's {stated}")
         occupied = None
     return {
-        "as_of": d.get("as_of"),
+        # The AR cells are the Drive pipeline's, always (owner, 2026-09-21,
+        # closing G3): "there shouldn't be anything pulling from a 6 week old
+        # workbook". So this path publishes NEITHER of them -- no
+        # total_delinq_pct and no split -- and `measurements` therefore leaves
+        # both cells exactly as --from-pipeline last wrote them.
+        #
+        # Not filled-then-skipped but never read: a value this path must not
+        # publish should not be in the facts at all, or the next person to add
+        # a caller has to know not to trust it. The workbook's own figures stay
+        # available in landing.json for anyone who wants to compare.
+        #
+        # This is also why as_of is the workbook's own extract date now rather
+        # than the delinquency tab's: nothing this path publishes comes from
+        # that tab any more, so dating the family by it would name a source
+        # that no longer feeds a single cell here.
+        "as_of": (doc.get("meta") or {}).get("as_of")
+                 or (doc.get("meta") or {}).get("generated_at", "")[:10] or None,
         "gross_owed": d.get("gross_owed"),
         # The rent roll owns this cell (A8, owner 2026-09-15). The workbook's
         # own figure is kept beside it, never published, so the two readings of
         # a similarly named thing are on the record rather than confused.
         "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
+        "tradeout": to_win, "tradeout_why": to_why,
         "ltl_workbook_pct": ltl_series[-1] if ltl_series else None,
         "ltl_workbook_month": months[-1] if months else None,
         "noi_margin": noi_series[-1] if noi_series else None,
@@ -419,12 +574,17 @@ def facts_from_landing(path="docs/landing.json"):
         "mtm_units": mtm,
         "mtm_occupied": occupied,
         "mtm_why": mtm_why,
-        "split": [bucket("31 - 60", "31-60"), bucket("61 - 90", "61-90"),
-                  bucket("over 90")],
-        # the workbook computes this ratio itself, so use it rather than
-        # re-deriving the denominator
-        "total_delinq_pct": d.get("pct_month_rent"),
-        "source": "workbook Source Delinquency tab, via docs/landing.json",
+        # "split" and "total_delinq_pct" are deliberately absent -- see the
+        # note at the top of this return. The workbook's readings are recorded
+        # below as a note, never as the cell.
+        "delq_why": ("the Drive AR report owns this cell; the workbook no "
+                     "longer fills it (G3, owner 2026-09-21)"),
+        "delq_workbook": (
+            None if d.get("pct_month_rent") is None else
+            f"the workbook's Source Delinquency tab read "
+            f"{d['pct_month_rent'] * 100:.1f}% as of {d.get('as_of')} "
+            f"— not published; the Drive AR report owns this cell"),
+        "source": "analyst workbook extract, via docs/landing.json",
         # the workbook is refreshed by hand, so its "arrival" is when the
         # analyst last extracted it — landing.json's own generated_at
         "received_at": (doc.get("meta") or {}).get("generated_at"),
@@ -443,6 +603,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
     # published aggregate, so whichever run goes last writes the same number --
     # the mistake G3 records, designed out rather than sequenced around.
     rr_ltl, rr_ltl_why = rent_roll_ltl(slug)
+    to_win, to_why = lease_tradeout(slug)
 
     path = os.path.join("data", slug, "delinquency.json")
     if not os.path.exists(path):
@@ -456,7 +617,8 @@ def facts_from_pipeline(slug, monthly_rent=None):
         # provenance damage G1 and G3 are about.
         return {"no_report": True, "source": None, "as_of": None,
                 "received_at": None, "received_what": None,
-                "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why}
+                "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
+                "tradeout": to_win, "tradeout_why": to_why}
     d = json.load(open(path))
     s = d.get("summary") or {}
     a = s.get("aging") or {}
@@ -479,6 +641,13 @@ def facts_from_pipeline(slug, monthly_rent=None):
                               f"{'/'.join(m for m in months if m)}; {mr.get('basis')})")
 
     return {
+        # This feed owns the two AR cells outright (owner, 2026-09-21, G3), so
+        # it records them under its own "delq_" family rather than the
+        # unprefixed one. Without that the two cells' provenance is whatever
+        # ran LAST -- and since --from-landing still writes four workbook cells
+        # into the unprefixed family, the page would hover the workbook's date
+        # over this report's figures. Same over-report the tradeout cell hit.
+        "delq_family": True,
         "as_of": d.get("as_of"),
         # when the report landed in Drive, recorded by build_metrics from the
         # fetch manifest. None for data/ written before that was captured.
@@ -493,6 +662,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
                   + (f" ({'+'.join(c for c in d.get('property_codes') or [] if c)})"
                      if d.get("property_codes") else ""),
         "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
+        "tradeout": to_win, "tradeout_why": to_why,
     }
 
 
@@ -512,6 +682,7 @@ def facts_from_report(path, monthly_rent):
         # there is no arrival time to record unless --received-at supplies one
         "received_at": None,
         "received_what": "report supplied by hand",
+        "delq_family": True,
     }
 
 
@@ -527,7 +698,8 @@ def measurements(f):
         out[KPI_TOTAL] = (v, pct1(v), None)
     else:
         out[KPI_TOTAL] = (None, None,
-                          "needs one month's billed rent — pass --monthly-rent")
+                          f.get("delq_why")
+                          or "needs one month's billed rent — pass --monthly-rent")
 
     rr = f.get("rr_ltl")
     if rr:
@@ -535,6 +707,13 @@ def measurements(f):
     else:
         out[KPI_LTL] = (None, None,
                         f.get("rr_ltl_why") or "no rent roll published for this property")
+
+    to = f.get("tradeout")
+    if to:
+        out[KPI_TO] = (to["pct"], pct1(to["pct"]), None)
+    else:
+        out[KPI_TO] = (None, None,
+                       f.get("tradeout_why") or "no trade-out report for this property")
 
     if f.get("noi_margin") is not None:
         out[KPI_NOI] = (f["noi_margin"], pct1(f["noi_margin"]), None)
@@ -587,7 +766,9 @@ def measurements(f):
         # xx/yy/zz in whole dollars, the report's own figures
         out[KPI_SPLIT] = (None, "/".join(f"{p:,.0f}" for p in parts), None)
     else:
-        out[KPI_SPLIT] = (None, None, "report has no 30/60/90 aging buckets")
+        out[KPI_SPLIT] = (None, None,
+                          f.get("delq_why")
+                          or "report has no 30/60/90 aging buckets")
     return out
 
 
@@ -620,6 +801,73 @@ def coverage_of(p, names):
             "reported_ungraded": len(reported - g),
             "awaiting": len(set(names) - reported - g),
             "total": len(names)}
+
+
+OMITTED_RE = re.compile(r"^OMITTED_METRICS\s*=\s*\{(.*?)\}", re.S | re.M)
+
+
+def omitted_metrics():
+    """OMITTED_METRICS, read out of extract_scorecard.py's source.
+
+    Read rather than imported because that file has no __main__ guard: it opens
+    the workbook at module level, so importing it here would demand the .xlsx
+    the daily cron does not have. Reading the one list out of the one place it
+    is defined still beats a second copy that can disagree with it -- the same
+    reason test_routing.load_rules() parses ROUTING_RULES out of the .js.
+
+    Returns None, not an empty set, when the block cannot be parsed: the caller
+    must be able to tell "nothing is omitted" from "the list could not be read",
+    since the second silently puts a dropped KPI back on the page.
+    """
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "extract_scorecard.py")
+    try:
+        m = OMITTED_RE.search(open(src).read())
+    except OSError:
+        return None
+    if not m:
+        return None
+    return set(re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(1)))
+
+
+def prune_omitted(sc):
+    """Drop OMITTED_METRICS from an already-published scorecard.
+
+    extract_scorecard drops them at extraction, which is the real fix -- but
+    that step needs the workbook and is run by hand, so a KPI removed today
+    would otherwise sit on the live page until someone next re-extracts. This
+    runs on every fill, including the daily cron, so the page catches up on its
+    own. Re-extracting later is then a no-op rather than a correction.
+
+    Everything derived is left to recompute(): this only removes the metric
+    itself, so the coverage counts and by_metric cannot disagree with the grid.
+    """
+    omit = omitted_metrics()
+    if omit is None:
+        print("[warn] could not read OMITTED_METRICS out of extract_scorecard.py "
+              "-- nothing pruned; a metric meant to be dropped may be published")
+        return []
+    present = [m["name"] for m in sc.get("metrics", []) if m["name"] in omit]
+    if not present:
+        return []
+    sc["metrics"] = [m for m in sc["metrics"] if m["name"] not in omit]
+    for g in sc.get("groups", []):
+        g["metrics"] = [n for n in g["metrics"] if n not in omit]
+    sc["groups"] = [g for g in sc.get("groups", []) if g["metrics"]]
+    for key in ("thresholds",):
+        block = sc.get(key) or {}
+        for n in present:
+            block.pop(n, None)
+    sc["unscored"] = [n for n in (sc.get("unscored") or []) if n not in omit]
+    for p in sc["properties"]:
+        for key in ("statuses", "values", "status_source", "status_workbook"):
+            block = p.get(key) or {}
+            for n in present:
+                block.pop(n, None)
+    for slug, m in (sc.get("measured") or {}).items():
+        for key in [k for k in m if k.endswith("kpis")]:
+            m[key] = [n for n in m[key] if n not in omit]
+    return present
 
 
 def recompute(sc):
@@ -738,6 +986,12 @@ def main():
     print(f"{'KPI':26} {'measured':>18}  {'band says':<11} {'workbook had':<11} action")
     print("-" * 86)
 
+    rebracket = restate_controllable_band(thresholds)
+    if rebracket:
+        og, orr, g, r = rebracket
+        print(f"rebracketed {KPI_CTRL}: ${og:,}/${orr:,} -> ${g:,}/${r:,} "
+              f"(A9; the sheet's own cutoffs are kept in *_workbook)")
+
     unscored = set(sc.get("unscored") or [])
     changed, filled = [], 0
     for kpi, (value, display, why) in measurements(facts).items():
@@ -779,6 +1033,10 @@ def main():
             action = "confirms the workbook"
         print(f"{kpi:26} {display:>18}  {str(band):<11} {str(was):<11} {action}")
 
+    dropped = prune_omitted(sc)
+    if dropped:
+        print("omitted from the scorecard (OMITTED_METRICS): " + ", ".join(dropped))
+
     recompute(sc)
 
     meas = sc.setdefault("measured", {})
@@ -794,10 +1052,39 @@ def main():
                  # "data last updated". None when the source carries none.
                  "received_at": facts.get("received_at"),
                  "received_what": facts.get("received_what"),
-                 # keyed on display, not raw: an unscored KPI has figures to
-                 # show but no single number to classify
-                 "kpis": sorted(k for k in measurements(facts)
-                                if prop["values"].get(k, {}).get("display") is not None)})
+                 # The cells THIS run filled, keyed on display (an unscored
+                 # KPI has figures to show but no single number to classify).
+                 #
+                 # It used to test prop["values"], which earlier runs also
+                 # wrote, so the list named every cell any run had ever filled
+                 # and the page dated a cell by whichever feed ran last. That
+                 # is open item G1, and with the AR cells moving to their own
+                 # family (G3) it stopped being cosmetic: a --from-landing run
+                 # would re-claim two Drive cells by naming them here.
+                 "kpis": sorted(k for k, (_v, disp, _w) in measurements(facts).items()
+                                if disp is not None)})
+    if facts.get("delq_family") and not facts.get("no_report"):
+        # The AR report's own family. Registered in SC_FEED_PREFIXES in
+        # index.html and the matching list in data.html, and in
+        # SCD_DRIVE_FEEDS so the Landing tab's Delinquency tile carries it.
+        filled_here = sorted(k for k in (KPI_TOTAL, KPI_SPLIT)
+                             if prop["values"].get(k, {}).get("display") is not None)
+        meas[slug].update({
+            "delq_source": facts["source"],
+            "delq_as_of": facts["as_of"],
+            "delq_received_at": facts.get("received_at"),
+            "delq_received_what": facts.get("received_what"),
+            "delq_kpis": filled_here,
+        })
+        # Take both cells off every other family's list, exactly as the
+        # tradeout cell is taken off bldg_kpis: the page picks a cell's feed by
+        # whichever family names it, so a stale mention is a wrong date on a
+        # right number rather than a missing one.
+        for key, names in list(meas[slug].items()):
+            if (key.endswith("kpis") and key != "delq_kpis"
+                    and isinstance(names, list)):
+                meas[slug][key] = [n for n in names
+                                   if n not in (KPI_TOTAL, KPI_SPLIT)]
     if facts.get("denominator_note"):
         meas[slug]["denominator"] = facts["denominator_note"]
     if facts.get("ltl_month"):
@@ -814,6 +1101,7 @@ def main():
         if t and t.get("how") != CONTROLLABLE_HOW:
             t.setdefault("how_workbook", t.get("how"))
             t["how"] = CONTROLLABLE_HOW
+
     rr = facts.get("rr_ltl")
     if rr:
         # Its own feed family: this cell is the rent roll's, not the workbook's
@@ -841,6 +1129,68 @@ def main():
                 f"{facts['ltl_workbook_pct'] * 100:.0f}% for "
                 f"{facts['ltl_workbook_month']} on the T12 statement's monthly "
                 f"revenue lines — a different measurement, not published")
+
+    to = facts.get("tradeout")
+    if to:
+        # Its own feed family, for the same reason the rent roll has one: this
+        # cell is the tradeout report's, not the EliseAI export's, so its
+        # arrival and provenance are recorded apart. "tradeout_" is in
+        # SC_FEED_PREFIXES in index.html and the matching list in data.html,
+        # and in SCD_DRIVE_FEEDS so the Drive tab's tile carries it.
+        meas[slug].update({
+            "tradeout_source": to.get("source"),
+            "tradeout_as_of": to.get("as_of"),
+            "tradeout_received_at": to.get("received_at"),
+            "tradeout_received_what":
+                "lease tradeout report in the Drive Historical Tradeout Reports folder",
+            "tradeout_kpis": [KPI_TO],
+            # The window as a number as well as prose: the tile prints
+            # "trailing 3 mo" from it rather than parsing the sentence, and
+            # rather than repeating the constant in index.html where the two
+            # could drift.
+            "tradeout_months": to["months"],
+            "tradeout_window": (
+                f"{to['window_start']} to {to['window_end']} "
+                f"(trailing {to['months']} months)"),
+            "tradeout_basis": (
+                f"{to['leases']} new lease(s) signed {to['window_start']}.."
+                f"{to['window_end']}, trade-out weighted by rent: total current "
+                f"effective rent over total previous effective rent, on the "
+                f"report's own basis ({to.get('rate_type')} leases, trade-out on "
+                f"{to.get('tradeout_basis')}, dated by "
+                f"{to.get('lease_date_basis')}). Trailing "
+                f"{to['months']} months because that is the window the published "
+                f"band was written for"
+                + ("" if to.get("complete") else
+                   "; the window starts before the report does, so it covers "
+                   "fewer months than it names")),
+            # The whole file and the mean, recorded so neither is mistaken for
+            # the graded figure. The mean is not a rate -- see lease_tradeout().
+            "tradeout_all": (
+                None if to.get("all_pct") is None else
+                f"{to['all_pct'] * 100:.1f}% weighted across all "
+                f"{to['all_leases']} leases in the report "
+                f"({to.get('period_start')}..{to.get('period_end')})"),
+            "tradeout_mean": (
+                None if to.get("mean_pct") is None else
+                f"{to['mean_pct'] * 100:.1f}% as the mean of the per-lease rates "
+                f"over the same window — not published as the figure: a "
+                f"concession drives a previous effective rent toward zero and "
+                f"the ratio explodes"),
+        })
+        # Take the cell off every other family's list. populate_building_metrics
+        # already refuses to WRITE a cell another feed owns, but its bldg_kpis
+        # still NAMED this one from before this feed existed -- and the page
+        # picks a cell's feed by whichever family lists it, so the tile went on
+        # reading "EliseAI building-metrics export · as of 2026-08-31" over a
+        # figure from the tradeout report of 2026-09-16. A list that names a
+        # cell the feed no longer fills is the over-report CLAUDE.md warns
+        # about; this is that list being kept true rather than worked around on
+        # the page.
+        for key, names in list(meas[slug].items()):
+            if (key.endswith("kpis") and key != "tradeout_kpis"
+                    and isinstance(names, list) and KPI_TO in names):
+                meas[slug][key] = [n for n in names if n != KPI_TO]
 
     bv = facts.get("bv") or {}
     if bv.get("pct") is not None:
@@ -877,6 +1227,8 @@ def main():
         if t and t.get("how") != CONCESSION_HOW:
             t.setdefault("how_workbook", t.get("how"))
             t["how"] = CONCESSION_HOW
+    if facts.get("delq_workbook"):
+        meas[slug]["delq_workbook"] = facts["delq_workbook"]
     if facts.get("noi_margin_month"):
         meas[slug]["noi_margin_month"] = facts["noi_margin_month"]
         # the T12 figure the band's own basis names, kept beside the month that

@@ -6,14 +6,12 @@ and is supposed to keep only scrubbed aggregates. This is the check that the
 supposition holds — run it in CI so a regression fails the build rather than
 quietly shipping names to a public URL.
 
-Four passes (the fourth folded into the second):
+Three passes:
 
   1. Structural — any dict key that names a person (resident_name, tenant, …)
      anywhere in the published JSON. Catches a new parser field or a renamed key.
   2. Tracked-file — any raw report (.xlsx/.csv) or per-unit pipeline output
-     staged or committed to git. Those files hold everything. Also the plaintext
-     docs/*.json: the published data is sealed, and committing the clear copy to
-     a public repository would hand over everything the sealing protects.
+     staged or committed to git. Those files hold everything.
   3. Value-based — if a source report is available, every surname in it is
      searched for, with word boundaries, in every published file. This is the
      one that catches a name arriving through a path nobody thought about.
@@ -40,9 +38,6 @@ except Exception:                                    # noqa: BLE001
 
 PUBLISHED = ["docs/metrics.json", "docs/landing.json", "docs/scorecard.json",
              "docs/lineage.json"]
-# What actually ships. The plaintext above is a local working copy the pipeline
-# reads between runs; docs/*.json.enc is what is committed and served.
-SEALED = [f + ".enc" for f in PUBLISHED]
 # "name" appears legitimately as a label in aggregate structures (a floorplan's
 # name, a metric's name), so it is only a finding when the object it sits in
 # looks like a person rather than a thing.
@@ -70,17 +65,9 @@ def walk(obj, path, findings):
 
 def pass1_structural():
     print("1. structural — person-shaped keys in the published JSON")
-    for f, sealed in zip(PUBLISHED, SEALED):
+    for f in PUBLISHED:
         if not os.path.exists(f):
-            # Ciphertext cannot be inspected, and a pass that quietly counted it
-            # as clean would be a check passing for the wrong reason. Say which
-            # it is: in update.yml this runs BEFORE the encrypt step, so the
-            # plaintext is there and really is scanned.
-            if os.path.exists(sealed):
-                print(f"   SEALED {sealed} — nothing to scan here; this pass runs "
-                      f"before the encrypt step, on the plaintext")
-            else:
-                print(f"   SKIP {f} (not present)")
+            print(f"   SKIP {f} (not present)")
             continue
         findings = []
         walk(json.load(open(f)), os.path.basename(f), findings)
@@ -96,10 +83,7 @@ def pass1_structural():
 def pass2_tracked():
     print("2. tracked files — raw reports or per-unit output in git")
     tracked = subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout.split()
-    # --diff-filter=ACMR: what the commit will ADD, not what it removes. Without
-    # it, staging the removal of a file that should not be committed reads as
-    # staging the file itself, and the check fails on the very fix for it.
-    staged = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+    staged = subprocess.run(["git", "diff", "--cached", "--name-only"],
                             capture_output=True, text=True).stdout.split()
     bad_pat = re.compile(r"\.(xlsx|xlsm|csv)$|(^|/)_downloads/|"
                          r"(^|/)tests/fixtures/|/(rent_roll|delinquency)\.json$")
@@ -110,20 +94,6 @@ def pass2_tracked():
             problems.append(f"{label} files that may carry names: {hits}")
         else:
             print(f"   PASS no {label} raw reports or per-unit output")
-
-        # The data is encrypted precisely so it is not readable by anyone with
-        # the repository URL. Committing the plaintext beside the sealed copy
-        # undoes that completely and would look like nothing at all in a diff of
-        # 100,000 lines of JSON, so it is a hard failure here.
-        clear = [f for f in files if f in PUBLISHED]
-        if clear:
-            print(f"   FAIL {label} plaintext data files: {clear}")
-            problems.append(
-                f"{label} plaintext data file(s) {clear} — these are gitignored for a "
-                f"reason: the repository is public and only docs/*.json.enc should be "
-                f"committed. Run scripts/crypto_data.py encrypt and unstage them.")
-        else:
-            print(f"   PASS no {label} plaintext data files")
 
 
 def harvest_names(source):
