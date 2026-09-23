@@ -460,7 +460,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-23T20:49:05.349586+00:00",
+  "generated_at": "2026-09-23T21:33:33.281760+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -2260,7 +2260,7 @@
    "steps": [
     {
      "script": "scripts/import_rental_tracker.py",
-     "does": "Decrypts a tracker page with the tracker's password, keeps only the fields the Rental Rates tab draws, and re-encrypts them under the same password. Run by hand.",
+     "does": "Decrypts a tracker page with the tracker's password, keeps only the fields the Rental Rates tab draws, and re-encrypts them under the same password. Daily at 15:00 UTC in refresh_rental_tracker.yml, once the password is an Actions secret; by hand otherwise.",
      "checks": "A whitelist, field by field: free text never passes, so the notes are dropped, and a field nobody listed is dropped and counted rather than carried. A value that fails its pattern refuses the whole import, leaving the last good file. Each row is checked against its own arithmetic, and unchanged data leaves the file alone."
     }
    ],

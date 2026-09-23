@@ -1915,16 +1915,19 @@ function rtRender() {
   sel.value = RT.month;
   sel.hidden = RT.range !== "month";
 
-  // How old the snapshot is, counted from today: the tracker rebuilds daily,
-  // and a copy that has stopped being refreshed must look it.
+  // How old the snapshot is, counted from today. The tracker rebuilds daily
+  // and Refresh Rental Rates copies it daily, so past the page's own
+  // threshold for a daily feed one of the two has stopped -- and the copy
+  // must look it rather than pass for current.
   const st = document.getElementById("rtStatus");
   st.textContent = "";
   const ageDays = Math.floor((Date.now() - Date.parse(d.snapshot + "T00:00:00")) / 86400000);
   st.appendChild(elc("span", null, "Snapshot of " + d.snapshot + " · showing "
     + L.length + " of " + rtPlural(d.leases.length, "lease") + " and " + R.length + " of "
     + rtPlural(d.renewals.length, "renewal") + " · " + label));
-  if (ageDays > 7) st.appendChild(elc("span", "stale", " · " + ageDays
-    + " days old — the tracker has moved on; re-run the import"));
+  if (ageDays > SC_STALE_DAYS) st.appendChild(elc("span", "stale", " · " + ageDays
+    + " days old — the tracker rebuilds daily and this tab copies it daily, so one of"
+    + " the two has stopped (see the Refresh Rental Rates workflow)"));
 
   section("cRtTiles",    () => rtTiles(d, L, R, W, label));
   section("cRtTradeout", () => rtTradeoutCard(d, L, label));
@@ -1945,7 +1948,7 @@ function rtTiles(d, L, R, W, label) {
     const pl = L.filter(l => l.property === p && l.toPct != null);
     const mean = rtAvg(pl.map(l => l.toPct));
     // over the SAME leases as the mean: the tracker withholds a trade-out on
-    // a few leases that do carry a prior (Chorus 2706), and a weighted figure
+    // a few leases that do carry a prior, and a weighted figure
     // that quietly counted them would not be the mean's counterpart
     const wl = pl.filter(l => l.prior && rtRent(l));
     const wtd = wl.length ? (rtSum(wl.map(rtRent)) / rtSum(wl.map(l => l.prior)) - 1) * 100 : null;
