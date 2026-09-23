@@ -153,15 +153,15 @@ SPLIT_CASES = [
     # A11's own split, unchanged by the generalisation.
     ("2026-09-21 Daily Report- Week Ending 9.20.26 - The Madelon.xlsx",
      "Daily Leasing Reports", ["Madelon"]),
-    # A finding rather than a preference: the renewal tracker names its building
-    # as a bare "Landing", and the property master's words for it are "The
-    # Landing" and ".Landing", so the whole family lands at the TOP of the
-    # folder. Pinned as it behaves, not as it should -- loosening the word would
-    # mean adding a bare "Landing" alias to properties.json, which also feeds
-    # the report-type stripper and the comp parser's Align-building exclusion.
-    # Open item C10.
+    # The renewal tracker and the Landing daily tracker name their building as
+    # a bare "Landing". Until C10 closed (2026-09-23) the master's words were
+    # only "The Landing" and ".Landing", so both families filed at the TOP of
+    # the folder. "Landing" is now an alias in properties.json, which also
+    # feeds the report-type stripper and the comp parser's Align exclusion.
     ("2026-08-31 Landing 2025 Renewal Tracker - Full (40).xlsx",
-     "Daily Leasing Reports", None),
+     "Daily Leasing Reports", ["The Landing"]),
+    ("2026-09-22 Daily Report Tracker - Landing 9.22.26.xlsx",
+     "Daily Leasing Reports", ["The Landing"]),
     # A folder nobody splits.
     ("RentRoll09_11_2026.xlsx", "Rent Roll", []),
 ]

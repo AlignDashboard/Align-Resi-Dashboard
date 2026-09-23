@@ -224,7 +224,7 @@ const PROPERTY_WORDS = [
   "p0005612", "p0005640", "p0005671", "rspalman",
   "rspalmas", ".Chorus", "1023070", "1230090",
   "2101121", "2101122", "2101123", "2510150",
-  "6670040", "Madelon", "WCC0050", "bec0100",
+  "6670040", "Landing", "Madelon", "WCC0050", "bec0100",
   "bec0101", "bec0102", "bpc0010", "cp00080",
   "lm00030", "lm00031", "lm00032", "lm00033",
   "madelon", "owcc051", "p000611", "twcc052",
@@ -588,7 +588,7 @@ function getRootFolder_() {
 // accident test_routing.py check 2 exists to catch.
 
 const PROPERTY_FOLDERS = [
-  { folder: "The Landing", words: ["The Landing", ".Landing", "p0005611", "p0005612", "p0005640", "p0005671", "p000611"] },
+  { folder: "The Landing", words: ["The Landing", ".Landing", "p0005611", "p0005612", "p0005640", "p0005671", "Landing", "p000611"] },
   { folder: "Chorus", words: ["p0003872", "p0004764", "p0005215", ".Chorus", "Chorus"] },
   { folder: "Madelon", words: ["The Madelon", "camadelo", "camadret", "Madelon", "madelon"] },
   { folder: "335 Third Street", words: ["335 Third Street", "335 3rd Street", "rs335"] },

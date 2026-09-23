@@ -2304,10 +2304,13 @@ rather than a path.
 contract `PROPERTY_WORDS` does — `test_routing.py` check 7b fails if a property
 is added to one and not the other, and check 7c fails if the four families stop
 sharing the folder. A building missing from the list files at the top for ever,
-which looks exactly like a report that has no property in its name. **That is
-live today for the renewal trackers**: they name their building as a bare
-`Landing 2025 …` and the master's words are `The Landing` / `.Landing`, so the
-whole family files at the top (open item C10, pinned as it behaves in check 7d).
+which looks exactly like a report that has no property in its name. **That was
+the renewal trackers until 2026-09-23**: they name their building as a bare
+`Landing 2025 …`, and the master's words were only `The Landing` / `.Landing`,
+so the whole family filed at the top. `Landing` is an alias now (C10), and
+check 7d pins the tracker and the Landing daily tracker into `The Landing/`.
+The comp exclusion matches whole names, so the alias drops only a comp building
+called exactly "Landing".
 
 `COMP_MARKETS` has no such generator — there is no market list in the repo to
 generate it from — so check 7d pins it against real filenames instead, and
