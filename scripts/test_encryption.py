@@ -705,6 +705,11 @@ def test_workflows():
     sd = _steps("seal_data.yml")
     ok("seal_data.yml: reseals under the secret, with the old one as a fallback",
        any("crypto_data.py reseal --git" in s[1] and "DASHBOARD_PASSWORD_OLD" in s[2] for s in sd))
+    import yaml as _y
+    _sd = _y.safe_load((HERE.parent / ".github/workflows/seal_data.yml").read_text())
+    ok("seal_data.yml: checks out full history, which the plaintext repair needs",
+       any((st.get("with") or {}).get("fetch-depth") == 0
+           for st in _sd["jobs"]["seal"]["steps"] if "checkout" in str(st.get("uses", ""))))
     ok("seal_data.yml: PII check before the seal",
        _index(sd, lambda s: "check_no_pii.py" in s[1]) < _index(sd, lambda s: "reseal" in s[1]))
     for wf in ("update.yml", "refresh_comps.yml", "seal_data.yml", "deploy.yml"):
@@ -950,6 +955,227 @@ def test_review_round_two():
         env(DASHBOARD_PASSWORD=PW)
 
 
+def test_ops_review():
+    """The five rotation and merge failures the ops review reproduced."""
+    print("\nops review: merge refusals, pushed placeholders, shallow repairs, salt races")
+
+    # --- [1] every refusal of the merge driver leaves a placeholder, never a side
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        rel = "data/palma/monthly_pl.json"
+        side = (root / (rel + ".enc")).read_text()
+        work = pathlib.Path(tmp, "sides")
+        work.mkdir()
+        for name in ("base", "ours", "theirs"):
+            (work / name).write_text(side)
+
+        def driver(**pw):
+            (work / "ours").write_text(side)
+            env(**pw)
+            rc = run(root, "merge-driver", str(work / "base"), str(work / "ours"),
+                     str(work / "theirs"), rel + ".enc")
+            try:
+                left = json.loads((work / "ours").read_text())
+            except ValueError:
+                left = None
+            env(DASHBOARD_PASSWORD=PW)
+            return rc, left
+        rc, left = driver()
+        ok("no password: the driver refuses and leaves a placeholder, not ours",
+           rc == 1 and isinstance(left, dict) and left.get("conflict") == rel, (rc, left))
+        rc, left = driver(DASHBOARD_PASSWORD=PW2)
+        ok("a side it cannot open: placeholder, with the OLD-password hint",
+           rc == 1 and isinstance(left, dict) and "conflict" in left
+           and "DASHBOARD_PASSWORD_OLD" in left.get("resolve", ""), (rc, left))
+        rc, left = driver(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)
+        ok("no side under the current password: placeholder, not a new key",
+           rc == 1 and isinstance(left, dict) and "conflict" in left, (rc, left))
+        rc, left = driver(DASHBOARD_PASSWORD=PW)
+        ok("and a clean merge still re-seals an envelope", rc == 0 and "ct" in (left or {}),
+           (rc, left))
+
+    # --- [1]+[2] the rotation window, end to end: a stale session rebases onto a
+    # re-keyed main, resolves with `git add`, and pushes. The placeholder must not land.
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        seed = make_repo(tmp / "seed", STANDARD)
+        shutil.copytree(HERE, seed / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(HERE.parent / ".githooks", seed / ".githooks")
+        shutil.copy(HERE.parent / ".gitattributes", seed / ".gitattributes")
+        env(DASHBOARD_PASSWORD=PW)
+        assert run(seed, "reseal", "--git", "--replace") == 0, run.last
+        gitc(seed, "add", "-A", "scripts", ".githooks", ".gitattributes")
+        gitc(seed, "commit", "-qm", "seal", "--no-verify")
+        gitc(seed, "branch", "-M", "main")
+        subprocess.run(["git", "clone", "-q", "--bare", str(seed), str(tmp / "origin.git")],
+                       check=True)
+
+        def clone(name):
+            c = tmp / name
+            subprocess.run(["git", "clone", "-q", str(tmp / "origin.git"), str(c)], check=True)
+            for k, v in [("user.email", "t@example.com"), ("user.name", name),
+                         ("commit.gpgsign", "false")]:
+                gitc(c, "config", k, v)
+            run(c, "install", "--quiet")
+            run(c, "decrypt", "--quiet")
+            return c
+        stale, owner = clone("stale"), clone("owner")
+        rel = "data/palma/monthly_pl.json"
+        d = json.loads((stale / rel).read_text())
+        d["day"] = "recorded by a session that still has the old password"
+        (stale / rel).write_text(pretty(d))
+        assert run(stale, "encrypt", "--git") == 0, run.last
+        gitc(stale, "commit", "-qm", "a day")
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)       # the rotation lands
+        assert run(owner, "reseal", "--git") == 0, run.last
+        gitc(owner, "commit", "-qm", "rotate")
+        gitc(owner, "push", "-q", "origin", "HEAD:main")
+        env(DASHBOARD_PASSWORD=PW)                                    # the session still has A
+        pull = gitc(stale, "pull", "-q", "--rebase", "origin", "main", check=False)
+        on_disk = (stale / (rel + ".enc")).read_text()
+        ok("the rebase stops on the sealed file, with a placeholder on disk",
+           pull.returncode != 0 and '"conflict"' in on_disk, (pull.returncode, on_disk[:120]))
+        gitc(stale, "add", rel + ".enc")
+        cont = subprocess.run(["git", "-C", str(stale), "-c", "core.editor=true", "rebase",
+                               "--continue"], capture_output=True, text=True,
+                              env=dict(os.environ, GIT_EDITOR="true"))
+        push = gitc(stale, "push", "-q", "origin", "HEAD:main", check=False)
+        ok("resolving it with `git add` cannot push the placeholder to main",
+           push.returncode != 0 and "not envelopes" in push.stderr,
+           (cont.returncode, push.returncode, push.stderr[-300:]))
+        check = tmp / "check"
+        subprocess.run(["git", "clone", "-q", str(tmp / "origin.git"), str(check)], check=True)
+        env(DASHBOARD_PASSWORD=PW2)
+        ok("and main is still wholly sealed under the new password", run(check, "check") == 0,
+           run.last)
+        env(DASHBOARD_PASSWORD=PW)
+
+    # --- [2] directly: pre-push reads every pushed envelope
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        rel = "docs/scorecard.json"
+        (root / (rel + ".enc")).write_text(json.dumps({"conflict": rel}) + "\n")
+        gitc(root, "add", rel + ".enc")
+        gitc(root, "commit", "-qm", "resolved with git add", "--no-verify")
+        head = gitc(root, "rev-parse", "HEAD").stdout.strip()
+        r = subprocess.run([sys.executable, str(HERE / "crypto_data.py"), "pre-push",
+                            "--root", str(root)],
+                           input=f"refs/heads/main {head} refs/heads/main {'0' * 40}\n",
+                           capture_output=True, text=True)
+        ok("pre-push refuses a pushed tree whose sealed file is not an envelope",
+           r.returncode == 1 and "docs/scorecard.json.enc" in r.stderr, r.stderr[-200:])
+
+    # --- [3] which copy is newer comes from history, and a clone without it refuses
+    def plaintext_beside_seal(tmp, same_commit=False):
+        root = sealed_repo(tmp)
+        run(root, "decrypt")
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["note"] = "a day committed as plaintext"
+        (root / "docs/metrics.json").write_text(pretty(m))
+        gitc(root, "add", "-f", "docs/metrics.json")
+        if same_commit:
+            # the same envelope, re-serialised: a sealed copy in this commit too
+            (root / "docs/metrics.json.enc").write_text(json.dumps(enc(root, "docs/metrics.json"),
+                                                                   indent=1) + "\n")
+            gitc(root, "add", "docs/metrics.json.enc")
+        # no faked dates: the seal and this commit land in the same second
+        gitc(root, "commit", "-qm", "plaintext", "--no-verify")
+        return root
+
+    def note(root):
+        return json.loads(cd.unseal(enc(root, "docs/metrics.json"), PW, "docs/metrics.json"))["note"]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = plaintext_beside_seal(tmp)
+        ok("a full clone adopts the later plaintext by ancestry, even within one second",
+           run(root, "reseal", "--git") == 0 and "ADOPTED" in run.last
+           and note(root) == "a day committed as plaintext", run.last[-300:])
+    with tempfile.TemporaryDirectory() as tmp:
+        root = plaintext_beside_seal(tmp)
+        shallow = pathlib.Path(tmp, "shallow")
+        subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{root}", str(shallow)],
+                       check=True)
+        before = (shallow / "docs/metrics.json.enc").read_bytes()
+        rc = run(shallow, "reseal", "--git")
+        ok("a shallow clone refuses rather than keep the older sealed copy",
+           rc != 0 and "shallow" in run.last
+           and (shallow / "docs/metrics.json.enc").read_bytes() == before, run.last[-300:])
+    with tempfile.TemporaryDirectory() as tmp:
+        root = plaintext_beside_seal(tmp, same_commit=True)
+        ok("one commit carrying both, with different contents: refused, not guessed",
+           run(root, "reseal", "--git") != 0 and "cannot say which is newer" in run.last,
+           run.last[-300:])
+
+    # --- [5] the old password is read the way the new one is
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW + "\r\n")
+        pre = run(root, "check", "--allow-old")
+        rot = run(root, "reseal", "--git")
+        env(DASHBOARD_PASSWORD=PW2)
+        ok("DASHBOARD_PASSWORD_OLD pasted with its line ending still opens the set",
+           pre == 0 and rot == 0 and run(root, "check") == 0, run.last[-200:])
+        env(DASHBOARD_PASSWORD=PW)
+
+    # --- [4] the same password under another salt on main is replayed, not refused
+    try:
+        import yaml                                        # noqa: F401
+    except ImportError:
+        print("   SKIP pyyaml not installed")
+        return
+    step = _commit_step()
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        seed = sealed_repo(tmp / "seed")
+        gitc(seed, "branch", "-M", "main")
+        subprocess.run(["git", "clone", "-q", "--bare", str(seed), str(tmp / "origin.git")],
+                       check=True)
+
+        def clone(name):
+            c = tmp / name
+            subprocess.run(["git", "clone", "-q", str(tmp / "origin.git"), str(c)], check=True)
+            for k, v in [("user.email", "t@example.com"), ("user.name", name),
+                         ("commit.gpgsign", "false")]:
+                gitc(c, "config", k, v)
+            shutil.copytree(HERE, c / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+            return c
+        cron, other = clone("cron"), clone("other")
+        env(DASHBOARD_PASSWORD=PW)
+        run(cron, "decrypt")
+        m = json.loads((cron / "docs/metrics.json").read_text())
+        m["cron"] = "this run's build"
+        (cron / "docs/metrics.json").write_text(pretty(m))
+        assert run(cron, "encrypt", "--git") == 0, run.last
+        # meanwhile main is re-keyed under the SAME password with a new salt (two
+        # workflows finishing one rotation), and gains a day in a file the cron never wrote
+        run(other, "decrypt")
+        d = json.loads((other / "data/palma/monthly_pl.json").read_text())
+        d["routine"] = "recorded mid-run"
+        (other / "data/palma/monthly_pl.json").write_text(pretty(d))
+        assert run(other, "encrypt", "--git") == 0, run.last
+        env(DASHBOARD_PASSWORD=PW2, DASHBOARD_PASSWORD_OLD=PW)
+        assert run(other, "reseal", "--git") == 0, run.last
+        env(DASHBOARD_PASSWORD=PW, DASHBOARD_PASSWORD_OLD=PW2)
+        assert run(other, "reseal", "--git") == 0, run.last
+        gitc(other, "commit", "-qm", "rekeyed, same password")
+        gitc(other, "push", "-q", "origin", "HEAD:main")
+        env(DASHBOARD_PASSWORD=PW)
+        r = subprocess.run(["bash", "-c", step], cwd=cron, capture_output=True, text=True,
+                           env=dict(os.environ), timeout=180)
+        ok("same password, another salt on main: the cron replays instead of refusing",
+           r.returncode == 0 and "Pushed on attempt" in r.stdout,
+           (r.returncode, r.stdout[-300:], r.stderr[-300:]))
+        check = clone("check")
+        ok("and main ends on ONE salt, opening under the password",
+           run(check, "check") == 0, run.last[-200:])
+        run(check, "decrypt")
+        ok("carrying the cron's output",
+           json.loads((check / "docs/metrics.json").read_text()).get("cron") == "this run's build")
+        ok("and main's day in the file the cron never wrote",
+           json.loads((check / "data/palma/monthly_pl.json").read_text()).get("routine")
+           == "recorded mid-run")
+
+
 NODE_SCENARIOS = r"""
 const fs = require("fs"), path = require("path");
 const [DIR, PW, UNLOCK, HOST, SCENARIO, SEARCH, PW2] = process.argv.slice(2);
@@ -1111,7 +1337,7 @@ def main():
                   test_shrink_and_rekey,
                   test_workflows, test_update_replay, test_review_round,
                   test_review_round_two, test_browser_review,
-                  test_leaks_review):
+                  test_leaks_review, test_ops_review):
             # One test crashing must not hide the rest -- a guard broken on purpose
             # (mutation testing) often surfaces as an exception, and a suite that
             # stops there reports every later check as simply absent.

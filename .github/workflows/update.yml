@@ -292,7 +292,12 @@ jobs:
             fi
             # Never replay across a password change: main may have been re-keyed
             # while this run built, and restoring its files would split the set.
-            python scripts/crypto_data.py same-key origin/main || exit 1
+            # Exit 3 is the same password under another salt -- a first seal or a
+            # rotation that landed on main while this run built -- which is safe
+            # to replay once the result is re-sealed onto one salt, below.
+            sk=0
+            python scripts/crypto_data.py same-key origin/main || sk=$?
+            [ "$sk" -eq 0 ] || [ "$sk" -eq 3 ] || exit 1
             tmp=$(mktemp -d)
             for p in $KEPT; do
               [ -e "$p" ] && cp -a --parents "$p" "$tmp/" 2>/dev/null || true
@@ -303,6 +308,14 @@ jobs:
             # Plaintext main may still track (the one-time race with the first
             # seal) comes out of the index wherever its sealed copy is here.
             python scripts/crypto_data.py untrack --quiet || exit 1
+            if [ "$sk" -eq 3 ]; then
+              # main's files and this run's are under one password and two salts;
+              # the page derives one key and would open only half. --force: a
+              # file this run did not write takes main's sealed copy, not the
+              # stale working copy this run built from; --replace then drops
+              # those stale copies, which pre-commit would read as unsealed edits.
+              python scripts/crypto_data.py reseal --git --force --replace || exit 1
+            fi
             for p in $KEPT; do [ -e "$p" ] && git add -A -- "$p"; done
             if git diff --staged --quiet; then
               echo "Remote already carries this run's output; nothing left to push."

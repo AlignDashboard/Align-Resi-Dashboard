@@ -404,6 +404,18 @@ def check_new_password(pw):
             f"use a passphrase (crypto_data.py passphrase prints one).")
 
 
+def env_password(var="DASHBOARD_PASSWORD"):
+    """A password from the environment, without the line ending a paste brings.
+
+    Every reader goes through here -- the primary AND the old one, and the git
+    drivers as well as the commands. A secret pasted the same way twice must
+    mean the same password both times; stripping one variable and not the other
+    breaks a rotation with nothing pointing at the cause, since secret values
+    cannot be viewed.
+    """
+    return (os.environ.get(var) or "").strip("\r\n") or None
+
+
 def read_password(args, confirm=False, prompt="Dashboard password: ",
                   env_var="DASHBOARD_PASSWORD", file_attr="password_file"):
     path = getattr(args, file_attr, None)
@@ -412,12 +424,12 @@ def read_password(args, confirm=False, prompt="Dashboard password: ",
         if not pw:
             raise CryptoDataError(f"{path} is empty")
         return pw
-    pw = os.environ.get(env_var)
+    pw = env_password(env_var)
     if pw:
         # The same as the file path: a secret pasted with its line ending would
         # otherwise seal under a key the page's password field can never produce
         # (it strips CR/LF), while every check in CI passes.
-        return pw.strip("\r\n")
+        return pw
     if not sys.stdin.isatty():
         raise CryptoDataError(f"no password: set ${env_var}, pass --password-file, "
                               f"or run interactively")
@@ -432,7 +444,7 @@ def read_password(args, confirm=False, prompt="Dashboard password: ",
 def keyring_for(args, confirm=False):
     """-> (the password to seal under, a Keyring that also tries the old one)."""
     primary = read_password(args, confirm=confirm)
-    old = os.environ.get("DASHBOARD_PASSWORD_OLD") or ""
+    old = env_password("DASHBOARD_PASSWORD_OLD")
     return primary, Keyring([primary] + ([old] if old and old != primary else []))
 
 
@@ -705,9 +717,9 @@ def cmd_reseal(args, root, password=None, ring=None):
             if rel in tracked and plain_p.is_file() and plain_p.read_bytes() != plaintexts[rel]:
                 # Plaintext committed beside its sealed copy -- a cutover race, a
                 # force-add, a rebase that re-added it. This is the case
-                # seal_data.yml exists to repair, so settle it rather than refuse:
-                # the one committed more recently is the current data.
-                if _commit_time(root, rel) > _commit_time(root, rel + SUFFIX):
+                # seal_data.yml exists to repair, so settle it rather than refuse
+                # -- but only where history says which is current.
+                if _committed_after(root, rel, rel + SUFFIX):
                     plaintexts[rel] = plain_p.read_bytes()
                     print(f"   ADOPTED  {rel} (committed after its sealed copy)")
             elif plain_p.is_file() and plain_p.read_bytes() != plaintexts[rel] and not args.force:
@@ -727,9 +739,36 @@ def cmd_reseal(args, root, password=None, ring=None):
     return 0
 
 
-def _commit_time(root, path):
-    out = git(root, "log", "-1", "--format=%ct", "--", path, check=False).stdout.strip()
-    return int(out) if out.isdigit() else 0
+def _last_commit(root, path):
+    return git(root, "log", "-1", "--format=%H", "--", path, check=False).stdout.strip()
+
+
+def _committed_after(root, a, b):
+    """Was path `a` last committed after path `b`? By ancestry, never by clock.
+
+    A shallow clone cannot answer: its one grafted commit "adds" every file, so
+    both paths date from it -- and seal_data.yml once read that as "not newer" and
+    dropped a day committed as plaintext. Commit times cannot answer either when
+    the two commits are one, or sit on parallel branches. Where history cannot
+    say, refuse: silently keeping the wrong copy loses data no diff will show.
+    """
+    shallow = git(root, "rev-parse", "--is-shallow-repository", check=False).stdout.strip()
+    if shallow == "true":
+        raise CryptoDataError(
+            f"{a} is committed beside its sealed copy with different contents, and this clone "
+            f"is shallow, so history cannot say which is newer. Fetch it all "
+            f"(git fetch --unshallow) and run reseal again.")
+    ca, cb = _last_commit(root, a), _last_commit(root, b)
+    if ca and cb and ca != cb:
+        if git(root, "merge-base", "--is-ancestor", cb, ca, check=False).returncode == 0:
+            return True
+        if git(root, "merge-base", "--is-ancestor", ca, cb, check=False).returncode == 0:
+            return False
+    raise CryptoDataError(
+        f"{a} is committed beside its sealed copy with different contents, and history "
+        f"cannot say which is newer (one commit carries both, or they sit on parallel "
+        f"branches). Decide by hand: decrypt, compare with `git show HEAD:{a}`, keep what "
+        f"belongs, encrypt --git, then untrack.")
 
 
 def cmd_rotate(args, root):
@@ -839,7 +878,7 @@ def cmd_session_start(args, root):
     if m != "sealed":
         print("[sealed data] this checkout is not sealed yet; nothing to open.")
         return 0
-    if not os.environ.get("DASHBOARD_PASSWORD"):
+    if not env_password():
         print("[sealed data] The data files are sealed and DASHBOARD_PASSWORD is not set "
               "in this environment, so docs/*.json and data/**/*.json are NOT on disk. "
               "Do not run the pipeline or any populate_* script: with no history they "
@@ -865,9 +904,9 @@ def cmd_textconv(args, root):
         env = json.loads(raw)
         rel = env["aad"][len(AAD_PREFIX):] if str(env.get("aad", "")).startswith(AAD_PREFIX) \
             else None
-        pw = os.environ.get("DASHBOARD_PASSWORD")
+        pw = env_password()
         if rel and pw:
-            old = os.environ.get("DASHBOARD_PASSWORD_OLD")
+            old = env_password("DASHBOARD_PASSWORD_OLD")
             sys.stdout.write(Keyring([pw, old]).open(env, rel)[0].decode("utf-8"))
             return 0
     except Exception:                                      # noqa: BLE001
@@ -881,16 +920,32 @@ def cmd_merge_driver(args, root):
 
     Without it every concurrent change to one sealed file is a conflict, since
     ciphertext is one line; with it they merge exactly as the plaintext did. On
-    a real conflict it leaves ours in place and reports failure, so git stops.
+    a real conflict, or anything else it cannot do, the file becomes a
+    placeholder nothing accepts, and git stops.
     """
     base_p, ours_p, theirs_p, rel = args.files[:4]
     rel = rel.removesuffix(SUFFIX)
-    pw = os.environ.get("DASHBOARD_PASSWORD")
-    if not pw:
-        print(f"[alignenc] {rel}: DASHBOARD_PASSWORD not set; cannot merge sealed files",
-              file=sys.stderr)
+
+    def refuse(why, resolve):
+        # Never return with a side's ciphertext in place. %A is a perfectly valid
+        # envelope -- ours in a merge, UPSTREAM's in a rebase -- with no conflict
+        # markers, so the natural `git add` + continue would keep one side without
+        # a trace; in a rebase that drops the local commit as empty. A placeholder
+        # is refused by decrypt, check, pre-commit, pre-push and the page, so an
+        # unresolved conflict fails loudly wherever it goes next.
+        pathlib.Path(ours_p).write_text(json.dumps({"conflict": rel, "why": why,
+                                                    "resolve": resolve}) + "\n")
+        print(f"[alignenc] {rel}: {why} -- {resolve}", file=sys.stderr)
         return 1
-    old = os.environ.get("DASHBOARD_PASSWORD_OLD")
+
+    by_hand = ("take one side's .enc (git checkout --ours/--theirs), decrypt, redo the "
+               "other side's change, encrypt --git")
+    pw = env_password()
+    if not pw:
+        return refuse("DASHBOARD_PASSWORD is not set, so the two sides cannot be opened",
+                      "abort (git merge --abort / git rebase --abort), set DASHBOARD_PASSWORD "
+                      "and run it again, or " + by_hand)
+    old = env_password("DASHBOARD_PASSWORD_OLD")
     ring = Keyring([pw, old])
 
     def opened(p):
@@ -902,9 +957,10 @@ def cmd_merge_driver(args, root):
     import tempfile
     try:
         parts = [opened(base_p), opened(ours_p), opened(theirs_p)]
-    except CryptoDataError as exc:
-        print(f"[alignenc] {exc}", file=sys.stderr)
-        return 1
+    except (CryptoDataError, ValueError) as exc:
+        return refuse(f"a side cannot be opened ({exc})",
+                      "if a password change is in progress, set DASHBOARD_PASSWORD_OLD too "
+                      "and run it again; otherwise " + by_hand)
     with tempfile.TemporaryDirectory() as tmp:
         paths = []
         for name, data in zip(("ours", "base", "theirs"), (parts[1], parts[0], parts[2])):
@@ -913,25 +969,11 @@ def cmd_merge_driver(args, root):
             paths.append(str(q))
         res = subprocess.run(["git", "merge-file", "-p", *paths], capture_output=True)
     if res.returncode != 0:
-        # Leaving ours in place would leave a perfectly valid envelope with no
-        # conflict markers, and the natural `git add` + continue would then keep
-        # one side without a trace. So the file becomes something nothing will
-        # accept -- decrypt, check, pre-commit and the page all refuse it -- and
-        # an unresolved conflict fails loudly wherever it goes next.
-        pathlib.Path(ours_p).write_text(json.dumps({
-            "conflict": rel,
-            "resolve": "both sides changed the same lines. Take one side's .enc "
-                       "(git checkout --ours/--theirs), decrypt, redo the other "
-                       "side's change, encrypt --git."}) + "\n")
-        print(f"[alignenc] {rel}: the two sides changed the same lines -- resolve by "
-              f"hand (take one side, decrypt, redo the other's change, encrypt --git)",
-              file=sys.stderr)
-        return 1
+        return refuse("both sides changed the same lines", by_hand)
     try:
         json.loads(res.stdout)
     except ValueError:
-        print(f"[alignenc] {rel}: the merged text is not valid JSON", file=sys.stderr)
-        return 1
+        return refuse("the merged text is not valid JSON", by_hand)
     # Re-seal under the key the merged sides are already under -- theirs first,
     # since that is where the rest of the set is coming from. The worktree is no
     # guide mid-merge: it still holds ours, which during a rotation is the OLD key,
@@ -947,10 +989,10 @@ def cmd_merge_driver(args, root):
             salt = _b64d(e["salt"])
             break
     if salt is None:
-        print(f"[alignenc] {rel}: neither side is sealed under DASHBOARD_PASSWORD -- one side "
-              f"predates a password change. Merge after resealing that side (reseal), so the "
-              f"result is not left on a key of its own.", file=sys.stderr)
-        return 1
+        return refuse("neither side is sealed under DASHBOARD_PASSWORD -- one side predates "
+                      "a password change",
+                      "abort, reseal that side under the current password, and merge again, "
+                      "so the result is not left on a key of its own")
     merged = seal(res.stdout, ring.key(pw, salt, ITERATIONS), rel, salt)
     pathlib.Path(ours_p).write_text(json.dumps(merged) + "\n")
     return 0
@@ -1006,19 +1048,47 @@ def _tree_plaintext(root, sha):
     return sorted(n for n in names if sealable(n))
 
 
-def cmd_pre_push(args, root):
-    """git pre-push hook: refuse to push a sealed tree that also carries plaintext.
-
-    pre-commit does not run on `rebase --continue` or `commit --no-verify`, and a
-    conflict at the cutover resolves naturally into exactly this: the plaintext
-    re-added beside its sealed copy. Checked on what is actually being pushed.
-    """
+def _tree_bad_envelopes(root, sha):
+    """Sealed-set .enc paths in a commit's tree that are not envelopes."""
+    names = git(root, "ls-tree", "-r", "--name-only", sha, check=False).stdout.split()
     bad = []
+    for n in names:
+        if not n.endswith(SUFFIX):
+            continue
+        rel = n[:-len(SUFFIX)]
+        if not any(fnmatch.fnmatch(rel, g) for g in SEALED_GLOBS) or never_sealed(rel):
+            continue
+        try:
+            check_envelope(json.loads(git(root, "show", f"{sha}:{n}", check=False).stdout), rel)
+        except (CryptoDataError, ValueError):
+            bad.append(n)
+    return bad
+
+
+def cmd_pre_push(args, root):
+    """git pre-push hook: refuse to push plaintext beside the sealed copies, or a
+    sealed file that is not an envelope.
+
+    pre-commit does not run on `rebase --continue` or `commit --no-verify`, and
+    both failures arrive exactly that way: a conflict at the cutover resolves into
+    the plaintext re-added beside its sealed copy, and a sealed conflict resolved
+    with `git add` commits the merge driver's placeholder. Either one on main stops
+    every workflow at its first step. Checked on what is actually being pushed.
+    """
+    bad, broken = [], []
     for line in sys.stdin.read().splitlines():
         parts = line.split()
         if len(parts) != 4 or set(parts[1]) == {"0"}:
             continue                                # a deletion
         bad += _tree_plaintext(root, parts[1])
+        broken += _tree_bad_envelopes(root, parts[1])
+    if broken:
+        print("pre-push: refusing -- these sealed files are not envelopes, most likely an "
+              "unresolved merge conflict committed with `git add`:\n  "
+              + "\n  ".join(sorted(set(broken))[:10]) +
+              "\nFor each: take one side (git checkout <commit> -- <file>), decrypt, redo "
+              "the other side's change, encrypt --git, commit.", file=sys.stderr)
+        return 1
     if bad:
         print("pre-push: refusing -- the commit being pushed carries plaintext data beside "
               "the sealed copies, and this repository is public:\n  "
@@ -1030,7 +1100,8 @@ def cmd_pre_push(args, root):
 
 
 def cmd_same_key(args, root):
-    """Is <ref> sealed under the same key as this checkout? No password needed.
+    """Is <ref> sealed under the same key as this checkout? 0 yes, 3 same password
+    under another salt (re-seal after replaying), 1 no.
 
     update.yml's push retry replays sealed files over main. If the password was
     changed while the run was building, main is under a new key and the replay
@@ -1047,11 +1118,25 @@ def cmd_same_key(args, root):
         b = json.loads(there.stdout)
     except ValueError:
         return 0
-    if (a.get("salt"), a.get("iter")) != (b.get("salt"), b.get("iter")):
-        print(f"::error::{ref} is sealed under a different key than this run: the password "
-              f"was changed while it ran. Not replaying -- rerun the workflow.", file=sys.stderr)
-        return 1
-    return 0
+    if (a.get("salt"), a.get("iter")) == (b.get("salt"), b.get("iter")):
+        return 0
+    pw = env_password()
+    if pw:
+        try:
+            unseal(b, pw, "docs/metrics.json")
+        except CryptoDataError:
+            pass
+        else:
+            # The same password sealed main under another salt while this run built
+            # -- the first seal racing the cron, or two workflows finishing the same
+            # rotation. Nothing was changed; the replay just has to land on one
+            # salt, which the caller does by re-sealing after it (exit 3).
+            print(f"::notice::{ref} is sealed under the same password with another salt "
+                  f"(a concurrent seal). Replaying, then re-sealing onto one salt.")
+            return 3
+    print(f"::error::{ref} is sealed under a different key than this run: the password "
+          f"was changed while it ran. Not replaying -- rerun the workflow.", file=sys.stderr)
+    return 1
 
 
 # What a commit message may not carry. Narrower than the CI log redaction on
@@ -1137,7 +1222,7 @@ def _opens(key, iv, ct, aad):
 
 def cmd_post_sync(args, root):
     """post-merge / post-checkout / post-rewrite: refresh working copies after a pull."""
-    if mode(root) != "sealed" or not os.environ.get("DASHBOARD_PASSWORD"):
+    if mode(root) != "sealed" or not env_password():
         return 0
     try:
         return cmd_decrypt(argparse.Namespace(files=[], force=False, quiet=True,

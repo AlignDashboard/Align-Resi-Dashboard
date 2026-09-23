@@ -2820,7 +2820,9 @@ anything under 12 characters, and refuses `AlignExecs`, which sat in `index.html
 in public. It also refuses anything the gate's password field cannot type back:
 control characters, a leading or trailing space, and anything outside printable
 ASCII. A secret pasted with its line ending is read without it, because the page
-strips newlines and would otherwise never match. `crypto_data.py passphrase` prints a strong, typeable one (about 99
+strips newlines and would otherwise never match. That holds for
+`DASHBOARD_PASSWORD_OLD` too, and for the git drivers: every reader goes through
+`env_password()`, so one value pasted the same way twice is one password. `crypto_data.py passphrase` prints a strong, typeable one (about 99
 bits); it refuses to run inside Actions, where the log is public.
 
 It lives in exactly two places, and both must hold the same value:
@@ -2839,7 +2841,11 @@ closed.
 
 **Changing it:** set `DASHBOARD_PASSWORD_OLD` to the current password and
 `DASHBOARD_PASSWORD` to the new one, run **Seal dashboard data**, update the
-Claude environment variable, and delete `DASHBOARD_PASSWORD_OLD`. Every run opens
+Claude environment variable, and delete `DASHBOARD_PASSWORD_OLD`. Update the
+Claude variable straight after the seal: until then a Routine still holds the old
+password, cannot open the re-keyed files, and a pull of one it changed stops on a
+conflict placeholder rather than merging. (Adding `DASHBOARD_PASSWORD_OLD` to the
+Claude environment for the window lets those merges go through.) Every run opens
 under whichever of the two fits and seals under the new one, so even the daily
 cron completes a rotation on its own: its pre-flight is `check --allow-old`,
 which treats files still under the old password as a rotation in progress. A
@@ -2852,7 +2858,12 @@ starts. A run still building under the old password therefore cannot re-open a
 re-keyed `main`. Its push retry checks `crypto_data.py same-key origin/main`
 and refuses to replay across a key change. Replaying would put its files back
 under the retired password, a split no single password opens. So it fails
-loudly, and you rerun it.
+loudly, and you rerun it. The **same** password under another salt is not a key
+change: a first seal landing on `main` mid-build, or two workflows finishing one
+rotation, mint two salts for one password. `same-key` tells the two apart by
+opening `main` with the run's password (exit 3), and the retry replays, then
+`reseal --force --replace` puts `main`'s files and the run's onto one salt, since
+the page derives one key and would open only half.
 
 Every workflow **requires** the secret and fails in its first steps without it.
 There is no unsealed fallback mode, because the only thing such a mode could do
@@ -2909,19 +2920,31 @@ closed at the point they would happen rather than left for a diff to show:
   commit, whatever the ignore rules say, and every staged `.enc` must be a
   well-formed envelope.
 - **pre-push.** `pre-commit` does not run on `rebase --continue` or
-  `--no-verify`. The natural resolution of a cutover race re-adds the plaintext
-  beside its sealed copy, so `.githooks/pre-push` refuses to push any sealed
-  tree that carries plaintext.
+  `--no-verify`, and both of these arrive that way. The natural resolution of a
+  cutover race re-adds the plaintext beside its sealed copy, and a sealed
+  conflict resolved with `git add` commits the merge driver's placeholder. So
+  `.githooks/pre-push` refuses to push a sealed tree that carries plaintext, or
+  whose sealed files are not all envelopes. Either one on `main` would stop every
+  workflow at its first step.
 - **Committed plaintext is repaired, not jammed.** If plaintext reaches `main`
   anyway, the push triggers **Seal dashboard data**. Its PII check runs with
   `--sealing`, since sealing is what removes the plaintext, and `reseal` adopts
   whichever of the plaintext and its sealed copy was committed later, then seals
-  it and takes the plaintext out of git.
-- **A merge conflict cannot pass for a resolution.** When the merge driver cannot
-  merge one sealed file, it leaves a deliberate non-envelope
-  (`{"conflict": ...}`) rather than one side's valid ciphertext. `decrypt`,
-  `check`, `pre-commit` and the page all refuse it, so an unresolved conflict
-  fails where it is committed instead of silently keeping one side.
+  it and takes the plaintext out of git. "Later" is **ancestry, not clock**: a
+  shallow clone has one grafted commit that "adds" every file, so both paths date
+  from it, and a depth-1 checkout once read that as "the sealed copy is current"
+  and dropped the newer day without a word. So `seal_data.yml` checks out full
+  history, and `reseal` refuses where history cannot say (a shallow clone, one
+  commit carrying both, parallel branches) rather than keep the wrong copy.
+- **A merge conflict cannot pass for a resolution.** Whenever the merge driver
+  cannot merge one sealed file -- overlapping edits, no password, a side it
+  cannot open, no side under the current password -- it leaves a deliberate
+  non-envelope (`{"conflict": ..., "why": ..., "resolve": ...}`) rather than
+  one side's valid ciphertext. In a rebase that side is *upstream's*, so leaving
+  it would let `git add` + `rebase --continue` drop the local commit as empty.
+  `decrypt`, `check`, `pre-commit`, `pre-push` and the page all refuse the
+  placeholder, so an unresolved conflict fails where it is committed instead of
+  silently keeping one side.
 - **The entry guard.** Eleven readers in `build_metrics` load last run's output as
   `json.load(open(fp)) if fp.exists() else <empty>`. Faced with only a sealed
   copy they would not fail — they would start over. So every script that reads

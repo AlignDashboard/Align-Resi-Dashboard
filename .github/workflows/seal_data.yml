@@ -49,6 +49,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history. Where plaintext was committed beside its sealed copy,
+          # reseal keeps whichever history says is newer -- and a depth-1 clone
+          # has no history to ask, so it would refuse rather than repair.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
