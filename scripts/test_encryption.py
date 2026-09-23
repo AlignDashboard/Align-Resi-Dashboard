@@ -92,11 +92,18 @@ def make_repo(tmp, files):
     for k, v in [("user.email", "t@example.com"), ("user.name", "t"),
                  ("commit.gpgsign", "false")]:
         subprocess.run(["git", "-C", str(root), "config", k, v], check=True)
+    # The real ignore rules: they are part of what keeps plaintext out of git,
+    # and a fixture without them tests a repository that does not exist.
+    shutil.copy(HERE.parent / ".gitignore", root / ".gitignore")
     for rel, obj in files.items():
         p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(pretty(obj) if not isinstance(obj, str) else obj)
+    # -f: a fixture's plaintext stands for main TODAY, where it is tracked; the
+    # runner-only store stays out, as it always has.
     subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "-f", "--",
+                    *[r for r in files if not cd.never_sealed(r)]], check=True)
     subprocess.run(["git", "-C", str(root), "commit", "-qm", "init"], check=True)
     return root
 
@@ -594,6 +601,36 @@ def test_entry_guard():
            "require_opened" not in main_body)
 
 
+def test_shrink_and_rekey():
+    print("\nthe shrink check and the partial re-key")
+    with tempfile.TemporaryDirectory() as tmp:
+        files = dict(STANDARD)
+        files["data/palma/monthly_pl.json"] = {"points": [{"m": f"2025-{i:02d}", "noi": i * 1000,
+                                                           "pad": "x" * 400} for i in range(1, 25)]}
+        root = make_repo(tmp, files)
+        env(DASHBOARD_PASSWORD=PW)
+        run(root, "reseal", "--git", "--replace")
+        run(root, "decrypt")
+        (root / "data/palma/monthly_pl.json").write_text(pretty({"points": [{"m": "2026-09"}]}))
+        ok("a store that shrank to a fraction is refused -- what a rebuilt-from-nothing looks like",
+           run(root, "encrypt") == 1 and "shrank" in run.last, run.last)
+        os.environ["ALIGN_ALLOW_SHRINK"] = "1"
+        ok("and a deliberate one goes through with ALIGN_ALLOW_SHRINK=1", run(root, "encrypt") == 0, run.last)
+        del os.environ["ALIGN_ALLOW_SHRINK"]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = sealed_repo(tmp)
+        run(root, "decrypt", "docs/metrics.json")         # only ONE file open here
+        m = json.loads((root / "docs/metrics.json").read_text())
+        m["note"] = "x"
+        (root / "docs/metrics.json").write_text(pretty(m))
+        env(DASHBOARD_PASSWORD=PW2)                        # a session whose variable moved on
+        before = (root / "docs/metrics.json.enc").read_bytes()
+        ok("a new password is not applied to only the files open here -- it would split the key",
+           run(root, "encrypt") == 1 and "not open here to be re-keyed" in run.last, run.last)
+        ok("and nothing was written", (root / "docs/metrics.json.enc").read_bytes() == before)
+
+
 # ------------------------------------------------------------------ the workflows
 
 def _steps(wf):
@@ -640,8 +677,9 @@ def test_workflows():
        "--require-open" in st[pii][1])
     ok("update.yml: commits the sealed copies, never the plaintext names",
        "metrics.json.enc" in st[commit][1] and 'PATHS="data docs/metrics.json docs' not in st[commit][1])
-    ok("update.yml: the push-retry replay re-stages through crypto_data",
-       "crypto_data.py encrypt --git" in st[commit][1])
+    ok("update.yml: the push-retry replays only what this run wrote",
+       "KEPT=$(git diff --name-only --diff-filter=d \"$BASE\" HEAD" in st[commit][1]
+       and "crypto_data.py untrack" in st[commit][1])
     ok("update.yml: every step that opens or seals has the key, and its fallback",
        all("DASHBOARD_PASSWORD" in s[2] and "DASHBOARD_PASSWORD_OLD" in s[2]
            for s in st if "crypto_data.py" in s[1]))
@@ -669,6 +707,89 @@ def test_workflows():
            "echo \"$DASHBOARD_PASSWORD" not in raw and "set -x" not in raw)
 
 
+def _commit_step():
+    import yaml
+    d = yaml.safe_load((HERE.parent / ".github/workflows/update.yml").read_text())
+    return next(st["run"] for st in d["jobs"]["update"]["steps"] if st["name"] == "Commit changes")
+
+
+def test_update_replay():
+    """Run update.yml's REAL commit step against a push race.
+
+    A bare repo stands in for origin. The cron clone changes metrics; meanwhile a
+    Routine clone records a day in another store and pushes first. Before, the
+    retry replayed every data path, so the Routine's day was overwritten by the
+    cron's older copy of a file it never wrote (A15). Now it must survive.
+    """
+    print("\nupdate.yml's push race, executed")
+    try:
+        import yaml                                        # noqa: F401
+    except ImportError:
+        print("   SKIP pyyaml not installed")
+        return
+    step = _commit_step()
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        seed = sealed_repo(tmp / "seed")
+        subprocess.run(["git", "-C", str(seed), "branch", "-M", "main"], check=True)
+        subprocess.run(["git", "clone", "-q", "--bare", str(seed), str(tmp / "origin.git")], check=True)
+
+        def clone(name):
+            c = tmp / name
+            subprocess.run(["git", "clone", "-q", str(tmp / "origin.git"), str(c)], check=True)
+            for k, v in [("user.email", "t@example.com"), ("user.name", name),
+                         ("commit.gpgsign", "false")]:
+                subprocess.run(["git", "-C", str(c), "config", k, v], check=True)
+            shutil.copytree(HERE, c / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+            return c
+
+        def edit(c, rel, key, val):
+            run(c, "decrypt")
+            doc = json.loads((c / rel).read_text())
+            doc[key] = val
+            (c / rel).write_text(pretty(doc))
+            assert run(c, "encrypt", "--git") == 0, run.last
+
+        def race(routine_rel):
+            cron, routine = clone("cron"), clone("routine")
+            edit(cron, "docs/metrics.json", "cron", "this run's build")
+            edit(routine, routine_rel, "routine", "recorded mid-run")
+            gitc(routine, "commit", "-qm", "routine day")
+            gitc(routine, "push", "-q", "origin", "HEAD:main")
+            r = subprocess.run(["bash", "-c", step], cwd=cron, capture_output=True, text=True,
+                               env=dict(os.environ), timeout=120)
+            check = clone("check")
+            run(check, "decrypt")
+            return r, check
+
+        r, check = race("data/palma/monthly_pl.json")
+        ok("the cron's push goes through after losing the race", r.returncode == 0 and
+           "Pushed on attempt" in r.stdout, (r.returncode, r.stdout[-300:], r.stderr[-300:]))
+        ok("main carries the cron's output",
+           json.loads((check / "docs/metrics.json").read_text()).get("cron") == "this run's build")
+        ok("AND the Routine's day, in a file the cron never wrote (A15's daily loss)",
+           json.loads((check / "data/palma/monthly_pl.json").read_text()).get("routine")
+           == "recorded mid-run")
+        ok("nothing plaintext reached origin",
+           not any(f in tracked(check) for f in cd.sealed_set(check)))
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        seed = sealed_repo(tmp / "seed")
+        subprocess.run(["git", "-C", str(seed), "branch", "-M", "main"], check=True)
+        subprocess.run(["git", "clone", "-q", "--bare", str(seed), str(tmp / "origin.git")], check=True)
+        cron, routine = clone("cron"), clone("routine")
+        edit(cron, "docs/metrics.json", "cron", "this run's build")
+        edit(routine, "docs/metrics.json", "routine", "same file")
+        gitc(routine, "commit", "-qm", "routine")
+        gitc(routine, "push", "-q", "origin", "HEAD:main")
+        r = subprocess.run(["bash", "-c", step], cwd=cron, capture_output=True, text=True,
+                           env=dict(os.environ), timeout=120)
+        ok("where both changed one file, the run still wins -- and the log names the file",
+           r.returncode == 0 and "both changed" in r.stdout and "docs/metrics.json.enc" in r.stdout,
+           r.stdout[-400:])
+
+
 def main():
     saved = {k: os.environ.get(k) for k in ("DASHBOARD_PASSWORD", "DASHBOARD_PASSWORD_OLD",
                                             "DASHBOARD_PASSWORD_NEW")}
@@ -676,7 +797,8 @@ def main():
         for t in (test_envelope, test_tamper, test_kdf, test_file_set, test_first_seal,
                   test_cycle, test_guard, test_rotation, test_check, test_passphrase,
                   test_git_integration, test_browser_half, test_agreement, test_entry_guard,
-                  test_workflows):
+                  test_shrink_and_rekey,
+                  test_workflows, test_update_replay):
             t()
     finally:
         for k, v in saved.items():

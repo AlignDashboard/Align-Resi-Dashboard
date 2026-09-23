@@ -229,41 +229,45 @@ jobs:
           # The sealed copies are what is committed. The plaintext working copies
           # are gitignored, so `git add -A data` picks up only the .enc beside them.
           PATHS="data docs/metrics.json.enc docs/landing.json.enc docs/scorecard.json.enc docs/lineage.json.enc"
-          # Carried across the replay below so the re-stage can tell this run's
-          # sealed copies from main's; never committed.
-          WORKING="docs/metrics.json docs/landing.json docs/scorecard.json docs/lineage.json .sealed-state.json"
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
           # Only paths that exist: one missing pathspec makes `git add -A` stage
           # NOTHING (exit 128), and the run would end green on "No changes".
           stage() { for p in $PATHS; do [ -e "$p" ] && git add -A -- "$p"; done; true; }
+          BASE=$(git rev-parse HEAD)          # the commit this run built on
           stage
           if git diff --staged --quiet; then
             echo "No changes to commit."
             exit 0
           fi
+          # CI has no git hooks, so the pre-commit check runs here by hand: no plaintext
+          # data in the commit, whatever the ignore rules say.
+          python scripts/crypto_data.py pre-commit || exit 1
           MSG="Auto-update metrics ($(date -u +%Y-%m-%d))"
           git commit -qm "$MSG"
+          # What this run actually wrote -- the only files it may replay. Fixed
+          # here, from the first commit, so every retry replays the same set.
+          # Unchanged files keep identical bytes (crypto_data never re-seals
+          # unchanged plaintext), so "changed" means changed.
+          KEPT=$(git diff --name-only --diff-filter=d "$BASE" HEAD -- $PATHS)
+          DELETED=$(git diff --name-only --diff-filter=D "$BASE" HEAD -- $PATHS)
           # The commit only exists on this runner, so a transient 500 from
           # GitHub on push throws away the whole day's build — reports fetched,
           # metrics rebuilt, PII checked — with nothing left to recover from.
           # (Observed 2026-08-13.) Hence the retry.
           #
-          # What it must NOT do between tries is `git pull --rebase`. Every path
-          # here is regenerated output, so a push that lost a race conflicts on
-          # the very files the run just wrote. The rebase then stops on the
-          # conflict, `|| true` swallows it, and the loop spins in a half-rebase
-          # — "Pulling is not possible because you have unmerged files", then a
-          # detached HEAD it cannot push from. That is not hypothetical: it is
-          # why nothing published between 2026-09-13 and 2026-09-15.
+          # What it must NOT do between tries is `git pull --rebase`: sealed
+          # files are one line each, so any two changes to one conflict, and the
+          # loop would spin in a half-rebase (it did, on plaintext, 2026-09-13 to
+          # 09-15). Reset to the remote and replay instead.
           #
-          # These paths are this run's product, not a document two authors edit,
-          # so the answer is to replay them onto the new main rather than merge
-          # them line by line — a three-way merge of regenerated JSON yields a
-          # file no run ever wrote. Reset to the remote, restore this run's
-          # files over it, commit again. The commit that landed mid-run keeps
-          # its place in history; only the generated files are overwritten, and
-          # the log names them.
+          # It replays ONLY what this run wrote. Before sealing it replayed every
+          # path, which is how a day the EliseAI Routine recorded mid-run was
+          # overwritten by this run's older copy of a file it never touched
+          # (open item A15; restored by hand from readable diffs, which sealed
+          # files no longer give). Files main changed and this run did not now
+          # keep main's version. Where both changed a file, this run's still
+          # wins -- that half of A15 is unchanged -- and the log names them.
           for attempt in 1 2 3 4 5; do
             if git push -q origin HEAD:main; then
               echo "Pushed on attempt $attempt."
@@ -277,26 +281,30 @@ jobs:
             echo "Push failed; retrying in ${delay}s."
             sleep "$delay"
             git fetch -q origin main || continue
-            moved=$(git diff --name-only HEAD origin/main -- $PATHS 2>/dev/null || true)
-            if [ -n "$moved" ]; then
-              echo "::warning::main moved under this run; replaying this run's output over:"
-              echo "$moved" | sed 's/^/  /'
+            theirs=$(git diff --name-only "$BASE" origin/main -- $PATHS 2>/dev/null || true)
+            both=$(comm -12 <(printf '%s\n' $KEPT $DELETED | sort -u) <(printf '%s\n' $theirs | sort -u) | sed '/^$/d')
+            if [ -n "$theirs" ]; then
+              echo "main moved under this run; keeping main's version of what this run did not write."
+            fi
+            if [ -n "$both" ]; then
+              echo "::warning::main and this run both changed these; this run's output wins (A15):"
+              echo "$both" | sed 's/^/  /'
             fi
             tmp=$(mktemp -d)
-            for p in $PATHS $WORKING; do
+            for p in $KEPT; do
               [ -e "$p" ] && cp -a --parents "$p" "$tmp/" 2>/dev/null || true
             done
             git reset -q --hard origin/main
             cp -a "$tmp/." . && rm -rf "$tmp"
-            # Re-stage from the restored files: the sealed copies go in, and any
-            # plaintext main still tracks comes out of the index (the one-time
-            # race with the first seal). Same replay-over semantics as before
-            # sealing -- open item A15 is unchanged by this, not fixed.
-            python scripts/crypto_data.py encrypt --git --quiet || exit 1
-            stage
+            for p in $DELETED; do git rm -q --cached --ignore-unmatch -- "$p"; done
+            # Plaintext main may still track (the one-time race with the first
+            # seal) comes out of the index wherever its sealed copy is here.
+            python scripts/crypto_data.py untrack --quiet || exit 1
+            for p in $KEPT; do [ -e "$p" ] && git add -A -- "$p"; done
             if git diff --staged --quiet; then
               echo "Remote already carries this run's output; nothing left to push."
               exit 0
             fi
+            python scripts/crypto_data.py pre-commit || exit 1
             git commit -qm "$MSG"
           done

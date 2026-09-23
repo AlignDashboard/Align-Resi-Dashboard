@@ -111,6 +111,9 @@ jobs:
             echo "No newer vintage in any market — nothing to commit."
             exit 0
           fi
+          # CI has no git hooks, so the pre-commit check runs here by hand: no plaintext
+          # data in the commit, whatever the ignore rules say.
+          python scripts/crypto_data.py pre-commit || exit 1
           MSG="Refresh market comps ($(date -u +%Y-%m-%d))"
           git commit -qm "$MSG"
           for i in 1 2 3 4; do
@@ -139,6 +142,7 @@ jobs:
               echo "main already carries this vintage — nothing left to push."
               exit 0
             fi
+            python scripts/crypto_data.py pre-commit || exit 1
             git commit -qm "$MSG"
             sleep $((i * 5))
           done

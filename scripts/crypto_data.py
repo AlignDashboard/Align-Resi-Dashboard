@@ -103,6 +103,11 @@ SUFFIX = ".enc"
 AAD_PREFIX = f"align-dashboard/v{VERSION}/"
 STATE_FILE = ".sealed-state.json"
 MIN_PASSWORD = 12
+# A working copy that shrinks by more than half (and by more than this many
+# bytes) is refused at the seal. Ciphertext diffs show nothing, so this is what
+# stands in for reading the diff: a history rebuilt from nothing, a block
+# dropped by a bug. ALIGN_ALLOW_SHRINK=1 lets a deliberate one through.
+SHRINK_FLOOR = 4096
 
 # The four files the page fetches. docs/unlock.js asks for these by name.
 PAGE_FILES = ["docs/metrics.json", "docs/landing.json",
@@ -605,12 +610,39 @@ def cmd_encrypt(args, root):
                                f"(a pull brought a newer one). Run decrypt, redo the change.")
                 continue
         todo[rel] = plaintext
+    # Shrinkage. A sealed file cannot be diffed by eye, so a history rebuilt
+    # from nothing looks exactly like a normal day -- refuse the obvious case.
+    if os.environ.get("ALIGN_ALLOW_SHRINK") != "1":
+        for rel, plaintext in list(todo.items()):
+            enc = root / (rel + SUFFIX)
+            if not enc.is_file():
+                continue
+            try:
+                before, _ = ring.open(read_env(root, rel)[0], rel)
+            except CryptoDataError:
+                continue
+            if len(plaintext) * 2 < len(before) and len(before) - len(plaintext) > SHRINK_FLOOR:
+                refused.append(f"{rel}: shrank from {len(before):,} to {len(plaintext):,} bytes "
+                               f"-- a history rebuilt from nothing looks like this. If it is "
+                               f"deliberate, set ALIGN_ALLOW_SHRINK=1.")
+    # A new key for only some of the files. Sealing changed files under a password
+    # the rest are not under would leave the set split across two keys, which
+    # the page cannot open. Minting a new key is only right when every sealed
+    # file is being re-sealed with it -- a rotation, done by reseal or by a run
+    # that opened everything under DASHBOARD_PASSWORD_OLD.
+    if todo and mode(root) == "sealed" and canonical_salt(root, rels, ring, password)[1]:
+        sealed_now = {r for r in rels if (root / (r + SUFFIX)).is_file()}
+        left = sorted(sealed_now - set(todo))
+        if left:
+            refused.append(f"DASHBOARD_PASSWORD opens none of the sealed files, and {len(left)} "
+                           f"of them (e.g. {left[0]}) are not open here to be re-keyed. To change "
+                           f"the password, set DASHBOARD_PASSWORD_OLD and run reseal.")
     if refused:
         # All or nothing: a partial seal leaves a commit half from this run and
         # half from before, which is worse than either.
         for r in refused:
             print(f"   REFUSED  {r}", file=sys.stderr)
-        raise CryptoDataError(f"{len(refused)} file(s) refused; nothing was sealed")
+        raise CryptoDataError(f"{len(refused)} problem(s); nothing was sealed")
     if not todo:
         if not args.quiet:
             print("no working copies to seal")
@@ -668,6 +700,24 @@ def cmd_rotate(args, root):
           "environment's variable) to the new password, or the next run cannot "
           "open its own data.")
     return rc
+
+
+def cmd_untrack(args, root):
+    """Take plaintext out of the index wherever its sealed copy exists. No password.
+
+    For the cron's push-retry, which resets to main and restores this run's
+    sealed files: if main still tracked plaintext (the race with the first seal),
+    the plaintext comes back into the index with the reset and has to go again.
+    """
+    tracked = set(git(root, "ls-files").stdout.split())
+    n = 0
+    for rel in sealed_set(root):
+        if rel in tracked and (root / (rel + SUFFIX)).is_file():
+            git(root, "rm", "--cached", "--quiet", "--", rel)
+            n += 1
+    if n and not args.quiet:
+        print(f"{n} plaintext file(s) taken out of the index")
+    return 0
 
 
 def cmd_check(args, root):
@@ -876,6 +926,7 @@ def cmd_post_sync(args, root):
 
 COMMANDS = {"status": cmd_status, "decrypt": cmd_decrypt, "encrypt": cmd_encrypt,
             "reseal": cmd_reseal, "rotate": cmd_rotate, "check": cmd_check,
+            "untrack": cmd_untrack,
             "passphrase": cmd_passphrase, "install": cmd_install,
             "session-start": cmd_session_start, "textconv": cmd_textconv,
             "merge-driver": cmd_merge_driver, "pre-commit": cmd_pre_commit,
