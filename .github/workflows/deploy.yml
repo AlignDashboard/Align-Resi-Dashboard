@@ -24,8 +24,13 @@ on:
     branches: [main]
     paths-ignore:
       - '**.md'
+  # Every workflow that commits to main belongs here. A push made with a
+  # workflow's own token starts no other workflow, so once Pages deploys from
+  # Actions a refresh would otherwise sit on main unpublished until the next
+  # Update Dashboard Metrics run. (Until then the branch build publishes them.)
   workflow_run:
-    workflows: ["Update Dashboard Metrics"]
+    workflows: ["Update Dashboard Metrics", "Refresh Market Comps", "Refresh Rental Rates",
+                "Seal dashboard data"]
     types: [completed]
   workflow_dispatch: {}
 

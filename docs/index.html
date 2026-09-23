@@ -51,6 +51,11 @@
     --edge-exceeding: rgba(107,191,138,.50);
     --edge-in_range:  transparent;
     --edge-below:     rgba(217,105,79,.55);
+    /* Rental Rates: one property per slot, in fixed order. Each theme gets its
+       own step of the same hue -- validated against this surface -- so a
+       building keeps its colour's identity across the toggle. */
+    --rt-1: #3987e5; --rt-2: #d95926; --rt-3: #199e70; --rt-4: #c98500; --rt-5: #d55181;
+    --rt-prior: #3b4452;
   }
   :root[data-theme="light"] {
     --ink:        #f4f5f7;
@@ -75,6 +80,8 @@
     --edge-exceeding: rgba(45,117,73,.42);
     --edge-in_range:  transparent;
     --edge-below:     rgba(178,63,40,.45);
+    --rt-1: #2a78d6; --rt-2: #eb6834; --rt-3: #1baf7a; --rt-4: #eda100; --rt-5: #e87ba4;
+    --rt-prior: #cfd5dd;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--ink); color: var(--text);
@@ -457,6 +464,90 @@
   @media (prefers-reduced-motion: reduce) { .card.flash { animation-duration: .01s; } }
 
   .blu-note { font-size: 9px; letter-spacing: .5px; color: var(--blue); margin-top: 6px; }
+
+  /* ---------- Rental Rates ----------
+     The tracker's data, decrypted in the page. Property colours are the
+     theme's own steps of one validated categorical order (--rt-1..5 on the
+     two :root blocks), and they only ever sit beside a label: every chart is
+     one titled panel per building, so no colour has to carry identity alone. */
+  .rt-lock { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 2px 0 8px; }
+  .rt-why { font-size: 11px; line-height: 1.7; color: var(--muted); max-width: 640px; }
+  .rt-pw { background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    padding: 11px 13px; font-family: inherit; font-size: 12px; letter-spacing: 2px; width: 220px;
+    outline: none; }
+  .rt-pw:focus { border-color: var(--amber); }
+  .rt-unlock { background: var(--amber); color: var(--on-amber); border: none; padding: 11px 18px;
+    font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; }
+  .rt-unlock:hover { filter: brightness(1.08); }
+  .rt-unlock:disabled { opacity: .6; cursor: progress; }
+  .rt-unlock:focus-visible, .rt-pw:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+  .rt-err { color: var(--red); font-size: 11px; letter-spacing: 1px; min-height: 14px; }
+  .rt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
+    white-space: nowrap; }
+  /* One filter row above everything it scopes: every card below re-renders
+     against the same timeframe and basis. */
+  .rt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin: 0 0 18px;
+    padding: 10px 14px; border: 1px solid var(--line); background: var(--panel); }
+  .rt-ctl { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .rt-ctl .lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .rt-bar .togrow { margin-bottom: 0; }
+  .rt-lockbtn { margin-left: auto; }
+  .rt-status { flex: 1 1 100%; font-size: 9.5px; letter-spacing: .5px; color: var(--muted); line-height: 1.6; }
+  .rt-status .stale { color: var(--red); }
+  #rtMonth[hidden] { display: none; }
+  .rt-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 2px; }
+  .rt-tile { border: 1px solid var(--line); padding: 12px 13px 8px; min-width: 0; }
+  .rt-tile h3 { display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--text); font-weight: 600; }
+  .rt-sw { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
+  .rt-tile .big { font-size: 22px; font-weight: 700; color: var(--text); margin-top: 9px; line-height: 1.1; }
+  .rt-tile .bigk { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+    margin-top: 4px; line-height: 1.5; }
+  .rt-tile .rows { margin-top: 10px; }
+  .rt-tile .row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2px 8px;
+    font-size: 10px; padding: 4px 0; border-bottom: 1px dotted var(--line); color: var(--muted); }
+  .rt-tile .row:last-child { border-bottom: none; }
+  .rt-tile .row[title] { cursor: help; }
+  .rt-tile .row .v { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums;
+    white-space: nowrap; margin-left: auto; }
+  .rt-tile .pill { margin-left: 4px; }
+  .rt-facets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px 14px; margin-top: 4px; }
+  .rt-facets.rows { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .rt-facet { min-width: 0; }
+  .rt-facet .fh { display: flex; align-items: center; gap: 7px; font-size: 9.5px; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--text); font-weight: 600; }
+  .rt-facet .fs { font-size: 9px; color: var(--muted); letter-spacing: .4px; margin: 3px 0 6px; min-height: 12px; }
+  .rt-facet .fc { position: relative; height: 200px; min-width: 0; }
+  .rt-facets.rows .fc { height: 150px; }
+  .rt-facet .fnone { height: 200px; display: flex; align-items: center; justify-content: center;
+    text-align: center; font-size: 9.5px; line-height: 1.6; color: var(--muted);
+    border: 1px dashed var(--line); padding: 10px; }
+  .rt-facets.rows .fnone { height: 56px; }
+  .rt-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 9px; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+  .rt-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+  .rt-legend i { width: 14px; height: 9px; display: inline-block; }
+  .rt-more { margin-top: 10px; }
+  .rt-more[hidden] { display: none; }
+  table.dt th button.rt-sort { background: none; border: none; color: inherit; font: inherit;
+    letter-spacing: inherit; text-transform: inherit; cursor: pointer; padding: 0; text-align: inherit; }
+  table.dt th button.rt-sort:hover, table.dt th button.rt-sort:focus-visible { color: var(--amber); outline: none; }
+  #rtWeekTbl table.dt, #rtDtTbl table.dt { font-variant-numeric: tabular-nums; }
+  @media (max-width: 1100px) {
+    .rt-tiles, .rt-facets:not(.rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    .rt-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .rt-facets:not(.rows) { grid-template-columns: minmax(0, 1fr); }
+    .rt-lockbtn { margin-left: 0; }
+    #rtWeekTbl table.dt { min-width: 520px; }
+    #rtDtTbl table.dt { min-width: 640px; }
+  }
+  @media (max-width: 460px) {
+    .rt-tiles { grid-template-columns: minmax(0, 1fr); }
+    .rt-pw { width: 170px; }
+  }
 
   /* The Expense Ratio card's left column: one T12 figure per property shown,
      in that property's own line colour. It was a single 40px number with a
@@ -1020,23 +1111,112 @@
     <div class="view" id="viewRates" role="tabpanel" aria-labelledby="tabRates" tabindex="0" hidden>
     <div class="blu-note" id="rtIntro" style="color:var(--muted);margin-bottom:16px;"></div>
     <div class="grid">
-
-      <div class="card wide" id="cRateTrend">
-        <h2>Rental Rate Trend</h2>
-        <span class="eyebrow" id="rtEyebrow">ACHIEVED NEW-LEASE RENT vs THE RENT IT REPLACED &middot; $ PER UNIT PER MONTH</span>
-        <div class="statrow" id="rtStats"></div>
-        <div class="chartwrap"><canvas id="rcTrend"></canvas></div>
-        <div class="blu-note" id="rtFoot" style="color:var(--muted);"></div>
+      <div class="card wide" id="cRtLock">
+        <h2>Rental Rate Tracker</h2>
+        <span class="eyebrow" id="rtLockEyebrow">LOADING…</span>
+        <div class="rt-lock">
+          <p class="rt-why" id="rtLockWhy"></p>
+          <form class="pwrow" id="rtForm" autocomplete="off">
+            <label class="rt-sr" for="rtPw">Tracker password</label>
+            <input id="rtPw" class="rt-pw" type="password" placeholder="TRACKER PASSWORD" autocomplete="off" />
+            <button id="rtUnlock" class="rt-unlock" type="submit">Unlock</button>
+          </form>
+          <div class="rt-err" id="rtErr" role="status" aria-live="polite"></div>
+        </div>
       </div>
-
-      <div class="card wide" id="cRateByBed">
-        <h2>Asking Rate by Bedroom</h2>
-        <span class="eyebrow" id="rbEyebrow">ASKING RENT RANGE PER UNIT &middot; FROM THE UNIT DIRECTORY</span>
-        <div class="statrow" id="rbStats"></div>
-        <div class="chartwrap" style="height:250px;"><canvas id="rcBed"></canvas></div>
-        <div class="blu-note" id="rbFoot" style="color:var(--muted);"></div>
+    </div>
+    <div id="rtBody" hidden>
+      <div class="rt-bar" role="group" aria-label="What every chart on this tab shows">
+        <div class="rt-ctl">
+          <span class="lbl">Timeframe</span>
+          <div class="togrow">
+            <button class="tog" type="button" data-rt-range="max" aria-pressed="true">Max</button>
+            <button class="tog" type="button" data-rt-range="qtr" aria-pressed="false">QTR</button>
+            <button class="tog" type="button" data-rt-range="month" aria-pressed="false">Month</button>
+          </div>
+          <select class="prop-select" id="rtMonth" aria-label="Month" hidden></select>
+        </div>
+        <div class="rt-ctl">
+          <span class="lbl">Rent basis</span>
+          <div class="togrow">
+            <button class="tog" type="button" data-rt-mode="net" aria-pressed="true">Effective</button>
+            <button class="tog" type="button" data-rt-mode="gross" aria-pressed="false">Gross</button>
+          </div>
+        </div>
+        <button class="tog rt-lockbtn" type="button" id="rtLockBtn">Lock</button>
+        <div class="rt-status" id="rtStatus"></div>
       </div>
+      <div class="grid">
 
+        <div class="card wide" id="cRtTiles">
+          <h2>By Property</h2>
+          <span class="eyebrow" id="rtTilesEyebrow"></span>
+          <div class="rt-tiles" id="rtTiles"></div>
+          <div class="blu-note" id="rtTilesFoot" style="color:var(--muted);"></div>
+        </div>
+
+        <div class="card wide" id="cRtTradeout">
+          <h2>Trade-out % by Lease Date</h2>
+          <span class="eyebrow" id="rtToEyebrow"></span>
+          <div class="rt-facets" id="rtToFacets"></div>
+          <div class="blu-note" id="rtToFoot" style="color:var(--muted);"></div>
+        </div>
+
+        <div class="card wide" id="cRtPsfTrend">
+          <h2>New-Lease $/sqft &mdash; Trend</h2>
+          <span class="eyebrow" id="rtPtEyebrow"></span>
+          <div class="rt-facets" id="rtPtFacets"></div>
+          <div class="blu-note" id="rtPtFoot" style="color:var(--muted);"></div>
+        </div>
+
+        <div class="card wide" id="cRtTradePsf">
+          <h2>Trade-out $/sqft &mdash; Prior &rarr; New</h2>
+          <span class="eyebrow" id="rtTpEyebrow"></span>
+          <div class="rt-legend" id="rtTpLegend"></div>
+          <div class="rt-facets rows" id="rtTpFacets"></div>
+          <div class="blu-note" id="rtTpFoot" style="color:var(--muted);"></div>
+        </div>
+
+        <div class="card wide" id="cRtRenewal">
+          <h2>Renewal % by Lease Date</h2>
+          <span class="eyebrow" id="rtRnEyebrow"></span>
+          <div class="rt-facets" id="rtRnFacets"></div>
+          <div class="blu-note" id="rtRnFoot" style="color:var(--muted);"></div>
+        </div>
+
+        <div class="card wide" id="cRtRenewPsf">
+          <h2>Renewal $/sqft &mdash; Prior &rarr; New</h2>
+          <span class="eyebrow" id="rtRpEyebrow"></span>
+          <div class="rt-legend" id="rtRpLegend"></div>
+          <div class="rt-facets rows" id="rtRpFacets"></div>
+          <div class="blu-note" id="rtRpFoot" style="color:var(--muted);"></div>
+        </div>
+
+        <div class="card wide" id="cRtWeekly">
+          <h2>Weekly Summaries</h2>
+          <span class="eyebrow" id="rtWeekEyebrow"></span>
+          <div class="sc-scroll" id="rtWeekTbl"></div>
+          <button class="tog rt-more" type="button" id="rtWeekMore" hidden></button>
+          <div class="blu-note" id="rtWeekFoot" style="color:var(--muted);"></div>
+        </div>
+
+        <div class="card wide" id="cRtDetail">
+          <div class="card-head">
+            <div>
+              <h2>Lease Detail</h2>
+              <span class="eyebrow" id="rtDtEyebrow"></span>
+            </div>
+            <div class="togrow" role="group" aria-label="Which rows">
+              <button class="tog" type="button" data-rt-dt="leases" aria-pressed="true">New leases</button>
+              <button class="tog" type="button" data-rt-dt="renewals" aria-pressed="false">Renewals</button>
+            </div>
+          </div>
+          <div class="sc-scroll" id="rtDtTbl"></div>
+          <button class="tog rt-more" type="button" id="rtDtMore" hidden></button>
+          <div class="blu-note" id="rtDtFoot" style="color:var(--muted);"></div>
+        </div>
+
+      </div>
     </div>
     </div><!-- /viewRates -->
 
@@ -1296,224 +1476,797 @@ function maybeLoadLanding(tab) {
 
 /* ---- Rental Rates ------------------------------------------------------
 
-   A rate tracker asks what a unit RENTS FOR, so every number on this tab is
-   dollars per unit per month. That is the one thing the Trade-outs card on the
-   Drive tab cannot show: it draws this same lease_tradeout feed as a PERCENTAGE
-   over the rent each lease replaced, which grades the move and hides the level.
-   40% over a $4,000 prior rent and 40% over a $6,000 one are the same bar
-   there and $800 apart here (illustrative figures).
+   The Rental Rate Tracker's own numbers -- new-lease and renewal trade-outs
+   and rent per square foot, per building -- in the tracker's chart format.
+   The tracker keeps them encrypted, and so does this tab (owner's call,
+   2026-09-23): docs/rental_tracker.enc.json is ciphertext written by
+   scripts/import_rental_tracker.py, and it is decrypted here, in the page,
+   with the tracker's own password. Nothing readable is in this site's files,
+   and the password never leaves the browser. What sessionStorage keeps is the
+   derived key for that one file, so a reload stays unlocked and a re-import
+   (new salt) asks again.
 
-   Three feeds, and they do not all describe the same instant:
-     lease_tradeout   monthly — 26 months of achieved new-lease rent
-     rent_roll        ONE SNAPSHOT — asking and in-place as of its own date
-     unit_directory   the buildings' fixed description — asking by floorplan
-   The snapshot pair is drawn as flat reference lines rather than as series,
-   because a rent roll is one point in time, and the note says so rather than
-   letting two flat lines read as "rates held still for two years".
+   Two departures from the tracker, both deliberate:
+     - each chart is one small panel per building on shared axes, not five
+       colours on one plot. No set of five colours clears the colour-vision
+       floors for every pair on a scatter, and a panel title always can.
+     - every tile carries the rent-weighted trade-out beside the tracker's
+       mean. The mean is the tracker's headline and stays the headline, so
+       the two dashboards agree; the weighted figure is what the Landing tab
+       grades, and one concession-bought prior can swing a mean.
    ---- */
 let ratesStarted = false;
+const RT_KEY = "align-rt-key";
+const RT = { env: null, data: null, meta: null, range: "max", month: null, mode: "net",
+             dt: "leases", dtAll: false, wkAll: false, sort: { key: "date", dir: -1 },
+             charts: [], wired: false };
 
-async function loadRates() {
-  const m = await metricsJson();
-  const pickProp = (block, slug) => (((m || {})[block] || {}).properties || [])
-    .find(x => x.slug === slug) || null;
-  const SLUG = "the-landing";
-  const rr  = pickProp("rent_roll", SLUG);
-  const dir = pickProp("unit_directory", SLUG);
-  const tro = pickProp("lease_tradeout", SLUG);
+const rtB64  = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const rtB64e = u8 => btoa(String.fromCharCode(...u8));
+async function rtDerive(password, env) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password),
+                                             "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256",
+    salt: rtB64(env.salt), iterations: env.iterations }, base, 256);
+  return new Uint8Array(bits);
+}
+async function rtOpen(raw, env) {
+  const key = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: rtB64(env.iv) }, key,
+                                         rtB64(env.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function rtSaved(env) {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(RT_KEY) || "null");
+    return s && s.salt === env.salt ? rtB64(s.k) : null;
+  } catch (e) { return null; }
+}
+function rtSave(env, raw) {
+  try { sessionStorage.setItem(RT_KEY, JSON.stringify({ salt: env.salt, k: rtB64e(raw) })); }
+  catch (e) {}
+}
+function rtForget() { try { sessionStorage.removeItem(RT_KEY); } catch (e) {} }
 
-  const usd  = v => "$" + Math.round(v).toLocaleString();
-  const usd0 = v => v == null ? "—" : usd(v);
+/* ---- small helpers ---- */
+const rtSum  = a => a.reduce((s, x) => s + x, 0);
+const rtAvg  = a => a.length ? rtSum(a) / a.length : null;
+// The typographic minus, as on every other card: a hyphen beside a minus in
+// one column is visible.
+const rtPct  = (v, d = 1) => v == null ? "—" : (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(d) + "%";
+const rtUsd  = v => v == null ? "—" : "$" + Math.round(v).toLocaleString();
+const rtPsfS = v => v == null ? "—" : "$" + v.toFixed(2);
+const rtSgnP = v => (v >= 0 ? "+$" : "−$") + Math.abs(v).toFixed(2);
+const rtMD   = iso => (+iso.slice(5, 7)) + "/" + (+iso.slice(8, 10));
+const rtDay  = iso => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
+const rtIso  = day => new Date(day * 86400000).toISOString().slice(0, 10);
+const rtSpan = ds => {
+  const s = [...ds].sort();
+  return !s.length ? null : s[0] === s[s.length - 1] ? rtMD(s[0]) : rtMD(s[0]) + "–" + rtMD(s[s.length - 1]);
+};
+// Chart.js prints a hyphen on a negative tick; this page prints a minus.
+const rtTickPct = v => (v < 0 ? "\u2212" : "") + Math.abs(v) + "%";
+const rtPlural = (n, w, ws) => n + " " + (n === 1 ? w : (ws || w + "s"));
+const rtShort = p => String(p).replace(/^The /, "");
+const rtRent = l => RT.mode === "gross" ? l.grossRent : l.netRent;
+const rtLpsf = l => RT.mode === "gross" ? l.grossPsf : l.netPsf;
+const rtBasis = () => RT.mode === "gross" ? "gross" : "effective";
 
-  document.getElementById("rtIntro").textContent =
-    "Rental rates for The Landing, in dollars per unit per month. This is the "
-    + "rate-tracker format fitted to data already in the pipeline: the achieved "
-    + "new-lease series is the Yardi lease tradeout report, the asking and in-place "
-    + "levels are the Drive rent roll, and the per-bedroom asking is the unit "
-    + "directory. Nothing here is hand-entered. The other four properties join as "
-    + "their own exports arrive.";
+function rtColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const pal = [1, 2, 3, 4, 5].map(i => cs.getPropertyValue("--rt-" + i).trim());
+  const col = {};
+  // Fixed order, never cycled: a sixth building gets the page's neutral
+  // rather than a sixth hue. Its panel title still names it.
+  RT.data.properties.forEach((p, i) => { col[p] = pal[i] || C.muted; });
+  return { col, surface: cs.getPropertyValue("--panel").trim(),
+           prior: cs.getPropertyValue("--rt-prior").trim() };
+}
+function rtChart(cv, cfg) { const ch = new Chart(cv, cfg); RT.charts.push(ch); return ch; }
+function rtDestroy() { RT.charts.forEach(c => c.destroy()); RT.charts = []; }
 
-  /* ---- the rate trend ---- */
-  section("cRateTrend", function rateTrend() {
-    const card = document.getElementById("cRateTrend");
-    const rows = (tro && tro.months) || [];
-    if (!rows.length) { card.hidden = true; return; }
+/* ---- the timeframe: Max | QTR (trailing three months) | a month ---- */
+function rtMetaOf(d) {
+  const dates = [...d.leases.map(l => l.date), ...d.renewals.map(r => r.date),
+                 ...d.weekly.map(w => w.ws)].filter(Boolean).sort();
+  const max = dates[dates.length - 1];
+  return { min: dates[0], end: max > d.snapshot ? max : d.snapshot,
+           months: [...new Set(dates.map(x => x.slice(0, 7)))].sort() };
+}
+function rtBounds() {
+  const m = RT.meta, snap = RT.data.snapshot;
+  if (RT.range === "max") return { s: m.min, e: m.end };
+  if (RT.range === "qtr") {
+    const d = new Date(snap + "T00:00:00Z");
+    d.setUTCMonth(d.getUTCMonth() - 3);
+    d.setUTCDate(d.getUTCDate() + 1);
+    return { s: d.toISOString().slice(0, 10), e: m.end };
+  }
+  const [y, mo] = RT.month.split("-").map(Number);
+  return { s: RT.month + "-01", e: new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10) };
+}
+function rtRangeLabel(b) {
+  if (RT.range === "max") return "all data, " + rtMD(b.s) + "–" + rtMD(b.e);
+  if (RT.range === "qtr") return "last three months, from " + rtMD(b.s);
+  return MONTH_ABBR[+RT.month.slice(5, 7) - 1] + " " + RT.month.slice(0, 4);
+}
 
-    const WINDOW = 24;
-    const addMonths = (k, n) => {
-      const [y, mo] = k.split("-").map(Number), t = y * 12 + (mo - 1) + n;
-      return Math.floor(t / 12) + "-" + String(t % 12 + 1).padStart(2, "0");
-    };
-    const endMo = rows.map(r => r.month).sort().slice(-1)[0];
-    const axis = Array.from({ length: WINDOW },
-                            (_, i) => addMonths(addMonths(endMo, -(WINDOW - 1)), i));
-    const by = new Map(rows.map(r => [r.month, r]));
-    // eff_rent is the SUM over that month's leases, so the rate is per lease.
-    // A month with no new lease is a gap and stays null -- a zero would assert
-    // the building signed at $0 rather than signed nothing -- and spanGaps
-    // stays false so the line stops there instead of being drawn across it.
-    const perUnit = key => axis.map(mo => {
-      const r = by.get(mo);
-      return r && r.leases ? r[key] / r.leases : null;
+/* ---- charts: one small panel per building, on shared axes ---- */
+// One tick step per axis, and both ends rounded onto it -- a max that is
+// not a multiple of the step draws its own extra tick hard against the one
+// below it ("$12" on top of "$10").
+function rtNice(vals, withZero) {
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (withZero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  const pad = (hi - lo) * 0.06 || 1;
+  lo -= withZero && lo === 0 ? 0 : pad;
+  hi += pad;
+  const raw = (hi - lo) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / mag, step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+  return { min: Math.floor(lo / step) * step, max: Math.ceil(hi / step) * step, step };
+}
+// Month starts over a long window, weeks over a short one. Month ticks read
+// "Jun 26" -- the dashboard's own month format -- and day ticks "9/14",
+// because "Sep 26" already means September 2026 everywhere else on the page.
+function rtTimeAxis(lo, hi) {
+  const short = hi - lo <= 45;
+  const ticks = [];
+  if (short) {
+    for (let v = lo; v <= hi; v += 7) ticks.push(v);
+  } else {
+    const d = new Date(rtIso(lo) + "T00:00:00Z");
+    d.setUTCDate(1);
+    if (rtDay(d.toISOString().slice(0, 10)) < lo) d.setUTCMonth(d.getUTCMonth() + 1);
+    while (rtDay(d.toISOString().slice(0, 10)) <= hi) {
+      ticks.push(rtDay(d.toISOString().slice(0, 10)));
+      d.setUTCMonth(d.getUTCMonth() + 1);
+    }
+  }
+  return { type: "linear", min: lo - 2, max: hi + 2, grid: { display: false },
+    afterBuildTicks: ax => { ax.ticks = ticks.map(v => ({ value: v })); },
+    ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, autoSkipPadding: 6,
+             callback: v => short ? rtMD(rtIso(v)) : shortMo(rtIso(v).slice(0, 7)) } };
+}
+function rtFacetShell(host, p, colors, caption) {
+  const f = elc("div", "rt-facet");
+  const fh = elc("div", "fh");
+  const sw = elc("span", "rt-sw");
+  sw.style.background = colors.col[p];
+  fh.append(sw, elc("span", null, p));
+  f.append(fh, elc("div", "fs", caption));
+  host.appendChild(f);
+  return f;
+}
+function rtCanvas(f, label) {
+  const wrap = elc("div", "fc");
+  const cv = elc("canvas");
+  cv.setAttribute("role", "img");
+  cv.setAttribute("aria-label", label);
+  wrap.appendChild(cv);
+  f.appendChild(wrap);
+  return cv;
+}
+// rows: {property, x (day), y, tip: [title, ...lines]}
+function rtScatterFacets(hostId, rows, o) {
+  const host = document.getElementById(hostId);
+  host.textContent = "";
+  const colors = rtColors();
+  const yb = rows.length ? rtNice(rows.map(r => r.y), o.withZero) : null;
+  const xs = rows.map(r => r.x);
+  const xlo = Math.min(...xs), xhi = Math.max(...xs);
+  RT.data.properties.forEach(p => {
+    const mine = rows.filter(r => r.property === p);
+    const cap = o.caption(p, mine);            // once: a caption may record what it found
+    const f = rtFacetShell(host, p, colors, cap);
+    if (!mine.length) { f.appendChild(elc("div", "fnone", o.empty(p))); return; }
+    const cv = rtCanvas(f, p + ": " + cap);
+    const extra = o.extra ? o.extra(p, mine, colors) : [];
+    rtChart(cv, {
+      type: "scatter",
+      data: { datasets: [{ data: mine.map(r => ({ x: r.x, y: r.y, tip: r.tip })),
+        backgroundColor: colors.col[p], borderColor: colors.surface, borderWidth: 1.5,
+        pointRadius: 4, pointHoverRadius: 6, pointHitRadius: 8, order: 1 }].concat(extra) },
+      options: { animation: false, maintainAspectRatio: false, responsive: true,
+        interaction: { mode: "nearest", intersect: false, axis: "xy" },
+        plugins: { legend: { display: false },
+          tooltip: { filter: c => c.datasetIndex === 0, callbacks: {
+            title: it => it.length ? it[0].raw.tip[0] : "",
+            label: c => c.raw.tip.slice(1) } } },
+        scales: { x: rtTimeAxis(xlo, xhi),
+          y: { min: yb.min, max: yb.max,
+               grid: { drawTicks: false,
+                       color: c => (o.withZero && c.tick && c.tick.value === 0) ? C.muted : gridCfg.color },
+               ticks: { font: { size: 9 }, stepSize: yb.step, callback: o.yFmt } } } }
     });
-    const achieved = perUnit("eff_rent");
-    const prior    = perUnit("prev_eff_rent");
-    const counts   = axis.map(mo => (by.get(mo) || {}).leases || null);
-
-    const askNow     = rr && rr.occupied ? rr.market_rent_occupied / rr.occupied : null;
-    const inplaceNow = rr && rr.occupied ? rr.actual_rent_occupied / rr.occupied : null;
-    const flat = v => axis.map(() => v);
-
-    const ds = [
-      { label: "Achieved · new lease", data: achieved, borderColor: C.teal,
-        backgroundColor: C.teal, borderWidth: 2, pointRadius: 2, tension: 0.25,
-        spanGaps: false, order: 1 },
-      { label: "The rent it replaced", data: prior, borderColor: C.red,
-        backgroundColor: C.red, borderWidth: 1.5, pointRadius: 2, borderDash: [4, 3],
-        tension: 0.25, spanGaps: false, order: 2 },
-    ];
-    if (askNow != null) ds.push(
-      { label: "Asking now · snapshot", data: flat(askNow), borderColor: C.amber,
-        borderWidth: 1, borderDash: [2, 4], pointRadius: 0, order: 3 });
-    if (inplaceNow != null) ds.push(
-      { label: "In-place book now · snapshot", data: flat(inplaceNow),
-        borderColor: C.green, borderWidth: 1, borderDash: [2, 4], pointRadius: 0,
-        order: 4 });
-
-    new Chart(document.getElementById("rcTrend"), {
-      type: "line",
-      data: { labels: axis.map(shortMo), datasets: ds },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: {
-          title: c => shortMo(axis[c[0].dataIndex]),
-          label: c => {
-            const n = counts[c.dataIndex];
-            const base = c.dataset.label + ": " + usd(c.parsed.y);
-            // Only the two lease series are per-month; the flat pair is a
-            // snapshot and a lease count against it would be meaningless.
-            return c.datasetIndex <= 1 && n
-              ? base + " (" + n + " lease" + (n === 1 ? "" : "s") + ")" : base;
-          } } } },
-        scales: {
-          y: { grid: gridCfg, ticks: { callback: v => usd(v) } },
-          x: { grid: { display: false },
-               ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90,
-                        autoSkip: false } } } }
-    });
-
-    // Every stat is scoped to the chart's own window and says over how many
-    // months, the way the Trade-outs card does: the feed runs 26 months and
-    // the axis draws 24, so an unscoped count would not match the picture.
-    const win  = rows.filter(r => axis.indexOf(r.month) >= 0);
-    const nWin = win.reduce((t, r) => t + (r.leases || 0), 0);
-    const wtd  = key => nWin ? win.reduce((t, r) => t + r[key], 0) / nWin : null;
-    const t3   = (tro.windows || {}).t3 || null;
-    statBlock(document.getElementById("rtStats"), [
-      [usd0(askNow), "asking / unit now"],
-      [usd0(inplaceNow), "in-place / unit now"],
-      [t3 && t3.leases ? usd(t3.eff_rent / t3.leases) : "—", "achieved / unit, T3"],
-      [usd0(wtd("eff_rent")), "achieved / unit, " + win.length + " mo"],
-      [String(nWin), "new leases in window"],
-    ]);
-
-    // The newest month is partial whenever the export's window ends mid-month,
-    // which is what a report run on the 16th does. And a month carried by one
-    // or two leases is one signature, not a market -- both are named, because
-    // the line is drawn through them either way.
-    const lastDay = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7), 0))
-                           .toISOString().slice(0, 10);
-    const pe = tro.period_end || "";
-    const partial = pe && pe < lastDay(pe.slice(0, 7)) ? pe : null;
-    const thin = counts.map((n, i) => (n != null && n <= 2) ? shortMo(axis[i]) : null)
-                       .filter(Boolean);
-    document.getElementById("rtFoot").textContent =
-      "Achieved rent is the tradeout report's own effective rent — net of concessions "
-      + "on both the new lease and the one it replaced — over that month's lease count, "
-      + "so it is an average per unit and never a total. " + nWin + " new leases across "
-      + win.length + " months to " + (pe || "the newest file") + ". "
-      + (partial ? "The newest month is a part month: the export's window ends "
-                 + partial + ", so it holds only what signed by then. " : "")
-      + (thin.length ? "Months carried by one or two leases, where a single signature "
-                     + "sets the whole point: " + thin.join(", ") + ". " : "")
-      + "The two flat lines are a snapshot and not a series — the rent roll of "
-      + (rr && rr.as_of ? rr.as_of : "—") + " — so they say where the book sits today, "
-      + "not where it sat in each month behind them.";
   });
-
-  /* ---- asking rate by bedroom ---- */
-  section("cRateByBed", function byBedroom() {
-    const card = document.getElementById("cRateByBed");
-    const plans = (dir && dir.plans) || null;
-    if (!plans) { card.hidden = true; return; }
-
-    // Bedrooms belong to the PLAN, not the unit, so the roll-up is over plans
-    // weighted by how many units each holds. The directory carries a rent RANGE
-    // per plan and no rent total, so the bar IS that range -- min to max -- and
-    // not a mean the data cannot support; the units-weighted midpoint goes on
-    // the tooltip as the one figure to quote.
-    const g = new Map();
-    Object.values(plans).forEach(p => {
-      const b = p.bedrooms, lo = p.rent_min, hi = p.rent_max;
-      if (b == null || lo == null || hi == null) return;
-      const e = g.get(b) || { units: 0, plans: 0, lo: Infinity, hi: 0, midTot: 0 };
-      e.units += p.units || 0;
-      e.plans += 1;
-      e.lo = Math.min(e.lo, lo);
-      e.hi = Math.max(e.hi, hi);
-      e.midTot += ((lo + hi) / 2) * (p.units || 0);
-      g.set(b, e);
-    });
-    const beds = [...g.keys()].sort((a, b) => a - b);
-    if (!beds.length) { card.hidden = true; return; }
-
-    const mid = b => { const e = g.get(b); return e.units ? e.midTot / e.units : null; };
-    new Chart(document.getElementById("rcBed"), {
+}
+// rows: {property, label, date, prior, next, pct, term} -- $/sqft either side
+function rtBarFacets(hostId, rows, o) {
+  const host = document.getElementById(hostId);
+  host.textContent = "";
+  const colors = rtColors();
+  const yb = rows.length ? rtNice(rows.map(r => Math.max(r.prior, r.next)), true) : { max: 1, step: 1 };
+  RT.data.properties.forEach(p => {
+    const mine = rows.filter(r => r.property === p).sort((a, b) => a.date < b.date ? -1 : 1);
+    const cap = o.caption(p, mine);
+    const f = rtFacetShell(host, p, colors, cap);
+    if (!mine.length) { f.appendChild(elc("div", "fnone", o.empty(p))); return; }
+    const cv = rtCanvas(f, p + ": " + cap);
+    const up = mine.map(r => r.next >= r.prior);
+    // Grey runs to the LOWER of the two rents, the segment covers the gap.
+    // A rise is that segment filled; a cut is the same segment outlined --
+    // stacked on the prior instead, a cut would hang below the axis.
+    rtChart(cv, {
       type: "bar",
-      data: { labels: beds.map(b => b + " bed"),
-        datasets: [{ label: "Asking range", data: beds.map(b => [g.get(b).lo, g.get(b).hi]),
-          backgroundColor: C.teal, borderColor: C.teal, borderWidth: 1,
-          borderSkipped: false, borderRadius: 2 }] },
-      options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
-        plugins: { legend: { display: false }, tooltip: { callbacks: {
-          label: c => {
-            const b = beds[c.dataIndex], e = g.get(b);
-            return usd(e.lo) + "–" + usd(e.hi) + " · " + usd(mid(b)) + " weighted midpoint"
-                 + " · " + e.units + " unit" + (e.units === 1 ? "" : "s")
-                 + " across " + e.plans + " plan" + (e.plans === 1 ? "" : "s");
-          } } } },
+      data: { labels: mine.map(r => r.label), datasets: [
+        { label: "Kept", data: mine.map(r => Math.min(r.prior, r.next)), grouped: false,
+          backgroundColor: colors.prior, order: 2, barPercentage: 0.84, categoryPercentage: 0.92,
+          maxBarThickness: 14 },
+        { label: "Change", data: mine.map(r => [Math.min(r.prior, r.next), Math.max(r.prior, r.next)]),
+          grouped: false, backgroundColor: up.map(u => u ? colors.col[p] : "transparent"),
+          borderColor: colors.col[p], borderWidth: up.map(u => u ? 0 : 1.5), borderSkipped: false,
+          order: 1, barPercentage: 0.84, categoryPercentage: 0.92, maxBarThickness: 14 }] },
+      options: { animation: false, maintainAspectRatio: false, responsive: true,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { display: false },
+          tooltip: { filter: c => c.datasetIndex === 1, callbacks: {
+            title: it => {
+              const r = mine[it[0].dataIndex];
+              return rtShort(r.property) + " " + r.label + " · " + rtMD(r.date)
+                   + (r.term ? " · " + r.term + "-mo" : "");
+            },
+            label: c => {
+              const r = mine[c.dataIndex];
+              return ["Prior " + rtPsfS(r.prior) + "/sqft", "New " + rtPsfS(r.next) + "/sqft",
+                      "Change " + rtSgnP(r.next - r.prior) + "/sqft"
+                      + (r.pct != null ? " (" + rtPct(r.pct) + ")" : "")];
+            } } } },
         scales: {
-          x: { grid: gridCfg, ticks: { callback: v => usd(v) } },
-          y: { grid: { display: false } } } }
+          x: { grid: { display: false },
+               ticks: { font: { size: 8.5 }, autoSkip: true, autoSkipPadding: 4, maxRotation: 0 } },
+          y: { min: 0, max: yb.max, grid: gridCfg,
+               ticks: { font: { size: 9 }, stepSize: yb.step, callback: v => "$" + v } } } }
     });
-
-    const totUnits = beds.reduce((t, b) => t + g.get(b).units, 0);
-    const dirWtd = totUnits
-      ? beds.reduce((t, b) => t + g.get(b).midTot, 0) / totUnits : null;
-    const rollAsk = rr && rr.units ? rr.market_rent_total / rr.units : null;
-    statBlock(document.getElementById("rbStats"),
-      beds.map(b => [usd0(mid(b)), b + " bed · " + g.get(b).units + " units"]));
-
-    // The directory's asking and the rent roll's market rent are two different
-    // tables, not one number read twice, and they disagree -- the roll's own
-    // market-rent column was revised up sharply between exports. Printing both
-    // bases beats picking one and calling it the asking rent.
-    const gap = (dirWtd && rollAsk) ? (rollAsk - dirWtd) / dirWtd : null;
-    document.getElementById("rbFoot").textContent =
-      "Bedrooms come from the unit directory, which describes the floorplan rather than "
-      + "the lease: " + totUnits + " units across " + beds.length + " bedroom types. The "
-      + "bar is each type's asking RANGE across its plans, because the directory carries "
-      + "a min and a max per plan and no total — a single mean would be invented. "
-      + (gap != null
-          ? "Two asking bases, and they do not agree: the directory reads "
-            + usd(dirWtd) + " per unit weighted across all " + totUnits + " units, the "
-            + "rent roll's market-rent column " + usd(rollAsk) + " — "
-            + (gap >= 0 ? "" : "−") + Math.abs(gap * 100).toFixed(1) + "% apart. The roll "
-            + "is the newer table and the one loss to lease is measured on; the "
-            + "directory is the building's fixed description. Neither is wrong, and "
-            + "this card draws the directory."
-          : "");
   });
+}
+function rtFit(pts) {                          // ordinary least squares, y on x
+  const n = pts.length;
+  if (n < 3) return null;
+  const mx = rtAvg(pts.map(q => q.x)), my = rtAvg(pts.map(q => q.y));
+  let sxx = 0, sxy = 0, sst = 0;
+  pts.forEach(q => { sxx += (q.x - mx) ** 2; sxy += (q.x - mx) * (q.y - my); sst += (q.y - my) ** 2; });
+  if (!sxx) return null;
+  const b = sxy / sxx, a = my - b * mx;
+  const ssr = rtSum(pts.map(q => (q.y - (a + b * q.x)) ** 2));
+  return { a, b, r2: sst ? 1 - ssr / sst : 0 };
+}
 
+/* ---- sortable tables ---- */
+function rtTable(host, heads, rows, sort, onSort) {
+  host.textContent = "";
+  const t = elc("table", "dt"), tr = elc("tr");
+  heads.forEach(h => {
+    const th = elc("th", h.num ? "num" : "");
+    if (h.key && onSort) {
+      const b = elc("button", "rt-sort", h.t + (sort.key === h.key ? (sort.dir < 0 ? " ↓" : " ↑") : ""));
+      b.type = "button";
+      b.addEventListener("click", () => onSort(h.key));
+      th.appendChild(b);
+      th.setAttribute("aria-sort", sort.key === h.key ? (sort.dir < 0 ? "descending" : "ascending") : "none");
+    } else th.textContent = h.t;
+    tr.appendChild(th);
+  });
+  t.appendChild(tr);
+  rows.forEach(r => {
+    const row = elc("tr");
+    heads.forEach((h, i) => {
+      const td = elc("td", h.num ? "num" : "");
+      const v = r[i];
+      if (v instanceof Node) td.appendChild(v); else td.textContent = v;
+      row.appendChild(td);
+    });
+    t.appendChild(row);
+  });
+  host.appendChild(t);
+}
+function rtSorted(rows, key, dir, val) {
+  return [...rows].sort((a, b) => {
+    const x = val(a, key), y = val(b, key);
+    if (x == null && y == null) return 0;
+    if (x == null) return 1;                     // blanks last, whichever way
+    if (y == null) return -1;
+    return (x < y ? -1 : x > y ? 1 : 0) * dir;
+  });
+}
+function rtMoreBtn(id, shown, total, isAll, noun, toggle) {
+  const b = document.getElementById(id);
+  b.hidden = total <= shown && !isAll;
+  b.textContent = isAll ? "Show fewer" : "Show all " + rtPlural(total, noun);
+  b.onclick = toggle;
+}
+
+/* ---- the tab ---- */
+async function loadRates() {
+  document.getElementById("rtIntro").textContent =
+    "The Rental Rate Tracker's own numbers — new-lease and renewal trade-outs and rent per "
+    + "square foot, building by building — in the tracker's chart format. The tracker keeps "
+    + "its data encrypted and so does this tab: the site holds only ciphertext, and the "
+    + "tracker's password unlocks it in your browser. It is a snapshot, refreshed when "
+    + "scripts/import_rental_tracker.py is run, and it says how old it is.";
+
+  section("cRtLock", async function rtLockCard() {
+    const res = await fetch("rental_tracker.enc.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("rental_tracker.enc.json answered " + res.status);
+    const env = await res.json();
+    RT.env = env;
+    const c = env.counts || {};
+    document.getElementById("rtLockEyebrow").textContent = "ENCRYPTED · SNAPSHOT "
+      + env.snapshot + " · " + c.leases + " LEASES · " + c.renewals + " RENEWALS · "
+      + c.properties + " PROPERTIES";
+    document.getElementById("rtLockWhy").textContent =
+      "The tracker publishes these numbers encrypted, and this copy stays that way. Enter the "
+      + "tracker's password to unlock it: it is checked here in your browser and never sent "
+      + "anywhere, and the tab stays unlocked until you close it or press Lock.";
+    const form = document.getElementById("rtForm");
+    if (!(window.crypto && crypto.subtle)) {
+      document.getElementById("rtErr").textContent =
+        "This browser cannot decrypt here — it needs the page over https.";
+      form.querySelectorAll("input, button").forEach(e => { e.disabled = true; });
+      return;
+    }
+    if (!form.dataset.wired) {
+      form.dataset.wired = "1";
+      form.addEventListener("submit", rtTryUnlock);
+    }
+    const saved = rtSaved(env);
+    if (saved) {
+      try { rtShow(await rtOpen(saved, env)); return; } catch (e) { rtForget(); }
+    }
+    // No autofocus: this runs when the tab is selected, often from the arrow
+    // keys, and pulling focus into the field would strand the tablist.
+  });
+}
+
+async function rtTryUnlock(ev) {
+  ev.preventDefault();
+  const pw = document.getElementById("rtPw"), btn = document.getElementById("rtUnlock");
+  const err = document.getElementById("rtErr");
+  if (!pw.value) { err.textContent = "Enter the tracker's password"; pw.focus(); return; }
+  btn.disabled = true;
+  btn.textContent = "Unlocking…";
+  err.textContent = "";
+  try {
+    const raw = await rtDerive(pw.value, RT.env);
+    const data = await rtOpen(raw, RT.env);
+    pw.value = "";
+    rtSave(RT.env, raw);
+    rtShow(data);
+  } catch (e) {
+    // A wrong password is an OperationError and nothing else; anything else
+    // is a real fault, so it goes to the console as well as the card.
+    const wrong = e && e.name === "OperationError";
+    if (!wrong) console.error("Rental Rates could not be decrypted", e);
+    err.textContent = wrong ? "Incorrect password" : "Could not decrypt — see the console";
+    pw.value = "";
+    pw.focus();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Unlock";
+  }
+}
+
+function rtShow(data) {
+  RT.data = data;
+  RT.meta = rtMetaOf(data);
+  if (!RT.month || RT.meta.months.indexOf(RT.month) < 0) {
+    const snapMo = data.snapshot.slice(0, 7);
+    RT.month = RT.meta.months.indexOf(snapMo) >= 0 ? snapMo : RT.meta.months[RT.meta.months.length - 1];
+  }
+  document.getElementById("cRtLock").hidden = true;
+  document.getElementById("rtBody").hidden = false;
+  document.getElementById("rtIntro").textContent =
+    "The Rental Rate Tracker's own numbers for " + data.properties.join(", ").replace(/, ([^,]*)$/, " and $1")
+    + ", in the tracker's chart format and decrypted in this browser. "
+    + (data.about ? "Its sources, as the tracker states them: " + data.about : "");
+  rtWire();
+  rtRender();
+}
+
+function rtLockAgain() {
+  rtDestroy();
+  RT.data = null;
+  rtForget();
+  document.getElementById("rtBody").hidden = true;
+  document.getElementById("cRtLock").hidden = false;
+  document.getElementById("rtErr").textContent = "";
+  document.getElementById("rtPw").focus();
+}
+
+function rtWire() {
+  if (RT.wired) return;
+  RT.wired = true;
+  const sel = document.getElementById("rtMonth");
+  document.querySelectorAll("[data-rt-range]").forEach(b => b.addEventListener("click", () => {
+    RT.range = b.dataset.rtRange;
+    rtRender();
+  }));
+  sel.addEventListener("change", () => { RT.month = sel.value; rtRender(); });
+  document.querySelectorAll("[data-rt-mode]").forEach(b => b.addEventListener("click", () => {
+    RT.mode = b.dataset.rtMode;
+    rtRender();
+  }));
+  document.querySelectorAll("[data-rt-dt]").forEach(b => b.addEventListener("click", () => {
+    if (RT.dt === b.dataset.rtDt) return;
+    RT.dt = b.dataset.rtDt;
+    RT.dtAll = false;
+    RT.sort = { key: "date", dir: -1 };
+    rtRender();
+  }));
+  document.getElementById("rtLockBtn").addEventListener("click", rtLockAgain);
+  // The series colours are the theme's own steps, so a theme change redraws
+  // the tab rather than leaving five charts in the other theme's colours.
+  new MutationObserver(() => { if (RT.data) rtRender(); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+}
+
+function rtRender() {
+  const d = RT.data;
+  rtDestroy();
+  const b = rtBounds();
+  const keep = x => x != null && x >= b.s && x <= b.e;
+  const L = d.leases.filter(l => keep(l.date));
+  const R = d.renewals.filter(r => keep(r.date));
+  const W = d.weekly.filter(w => w.we >= b.s && w.ws <= b.e);   // a week counts if it overlaps
+  const label = rtRangeLabel(b);
+
+  document.querySelectorAll("[data-rt-range]").forEach(x =>
+    x.setAttribute("aria-pressed", String(x.dataset.rtRange === RT.range)));
+  document.querySelectorAll("[data-rt-mode]").forEach(x =>
+    x.setAttribute("aria-pressed", String(x.dataset.rtMode === RT.mode)));
+  document.querySelectorAll("[data-rt-dt]").forEach(x =>
+    x.setAttribute("aria-pressed", String(x.dataset.rtDt === RT.dt)));
+  const sel = document.getElementById("rtMonth");
+  if (sel.options.length !== RT.meta.months.length) {
+    sel.textContent = "";
+    RT.meta.months.forEach(ym => {
+      const o = elc("option", null, MONTH_ABBR[+ym.slice(5, 7) - 1] + " " + ym.slice(0, 4));
+      o.value = ym;
+      sel.appendChild(o);
+    });
+  }
+  sel.value = RT.month;
+  sel.hidden = RT.range !== "month";
+
+  // How old the snapshot is, counted from today. The tracker rebuilds daily
+  // and Refresh Rental Rates copies it daily, so past the page's own
+  // threshold for a daily feed one of the two has stopped -- and the copy
+  // must look it rather than pass for current.
+  const st = document.getElementById("rtStatus");
+  st.textContent = "";
+  const ageDays = Math.floor((Date.now() - Date.parse(d.snapshot + "T00:00:00")) / 86400000);
+  st.appendChild(elc("span", null, "Snapshot of " + d.snapshot + " · showing "
+    + L.length + " of " + rtPlural(d.leases.length, "lease") + " and " + R.length + " of "
+    + rtPlural(d.renewals.length, "renewal") + " · " + label));
+  if (ageDays > SC_STALE_DAYS) st.appendChild(elc("span", "stale", " · " + ageDays
+    + " days old — the tracker rebuilds daily and this tab copies it daily, so one of"
+    + " the two has stopped (see the Refresh Rental Rates workflow)"));
+
+  section("cRtTiles",    () => rtTiles(d, L, R, W, label));
+  section("cRtTradeout", () => rtTradeoutCard(d, L, label));
+  section("cRtPsfTrend", () => rtPsfTrendCard(d, L, label));
+  section("cRtTradePsf", () => rtTradePsfCard(d, L, label));
+  section("cRtRenewal",  () => rtRenewalCard(d, R, label));
+  section("cRtRenewPsf", () => rtRenewPsfCard(d, R, label));
+  section("cRtWeekly",   () => rtWeeklyCard(d, W, label));
+  section("cRtDetail",   () => rtDetailCard(d, L, R, label));
+}
+
+function rtTiles(d, L, R, W, label) {
+  const host = document.getElementById("rtTiles");
+  host.textContent = "";
+  const colors = rtColors();
+  const noSqft = [], stated = [];
+  d.properties.forEach(p => {
+    const pl = L.filter(l => l.property === p && l.toPct != null);
+    const mean = rtAvg(pl.map(l => l.toPct));
+    // over the SAME leases as the mean: the tracker withholds a trade-out on
+    // a few leases that do carry a prior, and a weighted figure
+    // that quietly counted them would not be the mean's counterpart
+    const wl = pl.filter(l => l.prior && rtRent(l));
+    const wtd = wl.length ? (rtSum(wl.map(rtRent)) / rtSum(wl.map(l => l.prior)) - 1) * 100 : null;
+    const rl = R.filter(r => r.property === p && r.incPct != null);
+    const ren = rtAvg(rl.map(r => r.incPct));
+    const rw = R.filter(r => r.property === p && r.oldRate && r.newRate);
+    const renW = rw.length ? (rtSum(rw.map(r => r.newRate)) / rtSum(rw.map(r => r.oldRate)) - 1) * 100 : null;
+    const nlPsf = rtAvg(L.filter(l => l.property === p && rtLpsf(l) != null).map(rtLpsf));
+    const rs = R.filter(r => r.property === p && r.sqft && r.newRate);
+    const rnPsf = rtAvg(rs.map(r => r.newRate / r.sqft));
+    const spread = nlPsf != null && rnPsf != null ? nlPsf - rnPsf : null;
+    if (rl.length && !rs.length) noSqft.push(p);
+
+    const t = elc("div", "rt-tile");
+    const h = elc("h3");
+    const sw = elc("span", "rt-sw");
+    sw.style.background = colors.col[p];
+    h.append(sw, elc("span", null, p));
+    t.appendChild(h);
+    t.appendChild(elc("div", "big", rtPct(mean)));
+    t.appendChild(elc("div", "bigk", pl.length
+      ? "mean trade-out · " + rtSpan(pl.map(l => l.date)) + " · " + rtPlural(pl.length, "lease")
+      : "no new lease in this timeframe"));
+    const rows = elc("div", "rows");
+    const row = (k, v, title) => {
+      const r = elc("div", "row");
+      r.appendChild(elc("span", null, k));
+      r.appendChild(v instanceof Node ? v : elc("span", "v", v));
+      if (title) r.title = title;
+      rows.appendChild(r);
+    };
+    row("Rent-weighted", rtPct(wtd), "Total " + rtBasis() + " rent over total prior rent, "
+        + rtPlural(wl.length, "lease") + ". What the Landing tab grades.");
+    row("Avg renewal" + (rl.length ? " (" + rl.length + ")" : ""), rtPct(ren),
+        rl.length ? "Mean renewal increase, " + rtSpan(rl.map(r => r.date))
+                    + (renW != null ? "; rent-weighted " + rtPct(renW) : "") : null);
+    row("New-lease $/sqft", rtPsfS(nlPsf), "Mean of each new lease's " + rtBasis() + " $/sqft");
+    row("Renewal $/sqft", rtPsfS(rnPsf), rs.length ? "Mean of each renewal's new rate over its sqft"
+        : "No renewal here carries square footage in its source");
+    row("Spread", spread == null ? "—" : rtSgnP(spread) + "/sqft",
+        "New-lease $/sqft less renewal $/sqft: what a renewal leaves on the table");
+
+    // occupancy: the newest weekly row in the timeframe, else the newest at
+    // all (said so), else the figure the tracker types in for a building
+    // with no weekly report (said so, since nothing dates it)
+    const inRange = W.filter(w => w.property === p && w.occ != null).sort((a, b) => a.we < b.we ? -1 : 1);
+    const any = d.weekly.filter(w => w.property === p && w.occ != null).sort((a, b) => a.we < b.we ? -1 : 1);
+    const wk = inRange[inRange.length - 1] || any[any.length - 1];
+    const os = (d.occ_stated || {})[p];
+    if (wk) {
+      row("Occupied / leased", wk.occ + "% / " + wk.leased + "%",
+          "Week " + wk.week + (inRange.length ? "" : " — the newest week on file, before this timeframe"));
+    } else if (os) {
+      stated.push(p);
+      row("Occupied / leased", os.occ + "% / " + os.leased + "%",
+          "The tracker's own figure: no weekly report covers this building, and nothing dates it");
+    } else row("Occupied / leased", "—", "No weekly report covers this building");
+
+    const m = (d.mtm || {})[p];
+    if (!m || m.units == null) {
+      row("MTM units", "—", "No source reports month-to-month units for this building");
+    } else {
+      const METH = { flag: ["reported", "Reported directly by the source system as month-to-month"],
+        cohort: ["partial", "A stated status, but it covers only units that have come up for renewal since the list began, so it can lag"],
+        proxy: ["estimate", "Inferred: occupied units whose lease expired more than " + m.graceDays
+                + " days before the rent roll's date. The source carries no month-to-month flag"] };
+      const mm = METH[m.method] || [m.method, "Method: " + m.method];
+      const stale = Math.round((Date.parse(d.snapshot) - Date.parse(m.asOf)) / 86400000);
+      const v = elc("span", "v");
+      v.appendChild(elc("span", null, m.units + " · " + m.pct.toFixed(1) + "% "));
+      v.appendChild(elc("span", "pill mut", mm[0]));
+      row("MTM units", v, mm[1] + ". " + m.units + " of " + m.occupied + " occupied units, as of "
+          + m.asOf + (stale > 14 ? " — " + stale + " days older than the snapshot" : ""));
+      if (stale > 14) rows.lastChild.firstChild.textContent = "MTM units ⚠";
+    }
+    t.appendChild(rows);
+    host.appendChild(t);
+  });
+  document.getElementById("rtTilesEyebrow").textContent = "EACH BUILDING'S LEASES IN THIS TIMEFRAME · "
+    + label.toUpperCase() + " · $/SQFT ON THE " + rtBasis().toUpperCase() + " BASIS";
+  document.getElementById("rtTilesFoot").textContent =
+    "The big figure is the tracker's own headline: the mean of each lease's trade-out %. "
+    + "Rent-weighted is total new rent over total prior rent — the statistic the Landing tab "
+    + "grades — and a single lease whose prior rent was bought down by a concession can swing "
+    + "the mean without moving it. Hover a row for its basis. "
+    + (noSqft.length ? noSqft.join(" and ") + (noSqft.length === 1 ? "'s renewals carry" : " renewals carry")
+                       + " no square footage in the source, so renewal $/sqft and the spread read — there. " : "")
+    + (stated.length ? stated.join(" and ") + " has no weekly report; its occupancy is the figure the "
+                       + "tracker types in, with nothing to date it." : "");
+}
+
+function rtTradeoutCard(d, L, label) {
+  const drawn = L.filter(l => l.toPct != null);
+  rtScatterFacets("rtToFacets", drawn.map(l => ({ property: l.property, x: rtDay(l.date), y: l.toPct,
+    tip: [rtShort(l.property) + " " + (l.unit || "") + " · " + rtMD(l.date),
+          "Trade-out " + rtPct(l.toPct) + (l.toDollars != null ? " (" + (l.toDollars >= 0 ? "+" : "−") + rtUsd(Math.abs(l.toDollars)) + ")" : ""),
+          "Rent " + rtUsd(rtRent(l)) + " against " + rtUsd(l.prior) + (l.term ? " · " + l.term + "-mo term" : "")] })), {
+    withZero: true, yFmt: rtTickPct,
+    caption: (p, mine) => mine.length ? rtPlural(mine.length, "lease") + " · mean " + rtPct(rtAvg(mine.map(r => r.y))) : "",
+    empty: () => "No new lease with a trade-out in this timeframe" });
+  document.getElementById("rtToEyebrow").textContent =
+    "ONE DOT PER EXECUTED NEW LEASE · THE TRADE-OUT % ITS SOURCE REPORTS · " + label.toUpperCase();
+  const none = L.filter(l => l.toPct == null);
+  const both = L.filter(l => l.prior && l.toPct != null && l.grossRent && l.netRent
+                             && Math.abs(l.grossRent - l.netRent) >= 1);
+  const near = (x, t) => Math.abs((x / t.prior - 1) * 100 - t.toPct) <= 0.6;
+  const onNet = both.filter(l => near(l.netRent, l) && !near(l.grossRent, l)).length;
+  const onGross = both.filter(l => near(l.grossRent, l) && !near(l.netRent, l)).length;
+  const hi = drawn.reduce((a, l) => (!a || l.toPct > a.toPct) ? l : a, null);
+  const lo = drawn.reduce((a, l) => (!a || l.toPct < a.toPct) ? l : a, null);
+  document.getElementById("rtToFoot").textContent =
+    "Panels share both axes, so a dot's height compares across buildings. "
+    + (hi ? "Highest " + rtShort(hi.property) + " " + hi.unit + " at " + rtPct(hi.toPct) + " (" + rtMD(hi.date)
+            + "); lowest " + rtShort(lo.property) + " " + lo.unit + " at " + rtPct(lo.toPct) + " (" + rtMD(lo.date) + "). " : "")
+    + (none.length ? rtPlural(none.length, "lease") + " in this timeframe " + (none.length === 1 ? "carries" : "carry")
+                     + " no trade-out and " + (none.length === 1 ? "is" : "are") + " not drawn: "
+                     + none.map(l => rtShort(l.property) + " " + (l.unit || "?") + " (" + rtMD(l.date) + ")").join(", ") + ". " : "")
+    + (onNet && onGross ? "The sources do not share one basis for it: where a lease's gross and "
+                          + "effective rent differ enough to tell, the trade-out follows effective rent on "
+                          + rtPlural(onNet, "lease") + " and gross on " + onGross + "." : "");
+}
+
+function rtPsfTrendCard(d, L, label) {
+  const b0 = rtDay(rtBounds().s);
+  const noisy = [];
+  rtScatterFacets("rtPtFacets", L.filter(l => l.sqft && rtLpsf(l) != null).map(l => ({
+    property: l.property, x: rtDay(l.date), y: rtLpsf(l),
+    tip: [rtShort(l.property) + " " + (l.unit || "") + " · " + rtMD(l.date),
+          rtPsfS(rtLpsf(l)) + "/sqft " + rtBasis() + " · " + l.sqft + " sqft",
+          "Rent " + rtUsd(rtRent(l))] })), {
+    withZero: false, yFmt: v => "$" + v,
+    caption: (p, mine) => {
+      const f = rtFit(mine.map(q => ({ x: q.x - b0, y: q.y })));
+      if (!f) return mine.length ? rtPlural(mine.length, "lease") + " — too few for a trend" : "";
+      if (f.r2 < 0.1) noisy.push(p);
+      return rtSgnP(f.b * 30.44) + "/sqft per month · R² " + f.r2.toFixed(2) + " · "
+           + rtPlural(mine.length, "lease");
+    },
+    extra: (p, mine, colors) => {
+      const f = rtFit(mine.map(q => ({ x: q.x - b0, y: q.y })));
+      if (!f) return [];
+      const xs = mine.map(q => q.x), a = Math.min(...xs), z = Math.max(...xs);
+      return [{ data: [{ x: a, y: f.a + f.b * (a - b0) }, { x: z, y: f.a + f.b * (z - b0) }],
+                showLine: true, borderColor: colors.col[p], borderWidth: 2, pointRadius: 0,
+                pointHitRadius: 0, order: 0 }];
+    },
+    empty: () => "No new lease with square footage in this timeframe" });
+  document.getElementById("rtPtEyebrow").textContent = "NEW-LEASE $/SQFT, " + rtBasis().toUpperCase()
+    + " · LINEAR FIT PER BUILDING · " + label.toUpperCase();
+  document.getElementById("rtPtFoot").textContent =
+    "Each dot is one executed new lease at its $/sqft on its lease date; the line is an ordinary "
+    + "least-squares fit through that building's leases, and its slope is the direction of "
+    + "new-lease pricing. R² is how much of the scatter the line explains"
+    + (noisy.length ? " — under 0.1 for " + noisy.join(", ") + ", where the slope is mostly noise" : "")
+    + ". A fit needs at least three leases.";
+}
+
+function rtLegend(hostId, colors) {
+  const host = document.getElementById(hostId);
+  host.textContent = "";
+  const add = (style, text) => {
+    const s = elc("span");
+    const i = elc("i");
+    Object.assign(i.style, style);
+    s.append(i, elc("span", null, text));
+    host.appendChild(s);
+  };
+  add({ background: colors.prior }, "Prior rent, kept");
+  add({ background: "var(--muted)" }, "Rise to the new rent");
+  add({ border: "1.5px solid var(--muted)", boxSizing: "border-box" }, "Cut — new rent below the prior");
+}
+
+function rtTradePsfCard(d, L, label) {
+  const rows = L.filter(l => l.sqft && l.prior != null && rtLpsf(l) != null).map(l => ({
+    property: l.property, label: l.unit || "?", date: l.date, prior: l.prior / l.sqft,
+    next: rtLpsf(l), pct: l.toPct, term: l.term }));
+  rtLegend("rtTpLegend", rtColors());
+  rtBarFacets("rtTpFacets", rows, {
+    caption: (p, mine) => {
+      if (!mine.length) return "";
+      const cuts = mine.filter(r => r.next < r.prior).length;
+      return rtPlural(mine.length, "lease") + " · mean move " + rtSgnP(rtAvg(mine.map(r => r.next - r.prior)))
+           + "/sqft" + (cuts ? " · " + rtPlural(cuts, "cut") : "");
+    },
+    empty: () => "No new lease with a prior rent and square footage in this timeframe" });
+  const cuts = rows.filter(r => r.next < r.prior);
+  document.getElementById("rtTpEyebrow").textContent = "ONE BAR PER NEW LEASE, IN DATE ORDER · $/SQFT · "
+    + label.toUpperCase();
+  document.getElementById("rtTpFoot").textContent =
+    "Each bar is the prior lease's $/sqft with the move to the new lease on top, on a shared scale. "
+    + "The prior rent is as its source reports it; the new rent follows the basis above. "
+    + (cuts.length ? rtPlural(cuts.length, "lease") + " came in below the one " + (cuts.length === 1 ? "it" : "they")
+                     + " replaced, drawn outlined: " + cuts.map(r => rtShort(r.property) + " " + r.label).join(", ") + "." : "");
+}
+
+function rtRenewalCard(d, R, label) {
+  const drawn = R.filter(r => r.incPct != null);
+  rtScatterFacets("rtRnFacets", drawn.map(r => ({ property: r.property, x: rtDay(r.date), y: r.incPct,
+    tip: [rtShort(r.property) + " " + (r.unit || "") + " · " + rtMD(r.date),
+          "Increase " + rtPct(r.incPct),
+          rtUsd(r.oldRate) + " → " + rtUsd(r.newRate)] })), {
+    withZero: true, yFmt: rtTickPct,
+    caption: (p, mine) => mine.length ? rtPlural(mine.length, "renewal") + " · mean " + rtPct(rtAvg(mine.map(r => r.y))) : "",
+    empty: () => "No renewal in this timeframe" });
+  document.getElementById("rtRnEyebrow").textContent = "ONE DOT PER RENEWAL · " + label.toUpperCase();
+  const ahead = drawn.filter(r => r.date > d.snapshot);
+  const by = {};
+  ahead.forEach(r => { by[r.property] = (by[r.property] || 0) + 1; });
+  document.getElementById("rtRnFoot").textContent =
+    "Panels share both axes. "
+    + (ahead.length ? rtPlural(ahead.length, "renewal") + " " + (ahead.length === 1 ? "is" : "are")
+                      + " dated after the snapshot of " + rtMD(d.snapshot) + " — "
+                      + Object.keys(by).map(p => p + " " + by[p]).join(", ") + "." : "");
+}
+
+function rtRenewPsfCard(d, R, label) {
+  const rows = R.filter(r => r.sqft && r.oldRate != null && r.newRate != null).map(r => ({
+    property: r.property, label: r.unit || "?", date: r.date, prior: r.oldRate / r.sqft,
+    next: r.newRate / r.sqft, pct: r.incPct }));
+  rtLegend("rtRpLegend", rtColors());
+  const inRange = {};
+  R.forEach(r => { inRange[r.property] = (inRange[r.property] || 0) + 1; });
+  rtBarFacets("rtRpFacets", rows, {
+    caption: (p, mine) => mine.length ? rtPlural(mine.length, "renewal") + " · mean move "
+      + rtSgnP(rtAvg(mine.map(r => r.next - r.prior))) + "/sqft" : "",
+    empty: p => inRange[p]
+      ? rtPlural(inRange[p], "renewal") + " here, none with square footage in the source — they are on the % chart above"
+      : "No renewal in this timeframe" });
+  const missing = R.filter(r => !r.sqft);
+  const mb = {};
+  missing.forEach(r => { mb[r.property] = (mb[r.property] || 0) + 1; });
+  document.getElementById("rtRpEyebrow").textContent =
+    "ONE BAR PER RENEWAL · $/SQFT · " + label.toUpperCase() + " · RENEWAL RATES CARRY ONE BASIS";
+  document.getElementById("rtRpFoot").textContent =
+    "The rent basis above does not move this card: a renewal carries one rate either side. "
+    + (missing.length ? rtPlural(missing.length, "renewal") + " in this timeframe carry no square footage and are "
+                        + "left out here: " + Object.keys(mb).map(p => p + " " + mb[p]).join(", ") + "." : "");
+}
+
+function rtWeeklyCard(d, W, label) {
+  const order = p => d.properties.indexOf(p);
+  const rows = [...W].sort((a, b) => a.ws !== b.ws ? (a.ws < b.ws ? 1 : -1) : order(a.property) - order(b.property));
+  const shown = RT.wkAll ? rows : rows.slice(0, 15);
+  rtTable(document.getElementById("rtWeekTbl"),
+    [{ t: "Week" }, { t: "Property" }, { t: "Leases", num: true }, { t: "Avg trade-out", num: true },
+     { t: "Avg renewal", num: true }, { t: "Occupied", num: true }, { t: "Leased", num: true }],
+    shown.map(w => [w.week + " " + w.ws.slice(0, 4), w.property, w.leases == null ? "" : String(w.leases),
+      w.avgTo == null ? "" : rtPct(w.avgTo), w.avgRenewal == null ? "" : rtPct(w.avgRenewal),
+      w.occ == null ? "" : w.occ + "%", w.leased == null ? "" : w.leased + "%"]));
+  rtMoreBtn("rtWeekMore", 15, rows.length, RT.wkAll, "week", () => { RT.wkAll = !RT.wkAll; rtRender(); });
+  document.getElementById("rtWeekEyebrow").textContent = "THE TRACKER'S WEEKLY ROWS · "
+    + rows.length + " IN THIS TIMEFRAME · NEWEST FIRST";
+  const without = d.properties.filter(p => !d.weekly.some(w => w.property === p));
+  document.getElementById("rtWeekFoot").textContent =
+    "A blank cell is a week its source carried no figure for, not a zero. "
+    + (without.length ? without.join(" and ") + (without.length === 1 ? " has" : " have") + " no weekly rows at all." : "");
+}
+
+function rtDetailCard(d, L, R, label) {
+  const isL = RT.dt === "leases";
+  const heads = isL
+    ? [{ t: "Date", key: "date" }, { t: "Property", key: "property" }, { t: "Unit", key: "unit" },
+       { t: "Sqft", key: "sqft", num: true }, { t: "Term", key: "term", num: true },
+       { t: "Rent", key: "rent", num: true }, { t: "$/sqft", key: "psf", num: true },
+       { t: "Prior", key: "prior", num: true }, { t: "Trade-out", key: "toPct", num: true }]
+    : [{ t: "Date", key: "date" }, { t: "Property", key: "property" }, { t: "Unit", key: "unit" },
+       { t: "Sqft", key: "sqft", num: true }, { t: "Old rate", key: "oldRate", num: true },
+       { t: "New rate", key: "newRate", num: true }, { t: "Increase", key: "incPct", num: true },
+       { t: "New $/sqft", key: "psf", num: true }];
+  const val = (r, k) => {
+    if (k === "rent") return rtRent(r);
+    if (k === "psf") return isL ? rtLpsf(r) : (r.sqft && r.newRate ? r.newRate / r.sqft : null);
+    if (k === "term") return r.term == null ? null : +r.term;
+    if (k === "property") return d.properties.indexOf(r.property);
+    return r[k] === undefined ? null : r[k];
+  };
+  const src = isL ? L : R;
+  const rows = rtSorted(src, RT.sort.key, RT.sort.dir, val);
+  const shown = RT.dtAll ? rows : rows.slice(0, 25);
+  rtTable(document.getElementById("rtDtTbl"), heads, shown.map(r => isL
+    ? [r.date, r.property, r.unit || "—", r.sqft == null ? "—" : String(r.sqft), r.term || "—",
+       rtUsd(rtRent(r)), rtPsfS(rtLpsf(r)), rtUsd(r.prior),
+       r.toPct == null ? "—" : rtPct(r.toPct) + (r.toDollars != null ? " (" + (r.toDollars >= 0 ? "+" : "−") + rtUsd(Math.abs(r.toDollars)) + ")" : "")]
+    : [r.date, r.property, r.unit || "—", r.sqft == null ? "—" : String(r.sqft),
+       rtUsd(r.oldRate), rtUsd(r.newRate), rtPct(r.incPct),
+       r.sqft && r.newRate ? rtPsfS(r.newRate / r.sqft) : "—"]),
+    RT.sort, key => {
+      RT.sort = RT.sort.key === key ? { key, dir: -RT.sort.dir } : { key, dir: key === "date" ? -1 : 1 };
+      rtRender();
+    });
+  rtMoreBtn("rtDtMore", 25, rows.length, RT.dtAll, isL ? "lease" : "renewal",
+            () => { RT.dtAll = !RT.dtAll; rtRender(); });
+  document.getElementById("rtDtEyebrow").textContent = (isL ? "EVERY EXECUTED NEW LEASE" : "EVERY RENEWAL")
+    + " IN THIS TIMEFRAME · " + rows.length + " ROWS · " + (isL ? "RENT ON THE " + rtBasis().toUpperCase() + " BASIS" : "ONE BASIS");
+  document.getElementById("rtDtFoot").textContent =
+    "The table behind every chart above. Click a column heading to sort; blanks sort last either way.";
 }
 
 // Left/Right arrows move between tabs, per the tablist keyboard convention.
