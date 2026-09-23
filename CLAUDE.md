@@ -2252,9 +2252,11 @@ Two traps worth knowing:
   `report_map.json` and the `.js` rule all change together; `test_routing.py`
   fails if only one moves.
 
-### Four folders are split inside, and `SPLIT_INSIDE` is how
+### Five folders are split inside, and `SPLIT_INSIDE` is how
 
-Since 2026-09-23 **`Rent Roll` and `Delinquency` split by property** as well,
+Since 2026-09-23 **`Rent Roll`, `Delinquency` and `Residential AR Analytics`
+split by property** as well (the last has no Drive folder yet: every delinquency
+summary so far matched the `Delinquency` rule first),
 off the same `PROPERTY_FOLDERS` table as the leasing reports. Yardi's rent roll
 names no property in its filename (`RentRoll09_15_2026.xlsx` — the building is
 only inside, at row 278), so in practice rolls stay at the top of `Rent Roll`;
