@@ -33,6 +33,10 @@ ap.add_argument("--slug", default=SLUG)
 ap.add_argument("--today", help="override today's date (YYYY-MM-DD), for testing")
 args = ap.parse_args()
 
+# Sealed data must be open first -- see crypto_data.require_opened.
+import crypto_data  # noqa: E402
+crypto_data.require_opened("landing_drive_status")
+
 today = (datetime.date.fromisoformat(args.today) if args.today
          else datetime.datetime.now(datetime.timezone.utc).date())
 

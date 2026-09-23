@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}   # allows manual "Run workflow" from the Actions tab
 
 permissions:
-  contents: write          # needed to commit metrics.json + data/ back
+  contents: write          # needed to commit the sealed metrics + data/ back
 
 # Two runs overlapping is one way the commit step ends up racing itself, and a
 # second run rebuilding the same day's data buys nothing. Queue rather than
@@ -21,6 +21,11 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    # Figures out of the (public) log: every python process in this job prints
+    # through scripts/ci_logs/sitecustomize.py, which masks currency, percentages
+    # and figure-shaped numbers. Local runs are unaffected.
+    env:
+      PYTHONPATH: ${{ github.workspace }}/scripts/ci_logs
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +37,26 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      # The data is sealed (scripts/crypto_data.py): docs/*.json.enc and
+      # data/**/*.json.enc are all the repository carries, and this run has to
+      # read last run's output before it can write this one. So the key is
+      # checked FIRST, and checked against the sealed files, not just for being
+      # set: a missing or wrong secret found after a four-hour Drive fetch would
+      # waste the whole run. Failing is deliberate. The alternative -- carrying on
+      # without it -- could only end in committing plaintext to a public repo.
+      - name: Check the data key opens the sealed files
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
+        run: |
+          if [ -z "${DASHBOARD_PASSWORD:-}" ]; then
+            echo "::error::The DASHBOARD_PASSWORD repository secret is not set. The data is"
+            echo "::error::sealed, so this run can neither read nor write it. Settings ->"
+            echo "::error::Secrets and variables -> Actions -> New repository secret."
+            exit 1
+          fi
+          python scripts/crypto_data.py check
 
       - name: Fetch reports from Google Drive
         env:
@@ -76,6 +101,18 @@ jobs:
           git log --oneline "$before..$after" 2>/dev/null | sed 's/^/  /' || true
           git reset -q --hard "$after"
           git log -1 --format='building on %h %s'
+
+      # AFTER the re-sync, never before it. The working copies are gitignored,
+      # so the reset above leaves them alone: opened any earlier, they would be
+      # this morning's data under this evening's sealed copies, and the seal at
+      # the end would write the stale copy over whatever main gained mid-run.
+      # Every script below also refuses to start on an unopened checkout
+      # (crypto_data.require_opened), so a missed step here fails loudly.
+      - name: Open the sealed data files
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
+        run: python scripts/crypto_data.py decrypt
 
       - name: Build metrics
         run: python scripts/build_metrics.py
@@ -163,17 +200,44 @@ jobs:
           GDRIVE_PACKET_FOLDER_ID: ${{ secrets.GDRIVE_PACKET_FOLDER_ID }}
         run: python scripts/upload_packet_pdf.py
 
+      # On the PLAINTEXT, which is the only point at which it can mean anything:
+      # once sealed there is nothing for it to read. --require-open makes a
+      # checkout whose working copies are missing a failure rather than a pass.
       - name: Refuse to commit if personal data leaked into the output
-        run: python scripts/check_no_pii.py
+        run: python scripts/check_no_pii.py --require-open
+
+      # Seals every working copy that changed -- and, the first time this runs
+      # with the secret set, every data file there is, taking the plaintext out
+      # of the index as it goes. Unchanged files are left byte-for-byte alone, so
+      # a quiet day still commits nothing. A new or rotated password re-keys
+      # everything here too: files are opened under DASHBOARD_PASSWORD_OLD when
+      # the current one does not fit, and always sealed under DASHBOARD_PASSWORD.
+      - name: Seal the data files
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
+        run: |
+          python scripts/crypto_data.py encrypt --git
+          python scripts/crypto_data.py check
 
       - name: Commit changes
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
         run: |
           set -u
-          PATHS="data docs/metrics.json docs/scorecard.json docs/lineage.json"
+          # The sealed copies are what is committed. The plaintext working copies
+          # are gitignored, so `git add -A data` picks up only the .enc beside them.
+          PATHS="data docs/metrics.json.enc docs/landing.json.enc docs/scorecard.json.enc docs/lineage.json.enc"
+          # Carried across the replay below so the re-stage can tell this run's
+          # sealed copies from main's; never committed.
+          WORKING="docs/metrics.json docs/landing.json docs/scorecard.json docs/lineage.json .sealed-state.json"
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A $PATHS 2>/dev/null \
-            || git add docs/metrics.json docs/scorecard.json docs/lineage.json
+          # Only paths that exist: one missing pathspec makes `git add -A` stage
+          # NOTHING (exit 128), and the run would end green on "No changes".
+          stage() { for p in $PATHS; do [ -e "$p" ] && git add -A -- "$p"; done; true; }
+          stage
           if git diff --staged --quiet; then
             echo "No changes to commit."
             exit 0
@@ -219,13 +283,17 @@ jobs:
               echo "$moved" | sed 's/^/  /'
             fi
             tmp=$(mktemp -d)
-            for p in $PATHS; do
+            for p in $PATHS $WORKING; do
               [ -e "$p" ] && cp -a --parents "$p" "$tmp/" 2>/dev/null || true
             done
             git reset -q --hard origin/main
             cp -a "$tmp/." . && rm -rf "$tmp"
-            git add -A $PATHS 2>/dev/null \
-              || git add docs/metrics.json docs/scorecard.json docs/lineage.json
+            # Re-stage from the restored files: the sealed copies go in, and any
+            # plaintext main still tracks comes out of the index (the one-time
+            # race with the first seal). Same replay-over semantics as before
+            # sealing -- open item A15 is unchanged by this, not fixed.
+            python scripts/crypto_data.py encrypt --git --quiet || exit 1
+            stage
             if git diff --staged --quiet; then
               echo "Remote already carries this run's output; nothing left to push."
               exit 0

@@ -63,7 +63,7 @@
         ],
         "through_period": "Jul 2026",
         "since": "2026-08-19",
-        "reason": "Owner confirmed 2026-08-20: 335 Third is newly built with no signed lease, so no real T12 exists yet -- the Jun 2026 statement filed under rs335 is dummy data (it posts $2.4M of T12 revenue, and its monthly ratios match Palma North's at a two-month offset). Statements ending after Jul 2026 flow automatically, like Palma's, so nothing needs lifting when real data starts."
+        "reason": "Owner confirmed 2026-08-20: 335 Third is newly built with no signed lease, so no real T12 exists yet -- the Jun 2026 statement filed under rs335 is dummy data (it posts millions of T12 revenue for a building with no lease, and its monthly ratios match Palma North's at a two-month offset). Statements ending after Jul 2026 flow automatically, like Palma's, so nothing needs lifting when real data starts."
       },
       "aliases": [
         "335 3rd Street"

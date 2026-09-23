@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Align Data Flow &amp; Tables</title>
+<!-- Opens the sealed data. The same file index.html uses, so the two cannot
+     disagree about the envelope. -->
+<script src="unlock.js"></script>
 <script>
   // Applied before first paint; shares the dashboard's stored preference.
   (function () {
@@ -257,9 +260,10 @@
 </head>
 <body>
 
-  <!-- No password entry here by design: this page is reachable only after
-       unlocking on the dashboard, so it is not a second way in. Without a
-       session unlock it redirects rather than prompting. -->
+  <!-- No password entry here by design: the dashboard is where the key is
+       derived, and this page borrows it for the browser tab. Without one there
+       is nothing to show -- the files are ciphertext -- so it redirects there
+       rather than offering a second prompt. -->
   <div id="gate">
     <div class="mark"></div>
     <h1>Align Data</h1>
@@ -327,24 +331,36 @@
 /* ============================================================
    ACCESS
    The password lives on the dashboard and is entered only there.
-   Unlocking sets a session marker; this page requires it and sends
-   you to the dashboard if it is missing, rather than offering a
-   second prompt. Same client-side visibility gate as before —
-   deterrence, not encryption, since the source is public.
+   Unlocking derives a key from it; this page borrows that key for
+   the browser tab and sends you to the dashboard when there is
+   none, rather than offering a second prompt. The files it reads
+   are ciphertext, so without the key there is nothing here to show:
+   the redirect is the only way in, not merely the polite one.
    ============================================================ */
-const SESSION_KEY = "align-unlocked";
 const gate = document.getElementById("gate"), app = document.getElementById("app");
 
-function sessionUnlocked() {
-  try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch (e) { return false; }
+function openPage() {
+  gate.style.display = "none";
+  app.style.display = "block";
+  loadAll();
 }
 
-function requireUnlock() {
-  if (sessionUnlocked()) {
-    gate.style.display = "none";
-    app.style.display = "block";
-    loadAll();
+async function requireUnlock() {
+  // "Unlocked" is no longer a marker that merely says so -- it is holding a key
+  // that actually opens the files. A key from before a password change sends you
+  // back to the dashboard rather than rendering an empty page.
+  let mode = "missing";
+  try { mode = await AlignUnlock.detect(); } catch (e) {}
+  if (mode === "plain") {
+    if (AlignUnlock.isLocal()) { AlignUnlock.plainBanner(); openPage(); return; }
+    document.getElementById("gateMsg").textContent =
+      "This deployment has not been sealed yet, so it shows nothing.";
     return;
+  }
+  if (mode === "encrypted") {
+    let keyed = false;
+    try { keyed = await AlignUnlock.resume(); } catch (e) {}
+    if (keyed) { openPage(); return; }
   }
   // Send them to the dashboard to unlock, and come back here afterwards.
   // replace() rather than assign() so Back does not bounce between the two.
@@ -1080,9 +1096,7 @@ function renderLineage(L) {
    ============================================================ */
 async function grab(name) {
   try {
-    const res = await fetch(name, { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return { ok: true, data: await res.json() };
+    return { ok: true, data: await AlignUnlock.load(name) };
   } catch (e) { return { ok: false, error: String(e.message || e) }; }
 }
 
@@ -1716,8 +1730,8 @@ async function loadAll() {
       feeds: "Nothing on the dashboard — kept for reference",
       note: "Every status as the analyst set it by hand in the KPI workbook, "
           + "including the cells no report has supplied. This is what the dashboard "
-          + "used to colour and count, which had the portfolio reporting 90% at or "
-          + "above target off cells that had never been measured. Retained because "
+          + "used to colour and count, which had the portfolio reporting far above "
+          + "target off cells that had never been measured. Retained because "
           + "it is a real record of the analyst's read — just not evidence.",
       cols: [{ key: "group", label: "Group" }, { key: "metric", label: "KPI" }].concat(
         props.map(p => ({ key: p.label, label: p.label }))),
@@ -2204,10 +2218,12 @@ async function loadAll() {
     if (dq.unit_531) {
       const u5 = dq.unit_531;
       renderTable(host, {
-        id: "t-l-delq-531", group: "The Landing", title: "Delinquency — unit 531 status",
-        feeds: "The unit-531 note under the Delinquency card",
-        note: "Tracked separately because 531 is both the rent-override unit on Inputs and "
-            + "a large balance. The resident's name is deliberately not published.",
+        id: "t-l-delq-tracked", group: "The Landing", title: "Delinquency — tracked unit status",
+        feeds: "The tracked-unit note under the Delinquency card",
+        // The unit number is deliberately not in this source, which is public: the
+        // row sits in the sealed data and appears only after unlocking.
+        note: "Tracked separately because it is the rent-override unit on Inputs. The "
+            + "resident's name is deliberately not published.",
         cols: KVCOLS,
         rows: [{ key: "status per Yardi", value: u5.status },
                { key: "PM memo", value: u5.memo },
@@ -2289,8 +2305,9 @@ async function loadAll() {
     + "see here is what the charts plot. The flow is read from lineage.json, whose Drive side "
     + "is derived from config/report_map.json — a folder registered tomorrow appears here by "
     + "itself. CSV exports carry raw unrounded values. "
-    + "SECURITY: the password gate is client-side only and not encryption — this page exposes "
-    + "the same data as the dashboard, so treat the link the same way.";
+    + "SECURITY: these tables are decrypted in your browser from the same sealed files the "
+    + "dashboard reads, with the key your password derived. They expose the same data, so "
+    + "treat the link the same way.";
 }
 
 /* A scorecard cell on the dashboard links to the row of "Measured KPI values"

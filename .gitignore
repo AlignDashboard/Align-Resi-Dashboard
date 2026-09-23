@@ -40,3 +40,15 @@ node_modules/
 
 # Rebuilt from OPEN_ITEMS.md on every run; the state file beside it is tracked
 open_items_digest.pdf
+
+# Sealed data (scripts/crypto_data.py). What is committed is <name>.enc; these are
+# the plaintext working copies, opened from it on a machine that has the password.
+# The repository is public, so committing one would hand over every figure the
+# sealing protects. Open them with:  python3 scripts/crypto_data.py decrypt
+docs/metrics.json
+docs/landing.json
+docs/scorecard.json
+docs/lineage.json
+data/**/*.json
+# per-checkout record of which sealed copy each working copy was opened from
+.sealed-state.json

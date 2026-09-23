@@ -420,4 +420,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # Sealed data must be open before anything reads last run's output -- see
+    # crypto_data.require_opened. Here, not in main(), which tests drive directly.
+    import crypto_data
+    crypto_data.require_opened("populate_building_metrics")
     main()

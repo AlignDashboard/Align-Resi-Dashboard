@@ -43,12 +43,32 @@ ask for the PR; do not open one preemptively.
 | Path | Purpose |
 | --- | --- |
 | `docs/index.html` | The whole dashboard: markup, CSS, and Chart.js rendering in one file |
-| `docs/metrics.json` | Data the page fetches at load; written by the pipeline, not by hand |
+| `docs/metrics.json.enc` | Data the page fetches at load, **sealed** — written by the pipeline, not by hand. `docs/metrics.json` beside it is the gitignored plaintext working copy |
+| `docs/unlock.js` | Opens the sealed data in the browser; shared by both pages |
 | `docs/data.html` | Two views behind the same gate: the **data-flow** chain, and the **tables** holding every number the JSON carries |
-| `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand |
+| `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand. Sealed like the rest |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json`; `gmail_drive_filing.js` is the Apps Script that files reports into Drive in the first place |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
-| `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
+| `data/` | Scrubbed per-property pipeline output, **sealed** (`<store>.json.enc`). Raw reports live in `_downloads/` and are never committed |
+
+### The data is sealed — before you touch any of it
+
+Every `docs/*.json` and `data/**/*.json` is committed only as ciphertext, beside
+it as `<name>.enc` (see **The data is sealed** below). So in any session:
+
+1. **Open it first:** `python3 scripts/crypto_data.py decrypt`. It needs
+   `DASHBOARD_PASSWORD` in the environment. The session-start hook does this
+   when the variable is set, and every pipeline script refuses to start without it
+   rather than quietly building from empty history.
+2. **Seal before committing a data change:** `python3 scripts/crypto_data.py
+   encrypt --git`. The pre-commit hook refuses a commit that carries plaintext,
+   or that leaves a changed working copy unsealed.
+3. **After a pull, open again.** A sealed copy that moved since you opened it is
+   refused at the seal, because sealing a stale copy would overwrite whatever
+   arrived in between.
+4. **Never commit a plaintext data file, and never put a figure in a commit
+   message.** The repository and its history are public; commit messages cannot
+   be sealed or taken back.
 
 ### A report can name a building any of three ways
 
@@ -2557,7 +2577,10 @@ to Pages from an artifact assembled at run time, taking the site shell from
 `main` and the data JSON from a `data` branch.
 
 `docs/lineage.json` travels with the other three data files — `update.yml`
-commits it, `publish_data.sh` publishes it and `deploy.yml` overlays it.
+commits it, `publish_data.sh` publishes it and `deploy.yml` overlays it — all in
+their **sealed** form (`*.json.enc`). Sealing narrows what history exposes from
+now on but does not replace this: the plaintext versions from before the first
+seal are still there.
 
 `scripts/publish_data.sh` writes that branch as a **single commit with no
 parent**, force-replacing it each time, so only the current data exists in git —
@@ -2583,13 +2606,171 @@ After flipping it, in order:
 
 1. `scripts/publish_data.sh` — create the `data` branch.
 2. Confirm the site still loads, then stop committing data to `main`: drop
-   `docs/*.json` from tracking and change `update.yml` to publish to the `data`
-   branch instead of committing.
+   `docs/*.json.enc` from tracking and change `update.yml` to publish to the
+   `data` branch instead of committing. (The *plaintext* half is done: the first
+   seal takes `docs/*.json` and `data/**/*.json` out of tracking, and
+   `check_no_pii.py` fails if they go back in.)
 3. `scripts/purge_data_history.sh --dry-run`, then `--yes-rewrite-history`, to
    remove the data already in history. Tested on a throwaway clone: 63 commits →
    40, every data path gone from every commit, site shell and scripts intact.
    Read the script's header first — it rewrites history, needs a force-push, and
    **cannot un-publish anything that was already public.**
+
+## The data is sealed
+
+Every data file the pipeline produces is committed as AES-256-GCM ciphertext.
+The plaintext is a gitignored working copy that exists only where the password
+is. The repository is public and the site is static, so before this every figure
+was readable by anyone. Now the four files the page fetches (`docs/metrics.json`,
+`landing.json`, `scorecard.json`, `lineage.json`) and every per-property store
+under `data/` are sealed:
+
+    docs/metrics.json            ->  docs/metrics.json.enc        (the page opens it)
+    data/palma/monthly_pl.json   ->  data/palma/monthly_pl.json.enc   (the pipeline does)
+
+The set is a glob, not a list: a store that appears tomorrow is sealed by
+default. Two things are deliberately **outside** it:
+
+- `data/*/rent_roll.json` and `data/*/delinquency.json` (`NEVER_SEAL`). They are
+  unit level and arrive with resident names, and they are gitignored outright:
+  they exist only on the runner for one run. Sealing them would start committing
+  names, readable by every viewer the password is shared with.
+- `config/*.json`, `open_items_state.json` and the site shell. The filer, the
+  routing test and the open-items Routine read them without the password, and
+  none of them carries data. The one figure that sat in `properties.json`'s
+  prose was reworded.
+
+| Piece | What |
+| --- | --- |
+| `scripts/crypto_data.py` | Seals and opens everything; the envelope format is defined here. `status` / `decrypt` / `encrypt` / `reseal` / `rotate` / `check` / `passphrase` / `install` |
+| `docs/unlock.js` | The browser half, shared by both pages: WebCrypto and DecompressionStream, no library |
+| `.github/workflows/seal_data.yml` | The first seal, and every password change, from the Actions tab |
+| `.claude/hooks/session-start.sh` | Opens the data at the start of every Claude Code web session that has the password |
+| `.githooks/`, `.gitattributes` | Refuse plaintext commits, refresh working copies after a pull, show sealed files as plaintext in `git diff`, and 3-way merge them |
+| `scripts/test_encryption.py` | Fixture-free checks, including `unlock.js` run under Node against files Python sealed. Each guard is verified by mutation |
+
+### The password
+
+**The protection is exactly as strong as the passphrase, and nothing else.** The
+ciphertext is public, so anyone can take a copy and guess offline for ever, with
+no rate limit and nobody watching. The 600,000 PBKDF2 rounds make each guess
+cost time. They do not make a guessable password safe. So the first seal refuses
+anything under 12 characters, and refuses `AlignExecs`, which sat in `index.html`
+in public. `crypto_data.py passphrase` prints a strong, typeable one (about 99
+bits); it refuses to run inside Actions, where the log is public.
+
+It lives in exactly two places, and both must hold the same value:
+
+| Where | Who reads it |
+| --- | --- |
+| Repository secret `DASHBOARD_PASSWORD` | `update.yml`, `refresh_comps.yml`, `seal_data.yml` |
+| Claude cloud environment variable `DASHBOARD_PASSWORD` | the EliseAI daily and Landing-packet Routines, and any session that edits data. The open-items Routine does not need it |
+
+**Setting it for the first time:** add the secret. Then add the same value to the
+Claude environment (the environment menu in a session's title bar, then Edit,
+then environment variables). Then run **Seal dashboard data** from the Actions
+tab. It also runs by itself on any push that carries plaintext data. Until that
+run, the live page shows nothing: an unsealed build on a public host fails
+closed.
+
+**Changing it:** set `DASHBOARD_PASSWORD_OLD` to the current password and
+`DASHBOARD_PASSWORD` to the new one, run **Seal dashboard data**, update the
+Claude environment variable, and delete `DASHBOARD_PASSWORD_OLD`. Every run opens
+under whichever of the two fits and seals under the new one, so even the daily
+cron completes a rotation on its own. A rotation mints a fresh salt, so every
+open browser tab drops back to the gate, which is expected. Locally,
+`crypto_data.py rotate` prompts for both.
+
+Every workflow **requires** the secret and fails in its first steps without it.
+There is no unsealed fallback mode, because the only thing such a mode could do
+is commit plaintext.
+
+### The envelope, and why each part is there
+
+The docstring of `crypto_data.py` is the spec. The parts that are load-bearing:
+
+- **Bound to its repo-relative path** (the AAD). Not its basename:
+  `data/palma/monthly_pl.json` and `data/the-landing/monthly_pl.json` share one,
+  and a basename binding would let one property's figures open as the other's.
+- **One salt per password, not per run.** One derivation opens all ~30 files,
+  and a browser tab unlocked this morning still opens tonight's re-seal. The IV
+  is fresh for every envelope.
+- **gzip inside.** Ciphertext does not delta-compress in git, so every changed
+  file is stored whole. Compressing first makes that roughly six times smaller:
+  `metrics.json` is 280 KB of JSON and a 45 KB envelope.
+- **Unchanged data is not re-sealed**, or the random IV would make every run
+  commit a diff.
+
+### The guards, because ciphertext hides every mistake
+
+A wrong file sealed looks exactly like a right one, so the failure modes are
+closed at the point they would happen rather than left for a diff to show:
+
+- **The checkout guard.** `decrypt` records, in the gitignored
+  `.sealed-state.json`, which envelope each working copy came from. `encrypt`
+  refuses a copy whose sealed file moved since it was opened, and a file never
+  opened in this checkout at all. The first case is a stale copy sealed over a
+  newer push. The second is a store rebuilt from nothing and sealed over its
+  history. The refusal is all or nothing. `--force` exists for `update.yml`'s
+  push race, which replays its output over `main` by design; that is A15, and it
+  is unchanged by this, not fixed.
+- **The entry guard.** Eleven readers in `build_metrics` load last run's output as
+  `json.load(open(fp)) if fp.exists() else <empty>`. Faced with only a sealed
+  copy they would not fail — they would start over. So every script that reads
+  data calls `crypto_data.require_opened()` at its command-line entry point: at
+  the entry point, and not in `main()`, which tests drive directly. It refuses to
+  start with a missing or stale working copy.
+- **Order in the workflows.** `update.yml` opens the data **after** its re-sync
+  reset, never before. The working copies are gitignored, so a reset leaves them
+  alone. `refresh_comps.yml`'s retry re-opens main's copies after its own reset
+  (`decrypt --force`). `test_encryption.py` pins both orders.
+- **The page fails closed.** An unsealed build shows nothing on any host but
+  `localhost`, where it opens under a red UNSEALED banner. The scorecard used to
+  be fetched at script-parse time and rendered into the hidden DOM before anyone
+  typed a password. It is lazy now: callers park until the key exists.
+- **`check_no_pii.py`** scans the plaintext, `data/` included, before the seal.
+  With `--require-open` it fails rather than passes when a working copy is
+  missing, and once the repo is sealed it fails on any tracked or staged
+  plaintext data file. When it fires it names the JSON path, never the value.
+  Printing the value would put the name it just blocked into a public log.
+- **The logs.** Actions logs on a public repository are public, and the pipeline
+  prints the sealed figures: every filled KPI, comp-implied rents, tie-out
+  amounts inside parser errors. Every workflow therefore puts
+  `scripts/ci_logs/` on `PYTHONPATH`. Its `sitecustomize.py` masks currency,
+  percentages and figure-shaped numbers in everything any Python process in the
+  job prints, tracebacks included. Dates, filenames and small counts survive. It
+  is off outside Actions; `ALIGN_LOG_REDACT=0` turns it off inside. The cost is
+  that a CI failure's amounts are not in its log: rerun locally, where they are.
+  `test_log_redact.py` covers it.
+
+### What it does not do
+
+- **History.** Every version committed before the first seal is still plaintext in
+  git. `scripts/purge_data_history.sh` removes it (open item E3). It removes the
+  plaintext only: its patterns end in `.json`, so the sealed `.json.enc` at the
+  tip survive. It refuses to run in a shallow clone. It cannot un-publish copies
+  already taken, and every stale remote branch keeps its own history until it is
+  deleted.
+- **A bad rotation is recoverable from history.** If a password change seals
+  under something nobody can type, the previous commit's `*.enc` still open under
+  the previous password. Check them out, then reseal with
+  `DASHBOARD_PASSWORD_OLD` set to that password.
+- **Everything else in a public repository.** CLAUDE.md and OPEN_ITEMS.md
+  carry real figures in prose, and so do script comments and a few tests. Commit
+  messages carry some; about fifty bodies reachable from `main` have dollar
+  amounts. None of that can be sealed. Past Actions logs still hold what was
+  printed before the redaction, until they are deleted or age out. Real figures
+  were taken out of the comments and strings the **served** pages carry, since
+  those reach anyone with the site's URL. The complete fix for the rest is making
+  the repository private: Pages then needs a paid plan, and the site itself stays
+  public, which is fine now that its data is sealed.
+- **The password itself.** Anyone who has it can hand the data on. A copy of
+  today's ciphertext stays readable under today's password, whatever it is
+  rotated to later.
+- **The key in the browser.** The derived key, never the password, sits in the
+  tab's `sessionStorage` so `data.html` opens without a second prompt. Any script
+  on the origin could read it, and GitHub Pages shares one origin across an
+  owner's sites.
 
 ## Tenant names must not leave the pipeline
 
@@ -2614,22 +2795,26 @@ Raw reports are gitignored (`_downloads/`, `*.xlsx`, `tests/fixtures/`,
 **Anything the page displays is in a file anyone with the URL can download.**
 There is no "visible on the page but not otherwise accessible" on a static site
 — the page fetches JSON over HTTP. That is why names are dropped from the data
-entirely rather than merely hidden from a table. Displaying them would require
-encrypting the JSON or putting the site behind real auth.
+entirely rather than merely hidden from a table.
+
+**Sealing the data does not relax this.** The password is shared with everyone
+who reads the dashboard, so "sealed" means "readable by every viewer", which is
+the wrong bar for a resident's name. The ciphertext is also public and permanent,
+so a password that leaks once exposes every copy ever published. Names stay out
+of the data.
 
 ## Notes
 
-- The page is gated by a client-side password constant in `index.html`. This is
-  visibility deterrence, not encryption — the source is public and readable. Do
-  not treat it as protecting anything. Real financials need client-side
-  encryption of `metrics.json` first.
-- `index.html` is the only place the password is entered. Unlocking sets
-  `sessionStorage["align-unlocked"]`; `data.html` requires that marker and
-  redirects to `index.html?next=data.html` without it, so the data tables are
-  not a second way in. The unlock lasts the browser session, not forever. Any
-  new gated page should follow the same pattern rather than adding its own
-  password field — and note the marker is client-side like the gate itself, so
-  it deters, it does not protect.
+- There is no password constant in `index.html`: the password is the key to the
+  sealed data (see **The data is sealed**). A wrong one fails to decrypt.
+- `index.html` is the only place the password is entered. Unlocking keeps the
+  derived key for the tab; `data.html` borrows it and redirects to
+  `index.html?next=data.html` when there is none. Any new page that shows data
+  must call `AlignUnlock.load()` rather than `fetch()` the JSON or add its own
+  password field.
+- **No real figures in the served pages' comments or strings.** The source of
+  `index.html` and `data.html` is readable without the password. Illustrate with
+  obviously made-up numbers.
 - `metrics.json` values flow into the DOM. When rendering anything from it,
   prefer `textContent` / `createElement` over `innerHTML` so pipeline data
   cannot inject markup.

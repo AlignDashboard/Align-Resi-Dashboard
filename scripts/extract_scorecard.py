@@ -22,6 +22,12 @@ from openpyxl.utils import get_column_letter
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else "KPI_Scorecard_Formatted_v10.xlsx"
 OUT = "docs/scorecard.json"
+
+# The populate_* fills that follow read data/ and merge into this file, so the
+# sealed set has to be open before it is rebuilt -- see crypto_data.require_opened.
+if __name__ == "__main__":
+    import crypto_data  # noqa: E402
+    crypto_data.require_opened("extract_scorecard")
 SHEET = "KPI (Flipped Axis)"
 RANGES_SHEET = "KPI Target Ranges"
 

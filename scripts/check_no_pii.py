@@ -23,6 +23,7 @@ Usage:
 import argparse
 import json
 import os
+import pathlib
 import re
 import subprocess
 import sys
@@ -46,6 +47,7 @@ PERSON_NEIGHBOURS = {"unit", "owed", "total_owed", "balance", "d30", "over90",
                      "actual_rent", "market_rent", "lease_expiration"}
 
 problems = []
+sealed_unscanned = []
 
 
 def walk(obj, path, findings):
@@ -56,18 +58,45 @@ def walk(obj, path, findings):
                 if k in AMBIGUOUS and not (keys & PERSON_NEIGHBOURS):
                     pass                              # a label on an aggregate
                 else:
-                    findings.append(f"{path}.{k} = {str(v)[:40]!r}")
+                    # The path and key only -- never the value. This prints into
+                    # a public Actions log, in exactly the run where a name leaked.
+                    findings.append(f"{path}.{k}")
             walk(v, f"{path}.{k}", findings)
     elif isinstance(obj, list):
         for i, v in enumerate(obj[:400]):
             walk(v, f"{path}[{i}]", findings)
 
 
+def _stores():
+    """Every per-property store in the checkout, plaintext working copies only."""
+    try:
+        from crypto_data import never_sealed
+    except Exception:                                  # noqa: BLE001
+        never_sealed = lambda rel: rel.endswith(("/rent_roll.json", "/delinquency.json"))  # noqa: E731
+    out = []
+    for dp, _, fs in os.walk("data"):
+        out += [os.path.join(dp, f).replace(os.sep, "/") for f in fs if f.endswith(".json")]
+    # The runner-only, unit-level files are never committed in any form; pass 2
+    # is what keeps them out of git. Scanning them here would be a new way for
+    # the cron to fail on files that are never published.
+    return sorted(r for r in out if not never_sealed(r))
+
+
 def pass1_structural():
-    print("1. structural — person-shaped keys in the published JSON")
-    for f in PUBLISHED:
+    print("1. structural — person-shaped keys in the published JSON and data/ stores")
+    # The stores are public too: the repository is public, whether or not the
+    # site ever fetches them. Before sealing they were not scanned at all.
+    for f in PUBLISHED + [x for x in _stores() if x not in PUBLISHED]:
         if not os.path.exists(f):
-            print(f"   SKIP {f} (not present)")
+            # Ciphertext cannot be inspected, and a pass that counted it as clean
+            # would pass for the wrong reason. In the workflows this runs after
+            # the decrypt step, on the plaintext, and --require-open turns a
+            # missing working copy into a failure.
+            if os.path.exists(f + ".enc"):
+                print(f"   SEALED {f}.enc — not scanned here (no working copy)")
+                sealed_unscanned.append(f)
+            else:
+                print(f"   SKIP {f} (not present)")
             continue
         findings = []
         walk(json.load(open(f)), os.path.basename(f), findings)
@@ -76,14 +105,19 @@ def pass1_structural():
             for x in findings[:10]:
                 print(f"        {x}")
             problems.append(f"{f} contains person-shaped fields: {findings[:3]}")
-        else:
+        elif f in PUBLISHED or os.environ.get("CHECK_NO_PII_VERBOSE"):
             print(f"   PASS {f}")
+    n = len([x for x in _stores() if x not in PUBLISHED])
+    print(f"   ({n} data/ store(s) scanned)")
 
 
 def pass2_tracked():
     print("2. tracked files — raw reports or per-unit output in git")
     tracked = subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout.split()
-    staged = subprocess.run(["git", "diff", "--cached", "--name-only"],
+    # --diff-filter=ACMR: what the commit ADDS. Without it, staging the removal
+    # of a file that must not be committed reads as staging the file itself,
+    # and the check fails on the very fix.
+    staged = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
                             capture_output=True, text=True).stdout.split()
     bad_pat = re.compile(r"\.(xlsx|xlsm|csv)$|(^|/)_downloads/|"
                          r"(^|/)tests/fixtures/|/(rent_roll|delinquency)\.json$")
@@ -94,6 +128,32 @@ def pass2_tracked():
             problems.append(f"{label} files that may carry names: {hits}")
         else:
             print(f"   PASS no {label} raw reports or per-unit output")
+
+    # Once the repository seals its data, the plaintext must never be in git
+    # again: beside the ciphertext it undoes the sealing completely, and in a
+    # 100,000-line JSON diff it would look like nothing at all.
+    try:
+        import crypto_data
+        root = pathlib.Path(".").resolve()
+        sealed_mode = crypto_data.mode(root) == "sealed"
+        sealed_set = set(crypto_data.sealed_set(root))
+    except Exception as exc:                          # noqa: BLE001
+        print(f"   SKIP sealed-data rule ({exc})")
+        return
+    if not sealed_mode:
+        print("   NOTE the data is not sealed yet — plaintext in git is expected until "
+              "the first seal (seal_data.yml)")
+        return
+    for label, files in (("tracked", tracked), ("staged", staged)):
+        clear = sorted(f for f in files if f in sealed_set)
+        if clear:
+            print(f"   FAIL {label} plaintext data: {clear[:6]}{' …' if len(clear) > 6 else ''}")
+            problems.append(
+                f"{len(clear)} {label} plaintext data file(s), e.g. {clear[0]}. The repository "
+                f"is public and the data is sealed: commit the .enc (crypto_data.py encrypt "
+                f"--git) and take the plaintext out of the index (git rm --cached).")
+        else:
+            print(f"   PASS no {label} plaintext data files")
 
 
 def harvest_names(source):
@@ -177,8 +237,12 @@ def pass3_values(source):
         leaks = [n for n in names
                  if re.search(r"(?<![A-Za-z])" + re.escape(n) + r"(?![A-Za-z])", txt)]
         if leaks:
-            print(f"   FAIL {f}: {sorted(leaks)[:6]}{' …' if len(leaks) > 6 else ''}")
-            problems.append(f"{f} contains {len(leaks)} name value(s): {sorted(leaks)[:4]}")
+            # Locally, a person needs to see which names leaked. In a CI log --
+            # public on a public repository -- the count is all that is printed.
+            shown = ("(names withheld in CI)" if os.environ.get("GITHUB_ACTIONS") == "true"
+                     else f"{sorted(leaks)[:6]}{' …' if len(leaks) > 6 else ''}")
+            print(f"   FAIL {f}: {len(leaks)} name value(s) {shown}")
+            problems.append(f"{f} contains {len(leaks)} name value(s)")
         else:
             print(f"   PASS {f}")
 
@@ -186,12 +250,19 @@ def pass3_values(source):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--source", help="a source report to take real names from")
+    ap.add_argument("--require-open", action="store_true",
+                    help="fail when a sealed file has no working copy to scan (use in CI, "
+                         "after the decrypt step)")
     a = ap.parse_args()
 
     os.chdir(subprocess.run(["git", "rev-parse", "--show-toplevel"],
                             capture_output=True, text=True).stdout.strip() or ".")
     pass1_structural()
     pass2_tracked()
+    if a.require_open and sealed_unscanned:
+        problems.append(f"{len(sealed_unscanned)} sealed file(s) had no working copy to scan, "
+                        f"e.g. {sealed_unscanned[0]} — run crypto_data.py decrypt first, or "
+                        f"this check passes without having looked")
     if a.source:
         pass3_values(a.source)
     else:

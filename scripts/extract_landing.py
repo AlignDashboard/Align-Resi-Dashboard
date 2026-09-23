@@ -43,6 +43,13 @@ ap.add_argument("--allow-warnings", action="store_true",
                 help="exit 0 even if soft checks fail (fatal checks still fail)")
 args = ap.parse_args()
 
+# Writing the published file? Then it has to be open first, or the seal that
+# follows refuses it as "never opened here". A test writing to --out elsewhere
+# does not touch the sealed set and needs nothing.
+if os.path.abspath(args.out) == os.path.abspath("docs/landing.json"):
+    import crypto_data  # noqa: E402
+    crypto_data.require_opened("extract_landing")
+
 wb = openpyxl.load_workbook(args.workbook, data_only=True)
 
 FATAL, WARN = [], []

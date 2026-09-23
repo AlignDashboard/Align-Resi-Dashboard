@@ -32,6 +32,11 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # Figures out of the (public) log: every python process in this job prints
+    # through scripts/ci_logs/sitecustomize.py, which masks currency, percentages
+    # and figure-shaped numbers. Local runs are unaffected.
+    env:
+      PYTHONPATH: ${{ github.workspace }}/scripts/ci_logs
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,6 +48,22 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      # The data is sealed (scripts/crypto_data.py): refresh_comps reads
+      # docs/metrics.json and data/<slug>/comps.json back before it writes, so
+      # they are opened first and re-sealed before the commit. A missing or
+      # wrong secret fails here, before any work.
+      - name: Open the sealed data files
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
+        run: |
+          if [ -z "${DASHBOARD_PASSWORD:-}" ]; then
+            echo "::error::The DASHBOARD_PASSWORD repository secret is not set; the data is sealed."
+            exit 1
+          fi
+          python scripts/crypto_data.py check
+          python scripts/crypto_data.py decrypt
 
       - name: Fetch the comp exports from Google Drive
         env:
@@ -65,15 +86,27 @@ jobs:
           python scripts/refresh_comps.py _downloads/market_comps
 
       - name: Refuse to commit if personal data leaked into the output
-        run: python scripts/check_no_pii.py
+        run: python scripts/check_no_pii.py --require-open
+
+      - name: Seal the data files
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
+        run: python scripts/crypto_data.py encrypt --git
 
       - name: Commit and push
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
+          DASHBOARD_PASSWORD_OLD: ${{ secrets.DASHBOARD_PASSWORD_OLD }}
         run: |
           set -u
-          PATHS="docs/metrics.json data"
+          # Sealed copies only; the working copies beside them are gitignored.
+          PATHS="docs/metrics.json.enc data"
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A $PATHS
+          # Only paths that exist: a missing pathspec stages nothing at all.
+          stage() { for p in $PATHS; do [ -e "$p" ] && git add -A -- "$p"; done; true; }
+          stage
           if git diff --staged --quiet; then
             echo "No newer vintage in any market — nothing to commit."
             exit 0
@@ -93,9 +126,15 @@ jobs:
             echo "::warning::push rejected; rebuilding the comps block on the current main"
             git fetch origin main
             git reset --hard origin/main
+            # The reset brought main's sealed copies but left this run's working
+            # copies on disk (they are gitignored). Take main's -- --force, since
+            # the whole point is to replay the computation on the new main, not
+            # this run's output over it.
+            python scripts/crypto_data.py decrypt --force --quiet || exit 1
             python scripts/refresh_comps.py _downloads/market_comps || exit 1
-            python scripts/check_no_pii.py || exit 1
-            git add -A $PATHS
+            python scripts/check_no_pii.py --require-open || exit 1
+            python scripts/crypto_data.py encrypt --git --quiet || exit 1
+            stage
             if git diff --staged --quiet; then
               echo "main already carries this vintage — nothing left to push."
               exit 0

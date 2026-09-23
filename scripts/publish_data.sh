@@ -18,7 +18,7 @@ REMOTE="${REMOTE:-origin}"
 DRY=0
 [ "${1:-}" = "--dry-run" ] && DRY=1
 
-FILES=(docs/metrics.json docs/landing.json docs/scorecard.json docs/lineage.json)
+FILES=(docs/metrics.json.enc docs/landing.json.enc docs/scorecard.json.enc docs/lineage.json.enc)
 
 cd "$(git rev-parse --show-toplevel)"
 

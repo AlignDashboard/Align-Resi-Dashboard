@@ -6,6 +6,9 @@
 <title>Align Asset Dashboard</title>
 <!-- Chart.js 4.4.1, vendored locally so the page has no CDN dependency -->
 <script src="chart.umd.min.js"></script>
+<!-- Opens the sealed data. Shared with data.html so the two cannot disagree
+     about the envelope; scripts/crypto_data.py writes it. -->
+<script src="unlock.js"></script>
 <script>
   // Applied before first paint so a stored light preference does not flash dark.
   (function () {
@@ -653,14 +656,15 @@
 <body>
 
   <!-- =================== PASSWORD GATE ===================
-       NOTE: This is a client-side visibility gate, NOT encryption.
-       It deters casual viewing but the page source is readable.
-       Before loading REAL financial data, replace this with true
-       client-side AES encryption of metrics.json (see footer note). -->
+       The password is not checked against anything in this file -- there is
+       nothing here to check it against. It is the key: it decrypts
+       metrics.json.enc, and a wrong one simply fails to open the file. So
+       there is no constant to read out of the source, and no plaintext data
+       beside the page for anyone who skips the gate. -->
   <div id="gate">
     <div class="mark"></div>
     <h1>Align Asset Dashboard</h1>
-    <div class="sub">The Landing · Chorus · The Madelon. Enter the password to view.</div>
+    <div class="sub" id="gateSub">The Landing · Chorus · The Madelon. The password decrypts the data — there is nothing to see without it.</div>
     <div class="pwrow">
       <input id="pw" type="password" placeholder="PASSWORD" autocomplete="off" />
       <button id="unlock">Unlock</button>
@@ -1045,15 +1049,19 @@
 <script>
 /* ============================================================
    PASSWORD GATE
-   ============================================================ */
-const PASSWORD = "AlignExecs";   // <-- change here to update the gate password
 
-// This page is the only place the password is entered. Unlocking records a
-// marker that data.html reads, so the data tables open without a second
-// prompt — and cannot be opened at all without coming through here first.
-// sessionStorage, not localStorage: the unlock lasts for the browser session
-// rather than forever on the machine.
-const SESSION_KEY = "align-unlocked";
+   There is no password in this file, because there is nothing to compare it
+   with: the password IS the key. docs/*.json.enc are AES-256-GCM ciphertext
+   under a key derived from it (unlock.js), and "wrong password" is simply the
+   file failing to open. That is the whole difference from what used to be
+   here -- a constant anyone could read out of the source, guarding files anyone
+   could fetch without ever meeting the gate.
+
+   unlock.js keeps the derived key for the browser tab, so data.html opens
+   without a second prompt. The boot that decides what to show is at the very
+   end of this script, after everything it may call is defined.
+   ============================================================ */
+
 // Pages data.html may send us back to after unlocking. An allowlist, so the
 // ?next= parameter can never be pointed somewhere else.
 const ALLOWED_NEXT = ["data.html"];
@@ -1062,10 +1070,8 @@ const gate   = document.getElementById("gate");
 const app    = document.getElementById("app");
 const pwInput = document.getElementById("pw");
 const errEl  = document.getElementById("err");
+const unlockBtn = document.getElementById("unlock");
 
-function sessionUnlocked() {
-  try { return sessionStorage.getItem(SESSION_KEY) === "1"; } catch (e) { return false; }
-}
 function reveal() {
   gate.style.display = "none";
   app.style.display = "block";
@@ -1074,30 +1080,46 @@ function reveal() {
   // now that the page is actually visible.
   if (location.hash) setTimeout(focusCardFromHash, 0);
 }
-function tryUnlock() {
-  if (pwInput.value === PASSWORD) {
-    try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (e) {}
-    // came here from a gated page? go back to it
-    const q = new URLSearchParams(location.search);
-    const next = q.get("next");
-    if (ALLOWED_NEXT.includes(next)) {
-      // data.html hands its fragment over as ?at= when it bounces someone here
-      // to unlock. Restore it so a deep link survives the round trip; the
-      // pattern keeps it to a plain anchor name.
-      const at = q.get("at") || "";
-      location.replace(next + (/^[A-Za-z0-9_-]+$/.test(at) ? "#" + at : ""));
-      return;
-    }
-    reveal();
-  } else {
+
+// Came here from data.html to unlock? Go back there. Otherwise show the board.
+function proceed() {
+  const q = new URLSearchParams(location.search);
+  const next = q.get("next");
+  if (ALLOWED_NEXT.includes(next)) {
+    // data.html hands its fragment over as ?at= when it bounces someone here
+    // to unlock. Restore it so a deep link survives the round trip; the
+    // pattern keeps it to a plain anchor name.
+    const at = q.get("at") || "";
+    location.replace(next + (/^[A-Za-z0-9_-]+$/.test(at) ? "#" + at : ""));
+    return;
+  }
+  reveal();
+}
+
+// Deriving the key is deliberately slow -- 600,000 PBKDF2 rounds, which is what
+// makes guessing the password offline expensive. Most of a second on a phone,
+// so the button says something is happening rather than looking dead.
+async function tryUnlock() {
+  const label = unlockBtn.textContent;
+  errEl.textContent = "";
+  unlockBtn.disabled = pwInput.disabled = true;
+  unlockBtn.textContent = "Opening…";
+  try {
+    if (await AlignUnlock.tryPassword(pwInput.value)) { proceed(); return; }
     errEl.textContent = "Incorrect password";
     pwInput.value = "";
+  } catch (e) {
+    // Not a wrong password: no secure context, no network, nothing published.
+    // Say which -- "Incorrect password" would send someone hunting for a typo.
+    errEl.textContent = (e && e.message) || String(e);
+  } finally {
+    unlockBtn.disabled = pwInput.disabled = false;
+    unlockBtn.textContent = label;
     pwInput.focus();
   }
 }
-document.getElementById("unlock").addEventListener("click", tryUnlock);
+unlockBtn.addEventListener("click", tryUnlock);
 pwInput.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
-window.addEventListener("load", () => { if (!sessionUnlocked()) pwInput.focus(); });
 
 /* ============================================================
    PROPERTY TABS
@@ -1178,7 +1200,7 @@ const PLACEHOLDER_PROPERTIES = [
       note.className = "sc-note"; note.id = ids.note;
       sc.append(head, strip, legend, note);
       grid.appendChild(sc);
-      // scPromise is declared further down the script — record the mount and
+      // scJson() is declared further down the script — record the mount and
       // let the scorecard section render it once the JSON arrives
       propScorecardMounts.push({ slug: p.slug, ids });
     }
@@ -1278,8 +1300,8 @@ function maybeLoadLanding(tab) {
    dollars per unit per month. That is the one thing the Trade-outs card on the
    Drive tab cannot show: it draws this same lease_tradeout feed as a PERCENTAGE
    over the rent each lease replaced, which grades the move and hides the level.
-   39.8% over a $4,635 prior rent and 39.8% over a $6,000 one are the same bar
-   there and $1,800 apart here.
+   40% over a $4,000 prior rent and 40% over a $6,000 one are the same bar
+   there and $800 apart here (illustrative figures).
 
    Three feeds, and they do not all describe the same instant:
      lease_tradeout   monthly — 26 months of achieved new-lease rent
@@ -1640,18 +1662,27 @@ applyTheme(document.documentElement.getAttribute("data-theme") === "light" ? "li
 // by this page at all — the tab that drew it came off on 2026-09-18; it is
 // still generated, still published, and still fills four scorecard cells
 // through populate_scorecard --from-landing.
-let _metricsPromise = null;
-const metricsJson = () => (_metricsPromise = _metricsPromise
-  || fetch("metrics.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
+// A decrypt failure must not read as "no export yet". The loaders resolve to
+// null so each card keeps its own empty state, but the first failure also puts
+// one line at the top of the page saying what actually went wrong.
+function reportDataError(name, e) {
+  if (document.getElementById("dataerr")) return;
+  const bar = document.createElement("div");
+  bar.id = "dataerr";
+  bar.className = "loaderr";
+  bar.textContent = "Could not open " + name + ": " + ((e && e.message) || e);
+  app.insertBefore(bar, app.firstChild);
+}
+const metricsJson = () => AlignUnlock.load("metrics.json")
+  .catch(e => { reportDataError("metrics.json", e); return null; });
 
 /* ---- where each card's numbers live, for the corner link ----
    The targets come from lineage.json rather than a map kept here, so
    build_lineage.py's checks cover them: it refuses to write a lineage naming a
    card anchor this page does not define or a table data.html does not build.
    A card with no entry simply gets no link — better than a link to nowhere. */
-let _lineagePromise = null;
-const lineageJson = () => (_lineagePromise = _lineagePromise
-  || fetch("lineage.json", { cache: "no-store" }).then(r => r.json()).catch(() => null));
+const lineageJson = () => AlignUnlock.load("lineage.json")
+  .catch(e => { reportDataError("lineage.json", e); return null; });
 
 function cardSrcLink(entry, label) {
   const a = elc("a", "cardsrc", "Data \u2197");
@@ -1686,11 +1717,11 @@ async function mountCardLinks() {
 async function loadDashboard() {
   let d;
   try {
-    const res = await fetch("metrics.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    d = await res.json();
+    d = await AlignUnlock.load("metrics.json");
   } catch (e) {
-    app.innerHTML = '<div class="loaderr">Could not load metrics.json — check the pipeline has run.</div>';
+    app.textContent = "";
+    app.appendChild(Object.assign(document.createElement("div"), { className: "loaderr",
+      textContent: "Could not load metrics.json — " + ((e && e.message) || e) }));
     return;
   }
 
@@ -1703,11 +1734,15 @@ async function loadDashboard() {
   const gen = d.meta?.generated_at ? new Date(d.meta.generated_at).toLocaleString() : "—";
   document.getElementById("metaline").textContent =
     (d.meta?.portfolio || "Portfolio") + " · updated " + gen;
-  document.getElementById("footer").innerHTML =
-    "Data source: metrics.json (written by email ingestion pipeline). " +
-    (d.meta?.note || "") +
-    "<br>SECURITY: password gate is client-side only and not encryption. " +
-    "Before loading real financials, encrypt metrics.json client-side (AES) and decrypt with the password, so raw data never ships in plaintext.";
+  // textContent, not innerHTML: meta.note is hand-authored in the data.
+  const foot = document.getElementById("footer");
+  foot.textContent = "Data source: metrics.json (written by email ingestion pipeline). " +
+    (d.meta?.note || "");
+  foot.appendChild(document.createElement("br"));
+  foot.appendChild(document.createTextNode(
+    "SECURITY: the data files are AES-256-GCM ciphertext; the password you entered is the " +
+    "key that opened them, in this browser, and nothing on this site is readable without it. " +
+    "The ciphertext is public, so the protection is exactly as strong as the passphrase."));
 
   /* ---- 1. TRADE OUTS (line, or empty state) ---- */
   const to = d.trade_outs;
@@ -1808,9 +1843,9 @@ async function loadDashboard() {
 
     // An accrual statement books true-ups and reversals in the month it finds
     // them, so the biggest features on this chart are usually timing rather
-    // than spending: The Landing reads $49k for Aug 26 against a $365k run
-    // rate because that month carries the tax reversal, and $624k for Apr 26
-    // because the annual assessment lands in one month. Naming them is what
+    // than spending: a month carrying a tax reversal reads a fraction of the
+    // run rate, and the month the annual assessment lands in reads well
+    // over it. Naming them is what
     // stops the line being read as a collapse and a blowout. Computed off the
     // series against each line's OWN median -- a shared threshold would flag
     // every month of the smaller building -- so it cannot go stale as months
@@ -1906,8 +1941,8 @@ async function loadDashboard() {
 
      The T12 figures move to the left column, one per property shown. They are
      the block's own published ratio_t12 and stay the headline: a single
-     accrual month swings hard (The Landing reads 3.8% for Aug 26 on the tax
-     reversal and 52.9% for Apr 26 on the assessment), which is exactly why the
+     accrual month swings hard (a tax reversal month reads a few percent, an
+     assessment month over half), which is exactly why the
      footnote points at them rather than at the line. */
   function renderRatioCard(ids, metric, unit, plBlock) {
     // ids: {cks, stats, eyebrow, foot, canvas}
@@ -1934,7 +1969,7 @@ async function loadDashboard() {
     const mixed = new Set(rows.map(r => r.scope)).size > 1;
     const hidden = new Set();
 
-    // A reversal month runs the ratio negative (Palma's Jun 26 reads -36%), and
+    // A reversal month runs the ratio negative (a reversal month can read well below zero), and
     // the minus has to be the page's typographic one in both places it shows --
     // the y ticks and the tooltip. Chart.js's default prints a hyphen, and the
     // Expense Trend card directly above this one already uses the minus.
@@ -2267,14 +2302,14 @@ function statBlock(host, stats) {                        // [[value, label], ...
    still the workbook's hand-set symbols.
    ============================================================ */
 let SC = null;                       // parsed scorecard.json, shared by both views
-const scPromise = (async () => {
-  try {
-    const res = await fetch("scorecard.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    SC = await res.json();
-  } catch (e) { SC = null; }
-  return SC;
-})();
+// Lazy, not eager. This used to fetch at script-parse time, before the gate --
+// which rendered the whole scorecard into the hidden DOM for anyone to read,
+// and is impossible now that opening it takes the key the gate produces.
+// Callers that ask before unlocking park in unlock.js until the key exists.
+let _scPromise = null;
+const scJson = () => (_scPromise = _scPromise || AlignUnlock.load("scorecard.json")
+  .then(doc => (SC = doc))
+  .catch(e => { reportDataError("scorecard.json", e); return (SC = null); }));
 
 // Colour swatch for the legend — status is carried by colour alone, no
 // symbols, so the legend shows the same fill the chips use. In range is
@@ -2370,7 +2405,7 @@ const SC_SRC_HINT = "\n\nClick the value to see where it came from: its row in "
   "status the workbook carried before.";
 const scValue = (prop, metric) => (prop.values || {})[metric] || null;
 // The band behind a status, now that the workbook publishes its ranges —
-// "In KPI target range (95.0% – 98.9%)" instead of the bare label.
+// "In KPI target range (NN.N% – NN.N%)" instead of the bare label.
 function scBand(metric, state) {
   const t = (SC.thresholds || {})[metric];
   const band = t && { exceeding: t.exceeding, in_range: t.in_range, below: t.below }[state];
@@ -2593,7 +2628,7 @@ function scHealthChart(canvasId) {
 /* ---- The property filter on the Scorecard tab ----
    "" is every property: the matrix this card has always shown, unchanged. A
    key narrows it to one row AND recomputes the head from that property alone,
-   because a headline reading "HEALTH ACROSS 4 PROPERTIES · 91%" over a single
+   because a headline reading "HEALTH ACROSS 4 PROPERTIES · NN%" over a single
    row is the kind of figure that gets quoted at the wrong scale.
 
    Only a mount that declares ids.select gets one. The Portfolio view renders
@@ -2629,7 +2664,7 @@ function scFillSelect(el, chosen) {
 // `chosen` is the property filter; omitted, the mount's own select decides,
 // which is what makes the change handler a plain re-render.
 async function renderScorecard(ids, chosen) {
-  await scPromise;
+  await scJson();
   const eyebrow = document.getElementById(ids.eyebrow);
   // The note block is optional — the Scorecard tab has none — so the load
   // failure still has to be visible without it. The eyebrow carries it either
@@ -2676,7 +2711,7 @@ async function renderScorecard(ids, chosen) {
   const head = document.getElementById(ids.head);
   head.textContent = "";
   // Deliberately uncolored: with ranges still to come there is no defined band
-  // that turns 91% into a verdict. The tally beside it and the per-property
+  // that turns the percentage into a verdict. The tally beside it and the per-property
   // percentages carry the color, where worst-state is unambiguous.
   const hb = elc("div", "sc-health");
   const big = elc("div", "big", P.at_or_above == null ? "—" : fmPct(P.at_or_above, 0));
@@ -2828,7 +2863,7 @@ async function renderScorecard(ids, chosen) {
     "\u201c" + SC_PENDING + "\u201d marks the " + cov.awaiting + " still awaiting a feed, " +
     "and a figure in grey is one no band can grade. The workbook's hand-set symbol is " +
     "kept in the data for every cell but is not treated as a result: counting it had " +
-    "the portfolio reading 90% at or above target off cells no report had ever " +
+    "the portfolio reading far above target off cells no report had ever " +
     "measured. " +
     (nUn ? (SC.unscored || []).join(", ") + " is reported, not graded — a distribution " +
       "has no single direction it can be good or bad in, so it carries no status and " +
@@ -2848,7 +2883,7 @@ renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
 renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
                   legend: "poscLegend", note: "poscNote", chart: "poscChart" });
 // property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
-scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
+scJson().then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
 
 // Groups a property tab leaves off its own scorecard. A display filter only:
 // scorecard.json still carries all 28 KPIs, the portfolio scorecard and every
@@ -3003,8 +3038,8 @@ function renderPropertyScorecard(slug, ids) {
 function renderRentCapture(rc, ids, source) {
   if (!rc || !rc.months || !rc.months.length) return false;
   // Zoom the money axis to the data instead of anchoring at $0 — income and
-  // potential both live well above $0.9M, and a zero baseline flattens the
-  // loss-to-lease gap the chart exists to show. Floored to a clean $50k tick
+  // potential both live far above zero, and a zero baseline flattens the
+  // loss-to-lease gap the chart exists to show. Floored to a clean round tick
   // just under the lowest plotted value; the footnote discloses the zoom.
   const yMin = Math.floor(Math.min(...rc.rental_income, ...rc.market_potential) * 0.97 / 5e4) * 5e4;
   new Chart(document.getElementById(ids.canvas), {
@@ -3044,8 +3079,8 @@ async function renderOpSummary(slug, ids) {
   // TOTAL EXPENSES line (jpm 549999-9999), which carries the non-operating
   // 52xxxx region as well as operating expense; a statement on the Align
   // tree has no such row and falls back to the operating total. The two are
-  // materially different -- ~$4.4k a month for The Landing, $55k in Jul 2026
-  // -- so the rows are labelled from the scope rather than assuming either.
+  // materially different, and by far more in some months than others, so the
+  // rows are labelled from the scope rather than assuming either.
   const totalScope = (pt.expense_scope || "operating") === "total";
   const expLabel = totalScope ? "Total expenses" : "Operating expenses";
   // Plain "NOI" on the total anchor because revenue less that row *is* the
@@ -4245,10 +4280,10 @@ const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).bloc
 const SCD_MISSING = [
   // Both sides of this arrived on 2026-09-11. What is left is not a report.
   { what: "Holdovers reconciled unit by unit",
-    why: "Both feeds are now here — the rent roll names 32 holdovers and the tracker's "
-       + "MTM roster names 31 — but nothing compares them unit by unit. Last time anyone "
-       + "checked, the tracker missed 27 of the rent roll's holdovers, so the two counts "
-       + "landing one apart is not evidence they are the same 31 units",
+    why: "Both feeds are now here — the rent roll lists its holdovers and the tracker's "
+       + "MTM roster lists its own — but nothing compares them unit by unit. Last time "
+       + "anyone checked, the tracker missed most of the rent roll's holdovers, so two "
+       + "counts landing close together is not evidence they are the same units",
     fix: "No new report: join the rent roll's expired-and-occupied units to the tracker's "
        + "MTM roster and show which appear on both",
     needs: null },
@@ -4326,7 +4361,7 @@ function sectionFailed(id, err) {
 
 async function loadLandingDrive() {
   const m = await metricsJson();
-  await scPromise;
+  await scJson();
   const pick = (block, slug) => (((m || {})[block] || {}).properties || [])
     .find(x => x.slug === slug) || null;
   const pl = pick("monthly_pl", SCD_SLUG);
@@ -4460,8 +4495,7 @@ async function loadLandingDrive() {
     // The stitched run is NOT twelve months. Successive statements overlap and
     // the join keeps every month either reports, so The Landing's series is
     // Aug 25-Aug 26: thirteen. Summing all of it and calling the total "T12"
-    // read $10,694,302 of NOI against a true trailing twelve of $9,928,681 --
-    // 7.7% high, on the one tile a reader is most likely to quote, and
+    // read NOI several percent above the true trailing twelve -- on the one tile a reader is most likely to quote, and
     // disagreeing with the T12 column of the Operating Summary directly below,
     // which has always sliced twelve. So the window is taken from the END of
     // the series, and named for the number of months it actually covers: T12
@@ -4543,8 +4577,8 @@ async function loadLandingDrive() {
       { kpi: "Leased %", label: "Leased %", to: "cdFeeds", where: "what feeds this tab",
         period: "point in time",
         read: v => [v.display, "100 − exposure"] },
-      // 39.8% here is the Yardi Lease Tradeout Report over its trailing three
-      // months, rent-weighted; the Trade-outs card below reads 82.8% from the
+      // This tile is the Yardi Lease Tradeout Report over its trailing three
+      // months, rent-weighted; the Trade-outs card below reads another figure from the
       // weekly leasing workbook and the renewal tracker. Two feeds, two
       // windows, two definitions -- so this tile still does NOT jump there.
       // One number landing on a card showing another under the same name is
@@ -4559,7 +4593,7 @@ async function loadLandingDrive() {
         period: meas.tradeout_months ? "trailing " + meas.tradeout_months + " mo"
                                      : "trailing 1 mo",
         read: v => [v.display, "weighted, new leases vs the lease replaced"] },
-      // The published cell is "+$116,402/+12.1%", two figures spliced, and at
+      // The published cell is "+$NNN,NNN/+NN.N%", two figures spliced, and at
       // 20px that is wider than a tile is at phone width. measured[slug]
       // publishes the halves separately for exactly this reason, so the tile
       // takes the percentage and puts the dollars underneath rather than
@@ -4777,8 +4811,8 @@ async function loadLandingDrive() {
     // is weighted (total current effective rent over total previous), which is
     // what the Trade-out % tile grades, so the card and the tile now agree.
     // The mean cannot carry this axis: a concession drives a PREVIOUS effective
-    // rent toward zero, so Nov 2024 reads 550.9% as a mean against 55.7%
-    // weighted, on a chart where renewals sit near 6%. On the renewal side the
+    // rent toward zero, so a thin month can read ten times its weighted figure
+    // as a mean, on a chart where renewals sit in single digits. On the renewal side the
     // two are within half a point every month, so that series moves in name
     // only and both are now the same statistic.
     const K = nl && nl.src === "tradeout"
@@ -4820,7 +4854,7 @@ async function loadLandingDrive() {
     // Both stats are scoped to the CHART'S OWN WINDOW, and their labels say
     // over how many months. The feeds carry wildly different histories -- two
     // weeks of new leases against three years of renewal offers -- so an
-    // unscoped "renewal offers" reads 574 beside "3 new leases" and invites a
+    // unscoped "renewal offers" reads hundreds beside a handful of "new leases" and invites a
     // comparison the numbers cannot bear.
     const inAxis = m => axis.indexOf(m.month) >= 0;
     const newWin = newRows.filter(inAxis);
@@ -4903,7 +4937,7 @@ async function loadLandingDrive() {
       // Name the months the axis is set by, against the series' own median, so
       // the note cannot go stale as months arrive. A thin month is where the
       // concession effect survives the weighting: with two leases, one whose
-      // previous rent was bought down to $1,471 by a $2,207 concession carries
+      // previous rent was bought down by a large concession carries
       // the month, and the weighted figure protects against that only when
       // there are enough leases for it to average over.
       + (spikes.length
@@ -5289,7 +5323,7 @@ async function loadLandingDrive() {
     const range = (lo, hi, fmt) => lo == null ? "—"
       : (lo === hi ? fmt(lo) : fmt(lo) + "–" + fmt(hi));
     const sqft = n => Math.round(n).toLocaleString();
-    // The leased/vacant columns are where the split is actually legible: at 98%
+    // The leased/vacant columns are where the split is actually legible: at high
     // occupancy the vacant segment is a few pixels wide, and "which plans are
     // the empty ones in" is the question that follows.
     buildTable(document.getElementById("diTbl"),
@@ -5503,7 +5537,7 @@ const MC = { block: null, slug: null, period: "q", chart: null };
 
 // The sign goes BEFORE the dollar, and it is the typographic minus the rest of
 // the page uses: a building whose table sits under the market is a real case
-// (Chorus reads −4.3%) and "$-107,433" is not how money is written.
+// (a property reads −N.N%) and "$-NNN,NNN" is not how money is written.
 const mcUsd = v => (v < 0 ? "−" : "") + "$" + Math.round(Math.abs(v)).toLocaleString("en-US");
 const mcM = v => (v < 0 ? "−" : "") + "$" + (Math.abs(v) / 1e6).toFixed(2) + "M";
 // Signed, with the typographic minus the rest of the page uses: these sit in
@@ -5663,7 +5697,7 @@ function mcChartDraw(p) {
     else break;
   }
   // Measured from the period BEFORE the run began: a run of one quarter has no
-  // span of its own, and "moved from $7.53 to $7.53" is what that reads as.
+  // span of its own, and "moved from $X.XX to $X.XX" is what that reads as.
   const startIdx = graded.length - run.length - 1;
   const ringFrom = graded[Math.max(0, startIdx)] || (run[0] || {});
   const last = run.length ? run[run.length - 1] : null;
@@ -5979,10 +6013,31 @@ async function loadComps() {
 }
 
 /* ============================================================
-   Already unlocked this browser session (a reload, or coming back
-   from the data tables)? Skip straight past the gate.
+   BOOT -- last, so everything it may call is defined.
+   Sealed data behind the gate is the live site. Unsealed data is a local
+   checkout, which opens under a red banner on localhost and shows NOTHING on
+   a public host: the page must never be what displays unsealed data.
    ============================================================ */
-if (sessionUnlocked()) reveal();
+(async function boot() {
+  let mode = "missing";
+  try { mode = await AlignUnlock.detect(); } catch (e) { /* handled below */ }
+  if (mode === "plain") {
+    if (AlignUnlock.isLocal()) { AlignUnlock.plainBanner(); reveal(); return; }
+    document.getElementById("gateSub").textContent =
+      "This deployment has not been sealed yet, so it shows nothing. The data is encrypted "
+      + "by the \u201cSeal dashboard data\u201d workflow once the DASHBOARD_PASSWORD secret is set.";
+    document.querySelector("#gate .pwrow").style.display = "none";
+    return;
+  }
+  if (mode === "missing") {
+    errEl.textContent = "No data published.";
+    return;
+  }
+  // Unlocked earlier in this tab (a reload, or back from the data tables)?
+  // The derived key is still here; skip the gate.
+  try { if (await AlignUnlock.resume()) { proceed(); return; } } catch (e) {}
+  pwInput.focus();
+})();
 </script>
 </body>
 </html>

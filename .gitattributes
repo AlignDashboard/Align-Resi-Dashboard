@@ -1,0 +1,5 @@
+# Sealed data (see scripts/crypto_data.py). With `crypto_data.py install` and the
+# password in the environment, `git diff` shows the plaintext and a merge of two
+# changes to one sealed file goes through a real 3-way merge instead of always
+# conflicting. Without them git treats these as the one-line text files they are.
+*.json.enc diff=alignenc merge=alignenc
