@@ -879,7 +879,8 @@ OTHER_FLOWS = [
             {"script": "scripts/import_rental_tracker.py",
              "does": "Decrypts a tracker page with the tracker's password, keeps only the "
                      "fields the Rental Rates tab draws, and re-encrypts them under the "
-                     "same password. Run by hand.",
+                     "same password. Daily at 15:00 UTC in refresh_rental_tracker.yml, "
+                     "once the password is an Actions secret; by hand otherwise.",
              "checks": "A whitelist, field by field: free text never passes, so the notes "
                        "are dropped, and a field nobody listed is dropped and counted rather "
                        "than carried. A value that fails its pattern refuses the whole import, "

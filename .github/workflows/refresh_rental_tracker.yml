@@ -1,0 +1,142 @@
+name: Refresh Rental Rates
+
+# The Rental Rates tab is the Rental Rate Tracker's own data -- a separate
+# dashboard at github.com/dbalduc/rental-rates, which its owner rebuilds every
+# morning -- kept here encrypted under the tracker's own password (see
+# CLAUDE.md, "The Rental Rates Tab"). This keeps that copy current: clone the
+# tracker, run scripts/import_rental_tracker.py, commit only if the data moved.
+#
+# WHAT IT NEEDS (one secret -- without it this is a no-op, and says so)
+#   RENTAL_TRACKER_PASSWORD  the tracker's password. It decrypts the tracker's
+#                            page and re-encrypts the tab's copy under the same
+#                            password; it is never written anywhere, and
+#                            Actions masks it in the log.
+#
+# WHAT IT TOUCHES
+#   docs/rental_tracker.enc.json and nothing else. update.yml never writes that
+#   file and this never writes any of update.yml's, so neither can clobber the
+#   other. Losing a push race only means main moved: the run resets to it and
+#   re-imports, as refresh_comps.yml does, rather than replaying its own output
+#   -- the inputs are still on the runner and the import takes seconds. It does
+#   not regenerate lineage.json; update.yml's next run picks the new snapshot up
+#   for the data-flow page, a day behind at most.
+#
+# WHAT IT PRINTS
+#   Totals and a date only (--quiet). This repo is public and so are its Actions
+#   logs; the per-building breakdown is the tracker's encrypted content, and the
+#   import's refusals never echo a value in any mode.
+#
+# WHEN
+#   15:00 UTC. The tracker's single commit was rebuilt at 11:09 UTC on
+#   2026-09-23, so four hours of slack covers a late build, and the tab has the
+#   day's snapshot before a Pacific working day starts. A day with nothing new
+#   commits nothing: the import leaves an unchanged file alone, since a fresh
+#   salt would otherwise commit a new ciphertext every morning.
+
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-rental-tracker
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Skip if the tracker password is not set
+        id: gate
+        env:
+          RENTAL_TRACKER_PASSWORD: ${{ secrets.RENTAL_TRACKER_PASSWORD }}
+        run: |
+          if [ -z "$RENTAL_TRACKER_PASSWORD" ]; then
+            echo "::notice::RENTAL_TRACKER_PASSWORD is not set, so the Rental Rates tab keeps its last snapshot. Add it under Settings > Secrets and variables > Actions -- see the header of this workflow."
+            {
+              echo "### Rental Rates: not refreshed"
+              echo "The \`RENTAL_TRACKER_PASSWORD\` secret is not set, so the tab keeps its last snapshot."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install the AES-GCM library
+        if: steps.gate.outputs.ready == 'true'
+        run: pip install --quiet pycryptodome==3.23.0
+
+      - name: Refuse to run an importer its own guard tests reject
+        # The whitelist that keeps the tracker's resident names out of this repo
+        # is only as good as the code enforcing it, so that code is checked on
+        # every run, before it touches the data.
+        if: steps.gate.outputs.ready == 'true'
+        run: python scripts/test_rental_tracker.py
+
+      - name: Fetch the tracker
+        if: steps.gate.outputs.ready == 'true'
+        run: git clone --quiet --depth 1 https://github.com/dbalduc/rental-rates "$RUNNER_TEMP/rental-rates"
+
+      - name: Import it
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          RENTAL_TRACKER_PASSWORD: ${{ secrets.RENTAL_TRACKER_PASSWORD }}
+        run: python scripts/import_rental_tracker.py "$RUNNER_TEMP/rental-rates" --quiet
+
+      - name: Refuse to commit if personal data leaked into the output
+        if: steps.gate.outputs.ready == 'true'
+        run: python scripts/check_no_pii.py
+
+      - name: Commit and push
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          RENTAL_TRACKER_PASSWORD: ${{ secrets.RENTAL_TRACKER_PASSWORD }}
+        run: |
+          set -u
+          OUT="docs/rental_tracker.enc.json"
+          # The plaintext half of the file -- a date and counts -- is all the
+          # summary and the commit message may say.
+          said() { python -c "import json; e = json.load(open('$OUT')); c = e['counts']; print(f\"snapshot {e['snapshot']}: {c['leases']} leases and {c['renewals']} renewals across {c['properties']} buildings\")"; }
+          git config user.name  "dashboard-bot"
+          git config user.email "actions@github.com"
+          git add "$OUT"
+          if git diff --staged --quiet; then
+            echo "The tracker has not moved since the last import -- nothing to commit."
+            echo "### Rental Rates: already current ($(said))" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          SNAP=$(python -c "import json; print(json.load(open('$OUT'))['snapshot'])")
+          MSG="Refresh the Rental Rates tab (tracker snapshot $SNAP)"
+          git commit -qm "$MSG"
+          for i in 1 2 3 4; do
+            if git push -q; then
+              echo "pushed."
+              echo "### Rental Rates: refreshed to $(said)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "::warning::push rejected; re-importing onto the current main"
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            python scripts/import_rental_tracker.py "$RUNNER_TEMP/rental-rates" --quiet || exit 1
+            python scripts/check_no_pii.py || exit 1
+            git add "$OUT"
+            if git diff --staged --quiet; then
+              echo "main already carries this snapshot -- nothing left to push."
+              exit 0
+            fi
+            git commit -qm "$MSG"
+            sleep $((i * 5))
+          done
+          echo "::error::could not push after 4 attempts"
+          exit 1

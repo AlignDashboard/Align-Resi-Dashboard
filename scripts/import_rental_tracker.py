@@ -27,7 +27,10 @@ the site shell rather than on the data branch: ciphertext is safe in history.
 
 Usage:
   RENTAL_TRACKER_PASSWORD=... python scripts/import_rental_tracker.py <tracker page | clone dir>
-      [--out docs/rental_tracker.enc.json] [--dry-run]
+      [--out docs/rental_tracker.enc.json] [--dry-run] [--quiet]
+
+.github/workflows/refresh_rental_tracker.yml runs it daily with --quiet, once
+the tracker's password is an Actions secret.
 
 Exit codes: 0 written or unchanged, 1 refused (the data failed validation, and
 the live file keeps its last good copy), 2 cannot run (usage, password, crypto).
@@ -252,7 +255,7 @@ def _rows(rows, spec, where, report):
 def _occ_stated(app: str, report):
     """The tracker's hand-typed occupancy for a building with no weekly report.
 
-    `const OCC={"Ansel":{occ:96.3,leased:98.1}}` -- unquoted keys, so not JSON.
+    `const OCC={"<building>":{occ:<n>,leased:<n>}}` -- unquoted keys, so not JSON.
     Kept so the two dashboards agree, and labelled on the page as the tracker's
     own figure with no date behind it.
     """
@@ -453,7 +456,14 @@ def decrypt_envelope(env, password):
         raise
 
 
-def _summary(payload, report):
+def _summary(payload, report, per_property=True):
+    """What the run found. per_property=False is for a public log.
+
+    This repo's Actions logs are readable by anyone, so the scheduled refresh
+    prints only what the file already shows in the clear -- totals and a date --
+    plus counts of what was dropped. The per-building breakdown is the
+    tracker's encrypted content, and stays on a terminal someone chose to open.
+    """
     lines = []
     by = {}
     for kind in ("leases", "renewals", "weekly"):
@@ -462,17 +472,19 @@ def _summary(payload, report):
             e[kind] += 1
             if kind == "leases":
                 e["dates"].append(r["date"])
-    lines.append(f"  {'property':16s} {'leases':>6s} {'renewals':>8s} {'weeks':>5s}  new leases")
-    for p in payload["properties"]:
-        e = by.get(p, {"leases": 0, "renewals": 0, "weekly": 0, "dates": []})
-        span = f"{min(e['dates'])} .. {max(e['dates'])}" if e["dates"] else "--"
-        lines.append(f"  {p:16s} {e['leases']:6d} {e['renewals']:8d} {e['weekly']:5d}  {span}")
+    if per_property:
+        lines.append(f"  {'property':16s} {'leases':>6s} {'renewals':>8s} {'weeks':>5s}  new leases")
+        for p in payload["properties"]:
+            e = by.get(p, {"leases": 0, "renewals": 0, "weekly": 0, "dates": []})
+            span = f"{min(e['dates'])} .. {max(e['dates'])}" if e["dates"] else "--"
+            lines.append(f"  {p:16s} {e['leases']:6d} {e['renewals']:8d} {e['weekly']:5d}  {span}")
     for k, d in sorted(report["dropped"].items()):
         lines.append(f"  dropped {k}: {d['rows']} row(s), {d['non_empty']} with content"
                      " -- never written")
     if payload.get("occ_stated"):
         lines.append("  kept the tracker's stated occupancy for: "
-                     + ", ".join(sorted(payload["occ_stated"])))
+                     + (", ".join(sorted(payload["occ_stated"])) if per_property
+                        else f"{len(payload['occ_stated'])} building(s)"))
     for w in report["warnings"]:
         lines.append("  warning: " + w)
     return "\n".join(lines)
@@ -483,6 +495,8 @@ def main(argv=None):
     ap.add_argument("source", help="a tracker page (index.html) or a clone of its repo")
     ap.add_argument("--out", default=str(DEFAULT_OUT))
     ap.add_argument("--dry-run", action="store_true", help="validate and report; write nothing")
+    ap.add_argument("--quiet", action="store_true",
+                    help="totals only, no per-building breakdown -- for a public CI log")
     ap.add_argument("--iterations", type=int, default=ITERATIONS, help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
 
@@ -519,7 +533,7 @@ def main(argv=None):
     print(f"snapshot {payload['snapshot']}: {len(payload['leases'])} leases, "
           f"{len(payload['renewals'])} renewals, {len(payload['weekly'])} weekly rows, "
           f"{len(payload['mtm'])} month-to-month counts")
-    print(_summary(payload, report))
+    print(_summary(payload, report, per_property=not a.quiet))
     if a.dry_run:
         print("dry run -- nothing written")
         return 0
