@@ -2711,9 +2711,29 @@ closed at the point they would happen rather than left for a diff to show:
   refuses a copy whose sealed file moved since it was opened, and a file never
   opened in this checkout at all. The first case is a stale copy sealed over a
   newer push. The second is a store rebuilt from nothing and sealed over its
-  history. The refusal is all or nothing. `--force` exists for `update.yml`'s
-  push race, which replays its output over `main` by design; that is A15, and it
-  is unchanged by this, not fixed.
+  history. The refusal is all or nothing. `--force` is the deliberate override,
+  and no workflow passes it to `encrypt`.
+- **The shrink check.** A working copy that shrank by more than half, and by more
+  than 4 KB, is refused at the seal. A diff used to show that; ciphertext cannot.
+  `ALIGN_ALLOW_SHRINK=1` lets a deliberate one through.
+- **No partial re-key.** `encrypt` mints a new key only if it is re-sealing
+  every sealed file with it. Otherwise a session whose `DASHBOARD_PASSWORD`
+  had moved on would seal the files it changed under the new key and leave the
+  rest under the old one, a split the page cannot open. Rotation belongs to
+  `reseal`, or to a run that opened everything under `DASHBOARD_PASSWORD_OLD`.
+- **The cron's push race (A15, the daily half).** When a push loses a race,
+  `update.yml` resets to `main` and replays **only the files this run wrote**.
+  They are listed once, from the diff between the commit it built on and its own
+  commit. Before this it replayed every data path. That is how a day the EliseAI
+  Routine recorded mid-run was overwritten by the cron's older copy of a file it
+  never writes, and it was restored by hand from diffs that sealed files no
+  longer give. Unchanged files keep identical bytes, so "changed" is exact. Where
+  both changed one file, the run still wins and the log names the file.
+  `test_encryption.py` runs the real step against a bare origin and a
+  concurrent push.
+- **CI has no git hooks**, so each workflow runs `crypto_data.py pre-commit` by
+  hand before every `git commit`, retries included. No plaintext gets into a
+  commit, whatever the ignore rules say.
 - **The entry guard.** Eleven readers in `build_metrics` load last run's output as
   `json.load(open(fp)) if fp.exists() else <empty>`. Faced with only a sealed
   copy they would not fail — they would start over. So every script that reads

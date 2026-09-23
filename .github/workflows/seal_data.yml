@@ -97,6 +97,9 @@ jobs:
             echo "Everything is already sealed under this password -- nothing to commit."
             exit 0
           fi
+          # CI has no git hooks, so the pre-commit check runs here by hand: no plaintext
+          # data in the commit, whatever the ignore rules say.
+          python scripts/crypto_data.py pre-commit || exit 1
           git commit -qm "Seal dashboard data ($(date -u +%Y-%m-%d))"
           for attempt in 1 2 3 4; do
             if git push -q origin HEAD:main; then
@@ -115,6 +118,7 @@ jobs:
               echo "main is already sealed under this password."
               exit 0
             fi
+            python scripts/crypto_data.py pre-commit || exit 1
             git commit -qm "Seal dashboard data ($(date -u +%Y-%m-%d))"
           done
           echo "::error::could not push after 4 attempts"
