@@ -171,6 +171,8 @@ SPLIT_CASES = [
     ("2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
      "Delinquency", ["The Landing"]),
     ("2026-09-21 Delinquency Notes - 09.21.2026.xlsx", "Delinquency", None),
+    ("2026-09-23 Residential AR Aging - Chorus.xlsx",
+     "Residential AR Analytics", ["Chorus"]),
     # A folder nobody splits.
     ("12_Month_Budget_Accrual.xlsx", "Budgets", []),
 ]

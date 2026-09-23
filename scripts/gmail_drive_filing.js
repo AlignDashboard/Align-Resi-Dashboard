@@ -563,9 +563,9 @@ function getRootFolder_() {
 // ---------------------------------------------------------------------------
 // Subfolders inside a category folder
 //
-// Four category folders are split inside: Daily Leasing Reports (A11), Rent
-// Roll and Delinquency by property, and Comps by market and then by which of
-// the paired exports it is. Yardi's rent roll names no property in its
+// Five category folders are split inside: Daily Leasing Reports (A11), Rent
+// Roll, Delinquency and Residential AR Analytics by property, and Comps by
+// market and then by which of the paired exports it is. Yardi's rent roll names no property in its
 // filename (RentRoll09_15_2026.xlsx), so most rolls file at the top of Rent
 // Roll; the split catches the ones that do.
 // Splitting happens at FILING time, from the attachment's own name, because
@@ -651,6 +651,7 @@ const SPLIT_INSIDE = {
   "Daily Leasing Reports": [PROPERTY_FOLDERS],
   "Rent Roll":             [PROPERTY_FOLDERS],
   "Delinquency":           [PROPERTY_FOLDERS],
+  "Residential AR Analytics": [PROPERTY_FOLDERS],
   "Comps": [COMP_MARKETS, COMP_KINDS],
 };
 
