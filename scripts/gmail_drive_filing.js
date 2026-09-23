@@ -563,8 +563,11 @@ function getRootFolder_() {
 // ---------------------------------------------------------------------------
 // Subfolders inside a category folder
 //
-// Two category folders are split inside: Daily Leasing Reports by property
-// (A11), and Comps by market and then by which of the paired exports it is.
+// Four category folders are split inside: Daily Leasing Reports (A11), Rent
+// Roll and Delinquency by property, and Comps by market and then by which of
+// the paired exports it is. Yardi's rent roll names no property in its
+// filename (RentRoll09_15_2026.xlsx), so most rolls file at the top of Rent
+// Roll; the split catches the ones that do.
 // Splitting happens at FILING time, from the attachment's own name, because
 // that is the only place either is knowable -- the pipeline attributes by
 // filename and by what is inside the file, never by the folder a report sits
@@ -646,6 +649,8 @@ const COMP_KINDS = [
 // Which folders are split inside, and by what. One segment per table, in order.
 const SPLIT_INSIDE = {
   "Daily Leasing Reports": [PROPERTY_FOLDERS],
+  "Rent Roll":             [PROPERTY_FOLDERS],
+  "Delinquency":           [PROPERTY_FOLDERS],
   "Comps": [COMP_MARKETS, COMP_KINDS],
 };
 

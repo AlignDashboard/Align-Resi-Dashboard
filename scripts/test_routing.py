@@ -162,8 +162,17 @@ SPLIT_CASES = [
      "Daily Leasing Reports", ["The Landing"]),
     ("2026-09-22 Daily Report Tracker - Landing 9.22.26.xlsx",
      "Daily Leasing Reports", ["The Landing"]),
+    # Rent Roll and Delinquency split by property too (2026-09-23). Yardi's roll
+    # names no property in its filename, so it stays at the top rather than
+    # being guessed into a building.
+    ("RentRoll09_11_2026.xlsx", "Rent Roll", None),
+    ("2026-09-21 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "Delinquency", ["Chorus"]),
+    ("2026-08-31 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "Delinquency", ["The Landing"]),
+    ("2026-09-21 Delinquency Notes - 09.21.2026.xlsx", "Delinquency", None),
     # A folder nobody splits.
-    ("RentRoll09_11_2026.xlsx", "Rent Roll", []),
+    ("12_Month_Budget_Accrual.xlsx", "Budgets", []),
 ]
 
 

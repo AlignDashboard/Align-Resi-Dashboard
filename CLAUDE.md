@@ -2252,7 +2252,15 @@ Two traps worth knowing:
   `report_map.json` and the `.js` rule all change together; `test_routing.py`
   fails if only one moves.
 
-### Two folders are split inside, and `SPLIT_INSIDE` is how
+### Four folders are split inside, and `SPLIT_INSIDE` is how
+
+Since 2026-09-23 **`Rent Roll` and `Delinquency` split by property** as well,
+off the same `PROPERTY_FOLDERS` table as the leasing reports. Yardi's rent roll
+names no property in its filename (`RentRoll09_15_2026.xlsx` — the building is
+only inside, at row 278), so in practice rolls stay at the top of `Rent Roll`;
+the delinquency summary names its building (`… - Chorus.xlsx`) and splits.
+Nothing downstream reads the subfolders, and one level is well within
+`MAX_SUBFOLDER_DEPTH`.
 
 Since 2026-09-21 (A11, owner's call) `Renewal Tracker`, `Prospect Reports`,
 `Daily Tracker` and `Daily Leasing Reports` are **one Drive folder** —
