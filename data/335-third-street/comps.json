@@ -10,16 +10,16 @@
     "lat": 37.79546,
     "lng": -122.27316
   },
-  "as_of": "2026-09-23",
+  "as_of": "2026-09-24",
   "primary_radius_mi": 1.35,
   "excluded_related": [],
   "subject_by_bed": {
     "1": {
-      "n": 28,
-      "median_rent": 2557.5,
-      "mean_rent": 2588.96,
+      "n": 26,
+      "median_rent": 2570.0,
+      "mean_rent": 2597.15,
       "median_sqft": 602.0,
-      "median_psf": 4.2483
+      "median_psf": 4.2691
     }
   },
   "rings": [
@@ -30,18 +30,18 @@
       "listings": 98,
       "by_bed": {
         "0": {
-          "n": 17,
+          "n": 18,
           "median_rent": 2250.0,
-          "mean_rent": 2288.12,
+          "mean_rent": 2276.0,
           "median_sqft": 521.0,
           "median_psf": 4.3647
         },
         "1": {
-          "n": 57,
-          "median_rent": 2720.0,
-          "mean_rent": 2688.54,
+          "n": 56,
+          "median_rent": 2731.5,
+          "mean_rent": 2699.14,
           "median_sqft": 639.0,
-          "median_psf": 4.2583
+          "median_psf": 4.2574
         },
         "2": {
           "n": 21,
@@ -66,18 +66,18 @@
       "listings": 98,
       "by_bed": {
         "0": {
-          "n": 17,
+          "n": 18,
           "median_rent": 2250.0,
-          "mean_rent": 2288.12,
+          "mean_rent": 2276.0,
           "median_sqft": 521.0,
           "median_psf": 4.3647
         },
         "1": {
-          "n": 57,
-          "median_rent": 2720.0,
-          "mean_rent": 2688.54,
+          "n": 56,
+          "median_rent": 2731.5,
+          "mean_rent": 2699.14,
           "median_sqft": 639.0,
-          "median_psf": 4.2583
+          "median_psf": 4.2574
         },
         "2": {
           "n": 21,
@@ -102,18 +102,18 @@
       "listings": 98,
       "by_bed": {
         "0": {
-          "n": 17,
+          "n": 18,
           "median_rent": 2250.0,
-          "mean_rent": 2288.12,
+          "mean_rent": 2276.0,
           "median_sqft": 521.0,
           "median_psf": 4.3647
         },
         "1": {
-          "n": 57,
-          "median_rent": 2720.0,
-          "mean_rent": 2688.54,
+          "n": 56,
+          "median_rent": 2731.5,
+          "mean_rent": 2699.14,
           "median_sqft": 639.0,
-          "median_psf": 4.2583
+          "median_psf": 4.2574
         },
         "2": {
           "n": 21,
@@ -291,7 +291,7 @@
       "key": "2026Q3",
       "subject_psf": 3.7375,
       "subject_n": 1,
-      "comp_psf": 4.4885,
+      "comp_psf": 4.5135,
       "comp_n": 44,
       "premium": null,
       "premium_beds": 0,
@@ -654,7 +654,7 @@
       "key": "2026-09",
       "subject_psf": null,
       "subject_n": 0,
-      "comp_psf": 4.5821,
+      "comp_psf": 4.735,
       "comp_n": 10,
       "premium": null,
       "premium_beds": 0
@@ -662,15 +662,15 @@
   ],
   "days_on_market": {
     "subject_median": 101.0,
-    "subject_n": 11,
+    "subject_n": 13,
     "comp_median": 42.0,
     "comp_n": 251,
     "since": "2025-09-01"
   },
   "concessions": {
     "subject_share": 1.0,
-    "subject_n": 28,
-    "comp_share": 0.8469,
+    "subject_n": 26,
+    "comp_share": 0.8571,
     "comp_n": 98
   },
   "comps": [
@@ -700,16 +700,16 @@
       "year_built": 2019,
       "units": 134,
       "miles": 0.096,
-      "listings": 8,
+      "listings": 9,
       "by_bed": {
         "0": {
-          "n": 3,
-          "median_rent": 2095.0,
+          "n": 4,
+          "median_rent": 2046.0,
           "median_sqft": 376.0
         },
         "1": {
           "n": 4,
-          "median_rent": 2594.0,
+          "median_rent": 2492.0,
           "median_sqft": 604.0
         },
         "3": {
@@ -725,7 +725,7 @@
       "year_built": 2021,
       "units": 333,
       "miles": 0.152,
-      "listings": 61,
+      "listings": 62,
       "by_bed": {
         "0": {
           "n": 13,
@@ -733,8 +733,8 @@
           "median_sqft": 521.0
         },
         "1": {
-          "n": 30,
-          "median_rent": 2887.5,
+          "n": 31,
+          "median_rent": 2899.0,
           "median_sqft": 711.0
         },
         "2": {
@@ -764,12 +764,12 @@
       "year_built": 2024,
       "units": 157,
       "miles": 0.292,
-      "listings": 14,
+      "listings": 13,
       "by_bed": {
         "1": {
-          "n": 13,
-          "median_rent": 2679.0,
-          "median_sqft": 508.0
+          "n": 12,
+          "median_rent": 2681.5,
+          "median_sqft": 500.0
         },
         "2": {
           "n": 1,
@@ -839,13 +839,8 @@
       "year_built": 1974,
       "units": 48,
       "miles": 0.411,
-      "listings": 2,
+      "listings": 1,
       "by_bed": {
-        "1": {
-          "n": 1,
-          "median_rent": 2365.0,
-          "median_sqft": 688.0
-        },
         "2": {
           "n": 1,
           "median_rent": 3200.0,
@@ -855,10 +850,10 @@
     }
   ],
   "subject_listings": {
-    "current": 28,
-    "oldest_days": 126,
+    "current": 26,
+    "oldest_days": 127,
     "by_bed": {
-      "1": 28
+      "1": 26
     }
   },
   "report_type": "market_comps",
@@ -866,7 +861,7 @@
   "market": "San Francisco-Oakland-Hayward, CA",
   "properties_in_file": 10,
   "listings_in_file": 738,
-  "source_file": "2026-09-24 HelloData - Simple - 335 Third Street.xlsx",
+  "source_file": "2026-09-25 HelloData - Simple - 335 Third Street.xlsx",
   "landed_at": null,
   "checks": [
     {
@@ -878,8 +873,8 @@
     {
       "check": "days on market reconciles to the listing's own dates",
       "ok": true,
-      "closed_listings": 599,
-      "agree": 599,
+      "closed_listings": 601,
+      "agree": 601,
       "rate": 1.0,
       "note": "(removed - first listed) + 1, inclusive of both ends"
     },
@@ -897,8 +892,8 @@
     {
       "check": "the current set is the file's own as-of date",
       "ok": true,
-      "as_of": "2026-09-23",
-      "current": 126
+      "as_of": "2026-09-24",
+      "current": 124
     },
     {
       "check": "Align's own buildings are out of the comp set",
@@ -957,6 +952,7 @@
     "2026-09-20",
     "2026-09-21",
     "2026-09-22",
-    "2026-09-23"
+    "2026-09-23",
+    "2026-09-24"
   ]
 }
