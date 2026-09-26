@@ -10,14 +10,14 @@
     "lat": 37.79546,
     "lng": -122.27316
   },
-  "as_of": "2026-09-24",
+  "as_of": "2026-09-25",
   "primary_radius_mi": 1.35,
   "excluded_related": [],
   "subject_by_bed": {
     "1": {
       "n": 26,
       "median_rent": 2570.0,
-      "mean_rent": 2597.15,
+      "mean_rent": 2594.27,
       "median_sqft": 602.0,
       "median_psf": 4.2691
     }
@@ -27,26 +27,26 @@
       "radius_mi": 0.75,
       "primary": false,
       "properties": 9,
-      "listings": 98,
+      "listings": 100,
       "by_bed": {
         "0": {
           "n": 18,
           "median_rent": 2250.0,
-          "mean_rent": 2276.0,
+          "mean_rent": 2286.33,
           "median_sqft": 521.0,
           "median_psf": 4.3647
         },
         "1": {
-          "n": 56,
-          "median_rent": 2731.5,
-          "mean_rent": 2699.14,
+          "n": 58,
+          "median_rent": 2706.5,
+          "mean_rent": 2692.0,
           "median_sqft": 639.0,
-          "median_psf": 4.2574
+          "median_psf": 4.2989
         },
         "2": {
           "n": 21,
           "median_rent": 3662.0,
-          "mean_rent": 3799.14,
+          "mean_rent": 3798.19,
           "median_sqft": 1052.0,
           "median_psf": 3.6301
         },
@@ -63,26 +63,26 @@
       "radius_mi": 1.35,
       "primary": true,
       "properties": 9,
-      "listings": 98,
+      "listings": 100,
       "by_bed": {
         "0": {
           "n": 18,
           "median_rent": 2250.0,
-          "mean_rent": 2276.0,
+          "mean_rent": 2286.33,
           "median_sqft": 521.0,
           "median_psf": 4.3647
         },
         "1": {
-          "n": 56,
-          "median_rent": 2731.5,
-          "mean_rent": 2699.14,
+          "n": 58,
+          "median_rent": 2706.5,
+          "mean_rent": 2692.0,
           "median_sqft": 639.0,
-          "median_psf": 4.2574
+          "median_psf": 4.2989
         },
         "2": {
           "n": 21,
           "median_rent": 3662.0,
-          "mean_rent": 3799.14,
+          "mean_rent": 3798.19,
           "median_sqft": 1052.0,
           "median_psf": 3.6301
         },
@@ -99,26 +99,26 @@
       "radius_mi": null,
       "primary": false,
       "properties": 9,
-      "listings": 98,
+      "listings": 100,
       "by_bed": {
         "0": {
           "n": 18,
           "median_rent": 2250.0,
-          "mean_rent": 2276.0,
+          "mean_rent": 2286.33,
           "median_sqft": 521.0,
           "median_psf": 4.3647
         },
         "1": {
-          "n": 56,
-          "median_rent": 2731.5,
-          "mean_rent": 2699.14,
+          "n": 58,
+          "median_rent": 2706.5,
+          "mean_rent": 2692.0,
           "median_sqft": 639.0,
-          "median_psf": 4.2574
+          "median_psf": 4.2989
         },
         "2": {
           "n": 21,
           "median_rent": 3662.0,
-          "mean_rent": 3799.14,
+          "mean_rent": 3798.19,
           "median_sqft": 1052.0,
           "median_psf": 3.6301
         },
@@ -291,7 +291,7 @@
       "key": "2026Q3",
       "subject_psf": 3.7375,
       "subject_n": 1,
-      "comp_psf": 4.5135,
+      "comp_psf": 4.4606,
       "comp_n": 44,
       "premium": null,
       "premium_beds": 0,
@@ -627,7 +627,7 @@
       "key": "2026-06",
       "subject_psf": null,
       "subject_n": 0,
-      "comp_psf": 4.7898,
+      "comp_psf": 4.7076,
       "comp_n": 8,
       "premium": null,
       "premium_beds": 0
@@ -645,7 +645,7 @@
       "key": "2026-08",
       "subject_psf": null,
       "subject_n": 0,
-      "comp_psf": 4.5191,
+      "comp_psf": 4.4595,
       "comp_n": 15,
       "premium": null,
       "premium_beds": 0
@@ -654,7 +654,7 @@
       "key": "2026-09",
       "subject_psf": null,
       "subject_n": 0,
-      "comp_psf": 4.735,
+      "comp_psf": 4.6041,
       "comp_n": 10,
       "premium": null,
       "premium_beds": 0
@@ -664,14 +664,14 @@
     "subject_median": 101.0,
     "subject_n": 13,
     "comp_median": 42.0,
-    "comp_n": 251,
+    "comp_n": 250,
     "since": "2025-09-01"
   },
   "concessions": {
     "subject_share": 1.0,
     "subject_n": 26,
-    "comp_share": 0.8571,
-    "comp_n": 98
+    "comp_share": 0.86,
+    "comp_n": 100
   },
   "comps": [
     {
@@ -700,16 +700,16 @@
       "year_built": 2019,
       "units": 134,
       "miles": 0.096,
-      "listings": 9,
+      "listings": 10,
       "by_bed": {
         "0": {
           "n": 4,
-          "median_rent": 2046.0,
+          "median_rent": 2139.0,
           "median_sqft": 376.0
         },
         "1": {
-          "n": 4,
-          "median_rent": 2492.0,
+          "n": 5,
+          "median_rent": 2513.0,
           "median_sqft": 604.0
         },
         "3": {
@@ -764,17 +764,17 @@
       "year_built": 2024,
       "units": 157,
       "miles": 0.292,
-      "listings": 13,
+      "listings": 14,
       "by_bed": {
         "1": {
-          "n": 12,
-          "median_rent": 2681.5,
-          "median_sqft": 500.0
+          "n": 13,
+          "median_rent": 2686.0,
+          "median_sqft": 508.0
         },
         "2": {
           "n": 1,
-          "median_rent": 3475.0,
-          "median_sqft": 836.0
+          "median_rent": 3455.0,
+          "median_sqft": 819.0
         }
       }
     },
@@ -788,7 +788,7 @@
       "by_bed": {
         "1": {
           "n": 5,
-          "median_rent": 2605.0,
+          "median_rent": 2595.0,
           "median_sqft": 592.0
         },
         "2": {
@@ -851,7 +851,7 @@
   ],
   "subject_listings": {
     "current": 26,
-    "oldest_days": 127,
+    "oldest_days": 128,
     "by_bed": {
       "1": 26
     }
@@ -861,7 +861,7 @@
   "market": "San Francisco-Oakland-Hayward, CA",
   "properties_in_file": 10,
   "listings_in_file": 738,
-  "source_file": "2026-09-25 HelloData - Simple - 335 Third Street.xlsx",
+  "source_file": "2026-09-26 HelloData - Simple - 335 Third Street.xlsx",
   "landed_at": null,
   "checks": [
     {
@@ -873,8 +873,8 @@
     {
       "check": "days on market reconciles to the listing's own dates",
       "ok": true,
-      "closed_listings": 601,
-      "agree": 601,
+      "closed_listings": 599,
+      "agree": 599,
       "rate": 1.0,
       "note": "(removed - first listed) + 1, inclusive of both ends"
     },
@@ -892,8 +892,8 @@
     {
       "check": "the current set is the file's own as-of date",
       "ok": true,
-      "as_of": "2026-09-24",
-      "current": 124
+      "as_of": "2026-09-25",
+      "current": 126
     },
     {
       "check": "Align's own buildings are out of the comp set",
@@ -953,6 +953,7 @@
     "2026-09-21",
     "2026-09-22",
     "2026-09-23",
-    "2026-09-24"
+    "2026-09-24",
+    "2026-09-25"
   ]
 }
