@@ -10,7 +10,7 @@
     "lat": 37.7728,
     "lng": -122.4195
   },
-  "as_of": "2026-09-25",
+  "as_of": "2026-09-26",
   "primary_radius_mi": 1.35,
   "excluded_related": [
     "The Landing",
@@ -25,18 +25,18 @@
       "median_psf": 9.0588
     },
     "1": {
-      "n": 13,
-      "median_rent": 5413.0,
-      "mean_rent": 5479.92,
+      "n": 14,
+      "median_rent": 5469.5,
+      "mean_rent": 5497.21,
       "median_sqft": 573.0,
-      "median_psf": 8.8976
+      "median_psf": 8.8524
     },
     "2": {
       "n": 8,
-      "median_rent": 8325.0,
-      "mean_rent": 8343.12,
+      "median_rent": 8041.0,
+      "mean_rent": 8059.12,
       "median_sqft": 1005.0,
-      "median_psf": 8.3066
+      "median_psf": 8.0257
     },
     "3": {
       "n": 2,
@@ -51,28 +51,28 @@
       "radius_mi": 0.75,
       "primary": false,
       "properties": 14,
-      "listings": 235,
+      "listings": 207,
       "by_bed": {
         "0": {
-          "n": 55,
-          "median_rent": 3655.0,
-          "mean_rent": 3732.07,
-          "median_sqft": 470.0,
-          "median_psf": 7.6915
+          "n": 52,
+          "median_rent": 3664.0,
+          "mean_rent": 3731.0,
+          "median_sqft": 470.5,
+          "median_psf": 7.7323
         },
         "1": {
-          "n": 78,
-          "median_rent": 4617.5,
-          "mean_rent": 4642.53,
-          "median_sqft": 637.5,
-          "median_psf": 7.1525
+          "n": 65,
+          "median_rent": 4720.0,
+          "mean_rent": 4667.68,
+          "median_sqft": 637.0,
+          "median_psf": 7.1535
         },
         "2": {
-          "n": 102,
-          "median_rent": 6553.0,
-          "mean_rent": 6482.33,
-          "median_sqft": 1002.0,
-          "median_psf": 6.3404
+          "n": 90,
+          "median_rent": 6605.5,
+          "mean_rent": 6552.02,
+          "median_sqft": 1030.0,
+          "median_psf": 6.1982
         }
       }
     },
@@ -80,28 +80,28 @@
       "radius_mi": 1.35,
       "primary": true,
       "properties": 20,
-      "listings": 284,
+      "listings": 251,
       "by_bed": {
         "0": {
-          "n": 62,
-          "median_rent": 3677.5,
-          "mean_rent": 3778.63,
+          "n": 54,
+          "median_rent": 3675.0,
+          "mean_rent": 3743.19,
           "median_sqft": 470.0,
-          "median_psf": 7.8163
+          "median_psf": 7.7624
         },
         "1": {
-          "n": 100,
-          "median_rent": 4712.0,
-          "mean_rent": 4762.65,
+          "n": 88,
+          "median_rent": 4778.5,
+          "mean_rent": 4794.1,
           "median_sqft": 641.0,
-          "median_psf": 7.1894
+          "median_psf": 7.1817
         },
         "2": {
-          "n": 122,
-          "median_rent": 6553.0,
-          "mean_rent": 6526.81,
-          "median_sqft": 1014.5,
-          "median_psf": 6.3343
+          "n": 109,
+          "median_rent": 6595.0,
+          "mean_rent": 6593.04,
+          "median_sqft": 1028.0,
+          "median_psf": 6.2055
         }
       }
     },
@@ -109,28 +109,28 @@
       "radius_mi": null,
       "primary": false,
       "properties": 33,
-      "listings": 414,
+      "listings": 394,
       "by_bed": {
         "0": {
-          "n": 85,
-          "median_rent": 3779.0,
-          "mean_rent": 3935.8,
-          "median_sqft": 470.0,
-          "median_psf": 7.9545
+          "n": 79,
+          "median_rent": 3795.0,
+          "mean_rent": 3941.57,
+          "median_sqft": 476.0,
+          "median_psf": 7.9394
         },
         "1": {
-          "n": 156,
-          "median_rent": 4991.0,
-          "mean_rent": 5055.64,
-          "median_sqft": 631.0,
-          "median_psf": 7.5711
+          "n": 150,
+          "median_rent": 5113.0,
+          "mean_rent": 5124.21,
+          "median_sqft": 630.0,
+          "median_psf": 7.6796
         },
         "2": {
-          "n": 171,
-          "median_rent": 6836.0,
-          "mean_rent": 6840.98,
-          "median_sqft": 1001.0,
-          "median_psf": 6.6235
+          "n": 163,
+          "median_rent": 6970.0,
+          "mean_rent": 6931.69,
+          "median_sqft": 1002.0,
+          "median_psf": 6.5767
         },
         "3": {
           "n": 2,
@@ -157,13 +157,13 @@
     },
     "2": {
       "subject_sqft": 1005.0,
-      "comp_sqft": 1014.5,
-      "gap": -0.0094,
+      "comp_sqft": 1028.0,
+      "gap": -0.0224,
       "like_for_like": true
     }
   },
   "premium": {
-    "median": 0.1944,
+    "median": 0.1898,
     "quarters": 13,
     "first": "2023Q2",
     "last": "2026Q3",
@@ -180,7 +180,7 @@
       "subject_psf": 6.3544,
       "subject_n": 2,
       "comp_psf": 4.6715,
-      "comp_n": 16,
+      "comp_n": 12,
       "premium": null,
       "premium_beds": 0,
       "by_bed": {}
@@ -189,20 +189,20 @@
       "key": "2023Q3",
       "subject_psf": 5.8889,
       "subject_n": 10,
-      "comp_psf": 4.4025,
-      "comp_n": 107,
-      "premium": 0.3673,
+      "comp_psf": 4.5721,
+      "comp_n": 88,
+      "premium": 0.3044,
       "premium_beds": 2,
       "by_bed": {
         "1": {
-          "premium": 0.1965,
+          "premium": 0.1835,
           "subject_n": 4,
-          "comp_n": 38
+          "comp_n": 34
         },
         "2": {
-          "premium": 0.504,
+          "premium": 0.4012,
           "subject_n": 5,
-          "comp_n": 51
+          "comp_n": 39
         }
       }
     },
@@ -210,25 +210,25 @@
       "key": "2023Q4",
       "subject_psf": 5.3858,
       "subject_n": 15,
-      "comp_psf": 5.1264,
-      "comp_n": 206,
-      "premium": 0.0898,
+      "comp_psf": 5.1802,
+      "comp_n": 178,
+      "premium": 0.0721,
       "premium_beds": 3,
       "by_bed": {
         "0": {
-          "premium": 0.0029,
-          "subject_n": 5,
-          "comp_n": 80
-        },
-        "1": {
-          "premium": 0.1091,
-          "subject_n": 5,
-          "comp_n": 64
-        },
-        "2": {
-          "premium": 0.1575,
+          "premium": -0.0167,
           "subject_n": 5,
           "comp_n": 62
+        },
+        "1": {
+          "premium": 0.0949,
+          "subject_n": 5,
+          "comp_n": 63
+        },
+        "2": {
+          "premium": 0.1379,
+          "subject_n": 5,
+          "comp_n": 53
         }
       }
     },
@@ -237,19 +237,19 @@
       "subject_psf": 6.167,
       "subject_n": 12,
       "comp_psf": 4.8394,
-      "comp_n": 181,
-      "premium": 0.3315,
+      "comp_n": 169,
+      "premium": 0.3317,
       "premium_beds": 2,
       "by_bed": {
         "1": {
-          "premium": 0.2424,
+          "premium": 0.2425,
           "subject_n": 5,
-          "comp_n": 94
+          "comp_n": 91
         },
         "2": {
-          "premium": 0.4205,
+          "premium": 0.4208,
           "subject_n": 5,
-          "comp_n": 51
+          "comp_n": 46
         }
       }
     },
@@ -257,9 +257,9 @@
       "key": "2024Q2",
       "subject_psf": 6.1207,
       "subject_n": 12,
-      "comp_psf": 4.8196,
-      "comp_n": 164,
-      "premium": 0.2744,
+      "comp_psf": 4.8269,
+      "comp_n": 163,
+      "premium": 0.2738,
       "premium_beds": 3,
       "by_bed": {
         "0": {
@@ -273,9 +273,9 @@
           "comp_n": 75
         },
         "2": {
-          "premium": 0.2747,
+          "premium": 0.2721,
           "subject_n": 3,
-          "comp_n": 66
+          "comp_n": 65
         }
       }
     },
@@ -330,9 +330,9 @@
       "key": "2025Q1",
       "subject_psf": 6.4871,
       "subject_n": 19,
-      "comp_psf": 5.2327,
-      "comp_n": 218,
-      "premium": 0.2552,
+      "comp_psf": 5.2329,
+      "comp_n": 217,
+      "premium": 0.2553,
       "premium_beds": 3,
       "by_bed": {
         "0": {
@@ -346,9 +346,9 @@
           "comp_n": 84
         },
         "2": {
-          "premium": 0.1793,
+          "premium": 0.1797,
           "subject_n": 6,
-          "comp_n": 82
+          "comp_n": 81
         }
       }
     },
@@ -382,9 +382,9 @@
       "key": "2025Q3",
       "subject_psf": 6.5244,
       "subject_n": 34,
-      "comp_psf": 5.4504,
-      "comp_n": 386,
-      "premium": 0.1788,
+      "comp_psf": 5.4495,
+      "comp_n": 385,
+      "premium": 0.1791,
       "premium_beds": 3,
       "by_bed": {
         "0": {
@@ -393,9 +393,9 @@
           "comp_n": 87
         },
         "1": {
-          "premium": 0.1847,
+          "premium": 0.1854,
           "subject_n": 16,
-          "comp_n": 163
+          "comp_n": 162
         },
         "2": {
           "premium": 0.1792,
@@ -436,7 +436,7 @@
       "subject_n": 50,
       "comp_psf": 6.1776,
       "comp_n": 337,
-      "premium": 0.0319,
+      "premium": 0.0297,
       "premium_beds": 3,
       "by_bed": {
         "0": {
@@ -450,7 +450,7 @@
           "comp_n": 149
         },
         "2": {
-          "premium": 0.1045,
+          "premium": 0.0964,
           "subject_n": 13,
           "comp_n": 120
         }
@@ -462,7 +462,7 @@
       "subject_n": 36,
       "comp_psf": 6.9845,
       "comp_n": 387,
-      "premium": 0.0049,
+      "premium": -0.0035,
       "premium_beds": 3,
       "by_bed": {
         "0": {
@@ -476,7 +476,7 @@
           "comp_n": 164
         },
         "2": {
-          "premium": 0.0808,
+          "premium": 0.0473,
           "subject_n": 9,
           "comp_n": 125
         }
@@ -486,25 +486,25 @@
       "key": "2026Q3",
       "subject_psf": 8.5155,
       "subject_n": 46,
-      "comp_psf": 7.0363,
-      "comp_n": 480,
-      "premium": 0.1944,
+      "comp_psf": 7.0319,
+      "comp_n": 489,
+      "premium": 0.1898,
       "premium_beds": 3,
       "by_bed": {
         "0": {
-          "premium": 0.1576,
+          "premium": 0.1571,
           "subject_n": 13,
-          "comp_n": 140
+          "comp_n": 142
         },
         "1": {
-          "premium": 0.1757,
+          "premium": 0.1777,
           "subject_n": 23,
-          "comp_n": 175
+          "comp_n": 177
         },
         "2": {
-          "premium": 0.2853,
+          "premium": 0.2599,
           "subject_n": 10,
-          "comp_n": 165
+          "comp_n": 170
         }
       }
     }
@@ -515,7 +515,7 @@
       "subject_psf": 6.3544,
       "subject_n": 2,
       "comp_psf": 4.6715,
-      "comp_n": 16,
+      "comp_n": 12,
       "premium": null,
       "premium_beds": 0
     },
@@ -523,8 +523,8 @@
       "key": "2023-07",
       "subject_psf": 5.7004,
       "subject_n": 3,
-      "comp_psf": 4.2187,
-      "comp_n": 26,
+      "comp_psf": 4.4615,
+      "comp_n": 21,
       "premium": null,
       "premium_beds": 0
     },
@@ -532,8 +532,8 @@
       "key": "2023-08",
       "subject_psf": 5.4134,
       "subject_n": 2,
-      "comp_psf": 4.5765,
-      "comp_n": 45,
+      "comp_psf": 4.6182,
+      "comp_n": 38,
       "premium": null,
       "premium_beds": 0
     },
@@ -541,35 +541,35 @@
       "key": "2023-09",
       "subject_psf": 6.0593,
       "subject_n": 5,
-      "comp_psf": 4.2258,
-      "comp_n": 36,
-      "premium": 0.5992,
+      "comp_psf": 4.3542,
+      "comp_n": 29,
+      "premium": 0.5838,
       "premium_beds": 1
     },
     {
       "key": "2023-10",
       "subject_psf": 5.368,
       "subject_n": 7,
-      "comp_psf": 4.2123,
-      "comp_n": 11,
-      "premium": 0.1794,
+      "comp_psf": 4.4373,
+      "comp_n": 7,
+      "premium": 0.1786,
       "premium_beds": 1
     },
     {
       "key": "2023-11",
       "subject_psf": 5.6483,
       "subject_n": 6,
-      "comp_psf": 5.1329,
-      "comp_n": 126,
-      "premium": -0.0156,
+      "comp_psf": 5.1607,
+      "comp_n": 115,
+      "premium": -0.0219,
       "premium_beds": 1
     },
     {
       "key": "2023-12",
       "subject_psf": 5.3706,
       "subject_n": 2,
-      "comp_psf": 5.1399,
-      "comp_n": 69,
+      "comp_psf": 5.3051,
+      "comp_n": 56,
       "premium": null,
       "premium_beds": 0
     },
@@ -577,8 +577,8 @@
       "key": "2024-01",
       "subject_psf": 5.9148,
       "subject_n": 2,
-      "comp_psf": 4.9341,
-      "comp_n": 61,
+      "comp_psf": 5.0167,
+      "comp_n": 53,
       "premium": null,
       "premium_beds": 0
     },
@@ -587,7 +587,7 @@
       "subject_psf": 6.0984,
       "subject_n": 5,
       "comp_psf": 4.6565,
-      "comp_n": 36,
+      "comp_n": 32,
       "premium": null,
       "premium_beds": 0
     },
@@ -604,8 +604,8 @@
       "key": "2024-04",
       "subject_psf": 6.2928,
       "subject_n": 3,
-      "comp_psf": 4.8705,
-      "comp_n": 51,
+      "comp_psf": 4.8845,
+      "comp_n": 50,
       "premium": null,
       "premium_beds": 0
     },
@@ -703,8 +703,8 @@
       "key": "2025-03",
       "subject_psf": 6.4581,
       "subject_n": 7,
-      "comp_psf": 5.4706,
-      "comp_n": 100,
+      "comp_psf": 5.482,
+      "comp_n": 99,
       "premium": 0.1656,
       "premium_beds": 1
     },
@@ -739,9 +739,9 @@
       "key": "2025-07",
       "subject_psf": 6.3415,
       "subject_n": 16,
-      "comp_psf": 5.5107,
-      "comp_n": 136,
-      "premium": 0.1718,
+      "comp_psf": 5.5028,
+      "comp_n": 135,
+      "premium": 0.1725,
       "premium_beds": 3
     },
     {
@@ -849,40 +849,40 @@
       "subject_n": 9,
       "comp_psf": 7.1138,
       "comp_n": 165,
-      "premium": 0.1356,
+      "premium": 0.1386,
       "premium_beds": 2
     },
     {
       "key": "2026-08",
       "subject_psf": 8.5792,
       "subject_n": 21,
-      "comp_psf": 6.958,
+      "comp_psf": 6.8249,
       "comp_n": 183,
-      "premium": 0.1831,
+      "premium": 0.1905,
       "premium_beds": 2
     },
     {
       "key": "2026-09",
-      "subject_psf": 8.6795,
+      "subject_psf": 8.3777,
       "subject_n": 16,
-      "comp_psf": 7.0134,
-      "comp_n": 132,
-      "premium": 0.2485,
+      "comp_psf": 7.0191,
+      "comp_n": 141,
+      "premium": 0.2268,
       "premium_beds": 3
     }
   ],
   "days_on_market": {
     "subject_median": 31.0,
-    "subject_n": 150,
+    "subject_n": 149,
     "comp_median": 29.0,
-    "comp_n": 1370,
+    "comp_n": 1412,
     "since": "2025-09-01"
   },
   "concessions": {
     "subject_share": 1.0,
-    "subject_n": 32,
-    "comp_share": 0.1725,
-    "comp_n": 284
+    "subject_n": 33,
+    "comp_share": 0.1952,
+    "comp_n": 251
   },
   "comps": [
     {
@@ -891,11 +891,11 @@
       "year_built": 2022,
       "units": 444,
       "miles": 0.083,
-      "listings": 59,
+      "listings": 57,
       "by_bed": {
         "0": {
-          "n": 21,
-          "median_rent": 3603.0,
+          "n": 19,
+          "median_rent": 3624.0,
           "median_sqft": 495.0
         },
         "1": {
@@ -905,7 +905,7 @@
         },
         "2": {
           "n": 28,
-          "median_rent": 5813.0,
+          "median_rent": 5828.5,
           "median_sqft": 997.0
         }
       }
@@ -916,7 +916,7 @@
       "year_built": 2020,
       "units": 550,
       "miles": 0.094,
-      "listings": 7,
+      "listings": 9,
       "by_bed": {
         "0": {
           "n": 4,
@@ -924,8 +924,8 @@
           "median_sqft": 533.0
         },
         "2": {
-          "n": 3,
-          "median_rent": 7895.0,
+          "n": 5,
+          "median_rent": 7850.0,
           "median_sqft": 1098.0
         }
       }
@@ -940,17 +940,17 @@
       "by_bed": {
         "0": {
           "n": 2,
-          "median_rent": 4382.0,
+          "median_rent": 4374.5,
           "median_sqft": 484.0
         },
         "1": {
           "n": 5,
-          "median_rent": 4707.0,
+          "median_rent": 4690.0,
           "median_sqft": 621.0
         },
         "2": {
           "n": 3,
-          "median_rent": 7578.0,
+          "median_rent": 7556.0,
           "median_sqft": 917.0
         }
       }
@@ -974,12 +974,12 @@
       "by_bed": {}
     },
     {
-      "building": "Olume Apartments",
+      "building": "Olume",
       "address": "1401 Mission Street",
       "year_built": 2016,
       "units": 121,
       "miles": 0.244,
-      "listings": 12,
+      "listings": 11,
       "by_bed": {
         "0": {
           "n": 3,
@@ -987,9 +987,9 @@
           "median_sqft": 411.0
         },
         "1": {
-          "n": 8,
-          "median_rent": 4190.0,
-          "median_sqft": 533.0
+          "n": 7,
+          "median_rent": 4094.0,
+          "median_sqft": 528.0
         },
         "2": {
           "n": 1,
@@ -1004,21 +1004,21 @@
       "year_built": 2014,
       "units": 754,
       "miles": 0.253,
-      "listings": 42,
+      "listings": 41,
       "by_bed": {
         "0": {
           "n": 15,
-          "median_rent": 3615.0,
+          "median_rent": 3630.0,
           "median_sqft": 476.0
         },
         "1": {
-          "n": 10,
-          "median_rent": 5026.0,
-          "median_sqft": 829.5
+          "n": 9,
+          "median_rent": 5137.0,
+          "median_sqft": 814.0
         },
         "2": {
           "n": 17,
-          "median_rent": 7170.0,
+          "median_rent": 6980.0,
           "median_sqft": 1376.0
         }
       }
@@ -1029,17 +1029,12 @@
       "year_built": 2014,
       "units": 418,
       "miles": 0.281,
-      "listings": 32,
+      "listings": 29,
       "by_bed": {
-        "0": {
-          "n": 1,
-          "median_rent": 4180.0,
-          "median_sqft": 439.0
-        },
         "1": {
-          "n": 14,
+          "n": 12,
           "median_rent": 4914.5,
-          "median_sqft": 680.0
+          "median_sqft": 663.0
         },
         "2": {
           "n": 17,
@@ -1069,22 +1064,12 @@
       "year_built": 2018,
       "units": 420,
       "miles": 0.304,
-      "listings": 28,
+      "listings": 1,
       "by_bed": {
-        "0": {
-          "n": 1,
-          "median_rent": 3742.0,
-          "median_sqft": 454.0
-        },
         "1": {
-          "n": 11,
-          "median_rent": 4396.0,
-          "median_sqft": 621.0
-        },
-        "2": {
-          "n": 16,
-          "median_rent": 6320.5,
-          "median_sqft": 975.0
+          "n": 1,
+          "median_rent": 5550.0,
+          "median_sqft": 611.0
         }
       }
     },
@@ -1094,7 +1079,7 @@
       "year_built": 2015,
       "units": 162,
       "miles": 0.347,
-      "listings": 11,
+      "listings": 12,
       "by_bed": {
         "0": {
           "n": 1,
@@ -1103,13 +1088,13 @@
         },
         "1": {
           "n": 6,
-          "median_rent": 4306.0,
-          "median_sqft": 623.5
+          "median_rent": 4110.5,
+          "median_sqft": 625.5
         },
         "2": {
-          "n": 4,
-          "median_rent": 6303.5,
-          "median_sqft": 922.0
+          "n": 5,
+          "median_rent": 6098.0,
+          "median_sqft": 903.0
         }
       }
     },
@@ -1119,17 +1104,17 @@
       "year_built": 2015,
       "units": 182,
       "miles": 0.348,
-      "listings": 12,
+      "listings": 13,
       "by_bed": {
         "0": {
           "n": 4,
-          "median_rent": 3887.5,
+          "median_rent": 3882.5,
           "median_sqft": 450.0
         },
         "1": {
-          "n": 1,
-          "median_rent": 4850.0,
-          "median_sqft": 638.0
+          "n": 2,
+          "median_rent": 4857.5,
+          "median_sqft": 623.5
         },
         "2": {
           "n": 7,
@@ -1144,17 +1129,17 @@
       "year_built": 2021,
       "units": 136,
       "miles": 0.381,
-      "listings": 2,
+      "listings": 4,
       "by_bed": {
         "0": {
-          "n": 1,
-          "median_rent": 3169.0,
+          "n": 2,
+          "median_rent": 3231.5,
           "median_sqft": 392.0
         },
         "2": {
-          "n": 1,
-          "median_rent": 4822.0,
-          "median_sqft": 615.0
+          "n": 2,
+          "median_rent": 5195.5,
+          "median_sqft": 754.5
         }
       }
     },
@@ -1189,17 +1174,17 @@
       "year_built": 2016,
       "units": 241,
       "miles": 0.904,
-      "listings": 9,
+      "listings": 7,
       "by_bed": {
         "1": {
-          "n": 5,
-          "median_rent": 4779.0,
-          "median_sqft": 701.0
+          "n": 4,
+          "median_rent": 4882.0,
+          "median_sqft": 677.5
         },
         "2": {
-          "n": 4,
-          "median_rent": 6231.5,
-          "median_sqft": 998.0
+          "n": 3,
+          "median_rent": 6293.0,
+          "median_sqft": 1014.0
         }
       }
     },
@@ -1209,13 +1194,8 @@
       "year_built": 2021,
       "units": 302,
       "miles": 0.916,
-      "listings": 10,
+      "listings": 5,
       "by_bed": {
-        "0": {
-          "n": 5,
-          "median_rent": 4285.0,
-          "median_sqft": 387.0
-        },
         "1": {
           "n": 1,
           "median_rent": 5228.0,
@@ -1223,7 +1203,7 @@
         },
         "2": {
           "n": 4,
-          "median_rent": 6936.5,
+          "median_rent": 6921.5,
           "median_sqft": 941.0
         }
       }
@@ -1253,12 +1233,12 @@
       "by_bed": {
         "1": {
           "n": 5,
-          "median_rent": 6015.0,
+          "median_rent": 6028.0,
           "median_sqft": 748.0
         },
         "2": {
           "n": 2,
-          "median_rent": 7744.5,
+          "median_rent": 7761.5,
           "median_sqft": 1145.0
         }
       }
@@ -1269,7 +1249,7 @@
       "year_built": 2016,
       "units": 453,
       "miles": 1.293,
-      "listings": 16,
+      "listings": 18,
       "by_bed": {
         "0": {
           "n": 1,
@@ -1277,7 +1257,7 @@
           "median_sqft": 449.0
         },
         "1": {
-          "n": 7,
+          "n": 9,
           "median_rent": 4405.0,
           "median_sqft": 651.0
         },
@@ -1310,11 +1290,11 @@
     }
   ],
   "subject_listings": {
-    "current": 32,
-    "oldest_days": 385,
+    "current": 33,
+    "oldest_days": 386,
     "by_bed": {
       "0": 9,
-      "1": 13,
+      "1": 14,
       "2": 8,
       "3": 2
     }
@@ -1323,8 +1303,8 @@
   "vendor": "HelloData",
   "market": "San Francisco-Oakland-Hayward, CA",
   "properties_in_file": 36,
-  "listings_in_file": 6561,
-  "source_file": "2026-09-26 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (2).xlsx",
+  "listings_in_file": 6501,
+  "source_file": "2026-09-27 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
   "landed_at": null,
   "checks": [
     {
@@ -1336,16 +1316,16 @@
     {
       "check": "days on market reconciles to the listing's own dates",
       "ok": true,
-      "closed_listings": 6089,
-      "agree": 6089,
+      "closed_listings": 6057,
+      "agree": 6057,
       "rate": 1.0,
       "note": "(removed - first listed) + 1, inclusive of both ends"
     },
     {
       "check": "floorplan summary rows are not counted as units",
       "ok": true,
-      "skipped": 238,
-      "units_read": 6561
+      "skipped": 211,
+      "units_read": 6501
     },
     {
       "check": "listings with no price or no size are excluded",
@@ -1355,8 +1335,8 @@
     {
       "check": "the current set is the file's own as-of date",
       "ok": true,
-      "as_of": "2026-09-25",
-      "current": 473
+      "as_of": "2026-09-26",
+      "current": 456
     },
     {
       "check": "Align's own buildings are out of the comp set",
@@ -1419,6 +1399,7 @@
     "2026-09-22",
     "2026-09-23",
     "2026-09-24",
-    "2026-09-25"
+    "2026-09-25",
+    "2026-09-26"
   ]
 }
