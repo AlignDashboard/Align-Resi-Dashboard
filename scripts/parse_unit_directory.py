@@ -33,7 +33,7 @@ import sys
 import openpyxl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from xlsx_anchors import LayoutError, norm  # noqa: E402
+from xlsx_anchors import LayoutError, dims, norm  # noqa: E402
 
 REPORT_TYPE = "unit_directory"
 
@@ -99,9 +99,10 @@ def _num(v):
 
 def _header(ws):
     """{field: column} for the directory's header row, and the row it is on."""
-    for r in range(1, min(ws.max_row, 15) + 1):
+    max_row, max_col = dims(ws)
+    for r in range(1, min(max_row, 15) + 1):
         got = {}
-        for c in range(1, ws.max_column + 1):
+        for c in range(1, max_col + 1):
             label = norm(ws.cell(row=r, column=c).value)
             for field, names in COLUMNS.items():
                 if label in names and field not in got:
@@ -223,7 +224,8 @@ def parse(path):
             "checks": checks,
         })
 
-    for r in range(hdr + 1, ws.max_row + 1):
+    max_row, max_col = dims(ws)
+    for r in range(hdr + 1, max_row + 1):
         a = ws.cell(row=r, column=fields["unit"]).value
         label = str(a).strip() if a is not None else ""
         if not label:
@@ -232,7 +234,7 @@ def parse(path):
         if m or norm(label) == "grand total":
             um = UNITS_IN_TOTAL.search(
                 " ".join(str(ws.cell(row=r, column=c).value or "")
-                         for c in range(1, ws.max_column + 1)))
+                         for c in range(1, max_col + 1)))
             declared = {
                 "units": int(um.group(1).replace(",", "")) if um else None,
                 "rent": _num(ws.cell(row=r, column=fields["rent"]).value),

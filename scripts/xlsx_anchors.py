@@ -27,6 +27,19 @@ def norm(v):
     return re.sub(r"\s+", " ", str(v)).strip().casefold()
 
 
+def dims(ws):
+    """(max_row, max_column), read once.
+
+    openpyxl does not store these: each access scans every cell in the sheet.
+    That is free on a report and ruinous on a sheet formatted out to tens of
+    thousands of rows -- the Madelon daily report is 51 MB of XML and ~2.3
+    million cells -- so a loop must read them here, once, rather than in its
+    own condition or body. test_xlsx_dims.py fails if a parser goes back to
+    asking per row.
+    """
+    return ws.max_row, ws.max_column
+
+
 def cell(ws, row, col):
     v = ws.cell(row=row, column=col).value
     if isinstance(v, datetime.datetime):
@@ -162,15 +175,22 @@ def header_map(ws, spec, search_rows=40, join_rows=2, min_hits=None):
     """
     want = min_hits if min_hits is not None else max(3, len(spec) // 2)
     best = (None, {}, -1)
+    # Read once. openpyxl computes max_row / max_column by scanning every cell
+    # in the sheet on each access, and these loops used to ask per cell: on a
+    # 51 MB Madelon daily report that was 3,338 full scans and 277 of the 323
+    # seconds the parse took -- one file of dozens, every run, which is what
+    # pushed the daily build past GitHub's six-hour limit. Every cell() below
+    # stays inside these bounds, so they cannot move while the loop runs.
+    max_row, max_col = dims(ws)
     # Try each candidate row at each join width. A single-row header and a
     # two-row header ("Market" over "Rent") both occur, and joining one row too
     # many swallows the section marker underneath, so let the score decide.
     for width in range(1, max(1, join_rows) + 1):
-        for r in range(1, min(ws.max_row, search_rows) + 1):
+        for r in range(1, min(max_row, search_rows) + 1):
             joined = {}
-            for c in range(1, ws.max_column + 1):
+            for c in range(1, max_col + 1):
                 parts = [norm(ws.cell(row=rr, column=c).value)
-                         for rr in range(r, min(r + width - 1, ws.max_row) + 1)]
+                         for rr in range(r, min(r + width - 1, max_row) + 1)]
                 joined[c] = " ".join(p for p in parts if p).strip()
             found = {}
             for field, pattern in spec.items():

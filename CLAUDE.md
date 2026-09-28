@@ -2339,6 +2339,19 @@ than silence — an unread folder that says nothing is exactly how
 `Budgets/Landing/` stranded two budgets. `test_fetch_sweep.py` covers all of
 it, each guard verified by mutation.
 
+**A folder several active entries share is split by `name_patterns`.**
+`Daily Leasing Reports` holds four report families (A11), two with parsers, and
+the folder pass used to hand every `*.xlsx` in it to both — so each file was
+downloaded twice and each Madelon daily report loaded in full by the
+renewal-tracker parser only to be rejected. Now a file another sharing entry
+claims by name, and this one does not, goes to that entry alone. A file **no**
+entry claims by name still goes to every entry, exactly as before: narrowing
+further would let a renamed export sit unread, which is the failure the Budgets
+entry's one-word pattern exists to prevent. Checked against run #97's real
+listing before it went in — every one of the 53 parses that succeeded that run
+is still sent to its parser. `test_fetch_sweep.py` check 7 holds both halves,
+each verified by mutation.
+
 The sweep is scoped, and each limit exists for a reason:
 
 | Limit | Why |
@@ -2349,7 +2362,7 @@ The sweep is scoped, and each limit exists for a reason:
 | Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
 | Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |
 
-`scripts/test_fetch_sweep.py` holds this down — 24 checks against a stubbed Drive
+`scripts/test_fetch_sweep.py` holds this down — 30 checks against a stubbed Drive
 mirroring the real layout, no network or fixtures. Both archive protections are
 tested *independently*: removing either one alone fails a check, since the name
 guard would otherwise cover for the missing tree scoping.
@@ -2699,6 +2712,32 @@ stale `metrics.json` and `lineage.json` over it — blanking a live tab. The lon
 pole is the build, not the fetch, and the guard covers the wrong one. Do not
 read this section as saying the window is closed; it is open for hours a day
 until A15 is taken.
+
+**Why the build took hours** (found 2026-09-28, after runs #94–#97 were all
+cancelled at GitHub's six-hour job limit): openpyxl does not store a sheet's
+`max_row` or `max_column` — every access scans every cell — and
+`xlsx_anchors.header_map` read them once per cell it looked at. Harmless on a
+report; ruinous on the Madelon daily report, whose first sheet is 51 MB of XML
+and ~2.3 million cells. One copy took **262 s** to parse, 3,338 full scans of
+the sheet, and one arrives every day and every run re-parses every copy, so the
+build grew by minutes a day until it could not finish. Two fixes:
+
+- **`xlsx_anchors.dims(ws)` reads both once**, and every parser loop that asked
+  per row or per cell now asks once. The same Madelon file parses in 17 s, and
+  a full renewal tracker in 1.7 s rather than 14.6 s — each checked
+  byte-identical against the old code's output. `test_xlsx_dims.py` counts the
+  property reads and fails if any helper goes back to per-row.
+- **A shared folder hands each file to the entry that claims it by name** — see
+  *Folders organise; filenames route*. Before, both leasing parsers got every
+  file in `Daily Leasing Reports`, so the renewal-tracker parser loaded each
+  Madelon daily report in full just to reject it.
+
+What is **not** fixed: the build still re-parses every file ever filed, every
+run, so it still grows — by roughly a minute a day at today's arrival rate,
+not five. A15's replay-clobber is untouched too. The job now runs with
+`PYTHONUNBUFFERED`, so the next slow file names itself in the log's
+timestamps; until then, stdout flushed in 8 KB blocks and a 45-minute gap could
+belong to any file in the block.
 
 It takes the newer **data** as well as the newer code, which is the half that
 saves a hand-added feed: the build then accumulates onto the current stores
