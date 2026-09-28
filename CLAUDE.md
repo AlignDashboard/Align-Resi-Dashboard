@@ -2763,9 +2763,18 @@ build grew by minutes a day until it could not finish. Two fixes:
   file in `Daily Leasing Reports`, so the renewal-tracker parser loaded each
   Madelon daily report in full just to reject it.
 
+**Verified on the runner the same day**: run #98 (`workflow_dispatch` on
+`22c80d4`) built in **9m29s** and the whole job in 20 minutes, pushing on the
+first attempt — against runs #94–#97, cancelled after ~5h50m each. Its own
+unbuffered log puts **7.4 of those 9.5 minutes in the Madelon daily reports,
+~16 s apiece**, and 1.3 in the comps.
+
 What is **not** fixed: the build still re-parses every file ever filed, every
-run, so it still grows — by roughly a minute a day at today's arrival rate,
-not five. A15's replay-clobber is untouched too. The job now runs with
+run, so it still grows — by about 16 s a day, one Madelon report's worth, which
+is years from the limit rather than days. A15's replay-clobber is untouched,
+but its window shrank with the build, from hours to about twenty minutes, and a
+ten-minute build makes "rebuild on the new main instead of replaying" a cheap
+option where it was not one before. The job now runs with
 `PYTHONUNBUFFERED`, so the next slow file names itself in the log's
 timestamps; until then, stdout flushed in 8 KB blocks and a 45-minute gap could
 belong to any file in the block.
