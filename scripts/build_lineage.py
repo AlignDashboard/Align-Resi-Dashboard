@@ -157,7 +157,7 @@ DRIVE_FLOWS = {
              "anchor": "cdRentCapture", "primary": "t-rentcap-*",
              "tables": ["t-rentcap-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
-             "anchor": "cdFeeds", "tables": []},
+             "anchor": "cdFeeds", "primary": "flow", "tables": []},
         ],
         "tables": ["t-expratio-*", "t-exptrend"],
         "note": "The one Drive report that reaches the dashboard as a chart in "
@@ -339,9 +339,12 @@ DRIVE_FLOWS = {
             {"card": "What The Market Would Pay", "tab": "Market Comps",
              "anchor": "cmcBuildUp", "primary": "t-compscheck-*",
              "tables": ["t-compscheck-*", "t-unitdir-*"]},
+            # Days on market and concessions -- the two figures on this export
+            # that are not rents. They had no table until 2026-09-28, so this
+            # card pointed at the comp set, which holds neither.
             {"card": "How It Is Actually Leasing", "tab": "Market Comps",
-             "anchor": "cmcEvidence", "primary": "t-comps-*",
-             "tables": ["t-comps-*"]},
+             "anchor": "cmcEvidence", "primary": "t-compsleasing-*",
+             "tables": ["t-compsleasing-*", "t-comps-*"]},
             {"card": "The Comp Set", "tab": "Market Comps",
              "anchor": "cmcSet", "primary": "t-comps-*",
              "tables": ["t-comps-*"]},
@@ -349,7 +352,8 @@ DRIVE_FLOWS = {
              "anchor": "cmcMethod", "primary": "t-comps-*",
              "tables": ["t-comps-*", "t-compstrend-*"]},
         ],
-        "tables": ["t-comps-*", "t-compstrend-*", "t-compscheck-*"],
+        "tables": ["t-comps-*", "t-compstrend-*", "t-compscheck-*",
+                   "t-compsleasing-*"],
         "note": "The only feed here about the MARKET rather than about an "
                 "Align building, and the only thing the Yardi market rent "
                 "column can be checked against \u2014 that column is set by "
@@ -453,7 +457,7 @@ DRIVE_FLOWS = {
             {"card": "Delinquency tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
             {"card": "What Feeds This Tab", "tab": "Landing",
-             "anchor": "cdFeeds", "tables": []},
+             "anchor": "cdFeeds", "primary": "flow", "tables": []},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The 30/60/90 split is reported, never graded: a distribution "
@@ -525,7 +529,7 @@ DRIVE_FLOWS = {
             {"card": "Leased % and Trade-out % tiles", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
             {"card": "What Feeds This Tab", "tab": "Landing",
-             "anchor": "cdFeeds", "tables": []},
+             "anchor": "cdFeeds", "primary": "flow", "tables": []},
             {"card": "KPI Scorecard — Chorus", "tab": "Chorus",
              "anchor": "psc-chorus", "primary": "t-sc-measured",
              "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
@@ -617,7 +621,7 @@ DRIVE_FLOWS = {
             {"card": "Unit Inventory", "tab": "Landing",
              "anchor": "cdInventory", "tables": ["t-unitdir-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
-             "anchor": "cdFeeds", "tables": []},
+             "anchor": "cdFeeds", "primary": "flow", "tables": []},
         ],
         "tables": ["t-l-units"],
         "note": "It exists because nothing else says how many bedrooms a "
@@ -1279,14 +1283,20 @@ def data_table_titles():
     """
     text = (ROOT / "docs/data.html").read_text(encoding="utf-8")
     out = {}
+    # These are read out of the SOURCE, not run, so a title written with a
+    # \\uXXXX escape would reach the card tooltip as those six characters.
+    def title_text(raw):
+        return re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)),
+                      raw.replace('\\"', '"'))
+
     for m in re.finditer(r'id:\s*"([\w-]+)"(.{0,400}?)title:\s*"((?:[^"\\]|\\.)*)"',
                          text, re.S):
-        out.setdefault(m.group(1), m.group(3).replace('\\"', '"'))
+        out.setdefault(m.group(1), title_text(m.group(3)))
     # dynamic families are built as a prefix plus a slug; the prefix is what a
     # card links to, and data.html resolves it to the first table that exists
     for m in re.finditer(r'id:\s*"([\w-]+-)"\s*\+(.{0,240}?)title:\s*"((?:[^"\\]|\\.)*)"',
                          text, re.S):
-        out.setdefault(m.group(1).rstrip("-"), m.group(3).replace('\\"', '"').strip(" \u2014-"))
+        out.setdefault(m.group(1).rstrip("-"), title_text(m.group(3)).strip(" \u2014-"))
     return out
 
 
@@ -1343,8 +1353,17 @@ def card_index(flows, titles):
         if declared and declared.endswith("*"):
             declared = declared[:-1].rstrip("-")
         e["primary"] = declared or (tables[0] if tables else "f-" + e["flows"][0])
-        e["holds"] = titles.get(e["primary"])
+        # A view anchor has no table title to borrow, and the tooltip reads
+        # better naming what is there than falling back to the generic line.
+        e["holds"] = VIEW_TITLES.get(e["primary"]) or titles.get(e["primary"])
     return cards
+
+
+# The two fragments data.html resolves to a view instead of a table; see
+# focusHashTarget. Valid link targets, so the table checks skip them.
+VIEW_ANCHORS = {"flow", "tables"}
+VIEW_TITLES = {"flow": "the data-flow chain, one row per source",
+               "tables": "every number the JSON carries"}
 
 
 def run_checks(flows):
@@ -1406,6 +1425,13 @@ def run_checks(flows):
                             f"itself a table docs/data.html builds — the link "
                             f"would land there instead of on the family")
             for t in ([d["primary"]] if d.get("primary") else []) + (d.get("tables") or []):
+                # data.html's focusHashTarget answers two fragments with a VIEW
+                # rather than a table -- "#flow" and "#tables". A card whose
+                # numbers are the flow page itself (What Feeds This Tab reads
+                # lineage.json's whole flow list) links there, which is a real
+                # target and not a table to look for.
+                if t in VIEW_ANCHORS:
+                    continue
                 if t.endswith("*"):
                     stem = t[:-1]
                     if not any(i.startswith(stem) for i in data_ids) \
