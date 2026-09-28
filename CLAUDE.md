@@ -2096,6 +2096,45 @@ computed once from the actuals — so toggling categories never re-sorts and
 nothing is repainted under the reader. A category only the *budget* names is
 appended after and steps past any hue already spoken for.
 
+### The property row
+
+A **row of property toggles** sits under the card head — one `.tog` button per
+building the card knows about, single-select, matching the `Total` /
+`Categories` pair above it rather than the checkbox grids the Expense Ratio and
+Expense Trend cards use. Those two overlay several properties on one axis;
+this card cannot, because both its views are one building at a time (two lines,
+or category bars that would be meaningless stacked across buildings) and the
+variance list and note are that building's own figures. So it switches rather
+than overlays, and the eyebrow leads with the property name once there is more
+than one — `PLAN vs ACTUAL · SEP 25–AUG 26` does not say whose.
+
+It replaced a `<select>` that was **hidden whenever fewer than two properties
+had both halves** — which is every day so far, so the card has never offered a
+property control at all.
+
+**A building the card cannot draw is listed and disabled, not left out.** Palma
+has a 12-month statement and no budget on file, so it can never be drawn here;
+leaving it off the row states nothing, while a struck-through `PALMA` whose
+tooltip reads `no budget on file` is the answer to "why is this card showing
+one building". The note carries the same sentence in prose, and names the Drive
+`Budgets` folder as the fix. That is why the row does not follow the
+hides-below-two rule the basket presets and the Expense Trend grid do: those
+hide because they have nothing to *say*, and this one does.
+
+The row hides itself only when there is a single property in total — then it
+has neither anything to switch nor anything to explain.
+
+`known` is the union of the properties with actuals and those with plans, so
+both gaps show: a plan with no statement reads `no 12-month statement to
+measure its plan against`. Drawable ones sort first, then by name.
+
+Verified by injecting a synthetic second budget into a copy of `metrics.json`
+and driving the page: the toggle switches the chart, the variance list, the
+eyebrow and the note, a view switch stays on the selected property, and
+switching back restores the first. The variance list does go stale while
+Categories is showing — it is `hidden` there and rebuilt on the way back to
+Total, so it is never visible stale, which was checked rather than assumed.
+
 ### The two basket presets
 
 A **Basket** row sits above the per-category grid with two boxes —
