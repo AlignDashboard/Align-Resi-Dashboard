@@ -30,7 +30,7 @@ import sys
 import openpyxl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from xlsx_anchors import (LayoutError, header_map, norm,  # noqa: E402
+from xlsx_anchors import (LayoutError, dims, header_map, norm,  # noqa: E402
                           rows_until)
 
 # field -> pattern matched against the joined header text
@@ -58,8 +58,9 @@ STOP = [r"^future residents", r"^total\b", r"^summary groups", r"^totals?:",
 
 def _text_cells(ws, max_row=30, max_col=None):
     out = []
-    for r in range(1, min(ws.max_row, max_row) + 1):
-        for c in range(1, min(ws.max_column, max_col or ws.max_column) + 1):
+    rows, cols = dims(ws)
+    for r in range(1, min(rows, max_row) + 1):
+        for c in range(1, min(cols, max_col or cols) + 1):
             v = ws.cell(row=r, column=c).value
             if isinstance(v, str) and v.strip():
                 out.append(v.strip())
@@ -111,9 +112,10 @@ def _as_of(ws):
 def _report_totals(ws, fields):
     """The report's own Total row, used purely as a tie-out."""
     unit_col = fields["unit"]
-    for r in range(1, ws.max_row + 1):
+    max_row, max_col = dims(ws)
+    for r in range(1, max_row + 1):
         row_text = " ".join(norm(ws.cell(row=r, column=c).value)
-                            for c in range(1, min(ws.max_column, unit_col + 4) + 1))
+                            for c in range(1, min(max_col, unit_col + 4) + 1))
         if re.search(r"\btotal\b", row_text) and not re.search(r"total (vacant|non rev)", row_text):
             mk = ws.cell(row=r, column=fields["market_rent"]).value
             ac = ws.cell(row=r, column=fields["actual_rent"]).value

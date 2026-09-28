@@ -26,7 +26,7 @@ import sys
 import openpyxl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from xlsx_anchors import (LayoutError, header_map, norm,  # noqa: E402
+from xlsx_anchors import (LayoutError, dims, header_map, norm,  # noqa: E402
                           rows_until)
 
 COLUMNS = {
@@ -86,8 +86,9 @@ def _property(ws, unit_col):
 def _as_of(ws):
     months = ["january", "february", "march", "april", "may", "june", "july",
               "august", "september", "october", "november", "december"]
-    for r in range(1, min(ws.max_row, 40) + 1):
-        for c in range(1, ws.max_column + 1):
+    max_row, max_col = dims(ws)
+    for r in range(1, min(max_row, 40) + 1):
+        for c in range(1, max_col + 1):
             v = ws.cell(row=r, column=c).value
             if not isinstance(v, str):
                 continue

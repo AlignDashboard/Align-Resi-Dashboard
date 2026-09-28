@@ -292,6 +292,25 @@ def main():
               + (f" — filed outside its own folder, matched on name as "
                  f"{entry['report_type']}" if rescued else ""))
 
+    def matches(filename, entry):
+        low = filename.lower()
+        return any(fnmatch.fnmatch(low, pat.lower())
+                   for pat in entry.get("name_patterns") or ())
+
+    # Folders more than one active entry reads. Daily Leasing Reports is four
+    # report families in one folder (A11), and "the pipeline picks a parser by
+    # name_patterns, never by folder" has to be true of the folder pass as well
+    # as the sweep: glob alone handed every file to every entry, so each 5-6 MB
+    # Madelon daily report was loaded in full by the renewal-tracker parser just
+    # to be rejected -- 29 of them, every run, a large part of what took the
+    # daily build past GitHub's six-hour limit.
+    def sharing(entry):
+        key = (entry.get("tree", "reports"), entry["drive_folder"])
+        return [e for e in cfg["subfolders"]
+                if e is not entry and e.get("status") == "active"
+                and e.get("name_patterns")
+                and (e.get("tree", "reports"), e["drive_folder"]) == key]
+
     for entry in cfg["subfolders"]:
         name = entry["drive_folder"]
         folders = folders_for(entry)
@@ -333,6 +352,20 @@ def main():
             # or it can sit in the folder for weeks with nothing to show for it
             print(f"[note] '{name}': {len(skipped)} file(s) outside this "
                   f"entry's glob: {skipped}")
+        # In a shared folder, a file another entry claims by name and this one
+        # does not is that entry's alone. A file NO entry claims by name still
+        # goes to every entry, exactly as before: narrowing further would let a
+        # renamed export sit unread, which is the failure the Budgets entry's
+        # single-word pattern exists to prevent.
+        others = sharing(entry)
+        if others:
+            theirs = [f for f in files if not matches(f["name"], entry)
+                      and any(matches(f["name"], e) for e in others)]
+            if theirs:
+                print(f"[info] '{name}': {len(theirs)} file(s) left to the "
+                      f"entr(ies) whose name_patterns claim them, not read as "
+                      f"{entry['report_type']}")
+                files = [f for f in files if f not in theirs]
         for f in files:
             take(entry, f, f"{name}/{f['_sub']}" if f.get("_sub") else name)
 
@@ -341,11 +374,6 @@ def main():
     named = [e for e in cfg["subfolders"]
              if e.get("status") == "active" and e.get("name_patterns")]
     if named:
-        def matches(filename, entry):
-            low = filename.lower()
-            return any(fnmatch.fnmatch(low, pat.lower())
-                       for pat in entry["name_patterns"])
-
         rescued = ambiguous = 0
         for folder_name, folder_id in sorted(trees["reports"].items()):
             if folder_name in NEVER_SWEEP:

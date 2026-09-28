@@ -43,7 +43,7 @@ import sys
 import openpyxl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from xlsx_anchors import (LayoutError, cell, header_map, norm,  # noqa: E402
+from xlsx_anchors import (LayoutError, cell, dims, header_map, norm,  # noqa: E402
                           property_from_filename, rows_until)
 
 SHEET = "Weekly_Leases"
@@ -140,9 +140,10 @@ def _week_ending(ws, path):
     9.7.26" say 2026-09-07 and 2026-09-06, which keyed the store twice for one
     week and counted it twice.
     """
-    for r in range(1, min(ws.max_row, 24) + 1):
+    max_row, max_col = dims(ws)
+    for r in range(1, min(max_row, 24) + 1):
         cells = [(c, ws.cell(row=r, column=c).value)
-                 for c in range(1, min(ws.max_column, 14) + 1)]
+                 for c in range(1, min(max_col, 14) + 1)]
         at = next((c for c, v in cells if "ending" in norm(v)), None)
         if at is None:
             continue
@@ -162,12 +163,13 @@ def _sheet_property(ws):
     units here while its Information sheet still says The Landing and 263.
     """
     name = units = None
-    for r in range(1, min(ws.max_row, 20) + 1):
-        for c in range(1, min(ws.max_column, 6) + 1):
+    max_row, max_col = dims(ws)
+    for r in range(1, min(max_row, 20) + 1):
+        for c in range(1, min(max_col, 6) + 1):
             label = norm(ws.cell(row=r, column=c).value).rstrip(":")
             if label not in ("property", "units"):
                 continue
-            for cc in range(c + 1, min(c + 5, ws.max_column) + 1):
+            for cc in range(c + 1, min(c + 5, max_col) + 1):
                 v = ws.cell(row=r, column=cc).value
                 if v is None or str(v).strip() == "":
                     continue

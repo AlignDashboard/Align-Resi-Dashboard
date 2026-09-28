@@ -286,6 +286,45 @@ def main():
                    "u":  [(FILE, "Delinquency_8_1_2026.xls.xlsx", "d9")]})
     check("the duplicate name is skipped, the folder-pass copy kept", len(man) == 1)
 
+    print("\n7. a shared folder hands each file to the entry that claims it by name")
+    # Daily Leasing Reports as it stood on 2026-09-27: four families in one
+    # folder, split by property below it. Before this, every file went to every
+    # active entry, so each 5-6 MB Madelon daily report was loaded in full by the
+    # renewal-tracker parser too -- part of what ran the build past six hours.
+    claimed_by = {
+        "renewal_tracker": ["2026-09-21 Landing 2025 Renewal Tracker - Full (47).xlsx",
+                            "2026-09-21 Chorus 2026 Renewal Tracker.xlsx"],
+        "daily_leasing_report": ["2026-09-26 9.26.26 - The Madelon - Daily Report .xlsx",
+                                 "2026-09-21 Daily Report- Week Ending 9.20.26.xlsx",
+                                 "2026-09-26 09.21.2026- 09.27.2026- Chorus - Daily Report (1).xlsx"],
+    }
+    nobody = ["2026-09-26 Renewals since 9.15.25 - (updated 9.26.26).xlsx",
+              "2026-09-20 Daily Tracker  (14) (1) (75).xlsx",
+              "2026-09-26 Prospect and Applicant Report 06.29.2026 - 09.27.2026 (2).xlsx",
+              "2026-09-25 The Fitzgerald Daily Report - 9.25.26.xlsx",
+              "2026-09-26 Daily Report Tracker - Landing 9.26.26.xlsx"]
+    shared = {"R": [(FOLDER, "Daily Leasing Reports", "dl")],
+              "dl": [(FOLDER, "The Madelon", "dlm"), (FOLDER, "The Landing", "dll")],
+              "dlm": [(FILE, claimed_by["daily_leasing_report"][0], "s1")],
+              "dll": [(FILE, claimed_by["renewal_tracker"][0], "s2")]}
+    shared["dl"] += [(FILE, n, f"s{i}") for i, n in enumerate(
+        claimed_by["renewal_tracker"][1:] + claimed_by["daily_leasing_report"][1:] + nobody, 3)]
+    man = run(fd, shared)
+    got = {}
+    for e in man:
+        got.setdefault(e["report_type"], set()).add(e["name"])
+    for rt, own in claimed_by.items():
+        other = [n for k, v in claimed_by.items() if k != rt for n in v]
+        check(f"{rt} gets every file its own name_patterns claim",
+              set(own) <= got.get(rt, set()))
+        check(f"{rt} is not handed the files the other entry claims",
+              not (set(other) & got.get(rt, set())))
+    check("a file no entry claims by name still reaches every active entry, "
+          "as before", all(set(nobody) <= got.get(rt, set()) for rt in claimed_by))
+    check("nothing in the folder goes unread",
+          {n for v in claimed_by.values() for n in v} | set(nobody)
+          <= {e["name"] for e in man})
+
     os.chdir(ROOT)
     shutil.rmtree(work, ignore_errors=True)
 

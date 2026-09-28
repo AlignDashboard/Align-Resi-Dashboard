@@ -21,6 +21,13 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    # Unbuffered, so every log line carries the time it was actually written.
+    # Buffered, Python flushed stdout in 8 KB blocks and a whole block shared
+    # one timestamp: runs #94-#97 showed 45-minute gaps between blocks with no
+    # way to tell which file inside a block had taken them, which is why the
+    # 51 MB Madelon daily reports went unfound for four days of cancelled runs.
+    env:
+      PYTHONUNBUFFERED: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
