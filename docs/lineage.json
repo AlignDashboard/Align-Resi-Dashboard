@@ -463,7 +463,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-28T18:04:36.836702+00:00",
+  "generated_at": "2026-09-28T18:29:49.367218+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1213,7 +1213,7 @@
      "file": "data/335-third-street/comps.json",
      "as_of": "2026-09-26",
      "source_file": "2026-09-27 HelloData - Simple - 335 Third Street.xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-27T17:28:31.768Z",
      "detail": null
     },
     {
@@ -1221,7 +1221,7 @@
      "file": "data/chorus/comps.json",
      "as_of": "2026-09-26",
      "source_file": "2026-09-27 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-27T23:28:31.550Z",
      "detail": null
     },
     {
@@ -1229,7 +1229,7 @@
      "file": "data/madelon/comps.json",
      "as_of": "2026-09-26",
      "source_file": "2026-09-27 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-27T23:28:31.550Z",
      "detail": null
     },
     {
@@ -1237,7 +1237,7 @@
      "file": "data/the-landing/comps.json",
      "as_of": "2026-09-26",
      "source_file": "2026-09-27 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-27T23:28:31.550Z",
      "detail": null
     }
    ],
@@ -1337,11 +1337,11 @@
    "evidence": [
     {
      "property": "the-landing",
-     "file": "metrics.json rent_roll",
+     "file": "data/the-landing/rent_roll.json",
      "as_of": "2026-09-21",
      "source_file": "RentRoll09_28_2026.xlsx",
      "landed_at": "2026-09-28T17:10:40.329Z",
-     "detail": "read from the published aggregate \u2014 this store is gitignored (per-unit) and exists only during a pipeline run"
+     "detail": null
     }
    ],
    "status": "live"
@@ -2409,7 +2409,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-28T17:13:02.007863+00:00",
+     "landed_at": "2026-09-28T18:29:47.221460+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
