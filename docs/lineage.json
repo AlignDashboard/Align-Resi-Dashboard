@@ -460,7 +460,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-23T21:33:33.281760+00:00",
+  "generated_at": "2026-09-28T17:14:32.588684+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1208,33 +1208,33 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/comps.json",
-     "as_of": "2026-09-21",
-     "source_file": "2026-09-22 HelloData - Simple - 335 Third Street (2).xlsx",
-     "landed_at": "2026-09-22T17:28:31.107Z",
+     "as_of": "2026-09-26",
+     "source_file": "2026-09-27 HelloData - Simple - 335 Third Street.xlsx",
+     "landed_at": null,
      "detail": null
     },
     {
      "property": "chorus",
      "file": "data/chorus/comps.json",
-     "as_of": "2026-09-21",
-     "source_file": "2026-09-22 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (3).xlsx",
-     "landed_at": "2026-09-22T23:28:31.610Z",
+     "as_of": "2026-09-26",
+     "source_file": "2026-09-27 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": null,
      "detail": null
     },
     {
      "property": "madelon",
      "file": "data/madelon/comps.json",
-     "as_of": "2026-09-21",
-     "source_file": "2026-09-22 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (3).xlsx",
-     "landed_at": "2026-09-22T23:28:31.610Z",
+     "as_of": "2026-09-26",
+     "source_file": "2026-09-27 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": null,
      "detail": null
     },
     {
      "property": "the-landing",
      "file": "data/the-landing/comps.json",
-     "as_of": "2026-09-21",
-     "source_file": "2026-09-22 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (3).xlsx",
-     "landed_at": "2026-09-22T23:28:31.610Z",
+     "as_of": "2026-09-26",
+     "source_file": "2026-09-27 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": null,
      "detail": null
     }
    ],
@@ -1335,9 +1335,9 @@
     {
      "property": "the-landing",
      "file": "data/the-landing/rent_roll.json",
-     "as_of": "2026-09-11",
-     "source_file": "RentRoll09_11_2026.xlsx",
-     "landed_at": "2026-09-11T18:33:04.600Z",
+     "as_of": "2026-09-21",
+     "source_file": "RentRoll09_28_2026.xlsx",
+     "landed_at": "2026-09-28T17:10:40.329Z",
      "detail": null
     }
    ],
@@ -2044,17 +2044,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-22",
+     "as_of": "2026-09-27",
      "source_file": null,
-     "landed_at": "2026-09-22T15:37:25Z",
-     "detail": "41 day(s) recorded"
+     "landed_at": "2026-09-27T15:37:45Z",
+     "detail": "47 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-22",
+     "as_of": "2026-09-27",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-22T15:37:25Z",
+     "landed_at": "2026-09-27T15:37:45Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2395,7 +2395,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-23T17:46:48.647174+00:00",
+     "landed_at": "2026-09-28T17:13:02.007863+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

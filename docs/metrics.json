@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-23T17:46:48.647174+00:00",
+    "generated_at": "2026-09-28T17:13:02.007863+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -1946,35 +1946,35 @@
     "available": true,
     "properties": [
       {
-        "as_of": "2026-09-11",
-        "landed_at": "2026-09-11T18:33:04.600Z",
-        "source_file": "RentRoll09_11_2026.xlsx",
+        "as_of": "2026-09-21",
+        "landed_at": "2026-09-28T17:10:40.329Z",
+        "source_file": "RentRoll09_28_2026.xlsx",
         "units": 263,
-        "occupied": 257,
-        "vacant": 6,
-        "on_notice": 9,
-        "occupancy": 0.977186,
+        "occupied": 260,
+        "vacant": 3,
+        "on_notice": 17,
+        "occupancy": 0.988593,
         "sqft": 215452.0,
-        "market_rent_total": 2004929.0,
-        "actual_rent_total": 1240930.0,
-        "market_rent_occupied": 1954850.0,
-        "actual_rent_occupied": 1240930.0,
-        "loss_to_lease": 713920.0,
-        "loss_to_lease_pct": 0.365204,
-        "market_psf": 9.3251,
-        "inplace_psf": 5.9195,
+        "market_rent_total": 2007475.0,
+        "actual_rent_total": 1271189.0,
+        "market_rent_occupied": 1982783.0,
+        "actual_rent_occupied": 1271189.0,
+        "loss_to_lease": 711594.0,
+        "loss_to_lease_pct": 0.358886,
+        "market_psf": 9.3158,
+        "inplace_psf": 5.9725,
         "holdovers": {
-          "units": 32,
-          "share_of_occupied": 0.124514,
-          "inplace": 148217.0,
-          "market": 261837.0,
-          "gap_yr": 1363440.0
+          "units": 30,
+          "share_of_occupied": 0.115385,
+          "inplace": 135520.0,
+          "market": 246316.0,
+          "gap_yr": 1329552.0
         },
         "by_plan": {
           "laa1": {
             "units": 88,
-            "leased": 87,
-            "vacant": 1
+            "leased": 88,
+            "vacant": 0
           },
           "laa10": {
             "units": 1,
@@ -2017,8 +2017,8 @@
             "vacant": 0
           },
           "laa7": {
-            "units": 6,
-            "leased": 6,
+            "units": 5,
+            "leased": 5,
             "vacant": 0
           },
           "laa8": {
@@ -2083,8 +2083,8 @@
           },
           "lab19": {
             "units": 24,
-            "leased": 22,
-            "vacant": 2
+            "leased": 23,
+            "vacant": 1
           },
           "lab2": {
             "units": 3,
@@ -2098,8 +2098,8 @@
           },
           "lab21": {
             "units": 9,
-            "leased": 8,
-            "vacant": 1
+            "leased": 9,
+            "vacant": 0
           },
           "lab22": {
             "units": 2,
@@ -2108,8 +2108,8 @@
           },
           "lab23": {
             "units": 4,
-            "leased": 3,
-            "vacant": 1
+            "leased": 4,
+            "vacant": 0
           },
           "lab3": {
             "units": 1,
@@ -2142,9 +2142,9 @@
             "vacant": 0
           },
           "lab9": {
-            "units": 30,
+            "units": 31,
             "leased": 30,
-            "vacant": 0
+            "vacant": 1
           },
           "lac1": {
             "units": 9,
@@ -2180,23 +2180,23 @@
         "rollover": [
           {
             "month": "Expired",
-            "units": 32,
-            "sqft": 28588.0,
-            "inplace": 148217.0,
-            "market": 261837.0,
-            "uncaptured": 113620.0,
-            "cum_units": 32,
-            "cum_pct": 0.124514
+            "units": 30,
+            "sqft": 26761.0,
+            "inplace": 135520.0,
+            "market": 246316.0,
+            "uncaptured": 110796.0,
+            "cum_units": 30,
+            "cum_pct": 0.115385
           },
           {
             "month": "2026-09",
-            "units": 11,
-            "sqft": 9193.0,
-            "inplace": 49205.0,
-            "market": 85676.0,
-            "uncaptured": 36471.0,
-            "cum_units": 43,
-            "cum_pct": 0.167315
+            "units": 3,
+            "sqft": 2237.0,
+            "inplace": 12842.0,
+            "market": 21371.0,
+            "uncaptured": 8529.0,
+            "cum_units": 33,
+            "cum_pct": 0.126923
           },
           {
             "month": "2026-10",
@@ -2205,8 +2205,8 @@
             "inplace": 29730.0,
             "market": 42867.0,
             "uncaptured": 13137.0,
-            "cum_units": 49,
-            "cum_pct": 0.190661
+            "cum_units": 39,
+            "cum_pct": 0.15
           },
           {
             "month": "2026-11",
@@ -2215,18 +2215,18 @@
             "inplace": 57711.0,
             "market": 97439.0,
             "uncaptured": 39728.0,
-            "cum_units": 62,
-            "cum_pct": 0.241245
+            "cum_units": 52,
+            "cum_pct": 0.2
           },
           {
             "month": "2026-12",
-            "units": 16,
-            "sqft": 13635.0,
-            "inplace": 78629.0,
-            "market": 123769.0,
-            "uncaptured": 45140.0,
-            "cum_units": 78,
-            "cum_pct": 0.303502
+            "units": 17,
+            "sqft": 14735.0,
+            "inplace": 88552.0,
+            "market": 133255.0,
+            "uncaptured": 44703.0,
+            "cum_units": 69,
+            "cum_pct": 0.265385
           },
           {
             "month": "2027-01",
@@ -2235,8 +2235,8 @@
             "inplace": 73138.0,
             "market": 113295.0,
             "uncaptured": 40157.0,
-            "cum_units": 93,
-            "cum_pct": 0.361868
+            "cum_units": 84,
+            "cum_pct": 0.323077
           },
           {
             "month": "2027-02",
@@ -2245,8 +2245,8 @@
             "inplace": 49774.0,
             "market": 77148.0,
             "uncaptured": 27374.0,
-            "cum_units": 103,
-            "cum_pct": 0.400778
+            "cum_units": 94,
+            "cum_pct": 0.361538
           },
           {
             "month": "2027-03",
@@ -2255,18 +2255,18 @@
             "inplace": 100699.0,
             "market": 157895.0,
             "uncaptured": 57196.0,
-            "cum_units": 124,
-            "cum_pct": 0.48249
+            "cum_units": 115,
+            "cum_pct": 0.442308
           },
           {
             "month": "2027-04",
-            "units": 16,
-            "sqft": 13311.0,
-            "inplace": 78966.0,
-            "market": 123299.0,
-            "uncaptured": 44333.0,
-            "cum_units": 140,
-            "cum_pct": 0.544747
+            "units": 17,
+            "sqft": 13846.0,
+            "inplace": 83529.0,
+            "market": 129389.0,
+            "uncaptured": 45860.0,
+            "cum_units": 132,
+            "cum_pct": 0.507692
           },
           {
             "month": "2027-05",
@@ -2275,18 +2275,18 @@
             "inplace": 82759.0,
             "market": 129274.0,
             "uncaptured": 46515.0,
-            "cum_units": 158,
-            "cum_pct": 0.614786
+            "cum_units": 150,
+            "cum_pct": 0.576923
           },
           {
             "month": "2027-06",
-            "units": 34,
-            "sqft": 29397.0,
-            "inplace": 175623.0,
-            "market": 265954.0,
-            "uncaptured": 90331.0,
-            "cum_units": 192,
-            "cum_pct": 0.747082
+            "units": 36,
+            "sqft": 31418.0,
+            "inplace": 186795.0,
+            "market": 284396.0,
+            "uncaptured": 97601.0,
+            "cum_units": 186,
+            "cum_pct": 0.715385
           },
           {
             "month": "2027-07",
@@ -2295,8 +2295,8 @@
             "inplace": 108342.0,
             "market": 152393.0,
             "uncaptured": 44051.0,
-            "cum_units": 213,
-            "cum_pct": 0.828794
+            "cum_units": 207,
+            "cum_pct": 0.796154
           },
           {
             "month": "2027-08",
@@ -2305,18 +2305,18 @@
             "inplace": 64452.0,
             "market": 100890.0,
             "uncaptured": 36438.0,
-            "cum_units": 227,
-            "cum_pct": 0.883268
+            "cum_units": 221,
+            "cum_pct": 0.85
           },
           {
             "month": "2027-09",
-            "units": 16,
-            "sqft": 13261.0,
-            "inplace": 83692.0,
-            "market": 123259.0,
-            "uncaptured": 39567.0,
-            "cum_units": 243,
-            "cum_pct": 0.945525
+            "units": 20,
+            "sqft": 17449.0,
+            "inplace": 112221.0,
+            "market": 157467.0,
+            "uncaptured": 45246.0,
+            "cum_units": 241,
+            "cum_pct": 0.926923
           },
           {
             "month": "2027-10",
@@ -2325,8 +2325,8 @@
             "inplace": 16628.0,
             "market": 30227.0,
             "uncaptured": 13599.0,
-            "cum_units": 247,
-            "cum_pct": 0.961089
+            "cum_units": 245,
+            "cum_pct": 0.942308
           },
           {
             "month": "2027-11",
@@ -2335,17 +2335,17 @@
             "inplace": 28793.0,
             "market": 48592.0,
             "uncaptured": 19799.0,
-            "cum_units": 254,
-            "cum_pct": 0.988327
+            "cum_units": 252,
+            "cum_pct": 0.969231
           },
           {
             "month": "2027-12",
-            "units": 3,
-            "sqft": 2053.0,
-            "inplace": 14572.0,
-            "market": 21036.0,
-            "uncaptured": 6464.0,
-            "cum_units": 257,
+            "units": 8,
+            "sqft": 6198.0,
+            "inplace": 39704.0,
+            "market": 60569.0,
+            "uncaptured": 20865.0,
+            "cum_units": 260,
             "cum_pct": 1.0
           }
         ],
@@ -2469,19 +2469,6 @@
           },
           {
             "rank": 10,
-            "unit": "643",
-            "unit_type": "lab9",
-            "sqft": 827.0,
-            "inplace": 4300.0,
-            "market": 8956.0,
-            "gap_mo": 4656.0,
-            "gap_yr": 55872.0,
-            "pct_below": 0.519875,
-            "expiry": "2026-09-20",
-            "status": "Current"
-          },
-          {
-            "rank": 11,
             "unit": "633",
             "unit_type": "lab15",
             "sqft": 951.0,
@@ -2494,7 +2481,7 @@
             "status": "Holdover"
           },
           {
-            "rank": 12,
+            "rank": 11,
             "unit": "325",
             "unit_type": "lab11",
             "sqft": 991.0,
@@ -2507,7 +2494,7 @@
             "status": "Current"
           },
           {
-            "rank": 13,
+            "rank": 12,
             "unit": "461",
             "unit_type": "lab21",
             "sqft": 1062.0,
@@ -2520,7 +2507,7 @@
             "status": "Current"
           },
           {
-            "rank": 14,
+            "rank": 13,
             "unit": "425",
             "unit_type": "lab11",
             "sqft": 1104.0,
@@ -2533,7 +2520,7 @@
             "status": "Current"
           },
           {
-            "rank": 15,
+            "rank": 14,
             "unit": "413",
             "unit_type": "lab2",
             "sqft": 798.0,
@@ -2543,10 +2530,10 @@
             "gap_yr": 55044.0,
             "pct_below": 0.513892,
             "expiry": "2026-12-16",
-            "status": "Current"
+            "status": "On notice"
           },
           {
-            "rank": 16,
+            "rank": 15,
             "unit": "323",
             "unit_type": "lab13",
             "sqft": 933.0,
@@ -2559,7 +2546,7 @@
             "status": "Current"
           },
           {
-            "rank": 17,
+            "rank": 16,
             "unit": "762",
             "unit_type": "lab9",
             "sqft": 850.0,
@@ -2572,7 +2559,7 @@
             "status": "Current"
           },
           {
-            "rank": 18,
+            "rank": 17,
             "unit": "343",
             "unit_type": "lab9",
             "sqft": 827.0,
@@ -2585,7 +2572,7 @@
             "status": "Current"
           },
           {
-            "rank": 19,
+            "rank": 18,
             "unit": "359",
             "unit_type": "lab9",
             "sqft": 847.0,
@@ -2598,7 +2585,7 @@
             "status": "Current"
           },
           {
-            "rank": 20,
+            "rank": 19,
             "unit": "736",
             "unit_type": "lab19",
             "sqft": 1093.0,
@@ -2611,7 +2598,7 @@
             "status": "Current"
           },
           {
-            "rank": 21,
+            "rank": 20,
             "unit": "864",
             "unit_type": "lab19",
             "sqft": 1090.0,
@@ -2624,7 +2611,7 @@
             "status": "Current"
           },
           {
-            "rank": 22,
+            "rank": 21,
             "unit": "113",
             "unit_type": "lab5",
             "sqft": 956.0,
@@ -2637,7 +2624,7 @@
             "status": "Holdover"
           },
           {
-            "rank": 23,
+            "rank": 22,
             "unit": "840",
             "unit_type": "lab9",
             "sqft": 859.0,
@@ -2650,7 +2637,7 @@
             "status": "Current"
           },
           {
-            "rank": 24,
+            "rank": 23,
             "unit": "423",
             "unit_type": "lab13",
             "sqft": 950.0,
@@ -2663,7 +2650,7 @@
             "status": "Current"
           },
           {
-            "rank": 25,
+            "rank": 24,
             "unit": "533",
             "unit_type": "lab15",
             "sqft": 952.0,
@@ -2676,7 +2663,7 @@
             "status": "Current"
           },
           {
-            "rank": 26,
+            "rank": 25,
             "unit": "659",
             "unit_type": "lab9",
             "sqft": 847.0,
@@ -2689,7 +2676,7 @@
             "status": "Holdover"
           },
           {
-            "rank": 27,
+            "rank": 26,
             "unit": "862",
             "unit_type": "lab9",
             "sqft": 850.0,
@@ -2702,7 +2689,7 @@
             "status": "Current"
           },
           {
-            "rank": 28,
+            "rank": 27,
             "unit": "357",
             "unit_type": "lab19",
             "sqft": 1100.0,
@@ -2715,20 +2702,7 @@
             "status": "Current"
           },
           {
-            "rank": 29,
-            "unit": "653",
-            "unit_type": "lab17",
-            "sqft": 984.0,
-            "inplace": 4800.0,
-            "market": 9156.0,
-            "gap_mo": 4356.0,
-            "gap_yr": 52272.0,
-            "pct_below": 0.475754,
-            "expiry": "2026-09-14",
-            "status": "Current"
-          },
-          {
-            "rank": 30,
+            "rank": 28,
             "unit": "547",
             "unit_type": "lab21",
             "sqft": 1059.0,
@@ -2741,7 +2715,7 @@
             "status": "Current"
           },
           {
-            "rank": 31,
+            "rank": 29,
             "unit": "663",
             "unit_type": "lab19",
             "sqft": 1092.0,
@@ -2754,7 +2728,7 @@
             "status": "Holdover"
           },
           {
-            "rank": 32,
+            "rank": 30,
             "unit": "742",
             "unit_type": "lab19",
             "sqft": 1090.0,
@@ -2767,7 +2741,7 @@
             "status": "Current"
           },
           {
-            "rank": 33,
+            "rank": 31,
             "unit": "320",
             "unit_type": "lab7",
             "sqft": 998.0,
@@ -2780,7 +2754,7 @@
             "status": "Current"
           },
           {
-            "rank": 34,
+            "rank": 32,
             "unit": "467",
             "unit_type": "lab3",
             "sqft": 861.0,
@@ -2793,7 +2767,7 @@
             "status": "Current"
           },
           {
-            "rank": 35,
+            "rank": 33,
             "unit": "361",
             "unit_type": "lab9",
             "sqft": 841.0,
@@ -2806,7 +2780,7 @@
             "status": "Current"
           },
           {
-            "rank": 36,
+            "rank": 34,
             "unit": "553",
             "unit_type": "lab17",
             "sqft": 984.0,
@@ -2819,7 +2793,7 @@
             "status": "Holdover"
           },
           {
-            "rank": 37,
+            "rank": 35,
             "unit": "740",
             "unit_type": "lab9",
             "sqft": 859.0,
@@ -2832,7 +2806,7 @@
             "status": "Current"
           },
           {
-            "rank": 38,
+            "rank": 36,
             "unit": "404",
             "unit_type": "lab10",
             "sqft": 889.0,
@@ -2845,7 +2819,20 @@
             "status": "Current"
           },
           {
-            "rank": 39,
+            "rank": 37,
+            "unit": "643",
+            "unit_type": "lab9",
+            "sqft": 827.0,
+            "inplace": 4687.0,
+            "market": 8956.0,
+            "gap_mo": 4269.0,
+            "gap_yr": 51228.0,
+            "pct_below": 0.476664,
+            "expiry": "2027-12-20",
+            "status": "Current"
+          },
+          {
+            "rank": 38,
             "unit": "853",
             "unit_type": "lab17",
             "sqft": 984.0,
@@ -2858,7 +2845,7 @@
             "status": "Current"
           },
           {
-            "rank": 40,
+            "rank": 39,
             "unit": "412",
             "unit_type": "lab1",
             "sqft": 741.0,
@@ -2869,6 +2856,19 @@
             "pct_below": 0.478481,
             "expiry": "2026-11-04",
             "status": "Current"
+          },
+          {
+            "rank": 40,
+            "unit": "304",
+            "unit_type": "lab10",
+            "sqft": 886.0,
+            "inplace": 4766.0,
+            "market": 8961.0,
+            "gap_mo": 4195.0,
+            "gap_yr": 50340.0,
+            "pct_below": 0.46814,
+            "expiry": "2027-01-11",
+            "status": "Current"
           }
         ],
         "undated_leases": 0,
@@ -2877,21 +2877,21 @@
           {
             "check": "market_rent ties to the report Total row",
             "ok": true,
-            "parsed": 2004929.0,
-            "report": 2004929.0,
+            "parsed": 2007475.0,
+            "report": 2007475.0,
             "delta": 0.0
           },
           {
             "check": "actual_rent ties to the report Total row",
             "ok": true,
-            "parsed": 1240930.0,
-            "report": 1240930.0,
+            "parsed": 1271189.0,
+            "report": 1271189.0,
             "delta": 0.0
           },
           {
             "check": "as-of date found",
             "ok": true,
-            "note": "2026-09-11"
+            "note": "2026-09-21"
           },
           {
             "check": "stopped at a section marker",
@@ -5074,7 +5074,7 @@
             "prev_eff_rent": 64043.0,
             "tradeout_amount": 11984.0,
             "pct": 0.187124,
-            "mean_pct": 0.206063
+            "mean_pct": 0.206062
           },
           {
             "month": "2025-06",
@@ -6598,12 +6598,12 @@
               "key": "rent_roll",
               "label": "Rent roll",
               "detail": "the market rent column, unit by unit",
-              "as_of": "2026-09-11",
-              "source_file": "RentRoll09_11_2026.xlsx",
-              "market_rent": 2004929.0,
+              "as_of": "2026-09-21",
+              "source_file": "RentRoll09_28_2026.xlsx",
+              "market_rent": 2007475.0,
               "units": 263,
-              "psf": 9.3251,
-              "gap": 0.1201,
+              "psf": 9.3158,
+              "gap": 0.1215,
               "exact": true
             },
             {
@@ -6644,7 +6644,7 @@
               "properties": 9,
               "listings": 85,
               "implied": 1696561.52,
-              "gap": 0.1818
+              "gap": 0.1833
             },
             {
               "radius_mi": 1.35,
@@ -6652,7 +6652,7 @@
               "properties": 17,
               "listings": 163,
               "implied": 1789990.9,
-              "gap": 0.1201
+              "gap": 0.1215
             },
             {
               "radius_mi": null,
@@ -6660,22 +6660,22 @@
               "properties": 33,
               "listings": 394,
               "implied": 1692416.79,
-              "gap": 0.1847
+              "gap": 0.1862
             }
           ],
           "unpriced_plans": [],
           "basis": "Comp median asking rent per bedroom on the 1.35 mi ring, times the subject's own median premium to that ring, applied to the unit directory's bedroom mix",
           "headline": {
-            "gap": 0.1201,
-            "dollars": 214938.1,
-            "annual": 2579257.2,
+            "gap": 0.1215,
+            "dollars": 217484.1,
+            "annual": 2609809.2,
             "source": "rent_roll",
             "label": "Rent roll",
             "exact": true,
-            "as_of": "2026-09-11",
-            "source_file": "RentRoll09_11_2026.xlsx",
-            "ltl_published": 0.365204,
-            "ltl_restated": 0.289
+            "as_of": "2026-09-21",
+            "source_file": "RentRoll09_28_2026.xlsx",
+            "ltl_published": 0.358886,
+            "ltl_restated": 0.281
           }
         }
       },
