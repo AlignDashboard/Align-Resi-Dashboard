@@ -1553,6 +1553,60 @@ async function loadAll() {
         filterable: true,
       });
 
+      // How it is actually leasing -- the two figures on this export that are
+      // not rents, plus what the subject has listed today. The card drawing
+      // them had nowhere to link: the page claims to hold every number the
+      // JSON carries and held neither of these, the same gap monthly_pl and
+      // the unit directory were in.
+      const dm = pr.days_on_market || {}, cc = pr.concessions || {},
+            sl = pr.subject_listings || {};
+      const lrows = [];
+      if (dm.subject_median != null)
+        lrows.push({ measure: "Median days on market", subject: dm.subject_median,
+                     comps: dm.comp_median, unit: "days",
+                     subject_n: dm.subject_n, comps_n: dm.comp_n,
+                     basis: "closed listings, each one's days reconciled against "
+                          + "its own first-listed and removed dates" });
+      if (cc.subject_share != null)
+        lrows.push({ measure: "Listings advertising a concession",
+                     subject: cc.subject_share * 100, comps: cc.comp_share * 100,
+                     unit: "%", subject_n: cc.subject_n, comps_n: cc.comp_n,
+                     basis: "share of listings, so the gap on an effective-rent "
+                          + "basis is wider than the asking rents show" });
+      if (sl.current != null)
+        lrows.push({ measure: "Units listed today", subject: sl.current,
+                     comps: null, unit: "units", subject_n: null, comps_n: null,
+                     basis: "the subject alone \u2014 the ring's live count is "
+                          + "not a like-for-like against one building" });
+      if (sl.oldest_days != null)
+        lrows.push({ measure: "Oldest listing still unlet", subject: sl.oldest_days,
+                     comps: null, unit: "days", subject_n: null, comps_n: null,
+                     basis: "one unit, not a median" });
+      renderTable(host, {
+        id: "t-compsleasing-" + (pr.slug || i), group: "Market Comps",
+        title: "How it is leasing, against the ring — " + (pr.name || pr.slug),
+        feeds: "The 'How It Is Actually Leasing' card \u2014 the market's own "
+             + "answer on the same export, in figures that are not rents",
+        note: [dm.since ? "Closed listings since " + dm.since : null,
+               "Subject and Comps are the same measure on each side; the two "
+                 + "counts are what each was taken over, and a blank means the "
+                 + "measure is the subject's alone rather than a comparison.",
+               "Neither figure is a verdict on its own \u2014 a building can "
+                 + "lease slowly for a dozen reasons \u2014 but both are read "
+                 + "from the listing rows rather than from a rent.",
+              ].filter(Boolean).join(" \u00b7 "),
+        cols: [{ key: "measure", label: "Measure" },
+               { key: "subject", label: "Subject", fmt: "num" },
+               { key: "comps", label: "Comp ring", fmt: "num" },
+               { key: "unit", label: "Unit" },
+               { key: "subject_n", label: "Subject listings", fmt: "int" },
+               { key: "comps_n", label: "Ring listings", fmt: "int" },
+               { key: "basis", label: "Basis" }],
+        rows: lrows,
+        emptyNote: "The export carries no days-on-market or concession figures "
+                 + "for this property.",
+      });
+
       const v = pr.verification;
       if (!v) return;
       renderTable(host, {
