@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-28T18:29:47.221460+00:00",
+    "generated_at": "2026-09-28T18:48:06.723348+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -3447,27 +3447,14 @@
           "mean_tradeout": 0.263534
         },
         "renewals": {
-          "as_of": "2026-11",
+          "as_of": "2026-12",
           "covers": {
-            "from": "2024-01",
-            "to": "2026-11"
+            "from": "2024-02",
+            "to": "2026-12"
           },
-          "landed_at": "2026-09-21T21:28:41.395Z",
-          "source_file": "2026-09-21 Chorus 2026 Renewal Tracker.xlsx",
+          "landed_at": "2026-09-28T18:28:45.379Z",
+          "source_file": "2026-09-28 Chorus 2026 Renewal Tracker.xlsx",
           "months": [
-            {
-              "month": "2024-01",
-              "leases": 19,
-              "mean_increase": 0.027193,
-              "wtd_increase": 0.025065,
-              "current_rent": 68059.0,
-              "offered_rent": 69764.87,
-              "statuses": {
-                "MTM": 4,
-                "Notice": 8,
-                "Renewed": 11
-              }
-            },
             {
               "month": "2024-02",
               "leases": 15,
@@ -3887,8 +3874,9 @@
               "statuses": {
                 "MTM": 1,
                 "Notice": 10,
+                "Offer Accepted": 1,
                 "Renewed": 7,
-                "Waiting For Response": 2
+                "Waiting For Response": 1
               }
             },
             {
@@ -3899,9 +3887,10 @@
               "current_rent": 87892.0,
               "offered_rent": 104608.5,
               "statuses": {
-                "Notice": 10,
+                "Notice": 9,
                 "Offer Accepted": 2,
-                "Renewed": 7
+                "Renewed": 7,
+                "Waiting For Response": 1
               }
             },
             {
@@ -3915,8 +3904,20 @@
                 "MTM": 1,
                 "Notice": 2,
                 "Offer Accepted": 2,
-                "Renewed": 4,
-                "Waiting For Response": 11
+                "Renewed": 5,
+                "Waiting For Response": 10
+              }
+            },
+            {
+              "month": "2026-12",
+              "leases": 18,
+              "mean_increase": 0.145163,
+              "wtd_increase": 0.145009,
+              "current_rent": 77802.0,
+              "offered_rent": 89084.0,
+              "statuses": {
+                "Offer Accepted": 1,
+                "Waiting For Response": 17
               }
             }
           ],
