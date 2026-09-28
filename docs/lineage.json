@@ -460,7 +460,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-28T17:14:32.588684+00:00",
+  "generated_at": "2026-09-28T17:25:50.184603+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1065,34 +1065,34 @@
    "evidence": [
     {
      "property": "Landing",
-     "file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "as_of": "2026-09-22",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "landed_at": "2026-09-22T22:27:05.607Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "as_of": "2026-09-28",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "5 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %"
     },
     {
      "property": "335 Third",
-     "file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "as_of": "2026-09-22",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "landed_at": "2026-09-22T22:27:05.607Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "as_of": "2026-09-28",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "4 KPI cell(s): AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency"
     },
     {
      "property": "Chorus",
-     "file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "as_of": "2026-09-22",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "landed_at": "2026-09-22T22:27:05.607Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "as_of": "2026-09-28",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "6 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Trade-out %"
     },
     {
      "property": "Madelon",
-     "file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "as_of": "2026-09-22",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-09-22.csv)",
-     "landed_at": "2026-09-22T22:27:05.607Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "as_of": "2026-09-28",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency, Trade-out %"
     }
    ],
@@ -1334,11 +1334,11 @@
    "evidence": [
     {
      "property": "the-landing",
-     "file": "data/the-landing/rent_roll.json",
+     "file": "metrics.json rent_roll",
      "as_of": "2026-09-21",
      "source_file": "RentRoll09_28_2026.xlsx",
      "landed_at": "2026-09-28T17:10:40.329Z",
-     "detail": null
+     "detail": "read from the published aggregate \u2014 this store is gitignored (per-unit) and exists only during a pipeline run"
     }
    ],
    "status": "live"
