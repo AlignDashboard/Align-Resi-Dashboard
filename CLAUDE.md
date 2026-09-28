@@ -956,6 +956,19 @@ are untouched at 31 and 64.52%, and only the cell counts fall — 27 KPIs to 26,
    counts and the portfolio roll-up so the matrix, health chart and tally cannot
    drift apart.
 
+**`status_workbook` is written once per cell and never replaced.** It is what
+the data page prints as "Workbook had", and only the *first* restatement since
+extraction knows the workbook's symbol — from the second on, the status being
+replaced is the previous run's grade. All three writers (`populate_scorecard`,
+`populate_eliseai`, `populate_building_metrics`) used to record it on every
+change, so by 2026-09-28 six cells quoted a grade the workbook never set
+(Chorus's Leased % read "in range" over a workbook that said below). They now
+all go through `populate_scorecard.keep_workbook_status`, the six were restored
+from the last extraction (`c0d760e`, 2026-08-10), and
+`scripts/test_status_workbook.py` holds it down — 14 fixture-free checks, the
+helper and the end-to-end run each verified by mutation. Re-extracting resets
+the entries, which is the only thing that should.
+
 A delinquency report answers exactly two of the 27 published KPIs:
 
 - `Total Deliquency` — gross resident AR over one month's billed rent, graded

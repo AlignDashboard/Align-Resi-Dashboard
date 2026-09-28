@@ -69,7 +69,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from populate_scorecard import OUT, classify, recompute  # noqa: E402
+from populate_scorecard import OUT, classify, keep_workbook_status, recompute  # noqa: E402
 
 # CSV property heading -> scorecard slug. A heading absent from here is reported
 # rather than guessed at, so a new property in the export cannot land silently
@@ -370,7 +370,7 @@ def main():
             else:
                 band = classify(value, thresholds.get(kpi))
                 if band and band != was:
-                    prop.setdefault("status_workbook", {})[kpi] = was
+                    keep_workbook_status(prop, kpi, was)
                     prop["statuses"][kpi] = band
                     note = f"RESTATED {was} -> {band}"
                 else:
