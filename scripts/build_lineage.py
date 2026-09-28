@@ -210,11 +210,14 @@ DRIVE_FLOWS = {
             # A tile in a row, like the budget's — no corner to hang a link in.
             {"card": "Trade-out % tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
-            # The card the report's own months are drawn on. Its new-lease
-            # series was the weekly leasing workbook until this feed arrived,
-            # which is why the primary is left to the flows that still declare
-            # one -- this entry only adds the two tables to the card's link.
+            # The card the report's own months are drawn on, and its corner
+            # link: the new-lease series it plots has been this feed's since
+            # 2026-09-17. The primary is declared HERE and nowhere else --
+            # two flows declaring one for the same card make the answer
+            # depend on which sorts last, which is how this link came to
+            # point at the Portfolio tab's manual Trade Outs table.
             {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
+             "primary": "t-tradeout-*",
              "tables": ["t-tradeout-*", "t-tradeout-tile-*",
                         "t-tradeout-leases-*"],
              "holds": "Every new lease, and the months they roll up into"},
@@ -379,8 +382,12 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/rent_roll.json  (gitignored — unit level)"],
         "publishes": [{"file": "metrics.json", "key": "rent_roll"}],
         "dashboard": [
+            # No primary: this card's chart is the T12 statement's monthly
+            # series and is always there, where the roll's half below it hides
+            # itself when no roll has arrived -- so the t12 flow declares the
+            # link (t-rentcap-*) and this one adds its tables.
             {"card": "Loss to Lease", "tab": "Landing", "anchor": "cdRentCapture",
-             "primary": "t-rentroll-*", "tables": ["t-rentroll-*", "t-rollover-*"],
+             "tables": ["t-rentroll-*", "t-rollover-*"],
              "holds": "Loss to lease, occupancy and the rollover cohorts"},
             {"card": "Rollover Schedule", "tab": "Landing", "anchor": "cdRollover",
              "primary": "t-rollover-*", "tables": ["t-rollover-*"],
@@ -604,9 +611,11 @@ DRIVE_FLOWS = {
             # On the Drive-only tab the directory is the whole card rather than
             # one join onto the workbook's unit list: floorplans, bedrooms,
             # square footage and the door count under controllable/door.
+            # No primary: the bars are the ROLL's counts per bedroom type and
+            # this feed supplies only the bedrooms, so the rent_roll flow
+            # declares this card's link (t-occupancy-*).
             {"card": "Unit Inventory", "tab": "Landing",
-             "anchor": "cdInventory", "primary": "t-unitdir-*",
-             "tables": ["t-unitdir-*"]},
+             "anchor": "cdInventory", "tables": ["t-unitdir-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "tables": []},
         ],
@@ -667,8 +676,10 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/leasing_detail.json"],
         "publishes": [{"file": "metrics.json", "key": "leasing"}],
         "dashboard": [
+            # No primary: the lease_tradeout flow declares this card's, since
+            # that is where its new-lease series comes from now.
             {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
-             "primary": "t-tradeouts-*", "tables": ["t-tradeouts-*", "t-renewals-*"],
+             "tables": ["t-tradeouts-*", "t-renewals-*"],
              "holds": "New-lease trade-outs by month"},
         ],
         "tables": ["t-tradeouts-*"],
@@ -705,8 +716,9 @@ DRIVE_FLOWS = {
         "stores": ["data/<slug>/renewal_tracker.json"],
         "publishes": [{"file": "metrics.json", "key": "leasing"}],
         "dashboard": [
+            # No primary, as above -- this flow draws the card's renewal half.
             {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
-             "primary": "t-renewals-*", "tables": ["t-renewals-*", "t-tradeouts-*"],
+             "tables": ["t-renewals-*", "t-tradeouts-*"],
              "holds": "Renewal offers by month, and the month-to-month roster"},
         ],
         "tables": ["t-renewals-*"],
@@ -810,8 +822,11 @@ OTHER_FLOWS = [
             # cells it fills through populate_scorecard --from-landing; the
             # rest of landing.json is written, published and on the data page,
             # but nothing draws it.
+            # No primary: this card renders the matrix, which every other
+            # flow landing on it names, and a second answer here would be
+            # resolved by sort order rather than by what the card shows.
             {"card": "KPI Scorecard — four measured cells", "tab": "Scorecard",
-             "anchor": "cScorecard", "primary": "t-sc-measured",
+             "anchor": "cScorecard",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-matrix"]},
         ],
         "tables": ["t-l-capture", "t-l-noi", "t-l-renewal", "t-l-units",
@@ -1354,6 +1369,42 @@ def run_checks(flows):
                     f"{f['id']}: dashboard anchor '{d['anchor']}' "
                     f"({d['card']}) is not an id in docs/index.html")
         for d in f.get("dashboard") or []:
+            # The primary is the card's corner link, so two things about it
+            # are checked here and nowhere else.
+            if d.get("primary"):
+                # Two flows may both declare a card's primary -- seven do for
+                # the scorecard -- and that is fine while they AGREE, since
+                # the resolved link is the same either way. Two DIFFERENT
+                # primaries for one card are resolved by which flow sorts
+                # last, which is not an answer to "where are this card's
+                # numbers". Reported naming both, rather than picked.
+                clash = sorted({(g["id"], e["primary"]) for g in flows if g is not f
+                                for e in (g.get("dashboard") or [])
+                                if e.get("anchor") == d["anchor"]
+                                and e.get("primary")
+                                and e["primary"] != d["primary"]})
+                if clash:
+                    problems.append(
+                        f"{f['id']}: card '{d['card']}' ({d['anchor']}) names "
+                        f"primary '{d['primary']}' where "
+                        + ", ".join(f"{i} names '{t}'" for i, t in clash)
+                        + " — declare it on one flow, since the corner link "
+                          "can only point at one table")
+                # data.html's focusHashTarget tries getElementById FIRST and
+                # falls back to the prefix scan, so a family stem that is
+                # ITSELF a table id lands on that table rather than on the
+                # family it names. Silently, and on a real table, which is
+                # why nothing downstream could tell: "t-tradeouts-*" strips to
+                # "t-tradeouts", the Portfolio tab's hand-authored Trade Outs
+                # table, and that is where the Landing card's link went.
+                if d["primary"].endswith("*"):
+                    link = d["primary"][:-1].rstrip("-")
+                    if link in data_ids:
+                        problems.append(
+                            f"{f['id']}: card '{d['card']}' has primary "
+                            f"'{d['primary']}', whose link stem '{link}' is "
+                            f"itself a table docs/data.html builds — the link "
+                            f"would land there instead of on the family")
             for t in ([d["primary"]] if d.get("primary") else []) + (d.get("tables") or []):
                 if t.endswith("*"):
                     stem = t[:-1]

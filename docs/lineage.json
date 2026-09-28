@@ -77,8 +77,8 @@
     "t12",
     "rent_roll"
    ],
-   "primary": "t-rentroll",
-   "holds": "Rent roll \u2014 summary"
+   "primary": "t-rentcap",
+   "holds": "Rent capture"
   },
   "cdFeeds": {
    "card": "What Feeds This Tab",
@@ -127,8 +127,8 @@
     "kpi_workbook",
     "analyst_workbook"
    ],
-   "primary": "t-sc-measured",
-   "holds": "Measured KPI values"
+   "primary": "t-sc-matrix",
+   "holds": "KPI Scorecard matrix"
   },
   "psc-palma": {
    "card": "KPI Scorecard \u2014 Palma",
@@ -311,8 +311,8 @@
     "rent_roll",
     "unit_directory"
    ],
-   "primary": "t-unitdir",
-   "holds": "Unit directory \u2014 floorplans"
+   "primary": "t-occupancy",
+   "holds": "Occupancy by floorplan"
   },
   "cdTradeOuts": {
    "card": "Trade-outs",
@@ -328,8 +328,8 @@
     "daily_leasing",
     "lease_tradeout"
    ],
-   "primary": "t-tradeouts",
-   "holds": "Trade Outs"
+   "primary": "t-tradeout",
+   "holds": "Lease trade-outs, by month"
   },
   "cPortfolioScorecard": {
    "card": "KPI Scorecard",
@@ -464,7 +464,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-28T18:48:09.531186+00:00",
+  "generated_at": "2026-09-28T22:08:26.551741+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1286,7 +1286,6 @@
      "card": "Loss to Lease",
      "tab": "Landing",
      "anchor": "cdRentCapture",
-     "primary": "t-rentroll-*",
      "tables": [
       "t-rentroll-*",
       "t-rollover-*"
@@ -1388,7 +1387,6 @@
      "card": "Trade-outs",
      "tab": "Landing",
      "anchor": "cdTradeOuts",
-     "primary": "t-tradeouts-*",
      "tables": [
       "t-tradeouts-*",
       "t-renewals-*"
@@ -1487,6 +1485,7 @@
      "card": "Trade-outs",
      "tab": "Landing",
      "anchor": "cdTradeOuts",
+     "primary": "t-tradeout-*",
      "tables": [
       "t-tradeout-*",
       "t-tradeout-tile-*",
@@ -1570,7 +1569,6 @@
      "card": "Unit Inventory",
      "tab": "Landing",
      "anchor": "cdInventory",
-     "primary": "t-unitdir-*",
      "tables": [
       "t-unitdir-*"
      ]
@@ -2205,7 +2203,6 @@
      "card": "KPI Scorecard \u2014 four measured cells",
      "tab": "Scorecard",
      "anchor": "cScorecard",
-     "primary": "t-sc-measured",
      "tables": [
       "t-sc-measured",
       "t-sc-arrivals",

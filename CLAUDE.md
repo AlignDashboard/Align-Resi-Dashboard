@@ -2644,6 +2644,33 @@ happens to sort first, which is the page's reading order, not an answer to
 and out of the card index — the Leased tile is genuinely fed by the export but
 is one tile in a row, with no corner to hang a link in.
 
+**A card's `primary` is declared on exactly one flow, and two checks hold that
+down.** Several flows land on one card and each may name its own tables; only
+one of them may say which is *the link*. Where two named **different** ones the
+winner was whichever sorted last — not an answer, and not visible from either
+declaration. Four cards were in that state on 2026-09-28: `cdTradeOuts`,
+`cdInventory`, `cdRentCapture` and `cScorecard`. Flows naming the *same*
+primary are fine and stay as they are (seven do for the scorecard), since the
+resolved link is the same either way.
+
+The second check is subtler, and is what made the Trade-outs card's link wrong
+rather than merely arbitrary. A wildcard primary is stripped to its stem for
+the href (`t-tradeouts-*` → `t-tradeouts`) and `focusHashTarget` resolves it by
+trying `getElementById` **first**, falling back to the prefix scan. So a stem
+that is *itself* a table id lands on that table instead of on the family it
+names — silently, and on a real table, which is why nothing downstream could
+tell. The Landing tab's Trade-outs card pointed at the **Portfolio tab's
+hand-authored `t-tradeouts`**, a different card's placeholder data.
+`build_lineage` refuses to write on either condition now, each verified by
+mutation.
+
+Both were found by checking the rendered links rather than the declarations:
+open every tab, read each card's `a.cardsrc` href, follow it into `data.html`
+and print which table it actually resolves to. All 35 land on a real table
+today. Note the gate marker lives in `sessionStorage`, which is per **tab**, so
+a probe like that has to navigate one page from `index.html` to `data.html`
+rather than opening a second one.
+
 Three details worth knowing:
 
 - The link is **absolutely positioned** in the card's corner, so `.card-head`
