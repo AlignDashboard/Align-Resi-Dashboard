@@ -1124,19 +1124,6 @@ async function loadAll() {
     const d = M.data;
     group("Portfolio view · metrics.json");
 
-    const to = d.trade_outs || {};
-    renderTable(host, {
-      id: "t-tradeouts", group: "Portfolio", title: "Trade Outs",
-      feeds: "Trade Outs line chart (Portfolio tab)",
-      note: to.available ? null : "Chart shows an empty state. " + (to.reason || ""),
-      emptyNote: "No data. " + (to.reason || ""),
-      cols: [{ key: "label", label: "Period" }, { key: "new", label: "New %", fmt: "pct1" },
-             { key: "renewal", label: "Renewal %", fmt: "pct1" },
-             { key: "blended", label: "Blended %", fmt: "pct1" }],
-      rows: (to.labels || []).map((l, i) => ({ label: l, new: (to.new || [])[i],
-        renewal: (to.renewal || [])[i], blended: (to.blended || [])[i] })),
-    });
-
     const ev = d.expense_trend || {};
     const evPr = ev.properties || [];
     renderTable(host, {

@@ -877,10 +877,6 @@ OTHER_FLOWS = [
             {"card": "KPI Scorecard", "tab": "Scorecard", "anchor": "cScorecard",
              "primary": "t-sc-matrix",
              "tables": ["t-sc-thresholds", "t-sc-props", "t-sc-metrics",
-                        "t-sc-workbook"]},
-            {"card": "KPI Scorecard", "tab": "Portfolio", "anchor": "cPortfolioScorecard",
-             "primary": "t-sc-matrix",
-             "tables": ["t-sc-props", "t-sc-metrics", "t-sc-thresholds",
                         "t-sc-measured", "t-sc-arrivals", "t-sc-workbook"]},
         ],
         "tables": ["t-sc-matrix", "t-sc-thresholds", "t-sc-workbook",
@@ -950,9 +946,10 @@ OTHER_FLOWS = [
         "source_label": "docs/metrics.json, edited directly",
         "source_detail": "Blocks the pipeline preserves rather than "
                          "regenerates.",
-        "carries": "The trade-out placeholder and the eleven planned-metric "
-                   "cards. Expense Trend left this list on 2026-09-17: it is "
-                   "derived from the T12 statement now.",
+        "carries": "The eleven planned-metric cards. Expense Trend left this "
+                   "list on 2026-09-17, derived from the T12 statement now, "
+                   "and the trade-out placeholder went with its card on "
+                   "2026-09-28.",
         "steps": [
             {"script": "scripts/build_metrics.py",
              "does": "Loads the existing metrics.json and writes only the "
@@ -962,19 +959,15 @@ OTHER_FLOWS = [
         ],
         "stores": [],
         "publishes": [
-            {"file": "metrics.json", "key": "trade_outs"},
             {"file": "metrics.json", "key": "placeholders"},
         ],
         "dashboard": [
-            {"card": "Trade Outs", "tab": "Portfolio", "anchor": "cTradeOutsPortfolio",
-             "tables": ["t-tradeouts"]},
             {"card": "Planned Metrics", "tab": "Portfolio", "anchor": "placeholderGrid",
              "tables": ["t-placeholders"]},
         ],
-        "tables": ["t-tradeouts", "t-placeholders"],
-        "note": "No feed stands behind these. Trade Outs is an empty state "
-                "waiting on AIRM and the weekly leasing report.",
-        "open_item": "D5",
+        "tables": ["t-placeholders"],
+        "note": "No feed stands behind these. The grid is a list of metrics "
+                "with no report to fill them, named so the gap is visible.",
         "force_status": MANUAL,
     },
 ]
@@ -988,8 +981,11 @@ PENDING_HINT = {
     "Weekly Leasing Reports": "The RealPage rate tracker behind the workbook's "
                               "Lease Detail tab — the one input still typed in "
                               "by hand.",
-    "AIRM - Yardi Rev Management": "The market-rent and trade-out feed the "
-                                   "Trade Outs card is waiting on.",
+    "AIRM - Yardi Rev Management": "A market-rent and trade-out feed. The "
+                                   "Portfolio placeholder that named it came "
+                                   "off on 2026-09-28; the trade-out cards "
+                                   "that remain are fed by the Yardi tradeout "
+                                   "report and the renewal tracker instead.",
     "AP Analytics": "POs over 30 days and invoices processed — two scorecard "
                     "KPIs a resident AR report cannot answer.",
     "Workorders - Mainentance ": "The maintenance KPI group, which no feed "
@@ -1394,9 +1390,12 @@ def run_checks(flows):
                 # falls back to the prefix scan, so a family stem that is
                 # ITSELF a table id lands on that table rather than on the
                 # family it names. Silently, and on a real table, which is
-                # why nothing downstream could tell: "t-tradeouts-*" strips to
-                # "t-tradeouts", the Portfolio tab's hand-authored Trade Outs
-                # table, and that is where the Landing card's link went.
+                # why nothing downstream could tell: "t-tradeouts-*" stripped
+                # to "t-tradeouts", which WAS the Portfolio tab's hand-authored
+                # Trade Outs table, and that is where the Landing card's link
+                # went. That table came off with its card on 2026-09-28, so the
+                # collision is gone -- but the shape that caused it is one
+                # rename away, which is what this guard is for.
                 if d["primary"].endswith("*"):
                     link = d["primary"][:-1].rstrip("-")
                     if link in data_ids:

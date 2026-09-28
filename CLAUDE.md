@@ -1169,12 +1169,13 @@ Three things it does deliberately:
 - **The chart stays portfolio-wide.** It ranks every property by the share of
   its graded KPIs at or above target, which is where the selected property
   *sits against the others* — a question filtering would destroy rather than
-  answer. (The Portfolio view's copy says so in its note; this tab has no note
-  block — see below.)
+  answer. (This tab has no note block to say so — see below.)
 - **The filter is a view of this card, not of the data.** Only a mount that
-  declares `ids.select` gets one, so the Portfolio view's copy of the same
-  matrix — same function, same `scorecard.json` — has no select and never
-  filters.
+  declares `ids.select` gets one, so the property tabs' slices of the same
+  matrix — same function, same `scorecard.json` — have no select and never
+  filter. The Portfolio view carried a second full copy of this card, also
+  without a select, until it was removed by request on 2026-09-28; the
+  Scorecard tab is the only place the whole matrix is drawn now.
 - **The single-property figure is coloured, the portfolio's is not.** Worst
   state across one building's cells is unambiguous (`scTone`), which is why the
   property tabs colour theirs; an average across five buildings has no band
@@ -1188,9 +1189,9 @@ It gets no "data last updated" line rather than the portfolio's, because
 **This tab carries no closing note.** The standing paragraph that used to end
 the card came off 2026-09-16, by request. `ids.note` is optional now: a mount
 that does not declare one renders without it, and `renderScorecard` returns
-before building it — the Portfolio view's copy of the same matrix still passes
-`poscNote` and still prints the full prose, as do the property tabs through
-`renderPropertyScorecard`.
+before building it. The Portfolio view's copy was the other mount declaring a
+note and went with the card on 2026-09-28, so the property tabs are what keep
+that path alive, through `renderPropertyScorecard`.
 
 What that paragraph carried is still on the card, which is why dropping it
 loses nothing material: coverage (`31 of 135 graded · 12 reported, not graded ·
@@ -2621,8 +2622,8 @@ so the scorecard's per-cell links from `index.html` are unaffected.
 Each row also links **out**: a card name under "On the dashboard" goes to
 `index.html#<cardId>`, and the dashboard selects the owning tab and flashes the
 card. Every Portfolio card now carries an id for this (`cExpRatio`, `cExpTrend`,
-`cBudgetActual`, `cTradeOutsPortfolio`); the Landing cards already had them, and
-the property tabs' scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
+`cBudgetActual`); the Landing cards already had them, and the property tabs'
+scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
 
 **And every card links back.** Each card on the dashboard carries a small
 `Data ↗` in its **top-right corner** that jumps to where its own numbers live
@@ -2741,7 +2742,7 @@ Five statuses, and they are the page's whole argument:
 | `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
 | `waiting` | Parser written and registered; no file has ever arrived. **No flow is in this state today** — the rent roll was the last one and it landed 2026-09-11, closing C4 |
 | `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
-| `manual` | No feed at all — `trade_outs` and the placeholder cards are edited into `metrics.json` and carried through each run. Two blocks left this row on 2026-09-17: `expense_trend`, derived from the T12 statement now, and `psf_vs_peers`, whose card was removed |
+| `manual` | No feed at all — the placeholder cards are edited into `metrics.json` and carried through each run. Three blocks have left this row: `expense_trend` on 2026-09-17, derived from the T12 statement now, and `psf_vs_peers` the same day and `trade_outs` on 2026-09-28, each with the card it fed |
 
 So the T12 points can report an arrival and not just a period,
 `store_expense_ratio` / `store_monthly_pl` / `store_expense_buckets` /

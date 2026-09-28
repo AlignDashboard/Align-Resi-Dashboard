@@ -124,6 +124,29 @@ wrong-looking number on the page.
 
 ## Closed
 
+2026-09-28 — **Trade Outs and the KPI Scorecard came off the Portfolio tab**, by
+request, and only from there. Both had a copy elsewhere and both stay: the
+scorecard matrix is still drawn in full on the `Scorecard` tab (same function,
+same `scorecard.json`) and per property on the property tabs, and trade-outs
+are still on `Landing` and on `Rental Rates`. What went was the Portfolio copy
+of the matrix and the hand-authored `trade_outs` placeholder, which had never
+held a number — an empty state reading "Awaiting source: AIRM / Yardi Revenue
+Management + Weekly Leasing Report". The block, its `t-tradeouts` table and both
+lineage entries went with the cards, leaving the `manual` flow carrying only
+the planned-metric grid, so it points at no open item now. The Scorecard tab's
+card picks up `t-sc-measured` and `t-sc-arrivals`, which the Portfolio copy was
+the only card naming. The Portfolio tab is Budget vs Actual, Expense Trend,
+Expense Ratio and the eleven planned-metric cards.
+
+Note the `t-tradeouts` table this removed is the one `a4b6aba` had found the
+`Landing` card's `Data ↗` landing on, through the wildcard-stem collision.
+That was already fixed there and fixed properly — the card's primary is
+`t-tradeout-*` now, off the Yardi tradeout report, and `build_lineage` refuses
+to write on either fault. Removing the table takes the collision away as well,
+but the guard stays: the shape that caused it is one rename away. Confirmed by
+following the rendered link, which still resolves to
+`t-tradeout-the-landing`.
+
 2026-09-18 — **a lineage page regenerated outside CI no longer downgrades a
 gitignored feed (G4).** `evidence_for_store` read `data/<slug>/*.json`, and the
 rent roll's and delinquency's stores are gitignored because they are per-unit
