@@ -4,14 +4,6 @@
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
-  "trade_outs": {
-    "available": false,
-    "reason": "Awaiting source: AIRM / Yardi Revenue Management + Weekly Leasing Report.",
-    "labels": [],
-    "new": [],
-    "renewal": [],
-    "blended": []
-  },
   "expense_trend": {
     "available": true,
     "months": [

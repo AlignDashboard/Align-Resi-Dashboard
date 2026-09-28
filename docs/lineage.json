@@ -331,23 +331,6 @@
    "primary": "t-tradeout",
    "holds": "Lease trade-outs, by month"
   },
-  "cPortfolioScorecard": {
-   "card": "KPI Scorecard",
-   "tab": "Portfolio",
-   "tables": [
-    "t-sc-props",
-    "t-sc-metrics",
-    "t-sc-thresholds",
-    "t-sc-measured",
-    "t-sc-arrivals",
-    "t-sc-workbook"
-   ],
-   "flows": [
-    "kpi_workbook"
-   ],
-   "primary": "t-sc-matrix",
-   "holds": "KPI Scorecard matrix"
-  },
   "cRtLock": {
    "card": "Rental Rate Tracker",
    "tab": "Rental Rates",
@@ -438,18 +421,6 @@
    "primary": "f-rental_tracker",
    "holds": null
   },
-  "cTradeOutsPortfolio": {
-   "card": "Trade Outs",
-   "tab": "Portfolio",
-   "tables": [
-    "t-tradeouts"
-   ],
-   "flows": [
-    "handset"
-   ],
-   "primary": "t-tradeouts",
-   "holds": "Trade Outs"
-  },
   "placeholderGrid": {
    "card": "Planned Metrics",
    "tab": "Portfolio",
@@ -464,7 +435,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-28T22:08:26.551741+00:00",
+  "generated_at": "2026-09-28T22:47:52.986651+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1771,7 +1742,7 @@
    "source_label": "AIRM - Yardi Rev Management",
    "source_detail": "Drive folder \u00b7 *.xlsx",
    "example": null,
-   "carries": "The market-rent and trade-out feed the Trade Outs card is waiting on.",
+   "carries": "A market-rent and trade-out feed. The Portfolio placeholder that named it came off on 2026-09-28; the trade-out cards that remain are fed by the Yardi tradeout report and the renewal tracker instead.",
    "filed_by": [
     "airm",
     "pricing",
@@ -2107,18 +2078,6 @@
       "t-sc-thresholds",
       "t-sc-props",
       "t-sc-metrics",
-      "t-sc-workbook"
-     ]
-    },
-    {
-     "card": "KPI Scorecard",
-     "tab": "Portfolio",
-     "anchor": "cPortfolioScorecard",
-     "primary": "t-sc-matrix",
-     "tables": [
-      "t-sc-props",
-      "t-sc-metrics",
-      "t-sc-thresholds",
       "t-sc-measured",
       "t-sc-arrivals",
       "t-sc-workbook"
@@ -2357,7 +2316,7 @@
    "origin_kind": "manual",
    "source_label": "docs/metrics.json, edited directly",
    "source_detail": "Blocks the pipeline preserves rather than regenerates.",
-   "carries": "The trade-out placeholder and the eleven planned-metric cards. Expense Trend left this list on 2026-09-17: it is derived from the T12 statement now.",
+   "carries": "The eleven planned-metric cards. Expense Trend left this list on 2026-09-17, derived from the T12 statement now, and the trade-out placeholder went with its card on 2026-09-28.",
    "steps": [
     {
      "script": "scripts/build_metrics.py",
@@ -2369,22 +2328,10 @@
    "publishes": [
     {
      "file": "metrics.json",
-     "key": "trade_outs"
-    },
-    {
-     "file": "metrics.json",
      "key": "placeholders"
     }
    ],
    "dashboard": [
-    {
-     "card": "Trade Outs",
-     "tab": "Portfolio",
-     "anchor": "cTradeOutsPortfolio",
-     "tables": [
-      "t-tradeouts"
-     ]
-    },
     {
      "card": "Planned Metrics",
      "tab": "Portfolio",
@@ -2395,11 +2342,9 @@
     }
    ],
    "tables": [
-    "t-tradeouts",
     "t-placeholders"
    ],
-   "note": "No feed stands behind these. Trade Outs is an empty state waiting on AIRM and the weekly leasing report.",
-   "open_item": "D5",
+   "note": "No feed stands behind these. The grid is a list of metrics with no report to fill them, named so the gap is visible.",
    "registered": null,
    "parser": null,
    "documented": true,

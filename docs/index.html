@@ -323,7 +323,7 @@
      min-width:auto, so without this the card refuses to shrink below the
      table's min-content width and the whole page scrolls sideways instead of
      the table scrolling inside its own box. */
-  #cScorecard, #cPortfolioScorecard { min-width: 0; }
+  #cScorecard { min-width: 0; }
   .sc-scroll { overflow-x: auto; min-width: 0; }
   /* combined selectors so a state class always wins over the default */
   .sc-health .big { font-size: 30px; font-weight: 700; line-height: 1; color: var(--text); }
@@ -785,25 +785,6 @@
 
     <div class="view" id="view1" role="tabpanel" aria-labelledby="tabView1" tabindex="0">
     <div class="grid">
-      <!-- same full matrix as the Scorecard tab, rendered by the same code -->
-      <div class="card wide" id="cPortfolioScorecard">
-        <h2>KPI Scorecard</h2>
-        <span class="eyebrow" id="poscEyebrow">PORTFOLIO HEALTH · LOADING…</span>
-        <div class="sc-topline">
-          <div class="sc-head" id="poscHead"></div>
-          <div class="sc-chart"><canvas id="poscChart"></canvas></div>
-        </div>
-        <div class="sc-scroll"><div id="poscTable"></div></div>
-        <div class="sc-legend" id="poscLegend"></div>
-        <div class="sc-note" id="poscNote"></div>
-      </div>
-
-      <div class="card wide" id="cTradeOutsPortfolio">
-        <h2>Trade Outs</h2>
-        <span class="eyebrow" id="toEyebrow">NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT</span>
-        <div class="chartwrap" id="tradeOutWrap"><canvas id="tradeOut"></canvas></div>
-      </div>
-
       <div class="card wide" id="cBudgetActual">
         <div class="card-head">
           <div>
@@ -2462,32 +2443,7 @@ async function loadDashboard() {
     "<br>SECURITY: password gate is client-side only and not encryption. " +
     "Before loading real financials, encrypt metrics.json client-side (AES) and decrypt with the password, so raw data never ships in plaintext.";
 
-  /* ---- 1. TRADE OUTS (line, or empty state) ---- */
-  const to = d.trade_outs;
-  if (to && to.available) {
-    document.getElementById("toEyebrow").textContent = "NEW vs RENEWAL vs BLENDED · % OVER PRIOR RENT";
-    new Chart(document.getElementById("tradeOut"), {
-      type: "line",
-      data: {
-        labels: to.labels,
-        datasets: [
-          { label: "New", data: to.new, borderColor: C.amber, backgroundColor: C.amber, tension: .3, borderWidth: 2, pointRadius: 3 },
-          { label: "Renewal", data: to.renewal, borderColor: C.teal, backgroundColor: C.teal, tension: .3, borderWidth: 2, pointRadius: 3 },
-          { label: "Blended", data: to.blended, borderColor: C.muted, backgroundColor: C.muted, tension: .3, borderWidth: 1.5, borderDash: [4,4], pointRadius: 0 }
-        ]
-      },
-      options: { maintainAspectRatio: false, responsive: true,
-        plugins: { legend: legendCfg, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y}%` } } },
-        scales: { y: { grid: gridCfg, ticks: { callback: v => v + "%" } }, x: { grid: { display: false } } } }
-    });
-  } else {
-    document.getElementById("toEyebrow").textContent = "AWAITING SOURCE DATA";
-    document.getElementById("tradeOutWrap").innerHTML =
-      '<div class="empty"><div class="dash"></div><div class="big">No trade-out data yet</div>' +
-      '<div class="why">' + (to?.reason || "No data available.") + '</div><div class="dash"></div></div>';
-  }
-
-  /* ---- 2. EXPENSE TREND (one line per property, each selectable) ----
+  /* ---- EXPENSE TREND (one line per property, each selectable) ----
      This was three hand-typed expense categories for one building until
      2026-09-17. It is now every property's own expense line on one axis, off
      the same statement series the Operating Summary reads, so the buildings
@@ -3593,13 +3549,13 @@ async function renderScorecard(ids, chosen) {
     (unmapped.length ? " Not yet in the property master: " + unmapped.join(", ") + "." : "") +
     " Source: " + SC.meta.source_workbook + ".";
 }
-// the Scorecard tab and the top of the Portfolio view carry the same matrix
-// No `note` on this mount: the Scorecard tab carries no closing prose.
+// No `note` on this mount: the Scorecard tab carries no closing prose. The
+// Portfolio view carried a second copy of this same matrix until 2026-09-28
+// and was the only mount here declaring a note; the property tabs still do,
+// through renderPropertyScorecard, so that path stays.
 renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
                   legend: "scLegend", chart: "scChart",
                   select: "scPropSelect" });
-renderScorecard({ eyebrow: "poscEyebrow", head: "poscHead", table: "poscTable",
-                  legend: "poscLegend", note: "poscNote", chart: "poscChart" });
 // property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
 scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
 
