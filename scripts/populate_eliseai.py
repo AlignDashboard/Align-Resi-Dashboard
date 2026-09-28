@@ -40,7 +40,7 @@ import sys
 from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from populate_scorecard import OUT, classify, recompute  # noqa: E402
+from populate_scorecard import OUT, classify, keep_workbook_status, recompute  # noqa: E402
 
 KPI_TLA = "# of Tours/Leads/Applications"
 KPI_TASKS = "Open Elise Tasks"
@@ -163,7 +163,7 @@ def main():
             band = classify(float(n), thresholds.get(KPI_TASKS))
             prop["values"][KPI_TASKS] = {"raw": n, "display": str(n)}
             if band and band != was:
-                prop.setdefault("status_workbook", {})[KPI_TASKS] = was
+                keep_workbook_status(prop, KPI_TASKS, was)
                 prop["statuses"][KPI_TASKS] = band
             prop.setdefault("status_source", {})[KPI_TASKS] = "measured"
             filled.append(KPI_TASKS)

@@ -772,6 +772,20 @@ def measurements(f):
     return out
 
 
+def keep_workbook_status(prop, kpi, was):
+    """Record the workbook's own symbol beside a cell a measurement restates.
+
+    Only the FIRST restatement since extraction knows what that symbol was:
+    after it, `was` is the previous run's grade. Writing it on every change is
+    how the data page's "Workbook had" column came to quote grades the workbook
+    never set — six cells by 2026-09-28, each one the second time its grade
+    moved. So an entry, once written, is never replaced; extract_scorecard
+    rebuilds the grid without any, which is what resets them. All three writers
+    that restate a status call this rather than keeping their own copy.
+    """
+    prop.setdefault("status_workbook", {}).setdefault(kpi, was)
+
+
 def graded(p, names):
     """The cells whose status was derived from a measurement.
 
@@ -1023,7 +1037,7 @@ def main():
         band = classify(value, thresholds.get(kpi))
         # keep the workbook's own symbol beside the derived one
         if band and band != was:
-            prop.setdefault("status_workbook", {})[kpi] = was
+            keep_workbook_status(prop, kpi, was)
             prop.setdefault("status_source", {})[kpi] = "measured"
             prop["statuses"][kpi] = band
             changed.append((kpi, was, band, display))
