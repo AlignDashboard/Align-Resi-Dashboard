@@ -215,15 +215,17 @@ DRIVE_FLOWS = {
             # which is why the primary is left to the flows that still declare
             # one -- this entry only adds the two tables to the card's link.
             {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
-             "tables": ["t-tradeout-*", "t-tradeout-leases-*"],
+             "tables": ["t-tradeout-*", "t-tradeout-tile-*",
+                        "t-tradeout-leases-*"],
              "holds": "Every new lease, and the months they roll up into"},
             {"card": "KPI Scorecard — Trade-out %", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
         ],
-        # Two tables: the monthly arithmetic the tile quotes, and the
-        # per-lease rows behind it (added 2026-09-28, by request).
-        "tables": ["t-tradeout-*", "t-tradeout-leases-*",
+        # Three tables: the monthly arithmetic the tile quotes, the leases
+        # the graded window is made of, and every lease in the report
+        # (added 2026-09-28, by request).
+        "tables": ["t-tradeout-*", "t-tradeout-tile-*", "t-tradeout-leases-*",
                    "t-sc-measured", "t-sc-arrivals"],
     },
     ("Budgets", "budget"): {

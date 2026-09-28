@@ -1406,26 +1406,48 @@ fails a check. Tagging widest-last still ties out cumulatively and leaves every
 `T3` filter empty, which is why that one has a check of its own. **Clear `__pycache__` between mutation runs** —
 the same trap the leasing parsers' tests record.
 
-Tables: `t-tradeout-<slug>` on the data page, which carries every month, the
-three windows and the weighted-vs-mean note, and **`t-tradeout-leases-<slug>`
-beneath it — every lease behind those months**, newest first, with the date,
-unit, floorplan, sqft, term, both effective rents, the trade-out in dollars and
-percent, and the window it falls in.
+Three tables on the data page, in this order, and the middle one is the answer
+to "which leases is the tile made of":
+
+| Table | Holds |
+| --- | --- |
+| `t-tradeout-<slug>` | every month, the three windows and the weighted-vs-mean note |
+| **`t-tradeout-tile-<slug>`** | **the leases the graded window is made of, and nothing else** — 26 rows for The Landing |
+| `t-tradeout-leases-<slug>` | every lease in the report, 247 of them, each tagged with the window it falls in |
 
 The per-lease rows were in `data/<slug>/lease_tradeout.json` (tracked — a
-trade-out report carries no resident) but nowhere on the page, so "which leases
-is the tile made of" could not be answered from the dashboard.
-`tradeout_lease_rows` in `build_metrics.py` publishes them under
-`lease_tradeout.properties[].leases`. Three things about it:
+trade-out report carries no resident) but nowhere on the page, so the tile's
+39.8% could not be taken apart from the dashboard. `tradeout_lease_rows` in
+`build_metrics.py` publishes them under `lease_tradeout.properties[].leases`.
+
+**The tile table is its own table rather than a filter on the full one.** The
+`Window` column makes the graded leases reachable, but only to a reader who
+knows to filter — and "which leases is this figure made of" is the question the
+tile raises, so it gets a table whose rows ARE the answer. Two things it does:
+
+- **Which window is graded is read from `scorecard.json`'s own
+  `tradeout_months`** — the field the tile itself reads — rather than fixed at
+  3 in the page, so the table and the tile cannot come to disagree about what
+  is being graded. If `TRADEOUT_WINDOW` moves to 6, the table follows. With
+  `scorecard.json` unreadable the table is left out rather than guessed at, and
+  the full one below still carries every lease with its window on it.
+- **It recomputes the published figure from the rows on show and says whether
+  they agree** — both the rate and the lease count. A table that claims to *be*
+  a published figure has to be able to reproduce it; the note reads "these rows
+  reproduce the published 39.8% and its lease count exactly" today, and names
+  both figures if that ever stops being true rather than quietly showing a
+  different number.
+
+Three things about the rows themselves:
 
 - **The `window` column is read back out of the published windows themselves,
   not recomputed from the dates.** `window()` counts a window in calendar
   months present in the file, so a second implementation of that rule here
   would eventually tag a lease into a window whose own total does not contain
-  it. Each lease carries the *narrowest* window it falls in, so filtering
-  `Window` to `T3` gives exactly the leases the graded tile is made of —
-  verified in the browser: 26 rows, matching the published T3 count, and
-  26/68/121 cumulatively across T3/T6/T12.
+  it. Each lease carries the *narrowest* window it falls in, which is what the
+  tile table above is cut on — verified in the browser: 26 rows, matching the
+  published T3 count and reproducing its 39.8%, and 26/68/121 cumulatively
+  across T3/T6/T12.
 - **The published row is a strict subset of the stored one**, built key by key
   rather than by copying and deleting, so a field added to the parse cannot
   arrive on the page by default.

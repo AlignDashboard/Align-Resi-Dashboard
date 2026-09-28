@@ -321,6 +321,7 @@
     "t-tradeouts",
     "t-renewals",
     "t-tradeout",
+    "t-tradeout-tile",
     "t-tradeout-leases"
    ],
    "flows": [
@@ -1488,6 +1489,7 @@
      "anchor": "cdTradeOuts",
      "tables": [
       "t-tradeout-*",
+      "t-tradeout-tile-*",
       "t-tradeout-leases-*"
      ],
      "holds": "Every new lease, and the months they roll up into"
@@ -1506,6 +1508,7 @@
    ],
    "tables": [
     "t-tradeout-*",
+    "t-tradeout-tile-*",
     "t-tradeout-leases-*",
     "t-sc-measured",
     "t-sc-arrivals"
