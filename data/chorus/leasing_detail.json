@@ -319,15 +319,15 @@
     },
     {
       "week_ending": "2026-09-27",
-      "source_file": "2026-09-22 09.21.2026- 09.27.2026- Chorus - Daily Report.xlsx",
-      "landed_at": "2026-09-23T02:28:31.627Z",
+      "source_file": "2026-09-26 09.21.2026- 09.27.2026- Chorus - Daily Report (1).xlsx",
+      "landed_at": "2026-09-27T01:28:38.306Z",
       "totals": {
-        "leases": 1,
-        "lease_rent": 7763,
-        "prior_rent": 5000,
-        "tradeout_amount": 2763,
-        "tradeout_pct_mean": 0.5526,
-        "sqft": 1130,
+        "leases": 4,
+        "lease_rent": 22176,
+        "prior_rent": 16435,
+        "tradeout_amount": 5741,
+        "tradeout_pct_mean": 0.321395,
+        "sqft": 2969,
         "concession": 0
       },
       "leases": [
@@ -345,14 +345,59 @@
           "net_rent": 7763,
           "move_in": "2026-10-01",
           "term": "12"
+        },
+        {
+          "unit": "905",
+          "unit_type": null,
+          "floor_plan": "chs1B",
+          "beds_baths": "0x1",
+          "sqft": 449,
+          "lease_rent": 3955,
+          "prior_rent": 3371,
+          "tradeout_amount": 584,
+          "tradeout_pct": 0.173242,
+          "concession": 0,
+          "net_rent": 3955,
+          "move_in": "2026-11-07",
+          "term": "12"
+        },
+        {
+          "unit": "721",
+          "unit_type": null,
+          "floor_plan": "chb2J",
+          "beds_baths": "2x2",
+          "sqft": 937,
+          "lease_rent": 6533,
+          "prior_rent": 4750,
+          "tradeout_amount": 1783,
+          "tradeout_pct": 0.375368,
+          "concession": 0,
+          "net_rent": 6533,
+          "move_in": "2026-11-06",
+          "term": "12"
+        },
+        {
+          "unit": "924 ",
+          "unit_type": null,
+          "floor_plan": "cha1A",
+          "beds_baths": "1x1",
+          "sqft": 453,
+          "lease_rent": 3925,
+          "prior_rent": 3314,
+          "tradeout_amount": 611,
+          "tradeout_pct": 0.184369,
+          "concession": 0,
+          "net_rent": 3925,
+          "move_in": "2026-12-23",
+          "term": "12"
         }
       ],
       "checks": [
         {
           "check": "every lease reconciles to its own trade-out",
           "ok": true,
-          "clean": 1,
-          "leases": 1
+          "clean": 4,
+          "leases": 4
         },
         {
           "check": "week-ending date found",
