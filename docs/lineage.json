@@ -463,7 +463,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-28T18:29:49.367218+00:00",
+  "generated_at": "2026-09-28T18:48:09.531186+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -2409,7 +2409,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-28T18:29:47.221460+00:00",
+     "landed_at": "2026-09-28T18:48:06.723348+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

@@ -1,32 +1,12 @@
 {
   "report_type": "renewal_tracker",
   "property": "Chorus",
-  "as_of": "2026-11",
+  "as_of": "2026-12",
   "covers": {
-    "from": "2024-01",
-    "to": "2026-11"
+    "from": "2024-02",
+    "to": "2026-12"
   },
   "months": [
-    {
-      "month": "2024-01",
-      "rows": 23,
-      "mean_increase": 0.027193,
-      "leases": 19,
-      "current_rent": 68059.0,
-      "offered_rent": 69764.87,
-      "wtd_increase": 0.025065,
-      "statuses": {
-        "MTM": 4,
-        "Notice": 8,
-        "Renewed": 11
-      },
-      "offer_basis": [
-        "offered_rent (a rate)"
-      ],
-      "unresolved": 4,
-      "sheet": "January 2024",
-      "header_row": 14
-    },
     {
       "month": "2024-02",
       "rows": 18,
@@ -665,8 +645,9 @@
       "statuses": {
         "MTM": 1,
         "Notice": 10,
+        "Offer Accepted": 1,
         "Renewed": 7,
-        "Waiting For Response": 2
+        "Waiting For Response": 1
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -684,9 +665,10 @@
       "offered_rent": 104608.5,
       "wtd_increase": 0.190194,
       "statuses": {
-        "Notice": 10,
+        "Notice": 9,
         "Offer Accepted": 2,
-        "Renewed": 7
+        "Renewed": 7,
+        "Waiting For Response": 1
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -707,8 +689,8 @@
         "MTM": 1,
         "Notice": 2,
         "Offer Accepted": 2,
-        "Renewed": 4,
-        "Waiting For Response": 11
+        "Renewed": 5,
+        "Waiting For Response": 10
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -716,22 +698,39 @@
       "unresolved": 0,
       "sheet": "November 2026",
       "header_row": 9
+    },
+    {
+      "month": "2026-12",
+      "rows": 18,
+      "mean_increase": 0.145163,
+      "leases": 18,
+      "current_rent": 77802.0,
+      "offered_rent": 89084.0,
+      "wtd_increase": 0.145009,
+      "statuses": {
+        "Offer Accepted": 1,
+        "Waiting For Response": 17
+      },
+      "offer_basis": [
+        "offered_rent (a rate)"
+      ],
+      "unresolved": 0,
+      "sheet": "December 2026",
+      "header_row": 9
     }
   ],
   "mtm": null,
   "unread_sheets": [
     {
       "sheet": "MTM",
-      "why": "'MTM': header found on row 9 but without current_rent"
+      "why": "'MTM': header found on row 1 but without current_rent"
     }
   ],
   "problems": [
-    "2025-04 appears on two sheets ('April 2025 - Pending Approval' with 24 offers and 'April 2025' with 25); the fuller one is used",
-    "2025-07 appears on two sheets ('July 2025 (2)' with 21 offers and 'July 2025' with 21); the fuller one is used",
     "1 sheet(s) were skipped because their header could not be matched \u2014 they are older layouts, and their months are absent from the series rather than wrong: MTM"
   ],
-  "source_file": "2026-09-21 Chorus 2026 Renewal Tracker.xlsx",
-  "landed_at": "2026-09-21T21:28:41.395Z",
+  "source_file": "2026-09-28 Chorus 2026 Renewal Tracker.xlsx",
+  "landed_at": "2026-09-28T18:28:45.379Z",
   "checks": [
     {
       "check": "month sheets read",
