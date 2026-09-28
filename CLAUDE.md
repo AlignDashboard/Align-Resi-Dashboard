@@ -683,8 +683,12 @@ exclusion, the bed-weighted premium, the thin-bedroom fallback and the
 market-wide ring). **Clear `__pycache__` between mutation runs** — the same trap
 the leasing parsers' tests record.
 
-Tables: `t-comps-<slug>`, `t-compstrend-<slug>` and `t-compscheck-<slug>` on the
-data page, under a `Market Comps` group.
+Tables: `t-comps-<slug>`, `t-compstrend-<slug>`, `t-compscheck-<slug>` and
+`t-compsleasing-<slug>` on the data page, under a `Market Comps` group. The
+last is the two figures on this export that are not rents — days on market and
+the concession share, each side's listing count beside it — plus what the
+subject has listed today. It was added 2026-09-28 because the card drawing
+them had nowhere to link: they were published and no table held them.
 
 ### Refreshing the tab on its own, daily
 
@@ -2666,10 +2670,46 @@ mutation.
 
 Both were found by checking the rendered links rather than the declarations:
 open every tab, read each card's `a.cardsrc` href, follow it into `data.html`
-and print which table it actually resolves to. All 35 land on a real table
-today. Note the gate marker lives in `sessionStorage`, which is per **tab**, so
-a probe like that has to navigate one page from `index.html` to `data.html`
-rather than opening a second one.
+and print which table it actually resolves to. Note the gate marker lives in
+`sessionStorage`, which is per **tab**, so a probe like that has to navigate
+one page from `index.html` to `data.html` rather than opening a second one —
+and it has to visit every tab first, since the property-tab cards and the
+placeholder grid are built on demand. All **46** rendered links land on a real
+target today (46 rather than 35: the nine Rental Rates cards and the
+placeholder cards are generated, so keying the probe on a card `id` missed
+them).
+
+**Resolving is not the same as landing on the right table**, and reading the
+46 against what each card actually draws turned up two more:
+
+- **`cmcEvidence` ("How It Is Actually Leasing") pointed at the comp set.**
+  That card draws days on market and concessions — and `t-comps-<slug>` holds
+  property, distance, units, listing counts and bed medians, none of it. The
+  figures were in `metrics.json`'s `comps` block (`days_on_market`,
+  `concessions`, `subject_listings`) with **no table anywhere on the page** —
+  the same gap `monthly_pl`, `expense_buckets` and `unit_directory` were in.
+  `t-compsleasing-<slug>` now carries them, one row per measure with each
+  side's listing count beside it, and the card points there.
+- **`cdFeeds` ("What Feeds This Tab") pointed at the T12 statement's flow
+  row.** That card reads `lineage.json`'s whole flow list — every feed's
+  arrival — so one flow row is not its numbers; it was the `tables: []`
+  fallback taking whichever flow sorted first. Its primary is now **`flow`**,
+  the data-flow view itself, which is what the card is a summary of.
+  `focusHashTarget` already answers `#flow` and `#tables` by switching view, so
+  `VIEW_ANCHORS` in `build_lineage` lets a primary name one and the table
+  checks skip it.
+
+One trap came with that table. `build_lineage` reads a table's title out of
+`data.html`'s **source** rather than running it, so a `title:` written with a
+`\uXXXX` escape reached the card tooltip as those six characters. Titles use a
+literal em-dash like every other table, and the extractor decodes the escape
+anyway so the next one cannot repeat it.
+
+Three links are a judgement rather than an error, and are left as they are: the
+four property-tab scorecard cards point at `t-sc-measured` rather than
+`t-sc-matrix` (they are about one property's measured cells and their feeds),
+`cBudgetActual` points at the plan rather than the actuals it is subtracted
+from, and `cmcMethod` — the limits block — points at the comp set.
 
 Three details worth knowing:
 

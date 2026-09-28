@@ -90,8 +90,8 @@
     "bldg_metrics",
     "unit_directory"
    ],
-   "primary": "f-t12",
-   "holds": null
+   "primary": "flow",
+   "holds": "the data-flow chain, one row per source"
   },
   "cBudgetActual": {
    "card": "Budget vs Actual",
@@ -242,13 +242,14 @@
    "card": "How It Is Actually Leasing",
    "tab": "Market Comps",
    "tables": [
+    "t-compsleasing",
     "t-comps"
    ],
    "flows": [
     "market_comps"
    ],
-   "primary": "t-comps",
-   "holds": "Comp set"
+   "primary": "t-compsleasing",
+   "holds": "How it is leasing, against the ring"
   },
   "cmcSet": {
    "card": "The Comp Set",
@@ -464,7 +465,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-28T22:08:26.551741+00:00",
+  "generated_at": "2026-09-28T22:42:33.266404+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -641,6 +642,7 @@
      "card": "What Feeds This Tab",
      "tab": "Landing",
      "anchor": "cdFeeds",
+     "primary": "flow",
      "tables": []
     }
    ],
@@ -856,6 +858,7 @@
      "card": "What Feeds This Tab",
      "tab": "Landing",
      "anchor": "cdFeeds",
+     "primary": "flow",
      "tables": []
     }
    ],
@@ -1023,6 +1026,7 @@
      "card": "What Feeds This Tab",
      "tab": "Landing",
      "anchor": "cdFeeds",
+     "primary": "flow",
      "tables": []
     },
     {
@@ -1175,8 +1179,9 @@
      "card": "How It Is Actually Leasing",
      "tab": "Market Comps",
      "anchor": "cmcEvidence",
-     "primary": "t-comps-*",
+     "primary": "t-compsleasing-*",
      "tables": [
+      "t-compsleasing-*",
       "t-comps-*"
      ]
     },
@@ -1203,7 +1208,8 @@
    "tables": [
     "t-comps-*",
     "t-compstrend-*",
-    "t-compscheck-*"
+    "t-compscheck-*",
+    "t-compsleasing-*"
    ],
    "note": "The only feed here about the MARKET rather than about an Align building, and the only thing the Yardi market rent column can be checked against \u2014 that column is set by the property team, and it is the denominator of loss to lease on both Landing tabs and of the rent-capture series. The export arrives as a pair of near-identical names; the entry claims both on purpose, so a renamed export cannot go unread, and the formatted one is skipped with a reason.",
    "open_item": null,
@@ -1577,6 +1583,7 @@
      "card": "What Feeds This Tab",
      "tab": "Landing",
      "anchor": "cdFeeds",
+     "primary": "flow",
      "tables": []
     }
    ],
