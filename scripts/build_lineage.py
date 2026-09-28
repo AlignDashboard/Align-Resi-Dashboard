@@ -210,11 +210,21 @@ DRIVE_FLOWS = {
             # A tile in a row, like the budget's — no corner to hang a link in.
             {"card": "Trade-out % tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
+            # The card the report's own months are drawn on. Its new-lease
+            # series was the weekly leasing workbook until this feed arrived,
+            # which is why the primary is left to the flows that still declare
+            # one -- this entry only adds the two tables to the card's link.
+            {"card": "Trade-outs", "tab": "Landing", "anchor": "cdTradeOuts",
+             "tables": ["t-tradeout-*", "t-tradeout-leases-*"],
+             "holds": "Every new lease, and the months they roll up into"},
             {"card": "KPI Scorecard — Trade-out %", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
         ],
-        "tables": ["t-tradeout-*", "t-sc-measured", "t-sc-arrivals"],
+        # Two tables: the monthly arithmetic the tile quotes, and the
+        # per-lease rows behind it (added 2026-09-28, by request).
+        "tables": ["t-tradeout-*", "t-tradeout-leases-*",
+                   "t-sc-measured", "t-sc-arrivals"],
     },
     ("Budgets", "budget"): {
         "id": "budget",

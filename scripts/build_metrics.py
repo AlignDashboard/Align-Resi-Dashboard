@@ -959,6 +959,37 @@ def store_daily_leasing(prop, parsed):
     return fp
 
 
+def tradeout_lease_rows(leases, windows):
+    """The per-lease rows metrics.json publishes, newest first.
+
+    Trimmed to what the data page's table needs and tagged with the narrowest
+    published window each lease falls in, so "which leases is the tile made of"
+    is a filter rather than a calculation.
+
+    The tag is read back out of the windows THEMSELVES rather than recomputed
+    from the dates: `window()` counts a window in calendar months present in
+    the file, and a second implementation of that rule here would eventually
+    mark a lease into a window whose total does not contain it.
+
+    $/sqft is not published. It is eff_rent over sqft, and a stored copy is a
+    second place for it to be wrong.
+    """
+    in_window = {}
+    for n in (12, 6, 3):                      # widest first, so the narrowest wins
+        for m in ((windows.get(f"t{n}") or {}).get("months") or []):
+            in_window[m["month"]] = f"T{n}"
+    return [
+        {"signed": l["signed"], "month": l["month"], "unit": l["unit"],
+         "floor_plan": l.get("floor_plan"), "sqft": l.get("sqft"),
+         "term": l.get("term"), "eff_rent": l.get("eff_rent"),
+         "prev_eff_rent": l.get("prev_eff_rent"),
+         "tradeout_amount": l.get("tradeout_amount"),
+         "tradeout_pct": l.get("tradeout_pct"),
+         "window": in_window.get(l["month"], "older")}
+        for l in sorted(leases, key=lambda x: (x["signed"], x["unit"]), reverse=True)
+    ]
+
+
 def store_lease_tradeout(prop, parsed):
     """data/<slug>/lease_tradeout.json — new-lease trade-outs, accumulated.
 
@@ -2018,10 +2049,10 @@ def build_metrics_json():
 
     # Lease trade-outs from the Yardi Lease Tradeout Report, which is the only
     # feed carrying a trade-out with its own history: one row per new lease with
-    # the lease it replaced beside it. Published as the monthly series and a few
-    # trailing windows rather than the rows themselves -- the rows are in
-    # data/<slug>/lease_tradeout.json, and nothing on the page draws them one at
-    # a time.
+    # the lease it replaced beside it. Published as the monthly series, a few
+    # trailing windows, and -- since 2026-09-28, by request -- the per-lease
+    # rows behind them, so the data page can show which leases a published
+    # figure is made of rather than only what they add up to.
     #
     # `pct` everywhere here is the report's OWN definition: total current
     # effective rent over total previous effective rent. The mean of the
@@ -2057,6 +2088,7 @@ def build_metrics_json():
             "windows": {f"t{n}": mod.window(leases, n) for n in (3, 6, 12)},
         }
         entry["months"] = (entry["all"] or {}).pop("months", [])
+        entry["leases"] = tradeout_lease_rows(leases, entry["windows"])
         to_props.append(entry)
         a, w = entry["all"], entry["windows"].get("t3") or {}
         print(f"[ok] lease trade-outs for {p['name']}: {a['leases']} lease(s) "

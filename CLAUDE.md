@@ -1397,15 +1397,46 @@ lists it — so the tile went on hovering "EliseAI building-metrics export · as
 2026-08-31" over a figure from a report of 2026-09-16. That is the over-report
 this file warns about, fixed in the data rather than worked around on the page.
 
-`scripts/test_lease_tradeout.py` holds it down — 38 fixture-free checks against
-workbooks built in a temp dir. The five load-bearing guards (the forward-filled
+`scripts/test_lease_tradeout.py` holds it down — 47 fixture-free checks against
+workbooks built in a temp dir. The six load-bearing guards (the forward-filled
 header, the parenthesised negative, the magic-number open, the Grand Total
-tie-out and the skipped subtotal rows) were each verified by mutation; removing
-any one of them fails a check. **Clear `__pycache__` between mutation runs** —
+tie-out, the skipped subtotal rows and the narrowest-window-wins tagging behind
+the per-lease table) were each verified by mutation; removing any one of them
+fails a check. Tagging widest-last still ties out cumulatively and leaves every
+`T3` filter empty, which is why that one has a check of its own. **Clear `__pycache__` between mutation runs** —
 the same trap the leasing parsers' tests record.
 
-Table: `t-tradeout-<slug>` on the data page, which carries every month, the
-three windows and the weighted-vs-mean note.
+Tables: `t-tradeout-<slug>` on the data page, which carries every month, the
+three windows and the weighted-vs-mean note, and **`t-tradeout-leases-<slug>`
+beneath it — every lease behind those months**, newest first, with the date,
+unit, floorplan, sqft, term, both effective rents, the trade-out in dollars and
+percent, and the window it falls in.
+
+The per-lease rows were in `data/<slug>/lease_tradeout.json` (tracked — a
+trade-out report carries no resident) but nowhere on the page, so "which leases
+is the tile made of" could not be answered from the dashboard.
+`tradeout_lease_rows` in `build_metrics.py` publishes them under
+`lease_tradeout.properties[].leases`. Three things about it:
+
+- **The `window` column is read back out of the published windows themselves,
+  not recomputed from the dates.** `window()` counts a window in calendar
+  months present in the file, so a second implementation of that rule here
+  would eventually tag a lease into a window whose own total does not contain
+  it. Each lease carries the *narrowest* window it falls in, so filtering
+  `Window` to `T3` gives exactly the leases the graded tile is made of —
+  verified in the browser: 26 rows, matching the published T3 count, and
+  26/68/121 cumulatively across T3/T6/T12.
+- **The published row is a strict subset of the stored one**, built key by key
+  rather than by copying and deleting, so a field added to the parse cannot
+  arrive on the page by default.
+- **$/sqft is derived on the page, not published.** It is effective rent over
+  sqft, and a stored copy is a second place for it to be wrong.
+
+One page fix came with it. `sourceOf` in `data.html` built the `From:` line one
+entry per matched *pattern*, so a flow naming both a family and a narrower one
+inside it (`t-tradeout-*` and `t-tradeout-leases-*`) printed the same report
+twice. It dedupes by flow id now; tables genuinely fed by several flows still
+list them all (`t-sc-measured` shows five).
 
 **It feeds the Trade-outs card too, not just the tile.** That card's teal series
 was the weekly leasing workbook, which carries **one week per file** — four weeks

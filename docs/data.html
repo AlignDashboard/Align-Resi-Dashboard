@@ -637,8 +637,14 @@ let SOURCE_INDEX = [];
 const flowAnchor = id => "f-" + id;
 
 function sourceOf(tableId) {
+  // One entry per FLOW, not per pattern. A flow can name both a family and a
+  // narrower one inside it ("t-tradeout-*" and "t-tradeout-leases-*"), and the
+  // narrower family's tables match both -- which printed the one report twice
+  // on the "From:" line.
+  const seen = new Set();
   return SOURCE_INDEX
     .filter(e => e.exact ? e.match === tableId : tableId.startsWith(e.match))
+    .filter(e => !seen.has(e.id) && seen.add(e.id))
     .map(e => ({ id: e.id, title: e.title }));
 }
 
@@ -1317,10 +1323,9 @@ async function loadAll() {
       });
     });
 
-    // Lease trade-outs, by month. The rows are the report's own monthly
-    // arithmetic rather than the per-lease detail: every figure the tile and
-    // its hover quote comes off this series, and the leases themselves live in
-    // data/<slug>/lease_tradeout.json.
+    // Lease trade-outs, in two tables: the report's own monthly arithmetic,
+    // which is where every figure the tile and its hover quote comes from, and
+    // the per-lease rows underneath it.
     ((d.lease_tradeout || {}).properties || []).forEach((pr, i) => {
       const a = pr.all || {};
       const w = pr.windows || {};
@@ -1357,6 +1362,50 @@ async function loadAll() {
                { key: "tradeout_amount", label: "Trade-out $", fmt: "money" },
                { key: "pct", label: "Trade-out %", fmt: "pct1" }],
         rows: (pr.months || []).map(m => ({ ...m })),
+        filterable: true,
+      });
+
+      // Every lease behind those months, newest first. `Window` is the
+      // narrowest published window each lease falls in, tagged by
+      // build_metrics from the windows themselves rather than recomputed --
+      // so filtering to T3 gives exactly the leases the tile is graded on,
+      // and a row cannot disagree with the total it is counted in.
+      const lw = (pr.windows || {}).t3 || {};
+      renderTable(host, {
+        id: "t-tradeout-leases-" + (pr.slug || i), group: "Landing",
+        title: "Lease trade-outs, lease by lease \u2014 " + (pr.name || pr.slug),
+        feeds: "The rows behind the monthly table above, and behind the "
+             + "Trade-out % tile \u2014 filter Window to T3 for the "
+             + (lw.leases || 0) + " leases it is graded on",
+        note: ["Yardi Lease Tradeout Report " + (pr.source_file || "\u2014")
+                 + (pr.landed_at ? ", landed " + pr.landed_at : ""),
+               "Rent is EFFECTIVE rent on both sides \u2014 net of concessions on "
+                 + "the new lease and on the one it replaced, which is the "
+                 + "report's own basis and the tile's. It is not the gross rent "
+                 + "on the lease.",
+               "Dated by " + (pr.lease_date_basis || "?")
+                 + ", so a lease appears on the date it was signed rather than "
+                 + "the date it starts.",
+               "A per-lease percentage is that lease's own ratio and nothing is "
+                 + "weighted here: a concession drives a previous effective rent "
+                 + "toward zero and the ratio explodes, which is why the tile "
+                 + "takes total over total instead. Both are in the table above.",
+              ].filter(Boolean).join(" \u00b7 "),
+        cols: [{ key: "signed", label: "Date" },
+               { key: "unit", label: "Unit" },
+               { key: "floor_plan", label: "Floorplan" },
+               { key: "sqft", label: "Sqft", fmt: "int" },
+               { key: "term", label: "Term", fmt: "int" },
+               { key: "eff_rent", label: "Lease rent", fmt: "money0" },
+               { key: "psf", label: "$/sqft", fmt: "money" },
+               { key: "prev_eff_rent", label: "Prior rent", fmt: "money0" },
+               { key: "tradeout_amount", label: "Trade-out $", fmt: "money0" },
+               { key: "tradeout_pct", label: "Trade-out %", fmt: "pct1" },
+               { key: "window", label: "Window" }],
+        // $/sqft is derived here rather than published: one place for it to be
+        // computed is one place for it to be wrong.
+        rows: (pr.leases || []).map(l => ({
+          ...l, psf: (l.sqft ? l.eff_rent / l.sqft : null) })),
         filterable: true,
       });
     });

@@ -274,6 +274,53 @@ def main():
     finally:
         bm.DATA = old_data
 
+    print("\n11. the per-lease rows the data page publishes")
+    # Fourteen distinct signed months, so T3 / T6 / T12 are genuinely different
+    # slices AND two leases fall outside every published window.
+    ls = ([lease_row("98", "11/15/25", 4398, 4000),
+           lease_row("99", "12/15/25", 4399, 4000)]
+          + [lease_row(str(100 + i), f"{i}/15/26", 4400 + i, 4000)
+             for i in range(1, 13)])
+    leases = parse(build(x("rows.xlsx"), ls))["leases"]
+    windows = {f"t{n}": window(leases, n) for n in (3, 6, 12)}
+    rows = bm.tradeout_lease_rows(leases, windows)
+
+    check("every lease is published", len(rows) == len(leases),
+          f"got {len(rows)} of {len(leases)}")
+    check("newest first", [r["signed"] for r in rows]
+          == sorted((l["signed"] for l in leases), reverse=True))
+
+    # The tie-out that makes the Window column usable: filtering to a window
+    # must give exactly the leases that window's own published total counts.
+    # Tags are nested, so T6 means "T3 or T6".
+    for n in (3, 6, 12):
+        w = windows.get(f"t{n}") or {}
+        if w.get("leases") is None:
+            continue
+        tags = {f"T{k}" for k in (3, 6, 12) if k <= n}
+        got = sum(1 for r in rows if r["window"] in tags)
+        check(f"the rows tagged T{n} reproduce that window's own lease count",
+              got == w["leases"], f"{got} tagged vs {w['leases']} published")
+
+    # ...which needs the NARROWEST window to win. Tagging widest-last would
+    # still tie out cumulatively while making every T3 filter empty.
+    t3_months = {m["month"] for m in (windows["t3"] or {})["months"]}
+    check("a lease inside T3 is tagged T3, not the wider window it is also in",
+          all(r["window"] == "T3" for r in rows if r["month"] in t3_months)
+          and any(r["window"] == "T3" for r in rows))
+    check("a lease outside every window is 'older'",
+          any(r["window"] == "older" for r in rows))
+
+    published = {"signed", "month", "unit", "floor_plan", "sqft", "term",
+                 "eff_rent", "prev_eff_rent", "tradeout_amount",
+                 "tradeout_pct", "window"}
+    check("the published row is a strict subset of the stored one",
+          all(set(r) == published for r in rows)
+          and published - {"window"} <= set(leases[0]))
+    check("no resident-shaped key reaches the page",
+          not any(k in r for r in rows
+                  for k in ("resident", "resident_name", "tenant", "name")))
+
     shutil.rmtree(tmp, ignore_errors=True)
     print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
     return 1 if FAIL else 0
