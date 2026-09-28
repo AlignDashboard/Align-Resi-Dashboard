@@ -171,6 +171,15 @@
   .tog[aria-pressed="true"] { color: var(--amber); border-color: var(--amber); }
   .tog[aria-pressed="false"] { opacity: .55; }
   .tog:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+  /* A property this card cannot draw — a statement with no plan on file. Listed
+     rather than left out, so the row answers "why one building?", but it must
+     not read as a thing you can press: no hover, no pointer, struck through. */
+  .tog[disabled] { opacity: .35; cursor: default; text-decoration: line-through; }
+  .tog[disabled]:hover { color: var(--muted); border-color: var(--line); }
+  /* The property row sits under the head rather than in it: the head's own
+     togrow is a different question (which view), and two button rows touching
+     read as one control with six options. */
+  #baProps { align-self: flex-start; margin: 0 0 10px; }
 
   /* Checkbox series toggles: one grid so the boxes line up in columns.
      The box doubles as the series swatch — filled with its colour when on. */
@@ -794,10 +803,13 @@
           <div class="togrow" id="baTogs" role="group" aria-label="Budget vs Actual view">
             <button class="tog" type="button" data-bv="total" aria-pressed="true">Total</button>
             <button class="tog" type="button" data-bv="cats" aria-pressed="false">Categories</button>
-            <select class="prop-select" id="baSelect" style="display:none;"
-                    aria-label="Property"></select>
           </div>
         </div>
+        <!-- One button per property the card knows about, filled by
+             renderBudgetActual. A building with a statement but no plan on file
+             is listed and disabled rather than left out: it is the answer to
+             "why is this card showing one building". -->
+        <div class="togrow" id="baProps" role="group" aria-label="Property" hidden></div>
         <div class="varlist" id="baVars" hidden></div>
         <div class="ckpreset" id="baPresets" role="group" aria-label="Expense basket"></div>
         <div class="ckgrid" id="baCks" role="group" aria-label="Categories shown"></div>
@@ -4006,7 +4018,7 @@ async function renderBudgetActual(d) {
   const cks = document.getElementById("baCks");
   const pre = document.getElementById("baPresets");
   const note = document.getElementById("baNote");
-  const sel = document.getElementById("baSelect");
+  const sel = document.getElementById("baProps");
   const togs = document.getElementById("baTogs");
   const vars_ = document.getElementById("baVars");
 
@@ -4023,7 +4035,7 @@ async function renderBudgetActual(d) {
     pre.hidden = true;
     vars_.hidden = true;
     togs.hidden = true;
-    sel.style.display = "none";
+    sel.hidden = true;
     wrap.textContent = "";
     const empty = elc("div", "empty");
     empty.appendChild(elc("div", "dash"));
@@ -4402,7 +4414,10 @@ async function renderBudgetActual(d) {
     setModeRef = setMode;
     togs.querySelectorAll(".tog").forEach(t =>
       t.setAttribute("aria-pressed", String(t.dataset.bv === m)));
-    eyebrow.textContent = (m === "total"
+    // The property leads the eyebrow once there is a row of them to switch
+    // between: with a toggle above it, "PLAN vs ACTUAL" does not say whose.
+    eyebrow.textContent = (known.length > 1 ? b.name.toUpperCase() + " · " : "")
+      + (m === "total"
         ? "PLAN vs ACTUAL · "
         : "VARIANCE · ACTUAL LESS PLAN · ")
       + shortMo(keys[0]).toUpperCase() + "\u2013" + shortMo(keys[keys.length - 1]).toUpperCase();
@@ -4516,7 +4531,20 @@ async function renderBudgetActual(d) {
                     + "same basket.")
             : " The scorecard\u2019s Budget Variance % grades this same controllable "
               + "basket, but over the calendar year to date rather than the "
-              + "statement\u2019s twelve months, so the two windows still differ.");
+              + "statement\u2019s twelve months, so the two windows still differ.")
+        // The property row above lists buildings this card cannot draw. A
+        // disabled button says there is a reason; this says what it is, and
+        // names the one folder that would fix it.
+        + (undrawable.length
+            ? " " + undrawable.map(u => u.name + " (" + u.why + ")").join(", ")
+              + (undrawable.length === 1 ? " is on the property row above and cannot"
+                                         : " are on the property row above and cannot")
+              + " be drawn until the missing half arrives"
+              + (undrawable.some(u => u.why === "no budget on file")
+                  ? " — a plan goes in the Drive “Budgets” folder, one "
+                    + "file per calendar year."
+                  : ".")
+            : "");
     };
 
     setMode(mode);
@@ -4529,17 +4557,65 @@ async function renderBudgetActual(d) {
   togs.querySelectorAll(".tog").forEach(t =>
     t.addEventListener("click", () => setModeRef(t.dataset.bv)));
 
-  if (pairs.length > 1) {
-    sel.style.display = "";
-    sel.textContent = "";
-    pairs.forEach(p => {
-      const o = elc("option", null, p.b.name);
-      o.value = p.b.slug;
-      sel.appendChild(o);
+  // One button per property this card knows about — every building with a
+  // statement or a plan, not only the ones it can draw. A building with a
+  // statement and no budget on file is listed and disabled, because "Palma has
+  // no plan filed" is the answer to why the card is showing one building, and
+  // leaving it out states nothing at all. The row hides itself only when there
+  // is a single property in total: then it has nothing to switch AND nothing
+  // to explain, which is the rule the basket row and the Expense Trend grid
+  // follow.
+  const known = [];
+  const seen = new Set();
+  [].concat(acts, buds).forEach(p => {
+    if (seen.has(p.slug)) return;
+    seen.add(p.slug);
+    const pair = pairs.find(x => x.b.slug === p.slug);
+    known.push({
+      slug: p.slug,
+      name: p.name || p.slug,
+      drawable: !!pair,
+      // Which half is missing. Kept short: it reads both as a tooltip on the
+      // button and inside a sentence in the note.
+      why: pair ? "" : (buds.some(b => b.slug === p.slug)
+        ? "no 12-month statement to measure its plan against"
+        : "no budget on file"),
     });
-    sel.addEventListener("change", () => draw(sel.value));
+  });
+  known.sort((x, y) => (y.drawable - x.drawable) || x.name.localeCompare(y.name));
+  const undrawable = known.filter(p => !p.drawable);
+
+  let current = pairs[0].b.slug;
+  sel.hidden = known.length < 2;
+  sel.textContent = "";
+  known.forEach(p => {
+    const b = elc("button", "tog", p.name);
+    b.type = "button";
+    if (p.drawable) {
+      b.setAttribute("aria-pressed", String(p.slug === current));
+      b.title = "Show " + p.name;
+      b.addEventListener("click", () => {
+        if (p.slug === current) return;
+        current = p.slug;
+        paint();
+        draw(current);
+      });
+    } else {
+      b.disabled = true;
+      b.title = p.name + ": " + p.why;
+      // Not aria-pressed at all: it is not a state this button can be in.
+      b.setAttribute("aria-disabled", "true");
+    }
+    sel.appendChild(b);
+  });
+  function paint() {
+    sel.querySelectorAll(".tog").forEach((b, i) => {
+      if (!known[i].drawable) return;
+      b.setAttribute("aria-pressed", String(known[i].slug === current));
+    });
   }
-  draw(pairs[0].b.slug);
+
+  draw(current);
 }
 
 /* ---- Expense deep dive ----
