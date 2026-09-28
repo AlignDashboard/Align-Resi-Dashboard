@@ -1365,18 +1365,87 @@ async function loadAll() {
         filterable: true,
       });
 
-      // Every lease behind those months, newest first. `Window` is the
-      // narrowest published window each lease falls in, tagged by
-      // build_metrics from the windows themselves rather than recomputed --
-      // so filtering to T3 gives exactly the leases the tile is graded on,
-      // and a row cannot disagree with the total it is counted in.
+      // THE LEASES THE TRADE-OUT % TILE IS MADE OF, on their own. The whole
+      // report is the table below this one; this is the graded window by
+      // itself, because "which leases is the 39.8% made of" is the question
+      // the tile raises and a filter the reader has to know about is not an
+      // answer to it.
+      //
+      // WHICH window is graded is read from scorecard.json's own
+      // `tradeout_months` -- the field the tile itself reads -- rather than
+      // fixed at 3 here, so the table and the tile cannot come to disagree
+      // about what is being graded. With scorecard.json unreadable the table
+      // is left out rather than guessed at, and the full one below still
+      // carries every lease with its window on it.
+      const meas = (S.ok && (S.data.measured || {})[pr.slug]) || {};
+      const gm = meas.tradeout_months;
+      const gw = gm ? (pr.windows || {})["t" + gm] : null;
+      if (gw) {
+        const tags = [3, 6, 12].filter(k => k <= gm).map(k => "T" + k);
+        const tileRows = (pr.leases || []).filter(l => tags.indexOf(l.window) >= 0);
+        // Recomputed from the rows on show and checked against the published
+        // window, both on the count and on the rate. A table that claims to BE
+        // a published figure has to be able to reproduce it; if it ever stops,
+        // the note says so rather than quietly showing a different number.
+        const sum = k => tileRows.reduce((a, l) => a + (l[k] || 0), 0);
+        const own = sum("prev_eff_rent") ? sum("eff_rent") / sum("prev_eff_rent") - 1 : null;
+        const pc = v => v == null ? "\u2014" : (v * 100).toFixed(1) + "%";
+        const ties = own != null && gw.pct != null
+                  && Math.abs(own - gw.pct) < 0.0005 && tileRows.length === gw.leases;
+        renderTable(host, {
+          id: "t-tradeout-tile-" + (pr.slug || i), group: "Landing",
+          title: "Trade-out % tile \u2014 the leases behind it \u2014 " + (pr.name || pr.slug),
+          feeds: "The Trade-out % tile on the Landing tab, and the Trade-out % "
+               + "cell on the scorecard \u2014 every lease the published "
+               + pc(gw.pct) + " is made of, and nothing else",
+          note: [(meas.tradeout_window || "trailing " + gm + " months")
+                   + " \u00b7 " + tileRows.length + " new lease(s)",
+                 ties
+                   ? "These rows reproduce the published " + pc(gw.pct)
+                     + " and its lease count exactly: total current effective "
+                     + "rent over total previous effective rent, which is the "
+                     + "report's own definition and the one the band grades."
+                   : "These rows give " + pc(own) + " over " + tileRows.length
+                     + " lease(s) against a published " + pc(gw.pct) + " over "
+                     + gw.leases + " \u2014 the two no longer agree, so read "
+                     + "the window table above before quoting either.",
+                 "The percentage is rent-WEIGHTED, so it is not the average of "
+                   + "this table's own Trade-out % column: a concession drives a "
+                   + "previous effective rent toward zero and that lease's own "
+                   + "ratio explodes. The mean over these same leases is "
+                   + (meas.tradeout_mean ? String(meas.tradeout_mean).split(" ")[0]
+                                         : "\u2014") + ".",
+                 "Yardi Lease Tradeout Report " + (pr.source_file || "\u2014")
+                   + (pr.landed_at ? ", landed " + pr.landed_at : ""),
+                ].filter(Boolean).join(" \u00b7 "),
+          cols: [{ key: "signed", label: "Date" },
+                 { key: "unit", label: "Unit" },
+                 { key: "floor_plan", label: "Floorplan" },
+                 { key: "sqft", label: "Sqft", fmt: "int" },
+                 { key: "term", label: "Term", fmt: "int" },
+                 { key: "eff_rent", label: "Lease rent", fmt: "money0" },
+                 { key: "psf", label: "$/sqft", fmt: "money" },
+                 { key: "prev_eff_rent", label: "Prior rent", fmt: "money0" },
+                 { key: "tradeout_amount", label: "Trade-out $", fmt: "money0" },
+                 { key: "tradeout_pct", label: "Trade-out %", fmt: "pct1" }],
+          rows: tileRows.map(l => ({
+            ...l, psf: (l.sqft ? l.eff_rent / l.sqft : null) })),
+          emptyNote: "No lease falls in the graded window.",
+          filterable: true,
+        });
+      }
+
+      // Then every lease in the report, newest first, the graded ones
+      // included. `Window` is the narrowest published window each lease falls
+      // in, tagged by build_metrics from the windows themselves rather than
+      // recomputed, so a row cannot disagree with the total it is counted in.
       const lw = (pr.windows || {}).t3 || {};
       renderTable(host, {
         id: "t-tradeout-leases-" + (pr.slug || i), group: "Landing",
         title: "Lease trade-outs, lease by lease \u2014 " + (pr.name || pr.slug),
-        feeds: "The rows behind the monthly table above, and behind the "
-             + "Trade-out % tile \u2014 filter Window to T3 for the "
-             + (lw.leases || 0) + " leases it is graded on",
+        feeds: "Every new lease in the report, the graded ones included "
+             + "\u2014 the rows the two tables above are built from. "
+             + "`Window` says which published window each lease falls in",
         note: ["Yardi Lease Tradeout Report " + (pr.source_file || "\u2014")
                  + (pr.landed_at ? ", landed " + pr.landed_at : ""),
                "Rent is EFFECTIVE rent on both sides \u2014 net of concessions on "
