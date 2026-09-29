@@ -34,10 +34,10 @@ subset the scorecard can honestly take from it.
 
 Deliberately NOT filled, and why:
 
-  * Any cell another feed already owns. The Landing's and Palma's delinquency
-    come from the workbook and the Drive AR report, whose bases are known and
-    tied out; this export's delinquency basis is unstated and disagrees sharply
-    (Landing: 11.2% here vs 4.6% published). 335 Third's T/L/A comes from the
+  * Any cell another feed already owns -- except Total Deliquency, which this
+    export owns outright for every property it covers (EXPORT_OWNS, owner
+    2026-09-29): its Delinquency Rate is the outstanding-balance figure, and the
+    Yardi AR report keeps only the 30/60/90 split. 335 Third's T/L/A comes from the
     daily EliseAI emails, which carry a known 7-day window and a real arrival
     time, where this export's period is not stated anywhere in the file.
   * Chorus % Increase and Trade-out %. Chorus reports +119.78% executed against
@@ -69,7 +69,14 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from populate_scorecard import OUT, classify, keep_workbook_status, recompute  # noqa: E402
+from populate_scorecard import (OUT, AR_FROM_EXPORT, classify,  # noqa: E402
+                                keep_workbook_status, recompute)
+
+# KPIs this export owns outright, even where another feed has filled the cell:
+# its Delinquency Rate is the outstanding-balance figure (owner, 2026-09-29,
+# closing B4), so it takes Total Deliquency from the Yardi AR report for every
+# property in AR_FROM_EXPORT. Rule 1 below still holds for everything else.
+EXPORT_OWNS = {"Total Deliquency"}
 
 # CSV property heading -> scorecard slug. A heading absent from here is reported
 # rather than guessed at, so a new property in the export cannot land silently
@@ -157,7 +164,8 @@ def measurements(row, slug, owned):
     leaseup = occ is not None and occ < LEASEUP_OCCUPANCY_UNDER
 
     def add(kpi, value, display, basis, skip=None):
-        if kpi in owned and skip is None:
+        exported = kpi in EXPORT_OWNS and slug in AR_FROM_EXPORT
+        if kpi in owned and skip is None and not exported:
             skip = f"another feed already fills this cell for {slug}"
         out[kpi] = (value, display, basis, skip)
 
@@ -239,8 +247,8 @@ def measurements(row, slug, owned):
     dq = num(row, "Delinquency Rate")
     add("Total Deliquency", None if dq is None else dq / 100,
         None if dq is None else f"{dq:.1f}%",
-        "Delinquency Rate as reported; the export does not state whether this is "
-        "gross resident AR over one month's billed rent, the basis the KPI defines",
+        "Delinquency Rate as reported -- the outstanding-balance figure (owner, "
+        "2026-09-29); the export does not state its denominator or window",
         None if dq is not None else "Delinquency Rate blank")
 
     # ---- automation / response ----------------------------------------
@@ -396,6 +404,14 @@ def main():
                 "bldg_kpis": sorted(filled),
                 "bldg_basis": basis,
             })
+            # The page names a cell's feed by whichever family lists it, so a
+            # cell this export now owns comes off every other family's list --
+            # the same hand-over the tradeout and delq_ families do.
+            took = [k for k in filled if k in EXPORT_OWNS and slug in AR_FROM_EXPORT]
+            for key, names in list(meas_block.items()):
+                if (key.endswith("kpis") and key != "bldg_kpis"
+                        and isinstance(names, list)):
+                    meas_block[key] = [n for n in names if n not in took]
         print()
 
     if a.dry_run:

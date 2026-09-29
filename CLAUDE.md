@@ -228,7 +228,7 @@ this class, which is why it is worth keeping in the loop.
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
 | Largest Unit Gaps | `rent_roll` + `unit_directory` for the bedroom join |
-| Delinquency | the two cells the Drive AR report fills — empty whenever the workbook owns them |
+| Delinquency | the rate from the EliseAI building-metrics export (the outstanding-balance figure, since 2026-09-29), the 30/60/90 bars from the Drive AR report |
 | Unit Inventory | `unit_directory` (**frozen until C5**, see below) + `rent_roll.by_plan` for the leased/vacant split |
 | What Feeds This Tab | `lineage.json` — arrivals, and what is missing |
 
@@ -997,6 +997,34 @@ A delinquency report answers exactly two of the 27 published KPIs:
 `POs over 30 days` and `# of invoices processed` are accounts *payable* and a
 resident AR report cannot speak to them.
 
+**Since 2026-09-29 the report fills only the split wherever the EliseAI
+building-metrics export covers the property** — owner's call, closing B4: the
+export's `Delinquency Rate` is the outstanding-balance figure, and it fills
+`Total Deliquency` for Chorus, The Landing, Madelon and 335 Third.
+`AR_FROM_EXPORT` in `populate_scorecard.py` is that list, and must equal
+`populate_building_metrics.HEADING_TO_SLUG`'s values; Palma is not in the export
+and keeps the report's rate. It is a static list rather than whichever writer
+ran last, because a last-run-wins race over one cell is what G3 took a week to
+get out of. Three things hold it, each verified by mutation in
+`scripts/test_delinquency_source.py` (21 fixture-free checks):
+
+- `--from-pipeline` for a covered property writes the split and **not** the
+  rate, and records only what *this run* filled under `delq_kpis` — reading the
+  cell instead would claim the export's figure back and strip it from
+  `bldg_kpis`.
+- `populate_building_metrics` takes the rate even where `delq_kpis` still names
+  it (`EXPORT_OWNS`, an exemption from its rule 1), and takes it off every other
+  family's list, the same hand-over the tradeout and `delq_` families do.
+- The Landing tab's Delinquency card follows whichever family lists the rate,
+  labels it `outstanding balance · EliseAI export as of …`, and says the export
+  does not state a denominator — so the rate is no longer described as a ratio
+  of the bars beneath it.
+
+On the 09-28 export that moved The Landing from 10.2% (the report's gross AR
+over a month's revenue) to 7.7%, and Chorus from a stale 17.7% to 8.0% — the
+report had claimed Chorus's cell once it started routing, so the export was
+skipping it and the page showed the 08-31 figure with no date on it.
+
 **`Loss to Lease %` is the rent roll's** — owner's call, 2026-09-15, closing
 open item A8. Market rent less in-place rent over market rent, across
 **occupied units**, from the Drive rent roll: The Landing reads **37%**
@@ -1291,10 +1319,12 @@ what "excluded by default rather than by remembering" buys.
 
 Four rules keep it from overwriting better data or asserting what it cannot:
 
-1. **It never takes a cell another feed owns.** The Landing's and Palma's
-   delinquency come from the workbook and the Drive AR report, whose bases are
-   known and tie out; the export's delinquency basis is unstated and disagrees
-   sharply (Landing: 11.2% in the export vs 4.6% published). 335 Third's T/L/A
+1. **It never takes a cell another feed owns** — with one exception since
+   2026-09-29: `Total Deliquency` is the export's outright for every property
+   it covers (`EXPORT_OWNS`), because its `Delinquency Rate` is the
+   outstanding-balance figure (owner's call, closing B4; see the delinquency
+   notes above). Palma, which the export does not cover, keeps the Drive AR
+   report's rate. 335 Third's T/L/A
    comes from the daily emails, which carry a known 7-day window and a real
    arrival time. `owned_by_other_feeds()` reads `measured[slug]` to find them,
    so a new feed is excluded by default rather than by remembering.
