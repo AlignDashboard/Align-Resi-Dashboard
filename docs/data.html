@@ -7,12 +7,14 @@
 <script>
   // Applied before first paint; shares the dashboard's stored preference.
   (function () {
+    // Dark is the default, not the OS's preference: this is one dashboard
+    // shown on screens nobody here controls, and a reader on a light machine
+    // got a light copy of a page whose charts and bands were read on a dark
+    // one. The toggle still wins and still persists -- a default is what you
+    // get before you choose, not instead of choosing.
     var t = null;
     try { t = localStorage.getItem("align-theme"); } catch (e) {}
-    if (t !== "light" && t !== "dark") {
-      t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
-        ? "light" : "dark";
-    }
+    if (t !== "light" && t !== "dark") t = "dark";
     document.documentElement.setAttribute("data-theme", t);
   })();
 </script>
@@ -20,6 +22,12 @@
   /* Palette mirrors index.html. Kept inline so each page stands alone, the way
      the dashboard already works — if you retune a colour, change both. */
   :root, :root[data-theme="dark"] {
+    /* The browser's own chrome -- scrollbars, the select popup, focus rings --
+       follows the page rather than the machine. Without it a reader on a light
+       OS gets the dark dashboard with light scrollbars down the side of the
+       deep dive's table, which is the seam that made the OS-following default
+       worth keeping in the first place. */
+    color-scheme: dark;
     --target-wash: #3a2f14;
     --ink: #0e1116; --panel: #161b22; --panel-2: #1c232d; --line: #2a323d;
     --text: #e6e9ef; --muted: #8b95a4; --amber: #e0a53f; --teal: #5fb3b3;
@@ -27,6 +35,7 @@
     --gate-glow: #171d26; --on-amber: #10130f; --zebra: rgba(255,255,255,.022);
   }
   :root[data-theme="light"] {
+    color-scheme: light;
     --target-wash: #fdf1d8;
     --ink: #f4f5f7; --panel: #ffffff; --panel-2: #eef0f3; --line: #d6dae1;
     --text: #1a1f26; --muted: #5f6a78; --amber: #9d6a16; --teal: #2c7676;
