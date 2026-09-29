@@ -519,6 +519,9 @@
   .rt-lockbtn { margin-left: auto; }
   .rt-status { flex: 1 1 100%; font-size: 9.5px; letter-spacing: .5px; color: var(--muted); line-height: 1.6; }
   .rt-status .stale { color: var(--red); }
+  .rt-status .stale a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .rt-status .stale a:hover { color: var(--text); }
+  .rt-status .stale a:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   #rtMonth[hidden] { display: none; }
   .rt-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 2px; }
   .rt-tile { border: 1px solid var(--line); padding: 12px 13px 8px; min-width: 0; }
@@ -1498,6 +1501,9 @@ function maybeLoadLanding(tab) {
    ---- */
 let ratesStarted = false;
 const RT_KEY = "align-rt-key";
+// Where the daily copy runs; each run's summary says whether it imported.
+const RT_WORKFLOW_URL =
+  "https://github.com/AlignDashboard/Align-Resi-Dashboard/actions/workflows/refresh_rental_tracker.yml";
 // One empty set per overlay card, keyed as each card's `key`: trade-out %,
 // new-lease $/sqft, renewal %. Hoisted, so RT can be built with it.
 function rtHideNone() { return { to: new Set(), pt: new Set(), rn: new Set() }; }
@@ -2192,17 +2198,26 @@ function rtRender() {
 
   // How old the snapshot is, counted from today. The tracker rebuilds daily
   // and Refresh Rental Rates copies it daily, so past the page's own
-  // threshold for a daily feed one of the two has stopped -- and the copy
-  // must look it rather than pass for current.
+  // threshold for a daily feed one of the two is not happening -- and the
+  // copy must look it rather than pass for current. Which one is on the
+  // workflow's own page: a run with no password secret says "not refreshed",
+  // one that finds the tracker unmoved says "already current".
   const st = document.getElementById("rtStatus");
   st.textContent = "";
   const ageDays = Math.floor((Date.now() - Date.parse(d.snapshot + "T00:00:00")) / 86400000);
   st.appendChild(elc("span", null, "Snapshot of " + d.snapshot + " · showing "
     + L.length + " of " + rtPlural(d.leases.length, "lease") + " and " + R.length + " of "
     + rtPlural(d.renewals.length, "renewal") + " · " + label));
-  if (ageDays > SC_STALE_DAYS) st.appendChild(elc("span", "stale", " · " + ageDays
-    + " days old — the tracker rebuilds daily and this tab copies it daily, so one of"
-    + " the two has stopped (see the Refresh Rental Rates workflow)"));
+  if (ageDays > SC_STALE_DAYS) {
+    const stale = elc("span", "stale", " · " + ageDays + " days old — the daily copy is not"
+      + " running, or the tracker is not rebuilding. The latest ");
+    const a = elc("a", null, "Refresh Rental Rates run ↗");
+    a.href = RT_WORKFLOW_URL;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    stale.append(a, " says which.");
+    st.appendChild(stale);
+  }
 
   section("cRtTiles",    () => rtTiles(d, L, R, W, label));
   section("cRtTradeout", () => rtTradeoutCard(d, L, label));
