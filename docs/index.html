@@ -209,6 +209,14 @@
     font-size: 9px; line-height: 1; font-weight: 700; color: #10130f; }
   .ck:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
   .ck[aria-checked="mixed"] { color: var(--text); }
+  /* A series with nothing to draw: listed, so the grid says where it went, but
+     inert and struck through so it does not read as something to press. */
+  .ck[disabled] { opacity: .4; cursor: default; }
+  .ck[disabled]:hover { color: var(--muted); }
+  .ck[disabled] .ckl { text-decoration: line-through; }
+  /* The marker the series wears on the chart, where colour alone cannot say
+     which series a mark belongs to. */
+  .ck .mk { width: 10px; height: 10px; flex: none; }
   /* The basket presets: one row, ruled off from the per-category grid below,
      because they are a different kind of control — each drives a group of the
      boxes under it rather than a series of its own. */
@@ -483,8 +491,9 @@
   /* ---------- Rental Rates ----------
      The tracker's data, decrypted in the page. Property colours are the
      theme's own steps of one validated categorical order (--rt-1..5 on the
-     two :root blocks), and they only ever sit beside a label: every chart is
-     one titled panel per building, so no colour has to carry identity alone. */
+     two :root blocks), and no colour carries identity alone: a chart is one
+     titled panel per building, or -- on the two overlay cards -- one chart in
+     which every building also wears its own marker, shown in its box. */
   .rt-lock { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 2px 0 8px; }
   .rt-why { font-size: 11px; line-height: 1.7; color: var(--muted); max-width: 640px; }
   .rt-pw { background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
@@ -539,6 +548,13 @@
     text-align: center; font-size: 9.5px; line-height: 1.6; color: var(--muted);
     border: 1px dashed var(--line); padding: 10px; }
   .rt-facets.rows .fnone { height: 56px; }
+  /* Five building names, the longest "The Fitzgerald": narrow enough columns
+     that the grid reads as one legend row on a desktop and two across on a
+     phone, rather than five rows above the chart. */
+  .rt-cks { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
+  .rt-none { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    text-align: center; font-size: 9.5px; line-height: 1.6; color: var(--muted);
+    border: 1px dashed var(--line); padding: 10px; }
   .rt-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 9px; letter-spacing: .8px;
     text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
   .rt-legend > span { display: inline-flex; align-items: center; gap: 6px; }
@@ -1154,14 +1170,16 @@
         <div class="card wide" id="cRtTradeout">
           <h2>Trade-out % by Lease Date</h2>
           <span class="eyebrow" id="rtToEyebrow"></span>
-          <div class="rt-facets" id="rtToFacets"></div>
+          <div class="ckgrid rt-cks" id="rtToCks" role="group" aria-label="Buildings shown"></div>
+          <div class="chartwrap" id="rtToWrap"><canvas id="rtToChart" role="img"></canvas></div>
           <div class="blu-note" id="rtToFoot" style="color:var(--muted);"></div>
         </div>
 
         <div class="card wide" id="cRtPsfTrend">
           <h2>New-Lease $/sqft &mdash; Trend</h2>
           <span class="eyebrow" id="rtPtEyebrow"></span>
-          <div class="rt-facets" id="rtPtFacets"></div>
+          <div class="ckgrid rt-cks" id="rtPtCks" role="group" aria-label="Buildings shown"></div>
+          <div class="chartwrap" id="rtPtWrap"><canvas id="rtPtChart" role="img"></canvas></div>
           <div class="blu-note" id="rtPtFoot" style="color:var(--muted);"></div>
         </div>
 
@@ -1465,9 +1483,12 @@ function maybeLoadLanding(tab) {
    (new salt) asks again.
 
    Two departures from the tracker, both deliberate:
-     - each chart is one small panel per building on shared axes, not five
-       colours on one plot. No set of five colours clears the colour-vision
-       floors for every pair on a scatter, and a panel title always can.
+     - no colour carries a building alone. Trade-out % and new-lease $/sqft
+       are one chart each with a box per building to switch it off (owner's
+       call, 2026-09-29), and on those two every building also has its own
+       marker, since no set of five colours clears the colour-vision floors
+       for every pair on a scatter. The other charts are one small panel per
+       building on shared axes, where a panel title does the naming.
      - every tile carries the rent-weighted trade-out beside the tracker's
        mean. The mean is the tracker's headline and stays the headline, so
        the two dashboards agree; the weighted figure is what the Landing tab
@@ -1477,6 +1498,9 @@ let ratesStarted = false;
 const RT_KEY = "align-rt-key";
 const RT = { env: null, data: null, meta: null, range: "max", month: null, mode: "net",
              dt: "leases", dtAll: false, wkAll: false, sort: { key: "date", dir: -1 },
+             // buildings switched off on the two overlay cards, one set per card;
+             // kept across a timeframe, basis or theme change, dropped on Lock
+             hide: { to: new Set(), pt: new Set() },
              charts: [], wired: false };
 
 const rtB64  = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -1530,14 +1554,20 @@ const rtRent = l => RT.mode === "gross" ? l.grossRent : l.netRent;
 const rtLpsf = l => RT.mode === "gross" ? l.grossPsf : l.netPsf;
 const rtBasis = () => RT.mode === "gross" ? "gross" : "effective";
 
+// Each building's marker, in the same fixed order as its colour. On a chart
+// that overlays every building, colour alone cannot keep five apart -- the
+// palette validator fails them all-pairs, worst of all for a deuteranope in
+// the dark theme -- so the shape says whose a dot is as well.
+const RT_SHAPES = ["circle", "rect", "triangle", "rectRot", "crossRot"];
 function rtColors() {
   const cs = getComputedStyle(document.documentElement);
   const pal = [1, 2, 3, 4, 5].map(i => cs.getPropertyValue("--rt-" + i).trim());
   const col = {};
   // Fixed order, never cycled: a sixth building gets the page's neutral
   // rather than a sixth hue. Its panel title still names it.
-  RT.data.properties.forEach((p, i) => { col[p] = pal[i] || C.muted; });
-  return { col, surface: cs.getPropertyValue("--panel").trim(),
+  const shape = {};
+  RT.data.properties.forEach((p, i) => { col[p] = pal[i] || C.muted; shape[p] = RT_SHAPES[i] || "circle"; });
+  return { col, shape, surface: cs.getPropertyValue("--panel").trim(),
            prior: cs.getPropertyValue("--rt-prior").trim() };
 }
 function rtChart(cv, cfg) { const ch = new Chart(cv, cfg); RT.charts.push(ch); return ch; }
@@ -1569,7 +1599,8 @@ function rtRangeLabel(b) {
   return MONTH_ABBR[+RT.month.slice(5, 7) - 1] + " " + RT.month.slice(0, 4);
 }
 
-/* ---- charts: one small panel per building, on shared axes ---- */
+/* ---- charts: one small panel per building on shared axes, or one chart for
+   every building with a box per building to switch it off ---- */
 // One tick step per axis, and both ends rounded onto it -- a max that is
 // not a multiple of the step draws its own extra tick hard against the one
 // below it ("$12" on top of "$10").
@@ -1657,6 +1688,169 @@ function rtScatterFacets(hostId, rows, o) {
                ticks: { font: { size: 9 }, stepSize: yb.step, callback: o.yFmt } } } }
     });
   });
+}
+// The building's marker as the legend draws it: the same shape Chart.js puts
+// on the plot, so a box in the grid and a dot on the chart read as one thing.
+function rtMark(shape, color) {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 10 10");
+  svg.setAttribute("class", "mk");
+  svg.setAttribute("aria-hidden", "true");
+  const add = (tag, attrs) => {
+    const e = document.createElementNS(NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    svg.appendChild(e);
+  };
+  if (shape === "rect") add("rect", { x: 1.5, y: 1.5, width: 7, height: 7, fill: color });
+  else if (shape === "triangle") add("polygon", { points: "5,0.9 9.4,8.9 0.6,8.9", fill: color });
+  else if (shape === "rectRot") add("polygon", { points: "5,0.4 9.6,5 5,9.6 0.4,5", fill: color });
+  else if (shape === "crossRot") add("path", { d: "M1.6,1.6L8.4,8.4M8.4,1.6L1.6,8.4", stroke: color,
+                                               "stroke-width": 2, fill: "none" });
+  else add("circle", { cx: 5, cy: 5, r: 4.2, fill: color });
+  return svg;
+}
+// A cross is all stroke, so it wears its colour as the stroke; the filled
+// shapes keep the surface ring that parts a dot from the one it overlaps.
+function rtPoints(p, colors) {
+  const cross = colors.shape[p] === "crossRot";
+  return { pointStyle: colors.shape[p], backgroundColor: colors.col[p],
+           borderColor: cross ? colors.col[p] : colors.surface, borderWidth: cross ? 2 : 1.5,
+           pointRadius: cross ? 5 : 4.5, pointHoverRadius: cross ? 6.5 : 6, pointHitRadius: 8 };
+}
+const rtTextW = (() => {
+  let c = null;
+  return t => {
+    c = c || document.createElement("canvas").getContext("2d");
+    c.font = "9px " + Chart.defaults.font.family;
+    return c.measureText(t).width;
+  };
+})();
+// Names each fit line in the right-hand gutter, level with where the line
+// ends, in the chart's own ink beside the building's marker: on one plot of
+// five a line's colour does not say whose it is. Labels that would touch are
+// pushed apart, then the stack is kept inside the plot.
+const rtEndLabels = {
+  id: "rtEndLabels",
+  afterDatasetsDraw(chart, args, o) {
+    if (!o || !o.colors) return;
+    const a = chart.chartArea, at = [];
+    chart.data.datasets.forEach((ds, i) => {
+      if (!ds._end || !chart.isDatasetVisible(i)) return;
+      const pts = chart.getDatasetMeta(i).data;
+      const pt = pts[pts.length - 1];
+      if (pt) at.push({ p: ds._p, y: pt.y });
+    });
+    if (!at.length) return;
+    at.sort((m, n) => m.y - n.y);
+    for (let i = 1; i < at.length; i++) at[i].y = Math.max(at[i].y, at[i - 1].y + 12);
+    const over = at[at.length - 1].y - (a.bottom - 5);
+    if (over > 0) at.forEach(m => { m.y -= over; });
+    const under = a.top + 5 - at[0].y;
+    if (under > 0) at.forEach(m => { m.y += under; });
+    const ctx = chart.ctx, x = a.right + 10;
+    ctx.save();
+    ctx.font = "9px " + Chart.defaults.font.family;
+    ctx.textBaseline = "middle";
+    at.forEach(m => {
+      const col = o.colors.col[m.p];
+      ctx.fillStyle = col;
+      ctx.strokeStyle = col;
+      ctx.lineWidth = o.colors.shape[m.p] === "crossRot" ? 1.6 : 0;
+      Chart.helpers.drawPoint(ctx, { pointStyle: o.colors.shape[m.p], radius: 3.6, rotation: 0,
+                                     borderWidth: ctx.lineWidth }, x, m.y);
+      ctx.fillStyle = Chart.defaults.color;
+      ctx.fillText(rtShort(m.p), x + 8, m.y);
+    });
+    ctx.restore();
+  }
+};
+// One chart for every building, each switchable on a box above it.
+// rows: {property, x (day), y, tip: [title, ...lines]}. A building with no
+// row in the timeframe keeps its box, struck through, so the grid answers
+// "where is it?" rather than leaving a building out. The time axis is the
+// timeframe's and holds still; the vertical axis rescales to the buildings
+// shown, so switching the outliers off lets the rest fill the height.
+function rtOverlay(rows, o) {
+  const d = RT.data, colors = rtColors(), hidden = RT.hide[o.key];
+  const cks = document.getElementById(o.cks), wrap = document.getElementById(o.wrap);
+  const cv = document.getElementById(o.canvas);
+  const by = {}, stat = {}, extra = {};
+  d.properties.forEach(p => {
+    by[p] = rows.filter(r => r.property === p);
+    stat[p] = o.stat(p, by[p]);                 // once: a stat may record what it found
+    extra[p] = [];
+  });
+  const has = p => by[p].length > 0;
+  const shown = () => d.properties.filter(p => has(p) && !hidden.has(p));
+  let none = wrap.querySelector(".rt-none");
+  if (!rows.length) {
+    cks.hidden = true;
+    cks.textContent = "";
+    cv.hidden = true;
+    if (!none) { none = elc("div", "rt-none"); wrap.appendChild(none); }
+    none.textContent = o.empty();
+    o.note([], stat);
+    return;
+  }
+  if (none) none.remove();
+  cv.hidden = false;
+
+  const datasets = [];
+  d.properties.filter(has).forEach(p => {
+    datasets.push(Object.assign({ label: p, _p: p, _main: true, hidden: hidden.has(p), order: 1,
+      data: by[p].map(r => ({ x: r.x, y: r.y, tip: r.tip })) }, rtPoints(p, colors)));
+    if (o.extra) extra[p] = o.extra(p, by[p], colors);
+    extra[p].forEach(e => datasets.push(Object.assign(e, { _p: p, hidden: hidden.has(p) })));
+  });
+  const ysOf = ps => ps.flatMap(p => by[p].map(r => r.y)
+    .concat(extra[p].flatMap(e => e.data.map(q => q.y))));
+  const yb = () => rtNice(ysOf(shown().length ? shown() : d.properties.filter(has)), o.withZero);
+  const xs = rows.map(r => r.x);
+  const y0 = yb();
+  const labelled = o.endLabels ? d.properties.filter(p => extra[p].some(e => e._end)) : [];
+  const opts = { animation: false, maintainAspectRatio: false, responsive: true,
+    layout: { padding: { right: labelled.length ? Math.ceil(Math.max(...labelled.map(p => rtTextW(rtShort(p))))) + 24 : 4 } },
+    interaction: { mode: "nearest", intersect: false, axis: "xy" },
+    plugins: { legend: { display: false }, rtEndLabels: labelled.length ? { colors } : false,
+      tooltip: { filter: c => !!c.dataset._main, callbacks: {
+        title: it => it.length ? it[0].raw.tip[0] : "",
+        label: c => c.raw.tip.slice(1) } } },
+    scales: { x: rtTimeAxis(Math.min(...xs), Math.max(...xs)),
+      y: { min: y0.min, max: y0.max,
+           grid: { drawTicks: false,
+                   color: c => (o.withZero && c.tick && c.tick.value === 0) ? C.muted : gridCfg.color },
+           ticks: { font: { size: 9 }, stepSize: y0.step, callback: o.yFmt } } } };
+  const chart = rtChart(cv, { type: "scatter", data: { datasets }, options: opts,
+                              plugins: labelled.length ? [rtEndLabels] : [] });
+  const say = () => {
+    const sh = shown();
+    cv.setAttribute("aria-label", o.aria(sh, rtSum(sh.map(p => by[p].length))));
+    o.note(sh, stat);
+  };
+  const apply = () => {
+    chart.data.datasets.forEach((ds, i) => chart.setDatasetVisibility(i, !hidden.has(ds._p)));
+    // A grid that switches everything off keeps the last scale rather than
+    // collapsing it: the axis is still the frame the next box turns back on.
+    if (shown().length) {
+      const b = yb();
+      Object.assign(opts.scales.y, { min: b.min, max: b.max });
+      opts.scales.y.ticks.stepSize = b.step;
+    }
+    chart.update("none");
+    say();
+  };
+  // A control that cannot change anything is worse than no control, so a
+  // one-building tracker gets no grid -- the Expense Trend card's rule.
+  cks.hidden = d.properties.length < 2;
+  if (!cks.hidden) {
+    ckGrid(cks, d.properties.map(p => ({ p, label: p, color: colors.col[p],
+        mark: rtMark(colors.shape[p], colors.col[p]), disabled: !has(p),
+        title: has(p) ? stat[p] : o.empty(p) })),
+      it => has(it.p) && !hidden.has(it.p),
+      it => { if (hidden.has(it.p)) hidden.delete(it.p); else hidden.add(it.p); apply(); });
+  }
+  say();
 }
 // rows: {property, label, date, prior, next, pct, term} -- $/sqft either side
 function rtBarFacets(hostId, rows, o) {
@@ -1853,6 +2047,7 @@ function rtShow(data) {
 function rtLockAgain() {
   rtDestroy();
   RT.data = null;
+  RT.hide = { to: new Set(), pt: new Set() };
   rtForget();
   document.getElementById("rtBody").hidden = true;
   document.getElementById("cRtLock").hidden = false;
@@ -2042,68 +2237,95 @@ function rtTiles(d, L, R, W, label) {
 
 function rtTradeoutCard(d, L, label) {
   const drawn = L.filter(l => l.toPct != null);
-  rtScatterFacets("rtToFacets", drawn.map(l => ({ property: l.property, x: rtDay(l.date), y: l.toPct,
+  const on = p => !RT.hide.to.has(p);
+  rtOverlay(drawn.map(l => ({ property: l.property, x: rtDay(l.date), y: l.toPct,
     tip: [rtShort(l.property) + " " + (l.unit || "") + " · " + rtMD(l.date),
           "Trade-out " + rtPct(l.toPct) + (l.toDollars != null ? " (" + (l.toDollars >= 0 ? "+" : "−") + rtUsd(Math.abs(l.toDollars)) + ")" : ""),
           "Rent " + rtUsd(rtRent(l)) + " against " + rtUsd(l.prior) + (l.term ? " · " + l.term + "-mo term" : "")] })), {
+    key: "to", cks: "rtToCks", wrap: "rtToWrap", canvas: "rtToChart",
     withZero: true, yFmt: rtTickPct,
-    caption: (p, mine) => mine.length ? rtPlural(mine.length, "lease") + " · mean " + rtPct(rtAvg(mine.map(r => r.y))) : "",
-    empty: () => "No new lease with a trade-out in this timeframe" });
+    stat: (p, mine) => mine.length ? rtPlural(mine.length, "lease") + " · mean " + rtPct(rtAvg(mine.map(r => r.y))) : "",
+    empty: () => "No new lease with a trade-out in this timeframe",
+    aria: (shown, n) => "Trade-out % by lease date: " + rtPlural(n, "lease") + " across "
+      + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
+    note: (shown, stat) => {
+      const foot = document.getElementById("rtToFoot");
+      const none = L.filter(l => l.toPct == null && on(l.property));
+      const undrawn = none.length ? rtPlural(none.length, "lease") + " in this timeframe "
+        + (none.length === 1 ? "carries" : "carry") + " no trade-out and "
+        + (none.length === 1 ? "is" : "are") + " not drawn: "
+        + none.map(l => rtShort(l.property) + " " + (l.unit || "?") + " (" + rtMD(l.date) + ")").join(", ") + ". " : "";
+      if (!drawn.length) { foot.textContent = undrawn; return; }
+      if (!shown.length) { foot.textContent = "No building selected — tick one above."; return; }
+      const mine = drawn.filter(l => shown.indexOf(l.property) >= 0);
+      const both = L.filter(l => on(l.property) && l.prior && l.toPct != null && l.grossRent && l.netRent
+                                 && Math.abs(l.grossRent - l.netRent) >= 1);
+      const near = (x, t) => Math.abs((x / t.prior - 1) * 100 - t.toPct) <= 0.6;
+      const onNet = both.filter(l => near(l.netRent, l) && !near(l.grossRent, l)).length;
+      const onGross = both.filter(l => near(l.grossRent, l) && !near(l.netRent, l)).length;
+      const hi = mine.reduce((a, l) => (!a || l.toPct > a.toPct) ? l : a, null);
+      const lo = mine.reduce((a, l) => (!a || l.toPct < a.toPct) ? l : a, null);
+      foot.textContent =
+        "Each building has its own colour and marker; switch one off above and the vertical axis "
+        + "rescales to the buildings left. "
+        + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
+        + (hi ? "Highest " + rtShort(hi.property) + " " + hi.unit + " at " + rtPct(hi.toPct) + " (" + rtMD(hi.date)
+                + "); lowest " + rtShort(lo.property) + " " + lo.unit + " at " + rtPct(lo.toPct) + " (" + rtMD(lo.date) + "). " : "")
+        + undrawn
+        + (onNet && onGross ? "The sources do not share one basis for it: where a lease's gross and "
+                              + "effective rent differ enough to tell, the trade-out follows effective rent on "
+                              + rtPlural(onNet, "lease") + " and gross on " + onGross + "." : "");
+    } });
   document.getElementById("rtToEyebrow").textContent =
     "ONE DOT PER EXECUTED NEW LEASE · THE TRADE-OUT % ITS SOURCE REPORTS · " + label.toUpperCase();
-  const none = L.filter(l => l.toPct == null);
-  const both = L.filter(l => l.prior && l.toPct != null && l.grossRent && l.netRent
-                             && Math.abs(l.grossRent - l.netRent) >= 1);
-  const near = (x, t) => Math.abs((x / t.prior - 1) * 100 - t.toPct) <= 0.6;
-  const onNet = both.filter(l => near(l.netRent, l) && !near(l.grossRent, l)).length;
-  const onGross = both.filter(l => near(l.grossRent, l) && !near(l.netRent, l)).length;
-  const hi = drawn.reduce((a, l) => (!a || l.toPct > a.toPct) ? l : a, null);
-  const lo = drawn.reduce((a, l) => (!a || l.toPct < a.toPct) ? l : a, null);
-  document.getElementById("rtToFoot").textContent =
-    "Panels share both axes, so a dot's height compares across buildings. "
-    + (hi ? "Highest " + rtShort(hi.property) + " " + hi.unit + " at " + rtPct(hi.toPct) + " (" + rtMD(hi.date)
-            + "); lowest " + rtShort(lo.property) + " " + lo.unit + " at " + rtPct(lo.toPct) + " (" + rtMD(lo.date) + "). " : "")
-    + (none.length ? rtPlural(none.length, "lease") + " in this timeframe " + (none.length === 1 ? "carries" : "carry")
-                     + " no trade-out and " + (none.length === 1 ? "is" : "are") + " not drawn: "
-                     + none.map(l => rtShort(l.property) + " " + (l.unit || "?") + " (" + rtMD(l.date) + ")").join(", ") + ". " : "")
-    + (onNet && onGross ? "The sources do not share one basis for it: where a lease's gross and "
-                          + "effective rent differ enough to tell, the trade-out follows effective rent on "
-                          + rtPlural(onNet, "lease") + " and gross on " + onGross + "." : "");
 }
 
 function rtPsfTrendCard(d, L, label) {
   const b0 = rtDay(rtBounds().s);
-  const noisy = [];
-  rtScatterFacets("rtPtFacets", L.filter(l => l.sqft && rtLpsf(l) != null).map(l => ({
+  const fits = {}, noisy = [];
+  rtOverlay(L.filter(l => l.sqft && rtLpsf(l) != null).map(l => ({
     property: l.property, x: rtDay(l.date), y: rtLpsf(l),
     tip: [rtShort(l.property) + " " + (l.unit || "") + " · " + rtMD(l.date),
           rtPsfS(rtLpsf(l)) + "/sqft " + rtBasis() + " · " + l.sqft + " sqft",
           "Rent " + rtUsd(rtRent(l))] })), {
-    withZero: false, yFmt: v => "$" + v,
-    caption: (p, mine) => {
-      const f = rtFit(mine.map(q => ({ x: q.x - b0, y: q.y })));
+    key: "pt", cks: "rtPtCks", wrap: "rtPtWrap", canvas: "rtPtChart",
+    withZero: false, yFmt: v => "$" + v, endLabels: true,
+    stat: (p, mine) => {
+      const f = fits[p] = rtFit(mine.map(q => ({ x: q.x - b0, y: q.y })));
       if (!f) return mine.length ? rtPlural(mine.length, "lease") + " — too few for a trend" : "";
       if (f.r2 < 0.1) noisy.push(p);
       return rtSgnP(f.b * 30.44) + "/sqft per month · R² " + f.r2.toFixed(2) + " · "
            + rtPlural(mine.length, "lease");
     },
     extra: (p, mine, colors) => {
-      const f = rtFit(mine.map(q => ({ x: q.x - b0, y: q.y })));
+      const f = fits[p];
       if (!f) return [];
       const xs = mine.map(q => q.x), a = Math.min(...xs), z = Math.max(...xs);
       return [{ data: [{ x: a, y: f.a + f.b * (a - b0) }, { x: z, y: f.a + f.b * (z - b0) }],
                 showLine: true, borderColor: colors.col[p], borderWidth: 2, pointRadius: 0,
-                pointHitRadius: 0, order: 0 }];
+                pointHoverRadius: 0, pointHitRadius: 0, order: 0, _end: true }];
     },
-    empty: () => "No new lease with square footage in this timeframe" });
+    empty: () => "No new lease with square footage in this timeframe",
+    aria: (shown, n) => "New-lease $/sqft by lease date with a linear fit per building: "
+      + rtPlural(n, "lease") + " across " + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
+    note: (shown, stat) => {
+      const foot = document.getElementById("rtPtFoot");
+      if (!shown.length) {
+        foot.textContent = Object.keys(fits).some(p => stat[p]) ? "No building selected — tick one above." : "";
+        return;
+      }
+      const loud = noisy.filter(p => shown.indexOf(p) >= 0);
+      foot.textContent =
+        "Each dot is one executed new lease at its $/sqft on its lease date, and each line an "
+        + "ordinary least-squares fit through one building's leases, named at the right; its slope is "
+        + "the direction of new-lease pricing. " + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ")
+        + ". R² is how much of the scatter the line explains"
+        + (loud.length ? " — under 0.1 for " + loud.map(rtShort).join(", ") + ", where the slope is mostly noise" : "")
+        + ". A fit needs at least three leases; switch a building off above and the vertical axis "
+        + "rescales to the buildings left.";
+    } });
   document.getElementById("rtPtEyebrow").textContent = "NEW-LEASE $/SQFT, " + rtBasis().toUpperCase()
     + " · LINEAR FIT PER BUILDING · " + label.toUpperCase();
-  document.getElementById("rtPtFoot").textContent =
-    "Each dot is one executed new lease at its $/sqft on its lease date; the line is an ordinary "
-    + "least-squares fit through that building's leases, and its slope is the direction of "
-    + "new-lease pricing. R² is how much of the scatter the line explains"
-    + (noisy.length ? " — under 0.1 for " + noisy.join(", ") + ", where the slope is mostly noise" : "")
-    + ". A fit needs at least three leases.";
 }
 
 function rtLegend(hostId, colors) {
@@ -2363,9 +2585,13 @@ function ckGrid(host, items, isOn, onToggle) {
     b.type = "button";
     b.setAttribute("role", "checkbox");
     if (it.title) b.title = it.title;
+    // A series with nothing to draw is listed rather than left out, struck
+    // through and inert -- the Budget vs Actual property row's rule.
+    if (it.disabled) { b.disabled = true; b.setAttribute("aria-disabled", "true"); }
     const box = elc("span", "box");
     b.appendChild(box);
-    b.appendChild(elc("span", null, it.label));
+    if (it.mark) b.appendChild(it.mark);         // a marker shape, where colour is not enough
+    b.appendChild(elc("span", "ckl", it.label));
     const paint = () => {
       const on = isOn(it);
       b.setAttribute("aria-checked", String(on));
