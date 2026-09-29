@@ -810,9 +810,9 @@ started between 18:28 and 21:10 UTC, so once the secret is set, expect the
 day's snapshot around midday Pacific rather than before the working day.
 
 **It needs one secret, `RENTAL_TRACKER_PASSWORD`** — the tracker's password,
-under Settings → Secrets and variables → Actions (open item A18). Until it is
-set, every run is a no-op that says so in its summary rather than failing, the
-way `deploy_filing_script.yml` waits for its two. The password sits only in the
+under Settings → Secrets and variables → Actions, **set 2026-09-29** (A18,
+closed). Without it every run is a no-op that says so in its summary rather
+than failing, the way `deploy_filing_script.yml` waits for its two. The password sits only in the
 environment of the steps that need it, and Actions masks it in the log.
 
 Four things it is careful about:
@@ -847,10 +847,13 @@ unset, `already current` when the tracker itself has not moved. It said "see
 the Refresh Rental Rates workflow" in plain text until 2026-09-29, which read
 as a link and was not one.
 
-**Every run until the secret exists is that first case**, and that is what the
-red line on 2026-09-29 was: six scheduled runs and one started by hand, each
-skipping from the password check to the end. The snapshot was refreshed by hand that day (the
-command below), which clears the line for three days, not for good.
+**Every run before the secret existed was that first case**, and that is what
+the red line on 2026-09-29 was: six scheduled runs and one started by hand, each
+skipping from the password check to the end. The snapshot was refreshed by hand
+that afternoon (the command below), and the secret went in that evening: run #8,
+dispatched to check it, ran every step, decrypted the tracker, found the tab
+already current and committed nothing — the quiet-day path, and the first
+evidence that the password in the secret is the tracker's own.
 
 By hand, for a snapshot now:
 
