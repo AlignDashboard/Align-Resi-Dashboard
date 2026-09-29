@@ -3143,6 +3143,7 @@ const SC_FEED_PREFIXES = [
   { prefix: "rentroll_", fallbackWhat: "rent roll" },
   { prefix: "tradeout_", fallbackWhat: "lease tradeout report" },
   { prefix: "delq_", fallbackWhat: "delinquency summary" },
+  { prefix: "t12_", fallbackWhat: "12-month statement" },
 ];
 function scFeeds() {
   const out = [];
@@ -5001,6 +5002,11 @@ const SCD_DRIVE_FEEDS = [
   // so registering tradeout_kpis is what excludes it.
   { prefix: "tradeout_", only: null,
     what: "lease tradeout report · Drive “Historical Tradeout Reports”" },
+  // NOI Margin %, Concession Load % and Controllable OpEx/Unit, computed from
+  // the T12 statement as the pipeline published it (open item H2) rather than
+  // from the analyst workbook -- so they move when a statement lands.
+  { prefix: "t12_", only: null,
+    what: "12-month statement · Drive “T12 Expenses”" },
 ];
 
 // Is a feed family currently a Drive report? Used both by the scorecard filter

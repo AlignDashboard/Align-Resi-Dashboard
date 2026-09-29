@@ -115,8 +115,7 @@
     "t-sc-props",
     "t-sc-thresholds",
     "t-sc-metrics",
-    "t-sc-workbook",
-    "t-sc-matrix"
+    "t-sc-workbook"
    ],
    "flows": [
     "budget",
@@ -124,8 +123,7 @@
     "bldg_metrics",
     "lease_tradeout",
     "eliseai_daily",
-    "kpi_workbook",
-    "analyst_workbook"
+    "kpi_workbook"
    ],
    "primary": "t-sc-matrix",
    "holds": "KPI Scorecard matrix"
@@ -436,11 +434,11 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-29T17:07:11.696372+00:00",
+  "generated_at": "2026-09-29T17:29:14.460167+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 14,
-   "partial": 3,
+   "live": 13,
+   "partial": 4,
    "waiting": 1,
    "no-parser": 8,
    "manual": 1
@@ -543,6 +541,14 @@
     {
      "file": "metrics.json",
      "key": "rent_capture"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "NOI Margin %"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Concession Load %"
     },
     {
      "file": "scorecard.json",
@@ -847,7 +853,23 @@
      "as_of": null,
      "source_file": "2026-09-28 rs_rp_DelinquencySummaryReport - The Landing (1).xlsx",
      "landed_at": "2026-09-29T01:28:47.323Z",
-     "detail": "1 KPI cell(s): Loss to Lease %"
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
+    },
+    {
+     "property": "Palma",
+     "file": "Delinquency_8_1_2026.xls.xlsx",
+     "as_of": "2026-08-10",
+     "source_file": "Delinquency_8_1_2026.xls.xlsx",
+     "landed_at": "2026-08-10T17:30:44.001Z",
+     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+    },
+    {
+     "property": "Chorus",
+     "file": "2026-09-28 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "as_of": null,
+     "source_file": "2026-09-28 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "landed_at": "2026-09-28T18:28:31.431Z",
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
    "status": "live"
@@ -907,7 +929,23 @@
      "as_of": null,
      "source_file": "2026-09-28 rs_rp_DelinquencySummaryReport - The Landing (1).xlsx",
      "landed_at": "2026-09-29T01:28:47.323Z",
-     "detail": "1 KPI cell(s): Loss to Lease %"
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
+    },
+    {
+     "property": "Palma",
+     "file": "Delinquency_8_1_2026.xls.xlsx",
+     "as_of": "2026-08-10",
+     "source_file": "Delinquency_8_1_2026.xls.xlsx",
+     "landed_at": "2026-08-10T17:30:44.001Z",
+     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+    },
+    {
+     "property": "Chorus",
+     "file": "2026-09-28 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "as_of": null,
+     "source_file": "2026-09-28 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "landed_at": "2026-09-28T18:28:31.431Z",
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
    "status": "live"
@@ -1047,15 +1085,15 @@
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11.018Z",
-     "detail": "5 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %"
+     "landed_at": "2026-09-28T17:12:11Z",
+     "detail": "6 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency"
     },
     {
      "property": "335 Third",
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11.018Z",
+     "landed_at": "2026-09-28T17:12:11Z",
      "detail": "4 KPI cell(s): AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency"
     },
     {
@@ -1063,15 +1101,15 @@
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11.018Z",
-     "detail": "6 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Trade-out %"
+     "landed_at": "2026-09-28T17:12:11Z",
+     "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency, Trade-out %"
     },
     {
      "property": "Madelon",
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11.018Z",
+     "landed_at": "2026-09-28T17:12:11Z",
      "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency, Trade-out %"
     }
    ],
@@ -1256,6 +1294,14 @@
     {
      "file": "metrics.json",
      "key": "rent_roll"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Loss to Lease %"
+    },
+    {
+     "file": "scorecard.json",
+     "key": "Month to Month Leases"
     }
    ],
    "dashboard": [
@@ -1314,11 +1360,11 @@
    "evidence": [
     {
      "property": "the-landing",
-     "file": "data/the-landing/rent_roll.json",
+     "file": "metrics.json rent_roll",
      "as_of": "2026-09-21",
      "source_file": "RentRoll09_28_2026.xlsx",
      "landed_at": "2026-09-28T17:10:40.329Z",
-     "detail": null
+     "detail": "read from the published aggregate \u2014 this store is gitignored (per-unit) and exists only during a pipeline run"
     }
    ],
    "status": "live"
@@ -2126,11 +2172,6 @@
      "script": "scripts/extract_landing.py",
      "does": "Reads the workbook's cached formula results off the anchor labels and writes docs/landing.json.",
      "checks": "Prints a check table and refuses to write on a shifted month axis, a unit count that disagrees with Inputs, a broken statement tie-out or a renamed anchor. A workbook saved without recalculating has no cached results and is refused rather than published as nulls."
-    },
-    {
-     "script": "scripts/populate_scorecard.py --from-landing",
-     "does": "Fills the four KPIs a report cannot answer directly.",
-     "checks": "Every controllable-expense exclusion is matched by name against the statement's account groups and all of them must be found, or the figure goes unpublished."
     }
    ],
    "stores": [],
@@ -2138,44 +2179,9 @@
     {
      "file": "landing.json",
      "key": "the whole workbook extract (no card draws it)"
-    },
-    {
-     "file": "scorecard.json",
-     "key": "Loss to Lease %"
-    },
-    {
-     "file": "scorecard.json",
-     "key": "NOI Margin %"
-    },
-    {
-     "file": "scorecard.json",
-     "key": "Controllable OpEx/Unit"
-    },
-    {
-     "file": "scorecard.json",
-     "key": "Month to Month Leases"
-    },
-    {
-     "file": "scorecard.json",
-     "key": "Total Deliquency (The Landing)"
-    },
-    {
-     "file": "scorecard.json",
-     "key": "Split Between 30/60/90 (The Landing)"
     }
    ],
-   "dashboard": [
-    {
-     "card": "KPI Scorecard \u2014 four measured cells",
-     "tab": "Scorecard",
-     "anchor": "cScorecard",
-     "tables": [
-      "t-sc-measured",
-      "t-sc-arrivals",
-      "t-sc-matrix"
-     ]
-    }
-   ],
+   "dashboard": [],
    "tables": [
     "t-l-capture",
     "t-l-noi",
@@ -2227,7 +2233,7 @@
      "detail": "extract run; the workbook has no arrival time of its own, so this is when it was extracted"
     }
    ],
-   "status": "live"
+   "status": "partial"
   },
   {
    "id": "rental_tracker",

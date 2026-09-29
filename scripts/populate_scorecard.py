@@ -144,8 +144,6 @@ TRADEOUT_WINDOW = 3
 # rent roll calls month-to-month is already a holdover -- which is why the four
 # units the renewal tracker and the rent roll agree on are inside this 31 rather
 # than beside it.
-MTM_STATUS = "Holdover"
-OCCUPIED_STATUSES = ("Current", "On notice", "Holdover")
 
 # What a property manager cannot move inside a month, per the owner. Matched by
 # name against the T12 statement's own account groups rather than listed exactly,
@@ -474,6 +472,115 @@ def rent_roll_ltl(slug, path="docs/metrics.json"):
     }, None
 
 
+# ---- the statement- and rent-roll-fed KPIs (open item H2) -------------------
+#
+# NOI Margin %, Concession Load % and Month to Month Leases were read from
+# docs/landing.json -- the analyst workbook, refreshed by hand in Excel -- so
+# they stood still at the workbook's last extract however many statements and
+# rolls arrived. The same numbers live in metrics.json already, written by the
+# pipeline from the Drive reports themselves: `monthly_pl` is the series the
+# Landing tab's NOI tiles draw, `rent_capture` is the section of the statement
+# the workbook's Rent Capture block retyped to the cent, and `rent_roll` carries
+# its own holdover count. So each formula below is the one the workbook fill
+# used, pointed at those blocks, and every cell moves when its report does.
+#
+# Read from the committed aggregate for the same reason rent_roll_ltl is: the
+# per-unit roll is gitignored, and the same figure has to be available in CI.
+
+def _published(block, slug, path="docs/metrics.json"):
+    if not os.path.exists(path):
+        return None
+    b = (json.load(open(path)) or {}).get(block) or {}
+    return next((x for x in (b.get("properties") or []) if x.get("slug") == slug), None)
+
+
+def statement_arrival(slug):
+    """The newest T12 statement behind the stitched series: file, arrival, period."""
+    path = os.path.join("data", slug, "monthly_pl.json")
+    if not os.path.exists(path):
+        return {}
+    pts = (json.load(open(path)) or {}).get("points") or []
+    if not pts:
+        return {}
+    pt = pts[-1]
+    files = pt.get("source_files") or []
+    return {"source": files[-1] if files else None, "received_at": pt.get("landed_at"),
+            "period_end": pt.get("period_end")}
+
+
+def statement_noi_margin(slug, path="docs/metrics.json"):
+    """(this month's NOI over revenue, month, T12 figure) from monthly_pl.
+
+    The month is what is graded (owner, 2026-09-03) and the T12 figure the
+    band's own basis names is recorded beside it. Newest month with both halves
+    and positive revenue, so a month the stitch left null cannot be graded as
+    zero. T12 only when twelve months are on file: a shorter run named T12 is
+    the error the T12 NOI tile once made.
+    """
+    p = _published("monthly_pl", slug, path)
+    if not p:
+        return None, f"no monthly P&L published for {slug}"
+    months, rev, noi = p.get("months") or [], p.get("revenue") or [], p.get("noi") or []
+    idx = [i for i in range(min(len(months), len(rev), len(noi)))
+           if rev[i] is not None and noi[i] is not None and rev[i] > 0]
+    if not idx:
+        return None, "the monthly P&L has no month with both revenue and NOI"
+    i = idx[-1]
+    last12 = [j for j in idx if j > i - 12]
+    ttm = (sum(noi[j] for j in last12) / sum(rev[j] for j in last12)
+           if len(last12) == 12 else None)
+    return {"margin": noi[i] / rev[i], "month": months[i], "ttm": ttm,
+            "scope": p.get("expense_scope")}, None
+
+
+def statement_concession_load(slug, path="docs/metrics.json"):
+    """This month's concessions over GPR less L2L less vacancy, from rent_capture.
+
+    The owner's equation (2026-09-03), unchanged: concessions over market rent
+    potential less loss to lease less vacancy loss. Vacancy loss can run
+    negative in a true-up month, which ADDS to the denominator rather than
+    being clamped. The trailing three months are recorded beside the graded
+    month, since the ranges sheet's own wording names that window.
+    """
+    p = _published("rent_capture", slug, path)
+    if not p:
+        return None, f"no rent capture series published for {slug}"
+    conc, mp = p.get("concessions") or [], p.get("market_potential") or []
+    l2l, vac = p.get("loss_to_lease") or [], p.get("vacancy_loss") or []
+    months = p.get("months") or []
+    n = min(len(conc), len(mp), len(l2l), len(vac), len(months))
+    if not n:
+        return None, "the rent capture series is empty"
+    denom = mp[n - 1] - l2l[n - 1] - vac[n - 1]
+    if not denom or denom <= 0:
+        return None, (f"{months[n - 1]}: market rent potential less loss to lease "
+                      f"less vacancy is not positive, so there is no rent to divide by")
+    k = min(3, n)
+    d3 = sum(mp[n - k:n]) - sum(l2l[n - k:n]) - sum(vac[n - k:n])
+    return {"load": conc[n - 1] / denom, "month": months[n - 1],
+            "t3": sum(conc[n - k:n]) / d3 if d3 > 0 else None,
+            "parts": (conc[n - 1], mp[n - 1], l2l[n - 1], vac[n - 1])}, None
+
+
+def rent_roll_mtm(slug, path="docs/metrics.json"):
+    """Units past lease expiry and still occupied, and their share, from the roll.
+
+    The rent roll's own holdover count -- an occupied unit whose lease
+    expiration is before the roll's as-of date -- which is the workbook's
+    Holdover status, the one this KPI counted. Its share of occupied units is
+    what the band grades.
+    """
+    p = _published("rent_roll", slug, path)
+    if not p:
+        return None, f"no rent roll published for {slug}"
+    h = p.get("holdovers") or {}
+    if h.get("units") is None or h.get("share_of_occupied") is None:
+        return None, "the rent roll carries no holdover count"
+    return {"units": h["units"], "share": h["share_of_occupied"],
+            "occupied": p.get("occupied"), "as_of": p.get("as_of"),
+            "source": p.get("source_file"), "received_at": p.get("landed_at")}, None
+
+
 def facts_from_landing(path="docs/landing.json"):
     doc = json.load(open(path))
     d = doc["delinquency"]
@@ -495,54 +602,20 @@ def facts_from_landing(path="docs/landing.json"):
     # filled identically on both paths from one published aggregate, so
     # whichever run goes last writes the same number.
     to_win, to_why = lease_tradeout("the-landing")
-    # NOI margin, likewise from the monthly series behind the Expense Load & NOI
-    # card rather than its TTM column. Note the published band's own basis says
-    # T12: a single accrual month swings hard (Apr 2026 reads 47.0% on that
-    # month's tax true-up, Jul 2026 reads 72.6%), so both are recorded below and
-    # which one the band is meant to grade is the owner's call.
-    en = doc.get("expense_noi") or {}
-    noi_series, noi_months = en.get("noi_margin") or [], en.get("months") or []
-    # Concession load, from the same Rent Capture series as loss to lease. The
-    # four series reconcile exactly to the workbook's own rental-income line
-    # (GPR - L2L - vacancy - concessions - allowance = rental income, to the
-    # cent), so the denominator is the statement's rent income before
-    # concessions and the employee allowance. Vacancy loss can run negative in
-    # a true-up month (Jul 2026 does), which per the equation ADDS to the
-    # denominator rather than being clamped.
-    conc = rc.get("concessions") or []
-    mp = rc.get("market_potential") or []
-    l2l = rc.get("loss_to_lease") or []
-    vac = rc.get("vacancy_loss") or []
-    n = min(len(conc), len(mp), len(l2l), len(vac))
-    conc_load = conc_load_t3 = conc_parts = None
-    if n:
-        denom = mp[n - 1] - l2l[n - 1] - vac[n - 1]
-        if denom > 0:
-            conc_load = conc[n - 1] / denom
-            conc_parts = (conc[n - 1], mp[n - 1], l2l[n - 1], vac[n - 1])
-        k = min(3, n)
-        d3 = sum(mp[n - k:n]) - sum(l2l[n - k:n]) - sum(vac[n - k:n])
-        if d3 > 0:
-            conc_load_t3 = sum(conc[n - k:n]) / d3
-    units = (doc.get("meta") or {}).get("units")
+    # NOI margin, concession load and month to month, from the pipeline's own
+    # published blocks rather than the workbook (open item H2) -- see the
+    # helpers above. Same formulas; they now move when a report arrives.
+    noi, noi_why = statement_noi_margin("the-landing")
+    cl, cl_why = statement_concession_load("the-landing")
+    mtm, mtm_why = rent_roll_mtm("the-landing")
+    # Units for the per-door figure: the unit directory's residential count,
+    # the same figure the Landing tab divides by. The workbook's Inputs count
+    # stays as the fallback, and the two agree today (263).
+    ud = _published("unit_directory", "the-landing") or {}
+    units = ud.get("residential_units") or (doc.get("meta") or {}).get("units")
     ctrl, ctrl_month, ctrl_why = controllable_per_unit("the-landing", units)
     bv = budget_variance_ytd("the-landing")
-
-    # Month to month, as a share of occupied units -- the KPI is published as a
-    # ratio despite being named "#". Both sides come from the same unit list, and
-    # the occupied count is checked against the delinquency block's own figure so
-    # a status the workbook renames cannot quietly shrink the denominator.
-    rows = doc.get("units") or []
-    mtm = sum(1 for u in rows if u.get("status") == MTM_STATUS)
-    occupied = sum(1 for u in rows if u.get("status") in OCCUPIED_STATUSES)
-    stated = (doc.get("delinquency") or {}).get("occupied_units")
-    mtm_why = None
-    if not rows:
-        mtm_why = "this source carries no per-unit list"
-    elif stated is not None and occupied != stated:
-        mtm_why = (f"occupied units disagree: {occupied} by status against the "
-                   f"delinquency block's {stated}")
-        occupied = None
+    t12 = statement_arrival("the-landing")
     return {
         # The AR cells are the Drive pipeline's, always (owner, 2026-09-21,
         # closing G3): "there shouldn't be anything pulling from a 6 week old
@@ -569,22 +642,34 @@ def facts_from_landing(path="docs/landing.json"):
         "tradeout": to_win, "tradeout_why": to_why,
         "ltl_workbook_pct": ltl_series[-1] if ltl_series else None,
         "ltl_workbook_month": months[-1] if months else None,
-        "noi_margin": noi_series[-1] if noi_series else None,
-        "noi_margin_month": noi_months[-1] if noi_months else None,
-        "noi_margin_ttm": (en.get("ttm") or {}).get("noi_margin"),
-        "concession_load": conc_load,
-        "concession_load_month": months[-1] if months else None,
-        "concession_load_t3": conc_load_t3,
-        "concession_parts": conc_parts,
+        "noi_margin": noi["margin"] if noi else None,
+        "noi_margin_month": noi["month"] if noi else None,
+        "noi_margin_ttm": noi["ttm"] if noi else None,
+        "noi_why": noi_why,
+        "concession_load": cl["load"] if cl else None,
+        "concession_load_month": cl["month"] if cl else None,
+        "concession_load_t3": cl["t3"] if cl else None,
+        "concession_parts": cl["parts"] if cl else None,
+        "concession_why": cl_why,
+        "t12": t12 or None,
         "ctrl_per_unit_yr": ctrl,
         "ctrl_month": ctrl_month,
         "ctrl_units": units,
         "ctrl_why": ctrl_why,
         "bv": bv,
-        "mtm_share": (mtm / occupied) if (occupied and not mtm_why) else None,
-        "mtm_units": mtm,
-        "mtm_occupied": occupied,
+        "mtm_share": mtm["share"] if mtm else None,
+        "mtm_units": mtm["units"] if mtm else None,
+        "mtm_occupied": mtm["occupied"] if mtm else None,
+        "mtm_as_of": mtm["as_of"] if mtm else None,
         "mtm_why": mtm_why,
+        # Nothing this path publishes comes from the workbook any more, so it
+        # writes no unprefixed family: that family would date these cells by
+        # an Excel extract that no longer feeds one of them. Each cell is
+        # recorded under the family of the report it came from instead --
+        # t12_, rentroll_, budget_, tradeout_.
+        "no_report": True,
+        "source_note": "the T12 statement, rent roll, budget and tradeout report "
+                       "as published in docs/metrics.json",
         # "split" and "total_delinq_pct" are deliberately absent -- see the
         # note at the top of this return. The workbook's readings are recorded
         # below as a note, never as the cell.
@@ -615,6 +700,15 @@ def facts_from_pipeline(slug, monthly_rent=None):
     # the mistake G3 records, designed out rather than sequenced around.
     rr_ltl, rr_ltl_why = rent_roll_ltl(slug)
     to_win, to_why = lease_tradeout(slug)
+    # Month to month from the same roll aggregate, on this path as well as
+    # --from-landing, so whichever runs last writes the same number and the
+    # rent roll's family keeps naming both of its cells.
+    mtm, mtm_why = rent_roll_mtm(slug)
+    mtm_facts = {"mtm_share": mtm["share"] if mtm else None,
+                 "mtm_units": mtm["units"] if mtm else None,
+                 "mtm_occupied": mtm["occupied"] if mtm else None,
+                 "mtm_as_of": mtm["as_of"] if mtm else None,
+                 "mtm_why": mtm_why}
 
     path = os.path.join("data", slug, "delinquency.json")
     if not os.path.exists(path):
@@ -629,7 +723,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
         return {"no_report": True, "source": None, "as_of": None,
                 "received_at": None, "received_what": None,
                 "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
-                "tradeout": to_win, "tradeout_why": to_why}
+                "tradeout": to_win, "tradeout_why": to_why, **mtm_facts}
     d = json.load(open(path))
     s = d.get("summary") or {}
     a = s.get("aging") or {}
@@ -674,6 +768,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
                      if d.get("property_codes") else ""),
         "rr_ltl": rr_ltl, "rr_ltl_why": rr_ltl_why,
         "tradeout": to_win, "tradeout_why": to_why,
+        **mtm_facts,
     }
 
 
@@ -729,8 +824,8 @@ def measurements(f):
     if f.get("noi_margin") is not None:
         out[KPI_NOI] = (f["noi_margin"], pct1(f["noi_margin"]), None)
     else:
-        out[KPI_NOI] = (None, None,
-                        "this source carries no monthly revenue-and-NOI series")
+        out[KPI_NOI] = (None, None, f.get("noi_why")
+                        or "this source carries no monthly revenue-and-NOI series")
 
     if f.get("concession_load") is not None:
         v = f["concession_load"]
@@ -739,8 +834,8 @@ def measurements(f):
         # and "some" as the same figure
         out[KPI_CONC] = (v, f"{v * 100:.2f}%", None)
     else:
-        out[KPI_CONC] = (None, None,
-                         "this source carries no concessions series")
+        out[KPI_CONC] = (None, None, f.get("concession_why")
+                         or "this source carries no concessions series")
 
     if f.get("ctrl_per_unit_yr") is not None:
         v = f["ctrl_per_unit_yr"]
@@ -1000,8 +1095,9 @@ def main():
     thresholds = sc.get("thresholds") or {}
 
     if facts.get("no_report"):
-        print(f"source: the rent roll alone — no delinquency report for "
-              f"{prop['label']}; the cells another feed owns are left as they are")
+        print(f"source: {facts.get('source_note') or 'the rent roll alone'} — no "
+              f"delinquency report for {prop['label']}; the cells another feed "
+              f"owns are left as they are")
     else:
         print(f"source: {facts['source']}  ·  as of {facts['as_of']}  ·  "
               f"property: {prop['label']}")
@@ -1126,7 +1222,8 @@ def main():
     if facts.get("mtm_share") is not None:
         meas[slug]["mtm_basis"] = (
             f"{facts['mtm_units']} units past lease expiry and still occupied over "
-            f"{facts['mtm_occupied']} occupied, at {facts['as_of']}")
+            f"{facts['mtm_occupied']} occupied, on the rent roll of "
+            f"{facts.get('mtm_as_of') or facts['as_of']}")
     if facts.get("ctrl_month"):
         meas[slug]["controllable_basis"] = (
             f"{facts['ctrl_month']} operating expense less taxes, insurance, "
@@ -1147,7 +1244,8 @@ def main():
             "rentroll_as_of": rr.get("as_of"),
             "rentroll_received_at": rr.get("received_at"),
             "rentroll_received_what": "rent roll in the Drive Rent Roll folder",
-            "rentroll_kpis": [KPI_LTL],
+            "rentroll_kpis": [KPI_LTL] + ([KPI_MTM] if facts.get("mtm_share") is not None
+                                          else []),
             "ltl_basis": (
                 f"${rr['dollars']:,.0f} market rent less in-place rent across "
                 f"{rr['occupied']} occupied units (${rr['market']:,.0f} market, "
@@ -1225,6 +1323,35 @@ def main():
             if (key.endswith("kpis") and key != "tradeout_kpis"
                     and isinstance(names, list) and KPI_TO in names):
                 meas[slug][key] = [n for n in names if n != KPI_TO]
+
+    t12 = facts.get("t12")
+    if t12:
+        # The T12 statement's own family (open item H2): NOI margin, concession
+        # load and controllable opex per door are all computed from the
+        # statement as the pipeline published it, so they are dated by the
+        # statement's arrival rather than a workbook extract. "t12_" is in
+        # SC_FEED_PREFIXES in index.html, the matching list in data.html and
+        # SCD_DRIVE_FEEDS.
+        this_run = measurements(facts)
+        kp = sorted(k for k in (KPI_NOI, KPI_CONC, KPI_CTRL)
+                    if this_run.get(k, (None, None, None))[1] is not None)
+        meas[slug].update({
+            "t12_source": t12.get("source"),
+            "t12_as_of": t12.get("period_end"),
+            "t12_received_at": t12.get("received_at"),
+            "t12_received_what": "12-month statement in the Drive T12 Expenses folder",
+            "t12_kpis": kp,
+        })
+    # Each cell named by exactly one family: the page dates a cell by whichever
+    # family lists it, so a stale mention elsewhere is a wrong date on a right
+    # number. Same hand-over as the tradeout and delq_ cells.
+    owned = {"t12_kpis": meas[slug].get("t12_kpis") or [],
+             "rentroll_kpis": meas[slug].get("rentroll_kpis") or []}
+    if facts.get("t12") or facts.get("rr_ltl"):
+        for fam, names in owned.items():
+            for key, lst in list(meas[slug].items()):
+                if key.endswith("kpis") and key != fam and isinstance(lst, list):
+                    meas[slug][key] = [n for n in lst if n not in names]
 
     bv = facts.get("bv") or {}
     if bv.get("pct") is not None:
