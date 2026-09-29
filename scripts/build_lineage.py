@@ -122,6 +122,11 @@ DRIVE_FLOWS = {
             {"file": "metrics.json", "key": "expense_buckets"},
             {"file": "metrics.json", "key": "expense_trend"},
             {"file": "metrics.json", "key": "rent_capture"},
+            # Computed from the three blocks above by populate_scorecard
+            # --from-landing since open item H2 -- the workbook fill's own
+            # formulas, pointed at the pipeline's data.
+            {"file": "scorecard.json", "key": "NOI Margin %"},
+            {"file": "scorecard.json", "key": "Concession Load %"},
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
         ],
         "dashboard": [
@@ -384,7 +389,9 @@ DRIVE_FLOWS = {
                        "the build if a person-shaped field survived."},
         ],
         "stores": ["data/<slug>/rent_roll.json  (gitignored — unit level)"],
-        "publishes": [{"file": "metrics.json", "key": "rent_roll"}],
+        "publishes": [{"file": "metrics.json", "key": "rent_roll"},
+                      {"file": "scorecard.json", "key": "Loss to Lease %"},
+                      {"file": "scorecard.json", "key": "Month to Month Leases"}],
         "dashboard": [
             # No primary: this card's chart is the T12 statement's monthly
             # series and is always there, where the roll's half below it hides
@@ -801,37 +808,22 @@ OTHER_FLOWS = [
                        "broken statement tie-out or a renamed anchor. A "
                        "workbook saved without recalculating has no cached "
                        "results and is refused rather than published as nulls."},
-            {"script": "scripts/populate_scorecard.py --from-landing",
-             "does": "Fills the four KPIs a report cannot answer directly.",
-             "checks": "Every controllable-expense exclusion is matched by name "
-                       "against the statement's account groups and all of them "
-                       "must be found, or the figure goes unpublished."},
         ],
         "stores": [],
         "publishes": [
             # Still written by extract_landing.py, still published, still on
             # the data page as the t-l-* tables -- but no card has drawn it
             # since the workbook-fed Landing tab came off on 2026-09-18.
+            # And no scorecard cell either, since open item H2 (2026-09-29):
+            # the last four it filled -- NOI margin, concession load,
+            # controllable opex and month to month -- now come from the T12
+            # statement and the rent roll as the pipeline publishes them.
             {"file": "landing.json", "key": "the whole workbook extract (no card draws it)"},
-            {"file": "scorecard.json", "key": "Loss to Lease %"},
-            {"file": "scorecard.json", "key": "NOI Margin %"},
-            {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
-            {"file": "scorecard.json", "key": "Month to Month Leases"},
-            {"file": "scorecard.json", "key": "Total Deliquency (The Landing)"},
-            {"file": "scorecard.json", "key": "Split Between 30/60/90 (The Landing)"},
         ],
         "dashboard": [
-            # Eight cards on a workbook-fed Landing tab until 2026-09-18.
-            # What the workbook still puts on the dashboard is the scorecard
-            # cells it fills through populate_scorecard --from-landing; the
-            # rest of landing.json is written, published and on the data page,
-            # but nothing draws it.
-            # No primary: this card renders the matrix, which every other
-            # flow landing on it names, and a second answer here would be
-            # resolved by sort order rather than by what the card shows.
-            {"card": "KPI Scorecard — four measured cells", "tab": "Scorecard",
-             "anchor": "cScorecard",
-             "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-matrix"]},
+            # None since open item H2 (2026-09-29): the workbook's extract is
+            # written, published and on the data page as the t-l-* tables, but
+            # no card draws it and no scorecard cell reads it any more.
         ],
         "tables": ["t-l-capture", "t-l-noi", "t-l-renewal", "t-l-units",
                    "t-l-delq-aging", "t-l-rollover", "t-l-insights", "t-l-meta"],
@@ -1223,7 +1215,11 @@ def gather_evidence(flow):
     if flow["id"] == "bldg_metrics":
         return evidence_from_scorecard("bldg_")
     if flow["id"] in ("delinquency", "delinquency_alt"):
-        return evidence_from_scorecard("", want="Drive")
+        # The report's own family since G3 closed (2026-09-21). Reading the
+        # unprefixed one credited it with whatever that family last listed --
+        # Loss to Lease %, a rent-roll cell -- and once that was handed to its
+        # own family (H2) the flow read as waiting with reports arriving daily.
+        return evidence_from_scorecard("delq_")
     if kind == "rental_tracker":
         # The plaintext half of the envelope: when it was imported, which
         # snapshot, how much. Nothing about any lease is readable here.

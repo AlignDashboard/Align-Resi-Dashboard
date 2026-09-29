@@ -74,12 +74,15 @@ each verified by mutation.
 
 **`landing.json` no longer feeds a tab.** A workbook-fed `The Landing` tab sat
 beside the Drive-fed one until 2026-09-18, when the owner removed it and the
-survivor took the plain name `Landing`. Everything below still runs, and is
-still worth running, because the extract fills **four scorecard cells no Drive
-report answers yet** — `Concession Load %`, `NOI Margin %`, `Controllable
-OpEx/Unit` and `Month to Month Leases` — through `populate_scorecard.py
---from-landing`. The rest of what it extracts is written, published and on the
-data page as the `t-l-*` tables; no card draws it.
+survivor took the plain name `Landing`. **And since 2026-09-29 it fills no
+scorecard cell either** (open item H2): the four it used to — `Concession Load
+%`, `NOI Margin %`, `Controllable OpEx/Unit` and `Month to Month Leases` — are
+the same formulas pointed at the pipeline's own blocks in `metrics.json`, so
+they move when a statement or rent roll lands rather than when someone opens
+Excel. See **The scorecard cells that used to wait on Excel** below. Everything
+here still runs: the extract is written, published and on the data page as the
+`t-l-*` tables, and `--from-landing` still reads it for two comparison notes
+(`ltl_workbook`, `delq_workbook`) that are never published as a cell.
 
 `docs/landing.json` is generated from the analyst workbook, not by the daily
 cron. To refresh with new reports:
@@ -1075,8 +1078,9 @@ comp-supported market rent it reads **30.4%**. See **The Market Comps Tab**.
 That narrows A8 without closing it: 30% is still three times the ceiling.
 
 `--from-landing` also fills **`NOI Margin %`** the same way — the current
-month's NOI over revenue from the Expense & NOI series behind that card, to one
-decimal. Note the direction of the caveat is the opposite of loss to lease's:
+month's NOI over revenue from `metrics.json`'s `monthly_pl`, the series the
+Landing tab's NOI tiles draw, to one decimal (from the workbook's Expense & NOI
+tab until H2, 2026-09-29). Note the direction of the caveat is the opposite of loss to lease's:
 that KPI's published basis *is* the current rent roll, while this one's basis
 line says **T12**, and a single accrual month swings well outside the band in
 both directions (Apr 2026 reads 47.0% on that month's tax true-up, Jul 2026
@@ -1130,8 +1134,9 @@ will restate it on the Jan–Aug window.
 
 `--from-landing` also fills **`Concession Load %`** — the current month's
 concessions over **market rent potential less loss to lease less vacancy
-loss**, per the owner's equation set 2026-09-03. All four series come from the
-Rent Capture block behind the Loss to Lease card — the same T12 statement
+loss**, per the owner's equation set 2026-09-03. All four series come from
+`metrics.json`'s `rent_capture` (the workbook's Rent Capture block until H2) —
+the block behind the Loss to Lease card — the same T12 statement
 revenue lines that fill loss to lease — and they reconcile exactly to the
 workbook's own rental-income line (GPR − L2L − vacancy − concessions −
 allowance = rental income, to the cent), so the denominator is the statement's
@@ -1149,10 +1154,15 @@ adds to the denominator rather than being clamped.
 calls that column `# of month to month`, and `RENAMES` in
 `extract_scorecard.py` is what publishes it under the clearer name (the ranges
 sheet is matched through the same map, so the band follows the rename). The cell
-prints **`31/11.8%`**: units past lease expiry and still occupied, then their
+prints **`30/11.5%`**: units past lease expiry and still occupied, then their
 share of occupied units. The **share** is what the band grades, per its own basis
-line, so the raw value behind the cell stays the ratio. The Landing reads 31/262
-for the 2026-07-14 rent roll, which grades below a band whose red line is 5%.
+line, so the raw value behind the cell stays the ratio. Since H2 (2026-09-29) it
+is the Drive rent roll's own holdover count, `rent_roll.holdovers` in
+`metrics.json` — 30 of 260 occupied on the roll of 2026-09-21 — filled
+identically by `--from-landing` and `--from-pipeline` like loss to lease, and
+recorded under the `rentroll_` family beside it. Until then it was the
+workbook's count, 31/262 on the 2026-07-14 roll, which grades the same: below a
+band whose red line is 5%. The paragraph below is how the workbook counted.
 
 The rent roll has no month-to-month state of its own: the workbook classifies
 every unit as Current, On notice, Holdover or Vacant, and those four partition
@@ -2391,12 +2401,59 @@ Four things worth knowing:
 the sign flip, the `other` bucket, the refusals, the Align path and the stitch.
 The basis-cut guard is verified by mutation: removing it fails a check.
 
-`Concession Load %` still derives from these series through `--from-landing`
-and is therefore still **workbook**-fed. `Loss to Lease %` no longer does: it
-moved to the rent roll on 2026-09-15 (A8), which is a different source from
-this section entirely — see the scorecard notes above. Moving the concession
-cell to the pipeline means rewiring `facts_from_landing` to read `metrics.json`,
-and interacts with the source-precedence problem in G3 — not done, deliberately.
+`Concession Load %` derives from these series, and since 2026-09-29 from the
+pipeline's copy of them rather than the workbook's (H2). `Loss to Lease %` no
+longer does: it moved to the rent roll on 2026-09-15 (A8), which is a different
+source from this section entirely — see the scorecard notes above.
+
+### The scorecard cells that used to wait on Excel
+
+Open item H2, closed 2026-09-29. `NOI Margin %`, `Concession Load %` and
+`Month to Month Leases` were read from `docs/landing.json`, which is refreshed
+by hand, so they stood at the workbook's July extract while the statement
+reached August. Each is now the fill's own formula over a block the pipeline
+already publishes:
+
+| KPI | Formula | Read from | Family |
+| --- | --- | --- | --- |
+| NOI Margin % | newest month's NOI ÷ revenue; T12 recorded beside it | `monthly_pl` | `t12_` |
+| Concession Load % | concessions ÷ (market potential − loss to lease − vacancy); T3 beside it | `rent_capture` | `t12_` |
+| Controllable OpEx/Unit | already `expense_buckets`; now dated by the statement too | `expense_buckets` | `t12_` |
+| Month to Month Leases | holdover units, and their share of occupied | `rent_roll.holdovers` | `rentroll_` |
+
+`statement_noi_margin`, `statement_concession_load` and `rent_roll_mtm` in
+`populate_scorecard.py` are the three readers; the unit count for the per-door
+figure is the unit directory's `residential_units`, with the workbook's as a
+fallback. Three things they are careful about:
+
+- **Provenance follows the source.** The statement's cells are recorded under a
+  new `t12_` family — its newest file and arrival from
+  `data/<slug>/monthly_pl.json` — registered in `SC_FEED_PREFIXES`, `data.html`'s
+  arrivals list and `SCD_DRIVE_FEEDS`. `--from-landing` writes **no**
+  unprefixed family any more (`no_report`): that family would date these cells
+  by an Excel extract that no longer feeds one of them.
+- **Both fill paths agree.** The daily run calls `--from-landing` and then
+  `--from-pipeline`; the second fills month to month from the same aggregate,
+  so the file is byte-identical after both, as it is for loss to lease.
+- **A gap is a gap.** A month without revenue is skipped rather than graded as
+  zero, T12 is published only with twelve months on file, and a non-positive
+  concession denominator publishes nothing.
+
+What moved on 2026-09-29 for The Landing: NOI margin **72.6% (Jul) → 96.2%
+(Aug)**, concession load **0.37% → 0.25%**, month to month **31/11.8% →
+30/11.5%**; every grade unchanged. The 96.2% is August's tax and utility
+reversals, the timing effect the Operating Summary notes already describe — the
+month is what is graded (owner, 2026-09-03), and the T12 beside it reads 69.3%.
+
+`scripts/test_statement_kpis.py` holds it down — 17 fixture-free checks with
+the workbook's own readings planted at different values, so reading the wrong
+source fails. The three guards (the published source, no unprefixed family, the
+pipeline path's month to month) were each verified by mutation.
+
+The data-flow page follows: the T12 and rent-roll flows now publish these
+cells, the analyst workbook flow publishes only `landing.json` and draws no
+card, and the Delinquency flow reads its own `delq_` family — it had been
+reading the unprefixed one, which credited it with Loss to Lease %.
 
 ## How reports reach Drive
 
