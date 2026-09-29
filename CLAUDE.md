@@ -899,17 +899,25 @@ in a way the plaintext JSON is not.
   (`--rt-1`..`--rt-5` on the two `:root` blocks) are each theme's own step of one
   validated categorical order.
 
-  **Trade-out % and new-lease $/sqft are one chart each, with a box per
-  building** (owner's call, 2026-09-29) — they were five small panels until
-  then. On those two, every building also wears its own marker (`RT_SHAPES`,
+  **Trade-out %, new-lease $/sqft and renewal % are one chart each, with a
+  box per building** (owner's call, 2026-09-29) — they were five small panels
+  until then. On those three, every building also wears its own marker (`RT_SHAPES`,
   in the colours' fixed order, three longer than the palette so a sixth to
   eighth building, which share the neutral colour, still get one each), drawn
   in its box as well as on the plot. Each $/sqft fit line is named at **its
   own** end, on a backing of the card's surface — not in a column down the
   right, where a line that stops early would sit its name level with one
-  that runs on. And the tooltip names the building for every lease it
-  covers, since two buildings' leases on one point are hovered together.
-  `rtOverlay` draws both:
+  that runs on. And the tooltip names the building for every mark it
+  covers, since two buildings' leases on one point are hovered together. A
+  line every mark in such a stack shares is said once in the heading, and a
+  stack past `RT_TIP_MAX` (4) is cut, because any number of marks can share
+  one point and a tooltip taller than the chart is clipped by it. The cut
+  takes one of each building before a second of any, and the rest are
+  counted by building, so a stack never hides which buildings are in it.
+  Hover goes to the nearest **dot** only (`rtDots`): Chart.js's own nearest
+  mode also weighs a fit line's invisible end points, and the tooltip filter
+  runs after it, so pointing at a line's end showed an empty tooltip over a
+  real lease. `rtOverlay` draws all three:
 
   - **The boxes are per card**, kept across a timeframe, basis or theme change
     (`RT.hide`) and dropped on Lock.
@@ -928,8 +936,8 @@ in a way the plaintext JSON is not.
   - **The note and the canvas label follow the boxes**, per-building figures
     and all, the way Budget vs Actual's note follows its basket.
 
-  The other charts are still one small panel per building on shared axes,
-  where a panel title does the naming.
+  The two prior → new $/sqft cards are still one small panel per building on
+  shared axes, where a panel title does the naming.
 - **Every tile carries the rent-weighted trade-out beside the tracker's mean.**
   The mean stays the headline, so the two dashboards agree on it, and the
   weighted figure beside it is the statistic the Landing tab grades; one

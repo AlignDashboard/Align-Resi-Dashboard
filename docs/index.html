@@ -492,7 +492,7 @@
      The tracker's data, decrypted in the page. Property colours are the
      theme's own steps of one validated categorical order (--rt-1..5 on the
      two :root blocks), and no colour carries identity alone: a chart is one
-     titled panel per building, or -- on the two overlay cards -- one chart in
+     titled panel per building, or -- on the three overlay cards -- one chart in
      which every building also wears its own marker, shown in its box. */
   .rt-lock { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 2px 0 8px; }
   .rt-why { font-size: 11px; line-height: 1.7; color: var(--muted); max-width: 640px; }
@@ -1194,7 +1194,8 @@
         <div class="card wide" id="cRtRenewal">
           <h2>Renewal % by Lease Date</h2>
           <span class="eyebrow" id="rtRnEyebrow"></span>
-          <div class="rt-facets" id="rtRnFacets"></div>
+          <div class="ckgrid rt-cks" id="rtRnCks" role="group" aria-label="Buildings shown"></div>
+          <div class="chartwrap" id="rtRnWrap"><canvas id="rtRnChart" role="img"></canvas></div>
           <div class="blu-note" id="rtRnFoot" style="color:var(--muted);"></div>
         </div>
 
@@ -1483,12 +1484,13 @@ function maybeLoadLanding(tab) {
    (new salt) asks again.
 
    Two departures from the tracker, both deliberate:
-     - no colour carries a building alone. Trade-out % and new-lease $/sqft
-       are one chart each with a box per building to switch it off (owner's
-       call, 2026-09-29), and on those two every building also has its own
-       marker, since no set of five colours clears the colour-vision floors
-       for every pair on a scatter. The other charts are one small panel per
-       building on shared axes, where a panel title does the naming.
+     - no colour carries a building alone. Trade-out %, new-lease $/sqft and
+       renewal % are one chart each with a box per building to switch it off
+       (owner's call, 2026-09-29), and on those three every building also has
+       its own marker, since no set of five colours clears the colour-vision
+       floors for every pair on a scatter. The two prior -> new $/sqft cards
+       are one small panel per building on shared axes, where a panel title
+       does the naming.
      - every tile carries the rent-weighted trade-out beside the tracker's
        mean. The mean is the tracker's headline and stays the headline, so
        the two dashboards agree; the weighted figure is what the Landing tab
@@ -1496,11 +1498,14 @@ function maybeLoadLanding(tab) {
    ---- */
 let ratesStarted = false;
 const RT_KEY = "align-rt-key";
+// One empty set per overlay card, keyed as each card's `key`: trade-out %,
+// new-lease $/sqft, renewal %. Hoisted, so RT can be built with it.
+function rtHideNone() { return { to: new Set(), pt: new Set(), rn: new Set() }; }
 const RT = { env: null, data: null, meta: null, range: "max", month: null, mode: "net",
              dt: "leases", dtAll: false, wkAll: false, sort: { key: "date", dir: -1 },
-             // buildings switched off on the two overlay cards, one set per card;
+             // buildings switched off on the overlay cards, one set per card;
              // kept across a timeframe, basis or theme change, dropped on Lock
-             hide: { to: new Set(), pt: new Set() },
+             hide: rtHideNone(),
              charts: [], wired: false };
 
 const rtB64  = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -1662,40 +1667,6 @@ function rtCanvas(f, label) {
   f.appendChild(wrap);
   return cv;
 }
-// rows: {property, x (day), y, tip: [title, ...lines]}
-function rtScatterFacets(hostId, rows, o) {
-  const host = document.getElementById(hostId);
-  host.textContent = "";
-  const colors = rtColors();
-  const yb = rows.length ? rtNice(rows.map(r => r.y), o.withZero) : null;
-  const xs = rows.map(r => r.x);
-  const xlo = Math.min(...xs), xhi = Math.max(...xs);
-  RT.data.properties.forEach(p => {
-    const mine = rows.filter(r => r.property === p);
-    const cap = o.caption(p, mine);            // once: a caption may record what it found
-    const f = rtFacetShell(host, p, colors, cap);
-    if (!mine.length) { f.appendChild(elc("div", "fnone", o.empty(p))); return; }
-    const cv = rtCanvas(f, p + ": " + cap);
-    const extra = o.extra ? o.extra(p, mine, colors) : [];
-    rtChart(cv, {
-      type: "scatter",
-      data: { datasets: [{ data: mine.map(r => ({ x: r.x, y: r.y, tip: r.tip })),
-        backgroundColor: colors.col[p], borderColor: colors.surface, borderWidth: 1.5,
-        pointRadius: 4, pointHoverRadius: 6, pointHitRadius: 8, order: 1 }].concat(extra) },
-      options: { animation: false, maintainAspectRatio: false, responsive: true,
-        interaction: { mode: "nearest", intersect: false, axis: "xy" },
-        plugins: { legend: { display: false },
-          tooltip: { filter: c => c.datasetIndex === 0, callbacks: {
-            title: it => it.length ? it[0].raw.tip[0] : "",
-            label: c => c.raw.tip.slice(1) } } },
-        scales: { x: rtTimeAxis(xlo, xhi),
-          y: { min: yb.min, max: yb.max,
-               grid: { drawTicks: false,
-                       color: c => (o.withZero && c.tick && c.tick.value === 0) ? C.muted : gridCfg.color },
-               ticks: { font: { size: 9 }, stepSize: yb.step, callback: o.yFmt } } } }
-    });
-  });
-}
 // The building's marker as the legend draws it: the same shape Chart.js puts
 // on the plot, so a box in the grid and a dot on the chart read as one thing.
 function rtMark(shape, color) {
@@ -1801,6 +1772,32 @@ const rtEndLabels = {
     ctx.restore();
   }
 };
+const RT_TIP_MAX = 4;
+// Hover for the overlay cards: the nearest DOT, never a fit line. Chart.js's
+// own "nearest" weighs every element, a fit line's invisible end points
+// included, and the tooltip filter runs only afterwards -- so a line ending
+// on or near a lease took the hover and the filter left an empty tooltip over
+// a real dot. Marks within half a pixel of each other are one stack: drawn on
+// top of one another, they cannot be told apart by pointing either.
+Chart.Interaction.modes.rtDots = function (chart, e, options, useFinalPosition) {
+  const at = Chart.helpers.getRelativePosition(e, chart), all = [];
+  chart.getSortedVisibleDatasetMetas().forEach(meta => {
+    if (!chart.data.datasets[meta.index]._main) return;
+    meta.data.forEach((el, index) => {
+      const { x, y } = el.getProps(["x", "y"], useFinalPosition);
+      all.push({ element: el, datasetIndex: meta.index, index, dist: Math.hypot(x - at.x, y - at.y) });
+    });
+  });
+  if (!all.length) return [];
+  const near = Math.min(...all.map(m => m.dist));
+  return all.filter(m => m.dist <= near + 0.5);
+};
+// The overlay cards' shared first sentence. A building's colour is its own
+// only while the palette has a step for it, and it has five.
+function rtOverlayHow() {
+  return "Each building has its own " + (RT.data.properties.length <= 5 ? "colour and marker" : "marker")
+    + "; switch one off above and the vertical axis rescales to the buildings left. ";
+}
 // One chart for every building, each switchable on a box above it.
 // rows: {property, x (day), y, tip: [title, ...lines]}. A building with no
 // row in the timeframe keeps its box, struck through, so the grid answers
@@ -1847,19 +1844,58 @@ function rtOverlay(rows, o) {
   const labelled = o.endLabels ? d.properties.filter(p => extra[p].some(e => e._end)) : [];
   const opts = { animation: false, maintainAspectRatio: false, responsive: true,
     layout: { padding: { right: labelled.length ? Math.ceil(Math.max(...labelled.map(p => rtTextW(rtShort(p))))) + 22 : 4 } },
-    interaction: { mode: "nearest", intersect: false, axis: "xy" },
+    interaction: { mode: "rtDots", intersect: false },
     plugins: { legend: { display: false }, rtEndLabels: labelled.length ? { colors } : false,
-      // Two leases on one spot -- the same day and the same figure, often
-      // two buildings -- are hovered together. One heading over both would
-      // file the second under the first's name, so then each names itself.
-      tooltip: { filter: c => !!c.dataset._main, callbacks: {
-        title: it => {
-          if (!it.length) return "";
-          const heads = new Set(it.map(c => c.raw.tip[0]));
-          it[0].chart.$rtMany = heads.size > 1;
-          return heads.size > 1 ? rtPlural(it.length, "lease") + " at this point" : it[0].raw.tip[0];
+      // Two marks on one spot -- the same day and the same figure, often two
+      // buildings -- are hovered together. One heading over both would file
+      // the second under the first's name, so then each names itself, and a
+      // line every mark in the stack shares (on one point, usually the
+      // figure) is said once in the heading. A stack is cut at RT_TIP_MAX
+      // and the rest counted: any number of marks can share one point, and a
+      // tooltip taller than the chart is clipped by it.
+      tooltip: {
+        filter: (c, i, all) => {
+          const ch = c.chart;
+          if (ch.$rtFor !== all) {               // once per hover, not once per mark
+            ch.$rtFor = all;
+            ch.$rtStack = all.filter(x => x.dataset._main);
+            // one of each building before a second of any, so a cut stack
+            // still names every building in it (up to the cap)
+            const seen = {};
+            ch.$rtShown = new Set(ch.$rtStack
+              .map(x => ({ x, k: seen[x.datasetIndex] = (seen[x.datasetIndex] || 0) + 1 }))
+              .sort((a, b) => a.k - b.k || a.x.datasetIndex - b.x.datasetIndex)
+              .slice(0, RT_TIP_MAX).map(r => r.x));
+          }
+          return ch.$rtShown.has(c);
         },
-        label: c => c.chart.$rtMany ? c.raw.tip : c.raw.tip.slice(1) } } },
+        callbacks: {
+          title: it => {
+            if (!it.length) return "";
+            const ch = it[0].chart, all = (ch.$rtStack || it).map(c => c.raw.tip);
+            ch.$rtMany = new Set(all.map(t => t[0])).size > 1;
+            if (!ch.$rtMany) return it[0].raw.tip[0];
+            const n = Math.max(...all.map(t => t.length));
+            ch.$rtSame = new Set([...Array(n).keys()].slice(1)
+              .filter(k => all.every(t => t[k] === all[0][k])));
+            return [rtPlural(all.length, o.noun || "lease") + " at this point"]
+              .concat([...ch.$rtSame].map(k => all[0][k]));
+          },
+          label: c => !c.chart.$rtMany ? c.raw.tip.slice(1)
+            : c.raw.tip.filter((l, k) => k === 0 || !c.chart.$rtSame.has(k)),
+          // what the cut left out, by building, three to a line so the
+          // tooltip stays inside a phone-width chart
+          footer: it => {
+            const ch = it.length ? it[0].chart : null;
+            const rest = ch && ch.$rtStack ? ch.$rtStack.filter(x => !ch.$rtShown.has(x)) : [];
+            if (!rest.length) return "";
+            const by = {};
+            rest.forEach(x => { const b = rtShort(x.dataset._p); by[b] = (by[b] || 0) + 1; });
+            const parts = Object.keys(by).map(b => b + " " + by[b]), lines = [];
+            for (let k = 0; k < parts.length; k += 3) lines.push(parts.slice(k, k + 3).join(", "));
+            lines[0] = "+" + rest.length + " more: " + lines[0];
+            return lines;
+          } } } },
     scales: { x: rtTimeAxis(Math.min(...xs), Math.max(...xs)),
       y: { min: y0.min, max: y0.max,
            grid: { drawTicks: false,
@@ -2091,7 +2127,7 @@ function rtShow(data) {
 function rtLockAgain() {
   rtDestroy();
   RT.data = null;
-  RT.hide = { to: new Set(), pt: new Set() };
+  RT.hide = rtHideNone();
   rtForget();
   document.getElementById("rtBody").hidden = true;
   document.getElementById("cRtLock").hidden = false;
@@ -2314,8 +2350,7 @@ function rtTradeoutCard(d, L, label) {
       const hi = mine.reduce((a, l) => (!a || l.toPct > a.toPct) ? l : a, null);
       const lo = mine.reduce((a, l) => (!a || l.toPct < a.toPct) ? l : a, null);
       foot.textContent =
-        "Each building has its own " + (d.properties.length <= 5 ? "colour and marker" : "marker")
-        + "; switch one off above and the vertical axis rescales to the buildings left. "
+        rtOverlayHow()
         + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
         + (hi ? "Highest " + rtShort(hi.property) + " " + hi.unit + " at " + rtPct(hi.toPct) + " (" + rtMD(hi.date)
                 + "); lowest " + rtShort(lo.property) + " " + lo.unit + " at " + rtPct(lo.toPct) + " (" + rtMD(lo.date) + "). " : "")
@@ -2416,22 +2451,31 @@ function rtTradePsfCard(d, L, label) {
 
 function rtRenewalCard(d, R, label) {
   const drawn = R.filter(r => r.incPct != null);
-  rtScatterFacets("rtRnFacets", drawn.map(r => ({ property: r.property, x: rtDay(r.date), y: r.incPct,
+  rtOverlay(drawn.map(r => ({ property: r.property, x: rtDay(r.date), y: r.incPct,
     tip: [rtShort(r.property) + " " + (r.unit || "") + " · " + rtMD(r.date),
           "Increase " + rtPct(r.incPct),
           rtUsd(r.oldRate) + " → " + rtUsd(r.newRate)] })), {
+    key: "rn", cks: "rtRnCks", wrap: "rtRnWrap", canvas: "rtRnChart", noun: "renewal",
     withZero: true, yFmt: rtTickPct,
-    caption: (p, mine) => mine.length ? rtPlural(mine.length, "renewal") + " · mean " + rtPct(rtAvg(mine.map(r => r.y))) : "",
-    empty: () => "No renewal in this timeframe" });
+    stat: (p, mine) => mine.length ? rtPlural(mine.length, "renewal") + " · mean " + rtPct(rtAvg(mine.map(r => r.y))) : "",
+    empty: () => "No renewal in this timeframe",
+    aria: (shown, n) => "Renewal % by lease date: " + rtPlural(n, "renewal") + " across "
+      + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
+    note: (shown, stat) => {
+      const foot = document.getElementById("rtRnFoot");
+      if (!drawn.length) { foot.textContent = ""; return; }
+      if (!shown.length) { foot.textContent = "No building selected — tick one above."; return; }
+      // renewals the tracker carries ahead of the date they take effect
+      const ahead = drawn.filter(r => r.date > d.snapshot && shown.indexOf(r.property) >= 0);
+      const by = {};
+      ahead.forEach(r => { by[r.property] = (by[r.property] || 0) + 1; });
+      foot.textContent = rtOverlayHow()
+        + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
+        + (ahead.length ? rtPlural(ahead.length, "renewal") + " " + (ahead.length === 1 ? "is" : "are")
+                          + " dated after the snapshot of " + rtMD(d.snapshot) + " — "
+                          + Object.keys(by).map(p => rtShort(p) + " " + by[p]).join(", ") + "." : "");
+    } });
   document.getElementById("rtRnEyebrow").textContent = "ONE DOT PER RENEWAL · " + label.toUpperCase();
-  const ahead = drawn.filter(r => r.date > d.snapshot);
-  const by = {};
-  ahead.forEach(r => { by[r.property] = (by[r.property] || 0) + 1; });
-  document.getElementById("rtRnFoot").textContent =
-    "Panels share both axes. "
-    + (ahead.length ? rtPlural(ahead.length, "renewal") + " " + (ahead.length === 1 ? "is" : "are")
-                      + " dated after the snapshot of " + rtMD(d.snapshot) + " — "
-                      + Object.keys(by).map(p => p + " " + by[p]).join(", ") + "." : "");
 }
 
 function rtRenewPsfCard(d, R, label) {
