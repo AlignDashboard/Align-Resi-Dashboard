@@ -2851,6 +2851,12 @@ function seedPropColors(pl) {
   ((pl && pl.properties) || []).forEach(p => propColor(p.slug));
 }
 
+// "A", "A and B", "A, B and C" -- for prose that names a list of buildings.
+// Joining with commas throughout reads as a truncated list rather than a
+// finished one, and this sits mid-sentence in a note.
+const nameList = xs => (xs.length < 2 ? (xs[0] || "")
+  : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
+
 const shortMo = m => {
   const [y, mm] = String(m).split("-");
   return MONTH_ABBR[+mm - 1] + " " + y.slice(2);
@@ -4534,16 +4540,28 @@ async function renderBudgetActual(d) {
               + "statement\u2019s twelve months, so the two windows still differ.")
         // The property row above lists buildings this card cannot draw. A
         // disabled button says there is a reason; this says what it is, and
-        // names the one folder that would fix it.
+        // names the folder that would fix it. Grouped BY REASON rather than one
+        // clause per building: the row is the whole portfolio, so most of it
+        // can be undrawable at once and repeating a reason four times buries
+        // the one building whose reason differs.
         + (undrawable.length
-            ? " " + undrawable.map(u => u.name + " (" + u.why + ")").join(", ")
-              + (undrawable.length === 1 ? " is on the property row above and cannot"
-                                         : " are on the property row above and cannot")
-              + " be drawn until the missing half arrives"
-              + (undrawable.some(u => u.why === "no budget on file")
-                  ? " — a plan goes in the Drive “Budgets” folder, one "
-                    + "file per calendar year."
-                  : ".")
+            ? " The property row above lists "
+              + (undrawable.length === 1 ? "one building" : undrawable.length + " buildings")
+              + " this card cannot draw: "
+              + [...new Set(undrawable.map(u => u.why))].map(why =>
+                  nameList(undrawable.filter(u => u.why === why).map(u => u.name))
+                  + " (" + why + ")").join("; ")
+              + "."
+              + (undrawable.some(u => u.why.indexOf("budget") >= 0)
+                  ? " A plan goes in the Drive “Budgets” folder, one file per "
+                    + "calendar year"
+                  : "")
+              + (undrawable.some(u => u.why.indexOf("statement") >= 0)
+                  ? (undrawable.some(u => u.why.indexOf("budget") >= 0) ? "; a " : " A ")
+                    + "12-month statement goes in “T12 Expenses”"
+                  : "")
+              + ((undrawable.some(u => u.why.indexOf("budget") >= 0)
+                  || undrawable.some(u => u.why.indexOf("statement") >= 0)) ? "." : "")
             : "");
     };
 
@@ -4557,29 +4575,42 @@ async function renderBudgetActual(d) {
   togs.querySelectorAll(".tog").forEach(t =>
     t.addEventListener("click", () => setModeRef(t.dataset.bv)));
 
-  // One button per property this card knows about — every building with a
-  // statement or a plan, not only the ones it can draw. A building with a
-  // statement and no budget on file is listed and disabled, because "Palma has
+  // One button per property in the PORTFOLIO, not per property this card's own
+  // two feeds happen to cover. Until 2026-09-29 the row was the union of the
+  // buildings with a statement and those with a plan, so it listed The Landing
+  // and Palma and left Chorus, Madelon and 335 Third out entirely — which
+  // reads as a two-building portfolio rather than as three buildings waiting
+  // on a report. metrics.json's `properties` block is the active property
+  // master, which is the one place the portfolio is defined.
+  //
+  // A building the card cannot draw is listed and disabled, because "Palma has
   // no plan filed" is the answer to why the card is showing one building, and
   // leaving it out states nothing at all. The row hides itself only when there
   // is a single property in total: then it has nothing to switch AND nothing
   // to explain, which is the rule the basket row and the Expense Trend grid
   // follow.
+  //
+  // The union is kept as the fallback for a metrics.json written before that
+  // block existed: fewer buttons is a worse row, an empty one is a broken card.
+  const roster = ((d.properties || {}).properties || []);
   const known = [];
   const seen = new Set();
-  [].concat(acts, buds).forEach(p => {
+  (roster.length ? roster : [].concat(acts, buds)).forEach(p => {
     if (seen.has(p.slug)) return;
     seen.add(p.slug);
     const pair = pairs.find(x => x.b.slug === p.slug);
+    const hasAct = acts.some(a => a.slug === p.slug);
+    const hasBud = buds.some(b => b.slug === p.slug);
     known.push({
       slug: p.slug,
       name: p.name || p.slug,
       drawable: !!pair,
-      // Which half is missing. Kept short: it reads both as a tooltip on the
-      // button and inside a sentence in the note.
-      why: pair ? "" : (buds.some(b => b.slug === p.slug)
-        ? "no 12-month statement to measure its plan against"
-        : "no budget on file"),
+      // Which half is missing, and both where both are. Kept short: it reads
+      // as a tooltip on the button and inside a sentence in the note.
+      why: pair ? ""
+        : (hasBud && !hasAct ? "no 12-month statement to measure its plan against"
+        : (hasAct && !hasBud ? "no budget on file"
+        : "no 12-month statement or budget on file")),
     });
   });
   known.sort((x, y) => (y.drawable - x.drawable) || x.name.localeCompare(y.name));
