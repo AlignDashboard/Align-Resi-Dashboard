@@ -902,18 +902,29 @@ in a way the plaintext JSON is not.
   **Trade-out % and new-lease $/sqft are one chart each, with a box per
   building** (owner's call, 2026-09-29) — they were five small panels until
   then. On those two, every building also wears its own marker (`RT_SHAPES`,
-  in the colours' fixed order), drawn in its box as well as on the plot; each
-  $/sqft fit line is named in the right-hand gutter, level with where it ends;
-  and the tooltip names the building. `rtOverlay` draws both:
+  in the colours' fixed order, three longer than the palette so a sixth to
+  eighth building, which share the neutral colour, still get one each), drawn
+  in its box as well as on the plot. Each $/sqft fit line is named at **its
+  own** end, on a backing of the card's surface — not in a column down the
+  right, where a line that stops early would sit its name level with one
+  that runs on. And the tooltip names the building for every lease it
+  covers, since two buildings' leases on one point are hovered together.
+  `rtOverlay` draws both:
 
   - **The boxes are per card**, kept across a timeframe, basis or theme change
     (`RT.hide`) and dropped on Lock.
   - **A building with nothing in the timeframe keeps its box**, struck through
     and inert, with the reason on hover — the Budget vs Actual property row's
-    rule, so the grid says where a building went rather than losing it.
+    rule, so the grid says where a building went rather than losing it. A
+    timeframe with nothing at all drawn shows the card's empty state instead.
+  - **A box that cannot be ticked filters nothing.** A building switched off
+    stays so through a timeframe change, but where its box is struck through
+    or no grid is drawn its leases are listed as if it were on: a note
+    shaped by a setting the reader cannot see or change would undercount.
   - **The time axis holds still and the vertical axis rescales** to the
     buildings shown, so switching an outlier's building off lets the rest fill
-    the height. Everything off keeps the last scale, and the note says so.
+    the height. Everything off keeps the last scale, and the note says no
+    building is selected.
   - **The note and the canvas label follow the boxes**, per-building figures
     and all, the way Budget vs Actual's note follows its basket.
 
