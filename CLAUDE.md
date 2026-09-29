@@ -2100,7 +2100,7 @@ appended after and steps past any hue already spoken for.
 ### The property row
 
 A **row of property toggles** sits under the card head — one `.tog` button per
-building the card knows about, single-select, matching the `Total` /
+building **in the portfolio**, single-select, matching the `Total` /
 `Categories` pair above it rather than the checkbox grids the Expense Ratio and
 Expense Trend cards use. Those two overlay several properties on one axis;
 this card cannot, because both its views are one building at a time (two lines,
@@ -2125,9 +2125,29 @@ hide because they have nothing to *say*, and this one does.
 The row hides itself only when there is a single property in total — then it
 has neither anything to switch nor anything to explain.
 
-`known` is the union of the properties with actuals and those with plans, so
-both gaps show: a plan with no statement reads `no 12-month statement to
-measure its plan against`. Drawable ones sort first, then by name.
+**The row is the portfolio, not this card's own two feeds.** It was the union
+of the buildings with actuals and those with plans until 2026-09-29, which
+listed The Landing and Palma and left **Chorus, Madelon and 335 Third out
+entirely** — so a reader saw a two-building portfolio rather than three
+buildings waiting on a report. It reads `metrics.json`'s **`properties`** block
+now: the active entries of `config/properties.json`, which is the one place the
+portfolio is defined. Five buttons today, one drawable.
+
+Active only. The master carries 23 inactive entries — former Align properties
+— and a row of 28 buttons where 27 are disabled answers nothing. The union is
+kept as the fallback for a `metrics.json` written before the block existed:
+fewer buttons is a worse row, an empty one is a broken card.
+
+Each undrawable button says **which half is missing**, and both where both are:
+`no budget on file`, `no 12-month statement to measure its plan against`, or
+`no 12-month statement or budget on file`. Drawable ones sort first, then by
+name.
+
+The note **groups the undrawable by reason** rather than listing one clause per
+building, because the row is now the whole portfolio and most of it can be
+undrawable at once — naming the same reason four times buries the one building
+whose reason differs. It names both Drive folders that would fix it, `Budgets`
+and `T12 Expenses`, and only the ones that apply.
 
 Verified by injecting a synthetic second budget into a copy of `metrics.json`
 and driving the page: the toggle switches the chart, the variance list, the
@@ -2763,6 +2783,14 @@ Three details worth knowing:
   `t-expratio-palma`), so a card links to the **prefix** and `data.html`'s
   `focusHashTarget` resolves a fragment that is a prefix of a real id to the
   first table that exists.
+- **A block with no flow row still gets a table.** `properties` — the active
+  property master, published 2026-09-29 so the page can enumerate the
+  buildings rather than infer them from whichever block a card happens to
+  read — comes from `config/properties.json`, which is a config file rather
+  than a report, so no flow claims it and `sourceOf` returns nothing for it.
+  `t-properties` carries it anyway, with its provenance in its own note:
+  the page holds every block `metrics.json` carries, and this one decides
+  which buildings the Budget vs Actual card offers a tab for.
 - Three `metrics.json` blocks had **no table on the data page at all** —
   `monthly_pl`, `expense_buckets` and `unit_directory`, i.e. everything the
   Drive T12 and the unit directory produce. The page claims to hold every

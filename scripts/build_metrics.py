@@ -1779,6 +1779,20 @@ def comps_verification(section, ud_prop, rr_prop, rc_prop):
 def build_metrics_json():
     props, _ = load_properties()
 
+    # The portfolio itself, so the page can enumerate the buildings rather
+    # than each card inferring them from whichever block it happens to read.
+    # A card that lists properties from its own feed can only name the ones
+    # that feed already covers -- Budget vs Actual's property row knew The
+    # Landing and Palma, and Chorus, Madelon and 335 Third were absent from it
+    # entirely, which reads as though the portfolio were two buildings rather
+    # than as three waiting on a report.
+    #
+    # Active only: the master carries 23 inactive entries (former Align
+    # properties), and a tab row of 28 buildings where 27 are disabled is not
+    # an answer to anything.
+    metrics_props = [{"slug": p["slug"], "name": p["name"]}
+                     for p in props if p.get("active", True)]
+
     # Assemble per-property expense_ratio series from history (active only)
     expense_ratio_props = []
     for p in props:
@@ -2186,6 +2200,9 @@ def build_metrics_json():
         # No property history found. Leave any existing expense_ratio block
         # untouched rather than wiping it with an empty one.
         print("[info] no property history yet; leaving existing metrics.json expense_ratio as-is")
+
+    metrics["properties"] = {"available": bool(metrics_props),
+                             "properties": metrics_props}
 
     from datetime import datetime, timezone
     metrics.setdefault("meta", {})["generated_at"] = datetime.now(timezone.utc).isoformat()

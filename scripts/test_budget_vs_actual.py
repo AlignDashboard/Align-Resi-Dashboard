@@ -263,6 +263,42 @@ def main():
        miss.get("pct") is None and "2026" in (miss.get("why") or ""),
        str(miss.get("why")))
 
+    # --- the portfolio roster the card's property row is built from ---
+    #
+    # The row lists every building in the portfolio, not only the ones this
+    # card's own two feeds cover, so that a building with no plan reads as
+    # waiting on a report rather than as absent. It has to be the ACTIVE
+    # master: config/properties.json carries former Align properties too, and
+    # a row of 28 buttons where 27 are disabled answers nothing.
+    #
+    # Exercised against a fixture rather than the real master, so the check
+    # tests the filter itself and cannot pass merely because today's file
+    # happens to have no inactive entries in it.
+    print("\nthe published roster is the active property master")
+    roster_master = [
+        {"slug": "the-landing", "name": "The Landing", "codes": []},
+        {"slug": "chorus", "name": "Chorus", "codes": []},
+        {"slug": "sold-last-year", "name": "Sold Last Year", "codes": [],
+         "active": False},
+    ]
+    bm.load_properties = lambda: (roster_master, {})
+    bm.build_metrics_json()
+    published = json.load(open(pathlib.Path(tmp) / "docs" / "metrics.json"))
+    roster = published.get("properties", {}).get("properties")
+    ok("a roster is published at all", roster is not None)
+    ok("it is the active properties, in the master's own order",
+       [r["slug"] for r in (roster or [])] == ["the-landing", "chorus"],
+       str([r["slug"] for r in (roster or [])]))
+    ok("an inactive property does not reach it",
+       "sold-last-year" not in {r["slug"] for r in (roster or [])})
+    ok("each entry carries the slug and the name the row prints",
+       all(r.get("slug") and r.get("name") for r in (roster or [])))
+    # The point of the block: this run stored a plan and a statement for The
+    # Landing alone, and the roster still names Chorus, which is what lets the
+    # card list a building it cannot draw instead of leaving it out.
+    ok("it reaches past the buildings this card's own feeds cover",
+       "chorus" in {r["slug"] for r in (roster or [])})
+
     os.chdir(ROOT)
     shutil.rmtree(tmp, ignore_errors=True)
 

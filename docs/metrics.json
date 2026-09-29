@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-09-29T17:07:09.630421+00:00",
+    "generated_at": "2026-09-29T17:16:21.397667+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -13867,6 +13867,31 @@
           "2026-09-26"
         ],
         "verification": null
+      }
+    ]
+  },
+  "properties": {
+    "available": true,
+    "properties": [
+      {
+        "slug": "the-landing",
+        "name": "The Landing"
+      },
+      {
+        "slug": "chorus",
+        "name": "Chorus"
+      },
+      {
+        "slug": "madelon",
+        "name": "Madelon"
+      },
+      {
+        "slug": "335-third-street",
+        "name": "335 Third Street"
+      },
+      {
+        "slug": "palma",
+        "name": "Palma"
       }
     ]
   }

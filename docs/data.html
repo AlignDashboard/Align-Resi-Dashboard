@@ -1124,6 +1124,23 @@ async function loadAll() {
     const d = M.data;
     group("Portfolio view · metrics.json");
 
+    // The portfolio itself, which is a roster rather than a measurement --
+    // but the page holds every block metrics.json carries, and this one
+    // decides which buildings the Budget vs Actual card offers a tab for.
+    // No flow row claims it: config/properties.json is a config file, not a
+    // report, so the note carries its own provenance instead.
+    const rost = (d.properties || {}).properties || [];
+    renderTable(host, {
+      id: "t-properties", group: "Portfolio", title: "Properties (the portfolio)",
+      feeds: "Budget vs Actual's property row",
+      note: "The active entries of config/properties.json, published by "
+            + "build_metrics so the page can enumerate the buildings rather "
+            + "than infer them from whichever block a card happens to read. "
+            + "Inactive entries \u2014 23 former Align properties \u2014 are left out.",
+      cols: [{ key: "slug", label: "Slug" }, { key: "name", label: "Name" }],
+      rows: rost.map(p => ({ slug: p.slug, name: p.name })),
+    });
+
     const ev = d.expense_trend || {};
     const evPr = ev.properties || [];
     renderTable(host, {
