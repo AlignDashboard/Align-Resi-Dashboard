@@ -1557,14 +1557,21 @@ const rtBasis = () => RT.mode === "gross" ? "gross" : "effective";
 // Each building's marker, in the same fixed order as its colour. On a chart
 // that overlays every building, colour alone cannot keep five apart -- the
 // palette validator fails them all-pairs, worst of all for a deuteranope in
-// the dark theme -- so the shape says whose a dot is as well.
-const RT_SHAPES = ["circle", "rect", "triangle", "rectRot", "crossRot"];
+// the dark theme -- so the shape says whose a dot is as well. Three more than
+// there are hues: a sixth building onward shares the page's neutral colour,
+// so its shape is the only thing telling it from the next. Past the eighth two
+// buildings share a marker, and only the tooltip and the box's name tell them
+// apart; the tracker covers five.
+const RT_SHAPES = ["circle", "rect", "triangle", "rectRot", "crossRot", "star", "rectRounded", "cross"];
+// Chart.js draws these as lines only, so they wear the colour as a stroke.
+const RT_STROKED = new Set(["crossRot", "star", "cross"]);
 function rtColors() {
   const cs = getComputedStyle(document.documentElement);
   const pal = [1, 2, 3, 4, 5].map(i => cs.getPropertyValue("--rt-" + i).trim());
   const col = {};
   // Fixed order, never cycled: a sixth building gets the page's neutral
-  // rather than a sixth hue. Its panel title still names it.
+  // rather than a sixth hue. A panel's title still names it, and on the
+  // overlay cards its own marker does.
   const shape = {};
   RT.data.properties.forEach((p, i) => { col[p] = pal[i] || C.muted; shape[p] = RT_SHAPES[i] || "circle"; });
   return { col, shape, surface: cs.getPropertyValue("--panel").trim(),
@@ -1705,15 +1712,19 @@ function rtMark(shape, color) {
   if (shape === "rect") add("rect", { x: 1.5, y: 1.5, width: 7, height: 7, fill: color });
   else if (shape === "triangle") add("polygon", { points: "5,0.9 9.4,8.9 0.6,8.9", fill: color });
   else if (shape === "rectRot") add("polygon", { points: "5,0.4 9.6,5 5,9.6 0.4,5", fill: color });
-  else if (shape === "crossRot") add("path", { d: "M1.6,1.6L8.4,8.4M8.4,1.6L1.6,8.4", stroke: color,
-                                               "stroke-width": 2, fill: "none" });
+  else if (shape === "rectRounded") add("rect", { x: 1.2, y: 1.2, width: 7.6, height: 7.6, rx: 2.4, fill: color });
+  else if (RT_STROKED.has(shape)) {
+    const x = "M1.6,1.6L8.4,8.4M8.4,1.6L1.6,8.4", plus = "M5,0.6V9.4M0.6,5H9.4";
+    add("path", { d: shape === "crossRot" ? x : shape === "cross" ? plus : x + plus, stroke: color,
+                  "stroke-width": shape === "star" ? 1.5 : 2, fill: "none" });
+  }
   else add("circle", { cx: 5, cy: 5, r: 4.2, fill: color });
   return svg;
 }
 // A cross is all stroke, so it wears its colour as the stroke; the filled
 // shapes keep the surface ring that parts a dot from the one it overlaps.
 function rtPoints(p, colors) {
-  const cross = colors.shape[p] === "crossRot";
+  const cross = RT_STROKED.has(colors.shape[p]);
   return { pointStyle: colors.shape[p], backgroundColor: colors.col[p],
            borderColor: cross ? colors.col[p] : colors.surface, borderWidth: cross ? 2 : 1.5,
            pointRadius: cross ? 5 : 4.5, pointHoverRadius: cross ? 6.5 : 6, pointHitRadius: 8 };
@@ -1726,41 +1737,66 @@ const rtTextW = (() => {
     return c.measureText(t).width;
   };
 })();
-// Names each fit line in the right-hand gutter, level with where the line
-// ends, in the chart's own ink beside the building's marker: on one plot of
-// five a line's colour does not say whose it is. Labels that would touch are
-// pushed apart, then the stack is kept inside the plot.
+// Names each fit line at its own right-hand end, in the chart's ink beside
+// the building's marker: on one plot of five a line's colour does not say
+// whose it is. At the line's end rather than in a column down the right,
+// because a line that stops early would put its name level with a line that
+// runs on -- position is the one cue left once colour is ruled out. A name
+// sits on a backing of the card's own surface so it reads over the dots, and
+// one that would cover another is moved down, with a tick back to its line.
+// The chart keeps a gutter as wide as the widest name for the lines that run
+// to the right-hand edge.
 const rtEndLabels = {
   id: "rtEndLabels",
   afterDatasetsDraw(chart, args, o) {
     if (!o || !o.colors) return;
-    const a = chart.chartArea, at = [];
+    const a = chart.chartArea, at = [], ctx = chart.ctx;
+    ctx.save();
+    ctx.font = "9px " + Chart.defaults.font.family;
+    ctx.textBaseline = "middle";
     chart.data.datasets.forEach((ds, i) => {
       if (!ds._end || !chart.isDatasetVisible(i)) return;
       const pts = chart.getDatasetMeta(i).data;
       const pt = pts[pts.length - 1];
-      if (pt) at.push({ p: ds._p, y: pt.y });
+      if (!pt) return;
+      const w = 12 + ctx.measureText(rtShort(ds._p)).width;
+      at.push({ p: ds._p, x: pt.x, y0: pt.y, y: pt.y, w,
+                x0: Math.min(pt.x + 6, chart.width - w - 2) });
     });
-    if (!at.length) return;
-    at.sort((m, n) => m.y - n.y);
-    for (let i = 1; i < at.length; i++) at[i].y = Math.max(at[i].y, at[i - 1].y + 12);
-    const over = at[at.length - 1].y - (a.bottom - 5);
-    if (over > 0) at.forEach(m => { m.y -= over; });
-    const under = a.top + 5 - at[0].y;
-    if (under > 0) at.forEach(m => { m.y += under; });
-    const ctx = chart.ctx, x = a.right + 10;
-    ctx.save();
-    ctx.font = "9px " + Chart.defaults.font.family;
-    ctx.textBaseline = "middle";
+    at.sort((m, n) => m.y0 - n.y0);
+    const placed = [];
     at.forEach(m => {
-      const col = o.colors.col[m.p];
+      const hits = q => Math.abs(q.y - m.y) < 12 && q.x0 < m.x0 + m.w && m.x0 < q.x0 + q.w;
+      for (let k = 0; k < at.length && placed.some(hits); k++) {
+        m.y = Math.max(...placed.filter(hits).map(q => q.y)) + 12;
+      }
+      m.y = Math.min(Math.max(m.y, a.top + 6), a.bottom - 6);
+      placed.push(m);
+    });
+    at.forEach(m => {
+      const col = o.colors.col[m.p], shape = o.colors.shape[m.p];
+      if (Math.abs(m.y - m.y0) > 4) {
+        ctx.strokeStyle = Chart.defaults.color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(m.x + 2, m.y0);
+        ctx.lineTo(m.x0, m.y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = o.colors.surface;
+      ctx.fillRect(m.x0 - 1, m.y - 6, m.w + 3, 12);
+      ctx.globalAlpha = 1;
+      // decided here, never read back from ctx: canvas ignores a lineWidth
+      // of 0, and drawPoint strokes whenever borderWidth is above it
+      const bw = RT_STROKED.has(shape) ? 1.6 : 0;
       ctx.fillStyle = col;
       ctx.strokeStyle = col;
-      ctx.lineWidth = o.colors.shape[m.p] === "crossRot" ? 1.6 : 0;
-      Chart.helpers.drawPoint(ctx, { pointStyle: o.colors.shape[m.p], radius: 3.6, rotation: 0,
-                                     borderWidth: ctx.lineWidth }, x, m.y);
+      ctx.lineWidth = bw || 1;
+      Chart.helpers.drawPoint(ctx, { pointStyle: shape, radius: 3.6, rotation: 0, borderWidth: bw },
+                              m.x0 + 4, m.y);
       ctx.fillStyle = Chart.defaults.color;
-      ctx.fillText(rtShort(m.p), x + 8, m.y);
+      ctx.fillText(rtShort(m.p), m.x0 + 11, m.y);
     });
     ctx.restore();
   }
@@ -1810,12 +1846,20 @@ function rtOverlay(rows, o) {
   const y0 = yb();
   const labelled = o.endLabels ? d.properties.filter(p => extra[p].some(e => e._end)) : [];
   const opts = { animation: false, maintainAspectRatio: false, responsive: true,
-    layout: { padding: { right: labelled.length ? Math.ceil(Math.max(...labelled.map(p => rtTextW(rtShort(p))))) + 24 : 4 } },
+    layout: { padding: { right: labelled.length ? Math.ceil(Math.max(...labelled.map(p => rtTextW(rtShort(p))))) + 22 : 4 } },
     interaction: { mode: "nearest", intersect: false, axis: "xy" },
     plugins: { legend: { display: false }, rtEndLabels: labelled.length ? { colors } : false,
+      // Two leases on one spot -- the same day and the same figure, often
+      // two buildings -- are hovered together. One heading over both would
+      // file the second under the first's name, so then each names itself.
       tooltip: { filter: c => !!c.dataset._main, callbacks: {
-        title: it => it.length ? it[0].raw.tip[0] : "",
-        label: c => c.raw.tip.slice(1) } } },
+        title: it => {
+          if (!it.length) return "";
+          const heads = new Set(it.map(c => c.raw.tip[0]));
+          it[0].chart.$rtMany = heads.size > 1;
+          return heads.size > 1 ? rtPlural(it.length, "lease") + " at this point" : it[0].raw.tip[0];
+        },
+        label: c => c.chart.$rtMany ? c.raw.tip : c.raw.tip.slice(1) } } },
     scales: { x: rtTimeAxis(Math.min(...xs), Math.max(...xs)),
       y: { min: y0.min, max: y0.max,
            grid: { drawTicks: false,
@@ -2237,7 +2281,11 @@ function rtTiles(d, L, R, W, label) {
 
 function rtTradeoutCard(d, L, label) {
   const drawn = L.filter(l => l.toPct != null);
-  const on = p => !RT.hide.to.has(p);
+  // A building switched off stays so across a timeframe change, but only a
+  // live box can show or undo that: where its box is struck through, or no
+  // grid is drawn at all, its leases are listed whatever it was set to.
+  const live = new Set(drawn.map(l => l.property));
+  const on = p => !live.has(p) || !RT.hide.to.has(p);
   rtOverlay(drawn.map(l => ({ property: l.property, x: rtDay(l.date), y: l.toPct,
     tip: [rtShort(l.property) + " " + (l.unit || "") + " · " + rtMD(l.date),
           "Trade-out " + rtPct(l.toPct) + (l.toDollars != null ? " (" + (l.toDollars >= 0 ? "+" : "−") + rtUsd(Math.abs(l.toDollars)) + ")" : ""),
@@ -2266,8 +2314,8 @@ function rtTradeoutCard(d, L, label) {
       const hi = mine.reduce((a, l) => (!a || l.toPct > a.toPct) ? l : a, null);
       const lo = mine.reduce((a, l) => (!a || l.toPct < a.toPct) ? l : a, null);
       foot.textContent =
-        "Each building has its own colour and marker; switch one off above and the vertical axis "
-        + "rescales to the buildings left. "
+        "Each building has its own " + (d.properties.length <= 5 ? "colour and marker" : "marker")
+        + "; switch one off above and the vertical axis rescales to the buildings left. "
         + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
         + (hi ? "Highest " + rtShort(hi.property) + " " + hi.unit + " at " + rtPct(hi.toPct) + " (" + rtMD(hi.date)
                 + "); lowest " + rtShort(lo.property) + " " + lo.unit + " at " + rtPct(lo.toPct) + " (" + rtMD(lo.date) + "). " : "")
@@ -2317,7 +2365,7 @@ function rtPsfTrendCard(d, L, label) {
       const loud = noisy.filter(p => shown.indexOf(p) >= 0);
       foot.textContent =
         "Each dot is one executed new lease at its $/sqft on its lease date, and each line an "
-        + "ordinary least-squares fit through one building's leases, named at the right; its slope is "
+        + "ordinary least-squares fit through one building's leases, named where it ends; its slope is "
         + "the direction of new-lease pricing. " + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ")
         + ". R² is how much of the scatter the line explains"
         + (loud.length ? " — under 0.1 for " + loud.map(rtShort).join(", ") + ", where the slope is mostly noise" : "")
