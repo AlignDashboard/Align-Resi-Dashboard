@@ -60,7 +60,6 @@
        own step of the same hue -- validated against this surface -- so a
        building keeps its colour's identity across the toggle. */
     --rt-1: #3987e5; --rt-2: #d95926; --rt-3: #199e70; --rt-4: #c98500; --rt-5: #d55181;
-    --rt-prior: #3b4452;
   }
   :root[data-theme="light"] {
     color-scheme: light;
@@ -87,7 +86,6 @@
     --edge-in_range:  transparent;
     --edge-below:     rgba(178,63,40,.45);
     --rt-1: #2a78d6; --rt-2: #eb6834; --rt-3: #1baf7a; --rt-4: #eda100; --rt-5: #e87ba4;
-    --rt-prior: #cfd5dd;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--ink); color: var(--text);
@@ -491,9 +489,9 @@
   /* ---------- Rental Rates ----------
      The tracker's data, decrypted in the page. Property colours are the
      theme's own steps of one validated categorical order (--rt-1..5 on the
-     two :root blocks), and no colour carries identity alone: a chart is one
-     titled panel per building, or -- on the three overlay cards -- one chart in
-     which every building also wears its own marker, shown in its box. */
+     two :root blocks), and no colour carries identity alone: every chart is
+     one chart for all the buildings, in which each also wears its own marker,
+     shown in its box. */
   .rt-lock { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 2px 0 8px; }
   .rt-why { font-size: 11px; line-height: 1.7; color: var(--muted); max-width: 640px; }
   .rt-pw { background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
@@ -539,18 +537,6 @@
   .rt-tile .row .v { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums;
     white-space: nowrap; margin-left: auto; }
   .rt-tile .pill { margin-left: 4px; }
-  .rt-facets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px 14px; margin-top: 4px; }
-  .rt-facets.rows { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .rt-facet { min-width: 0; }
-  .rt-facet .fh { display: flex; align-items: center; gap: 7px; font-size: 9.5px; letter-spacing: 1.2px;
-    text-transform: uppercase; color: var(--text); font-weight: 600; }
-  .rt-facet .fs { font-size: 9px; color: var(--muted); letter-spacing: .4px; margin: 3px 0 6px; min-height: 12px; }
-  .rt-facet .fc { position: relative; height: 200px; min-width: 0; }
-  .rt-facets.rows .fc { height: 150px; }
-  .rt-facet .fnone { height: 200px; display: flex; align-items: center; justify-content: center;
-    text-align: center; font-size: 9.5px; line-height: 1.6; color: var(--muted);
-    border: 1px dashed var(--line); padding: 10px; }
-  .rt-facets.rows .fnone { height: 56px; }
   /* Five building names, the longest "The Fitzgerald": narrow enough columns
      that the grid reads as one legend row on a desktop and two across on a
      phone, rather than five rows above the chart. */
@@ -561,7 +547,8 @@
   .rt-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 9px; letter-spacing: .8px;
     text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
   .rt-legend > span { display: inline-flex; align-items: center; gap: 6px; }
-  .rt-legend i { width: 14px; height: 9px; display: inline-block; }
+  .rt-legend .lg { width: 12px; height: 16px; flex: none; }
+  .rt-legend[hidden] { display: none; }        /* display: flex outranks [hidden] */
   .rt-more { margin-top: 10px; }
   .rt-more[hidden] { display: none; }
   table.dt th button.rt-sort { background: none; border: none; color: inherit; font: inherit;
@@ -569,11 +556,10 @@
   table.dt th button.rt-sort:hover, table.dt th button.rt-sort:focus-visible { color: var(--amber); outline: none; }
   #rtWeekTbl table.dt, #rtDtTbl table.dt { font-variant-numeric: tabular-nums; }
   @media (max-width: 1100px) {
-    .rt-tiles, .rt-facets:not(.rows) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .rt-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
   @media (max-width: 760px) {
     .rt-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .rt-facets:not(.rows) { grid-template-columns: minmax(0, 1fr); }
     .rt-lockbtn { margin-left: 0; }
     #rtWeekTbl table.dt { min-width: 520px; }
     #rtDtTbl table.dt { min-width: 640px; }
@@ -1189,8 +1175,9 @@
         <div class="card wide" id="cRtTradePsf">
           <h2>Trade-out $/sqft &mdash; Prior &rarr; New</h2>
           <span class="eyebrow" id="rtTpEyebrow"></span>
+          <div class="ckgrid rt-cks" id="rtTpCks" role="group" aria-label="Buildings shown"></div>
           <div class="rt-legend" id="rtTpLegend"></div>
-          <div class="rt-facets rows" id="rtTpFacets"></div>
+          <div class="chartwrap" id="rtTpWrap"><canvas id="rtTpChart" role="img"></canvas></div>
           <div class="blu-note" id="rtTpFoot" style="color:var(--muted);"></div>
         </div>
 
@@ -1205,8 +1192,9 @@
         <div class="card wide" id="cRtRenewPsf">
           <h2>Renewal $/sqft &mdash; Prior &rarr; New</h2>
           <span class="eyebrow" id="rtRpEyebrow"></span>
+          <div class="ckgrid rt-cks" id="rtRpCks" role="group" aria-label="Buildings shown"></div>
           <div class="rt-legend" id="rtRpLegend"></div>
-          <div class="rt-facets rows" id="rtRpFacets"></div>
+          <div class="chartwrap" id="rtRpWrap"><canvas id="rtRpChart" role="img"></canvas></div>
           <div class="blu-note" id="rtRpFoot" style="color:var(--muted);"></div>
         </div>
 
@@ -1487,13 +1475,12 @@ function maybeLoadLanding(tab) {
    (new salt) asks again.
 
    Two departures from the tracker, both deliberate:
-     - no colour carries a building alone. Trade-out %, new-lease $/sqft and
-       renewal % are one chart each with a box per building to switch it off
-       (owner's call, 2026-09-29), and on those three every building also has
-       its own marker, since no set of five colours clears the colour-vision
-       floors for every pair on a scatter. The two prior -> new $/sqft cards
-       are one small panel per building on shared axes, where a panel title
-       does the naming.
+     - no colour carries a building alone. Every chart is one chart with a
+       box per building to switch it off (owner's call, 2026-09-29), and on
+       each every building also has its own marker, since no set of five
+       colours clears the colour-vision floors for every pair on a scatter.
+       The two prior -> new $/sqft cards draw each lease as a stem on its
+       lease date, from the prior rent to the new one (rtSpans).
      - every tile carries the rent-weighted trade-out beside the tracker's
        mean. The mean is the tracker's headline and stays the headline, so
        the two dashboards agree; the weighted figure is what the Landing tab
@@ -1505,8 +1492,11 @@ const RT_KEY = "align-rt-key";
 const RT_WORKFLOW_URL =
   "https://github.com/AlignDashboard/Align-Resi-Dashboard/actions/workflows/refresh_rental_tracker.yml";
 // One empty set per overlay card, keyed as each card's `key`: trade-out %,
-// new-lease $/sqft, renewal %. Hoisted, so RT can be built with it.
-function rtHideNone() { return { to: new Set(), pt: new Set(), rn: new Set() }; }
+// new-lease $/sqft, trade-out $/sqft prior -> new, renewal %, renewal $/sqft
+// prior -> new. Hoisted, so RT can be built with it.
+function rtHideNone() {
+  return { to: new Set(), pt: new Set(), tp: new Set(), rn: new Set(), rp: new Set() };
+}
 const RT = { env: null, data: null, meta: null, range: "max", month: null, mode: "net",
              dt: "leases", dtAll: false, wkAll: false, sort: { key: "date", dir: -1 },
              // buildings switched off on the overlay cards, one set per card;
@@ -1581,12 +1571,11 @@ function rtColors() {
   const pal = [1, 2, 3, 4, 5].map(i => cs.getPropertyValue("--rt-" + i).trim());
   const col = {};
   // Fixed order, never cycled: a sixth building gets the page's neutral
-  // rather than a sixth hue. A panel's title still names it, and on the
-  // overlay cards its own marker does.
+  // rather than a sixth hue, and its own marker and its box's name are what
+  // tell it apart.
   const shape = {};
   RT.data.properties.forEach((p, i) => { col[p] = pal[i] || C.muted; shape[p] = RT_SHAPES[i] || "circle"; });
-  return { col, shape, surface: cs.getPropertyValue("--panel").trim(),
-           prior: cs.getPropertyValue("--rt-prior").trim() };
+  return { col, shape, surface: cs.getPropertyValue("--panel").trim() };
 }
 function rtChart(cv, cfg) { const ch = new Chart(cv, cfg); RT.charts.push(ch); return ch; }
 function rtDestroy() { RT.charts.forEach(c => c.destroy()); RT.charts = []; }
@@ -1617,8 +1606,8 @@ function rtRangeLabel(b) {
   return MONTH_ABBR[+RT.month.slice(5, 7) - 1] + " " + RT.month.slice(0, 4);
 }
 
-/* ---- charts: one small panel per building on shared axes, or one chart for
-   every building with a box per building to switch it off ---- */
+/* ---- charts: one chart for every building, with a box per building to
+   switch it off ---- */
 // One tick step per axis, and both ends rounded onto it -- a max that is
 // not a multiple of the step draws its own extra tick hard against the one
 // below it ("$12" on top of "$10").
@@ -1653,25 +1642,6 @@ function rtTimeAxis(lo, hi) {
     afterBuildTicks: ax => { ax.ticks = ticks.map(v => ({ value: v })); },
     ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, autoSkipPadding: 6,
              callback: v => short ? rtMD(rtIso(v)) : shortMo(rtIso(v).slice(0, 7)) } };
-}
-function rtFacetShell(host, p, colors, caption) {
-  const f = elc("div", "rt-facet");
-  const fh = elc("div", "fh");
-  const sw = elc("span", "rt-sw");
-  sw.style.background = colors.col[p];
-  fh.append(sw, elc("span", null, p));
-  f.append(fh, elc("div", "fs", caption));
-  host.appendChild(f);
-  return f;
-}
-function rtCanvas(f, label) {
-  const wrap = elc("div", "fc");
-  const cv = elc("canvas");
-  cv.setAttribute("role", "img");
-  cv.setAttribute("aria-label", label);
-  wrap.appendChild(cv);
-  f.appendChild(wrap);
-  return cv;
 }
 // The building's marker as the legend draws it: the same shape Chart.js puts
 // on the plot, so a box in the grid and a dot on the chart read as one thing.
@@ -1778,20 +1748,70 @@ const rtEndLabels = {
     ctx.restore();
   }
 };
+// The prior -> new cards draw each lease as a stem on its lease date: a grey
+// tick at the prior rent, a line in the building's colour, and the building's
+// marker at the new rent. A cut is said three ways: its stem runs down, the
+// stem is dashed, and a filled marker goes hollow -- the last is what shows a
+// cut too small to have a visible stem at all (rtOverlay sets it; a cross is
+// all rim already, and its tooltip gives the fall either way). Drawn under
+// the marks, so no stem crosses a dot, and clipped to the plot as the marks
+// are. The ticks go on after every stem: a tick is the end of its own stem,
+// and a neighbour's stem must not cut it in half.
+const rtSpans = {
+  id: "rtSpans",
+  beforeDatasetsDraw(chart, args, o) {
+    if (!o || !o.colors) return;
+    const a = chart.chartArea, ys = chart.scales.y, ctx = chart.ctx, ticks = [];
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top);
+    ctx.clip();
+    ctx.lineWidth = 1.5;
+    chart.data.datasets.forEach((ds, i) => {
+      if (!ds._main || !chart.isDatasetVisible(i)) return;
+      ctx.strokeStyle = o.colors.col[ds._p];
+      chart.getDatasetMeta(i).data.forEach((el, j) => {
+        const q = ds.data[j];
+        if (q.lo == null) return;
+        const y0 = ys.getPixelForValue(q.lo);
+        ctx.setLineDash(q.cut ? [2, 2] : []);
+        ctx.beginPath();
+        ctx.moveTo(el.x, y0);
+        ctx.lineTo(el.x, el.y);
+        ctx.stroke();
+        ticks.push([el.x, y0]);
+      });
+    });
+    ctx.setLineDash([]);
+    ctx.strokeStyle = Chart.defaults.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ticks.forEach(([x, y]) => { ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); });
+    ctx.stroke();
+    ctx.restore();
+  }
+};
 const RT_TIP_MAX = 4;
 // Hover for the overlay cards: the nearest DOT, never a fit line. Chart.js's
 // own "nearest" weighs every element, a fit line's invisible end points
 // included, and the tooltip filter runs only afterwards -- so a line ending
 // on or near a lease took the hover and the filter left an empty tooltip over
-// a real dot. Marks within half a pixel of each other are one stack: drawn on
-// top of one another, they cannot be told apart by pointing either.
+// a real dot. A stem is part of its mark, so where a point carries a prior
+// (`lo`) the distance is to the whole stem: pointing at the grey tick is
+// pointing at that lease. Marks within half a pixel of each other are one
+// stack: drawn on top of one another, they cannot be told apart by pointing
+// either.
 Chart.Interaction.modes.rtDots = function (chart, e, options, useFinalPosition) {
-  const at = Chart.helpers.getRelativePosition(e, chart), all = [];
+  const at = Chart.helpers.getRelativePosition(e, chart), all = [], ys = chart.scales.y;
   chart.getSortedVisibleDatasetMetas().forEach(meta => {
-    if (!chart.data.datasets[meta.index]._main) return;
+    const ds = chart.data.datasets[meta.index];
+    if (!ds._main) return;
     meta.data.forEach((el, index) => {
       const { x, y } = el.getProps(["x", "y"], useFinalPosition);
-      all.push({ element: el, datasetIndex: meta.index, index, dist: Math.hypot(x - at.x, y - at.y) });
+      const lo = ds.data[index].lo, y0 = lo == null ? y : ys.getPixelForValue(lo);
+      const top = Math.min(y, y0), bot = Math.max(y, y0);
+      const dy = at.y < top ? top - at.y : at.y > bot ? at.y - bot : 0;
+      all.push({ element: el, datasetIndex: meta.index, index, dist: Math.hypot(x - at.x, dy) });
     });
   });
   if (!all.length) return [];
@@ -1805,11 +1825,13 @@ function rtOverlayHow() {
     + "; switch one off above and the vertical axis rescales to the buildings left. ";
 }
 // One chart for every building, each switchable on a box above it.
-// rows: {property, x (day), y, tip: [title, ...lines]}. A building with no
-// row in the timeframe keeps its box, struck through, so the grid answers
-// "where is it?" rather than leaving a building out. The time axis is the
-// timeframe's and holds still; the vertical axis rescales to the buildings
-// shown, so switching the outliers off lets the rest fill the height.
+// rows: {property, x (day), y, tip: [title, ...lines]}, and on a card with
+// o.spans also lo (the prior, where the stem starts) and cut (the new figure
+// came in below it). A building with no row in the timeframe keeps its box,
+// struck through, so the grid answers "where is it?" rather than leaving a
+// building out. The time axis is the timeframe's and holds still; the
+// vertical axis rescales to the buildings shown -- both ends of every stem --
+// so switching the outliers off lets the rest fill the height.
 function rtOverlay(rows, o) {
   const d = RT.data, colors = rtColors(), hidden = RT.hide[o.key];
   const cks = document.getElementById(o.cks), wrap = document.getElementById(o.wrap);
@@ -1837,12 +1859,23 @@ function rtOverlay(rows, o) {
 
   const datasets = [];
   d.properties.filter(has).forEach(p => {
-    datasets.push(Object.assign({ label: p, _p: p, _main: true, hidden: hidden.has(p), order: 1,
-      data: by[p].map(r => ({ x: r.x, y: r.y, tip: r.tip })) }, rtPoints(p, colors)));
+    const data = by[p].map(r => ({ x: r.x, y: r.y, tip: r.tip, lo: r.lo, cut: !!r.cut }));
+    const ds = Object.assign({ label: p, _p: p, _main: true, hidden: hidden.has(p), order: 1, data },
+                             rtPoints(p, colors));
+    // A cut wears its building's marker hollow: the colour on the rim, the
+    // card's surface inside. A cross is all rim already, so it has only the
+    // dashed stem to say so.
+    if (o.spans && !RT_STROKED.has(colors.shape[p]) && data.some(q => q.cut)) {
+      Object.assign(ds, {
+        pointBackgroundColor: data.map(q => q.cut ? colors.surface : colors.col[p]),
+        pointBorderColor: data.map(q => q.cut ? colors.col[p] : colors.surface),
+        pointBorderWidth: data.map(q => q.cut ? 1.8 : 1.5) });
+    }
+    datasets.push(ds);
     if (o.extra) extra[p] = o.extra(p, by[p], colors);
     extra[p].forEach(e => datasets.push(Object.assign(e, { _p: p, hidden: hidden.has(p) })));
   });
-  const ysOf = ps => ps.flatMap(p => by[p].map(r => r.y)
+  const ysOf = ps => ps.flatMap(p => by[p].flatMap(r => r.lo == null ? [r.y] : [r.y, r.lo])
     .concat(extra[p].flatMap(e => e.data.map(q => q.y))));
   const yb = () => rtNice(ysOf(shown().length ? shown() : d.properties.filter(has)), o.withZero);
   const xs = rows.map(r => r.x);
@@ -1852,6 +1885,7 @@ function rtOverlay(rows, o) {
     layout: { padding: { right: labelled.length ? Math.ceil(Math.max(...labelled.map(p => rtTextW(rtShort(p))))) + 22 : 4 } },
     interaction: { mode: "rtDots", intersect: false },
     plugins: { legend: { display: false }, rtEndLabels: labelled.length ? { colors } : false,
+      rtSpans: o.spans ? { colors } : false,
       // Two marks on one spot -- the same day and the same figure, often two
       // buildings -- are hovered together. One heading over both would file
       // the second under the first's name, so then each names itself, and a
@@ -1908,7 +1942,7 @@ function rtOverlay(rows, o) {
                    color: c => (o.withZero && c.tick && c.tick.value === 0) ? C.muted : gridCfg.color },
            ticks: { font: { size: 9 }, stepSize: y0.step, callback: o.yFmt } } } };
   const chart = rtChart(cv, { type: "scatter", data: { datasets }, options: opts,
-                              plugins: labelled.length ? [rtEndLabels] : [] });
+    plugins: [labelled.length ? rtEndLabels : null, o.spans ? rtSpans : null].filter(Boolean) });
   const say = () => {
     const sh = shown();
     cv.setAttribute("aria-label", o.aria(sh, rtSum(sh.map(p => by[p].length))));
@@ -1937,55 +1971,6 @@ function rtOverlay(rows, o) {
       it => { if (hidden.has(it.p)) hidden.delete(it.p); else hidden.add(it.p); apply(); });
   }
   say();
-}
-// rows: {property, label, date, prior, next, pct, term} -- $/sqft either side
-function rtBarFacets(hostId, rows, o) {
-  const host = document.getElementById(hostId);
-  host.textContent = "";
-  const colors = rtColors();
-  const yb = rows.length ? rtNice(rows.map(r => Math.max(r.prior, r.next)), true) : { max: 1, step: 1 };
-  RT.data.properties.forEach(p => {
-    const mine = rows.filter(r => r.property === p).sort((a, b) => a.date < b.date ? -1 : 1);
-    const cap = o.caption(p, mine);
-    const f = rtFacetShell(host, p, colors, cap);
-    if (!mine.length) { f.appendChild(elc("div", "fnone", o.empty(p))); return; }
-    const cv = rtCanvas(f, p + ": " + cap);
-    const up = mine.map(r => r.next >= r.prior);
-    // Grey runs to the LOWER of the two rents, the segment covers the gap.
-    // A rise is that segment filled; a cut is the same segment outlined --
-    // stacked on the prior instead, a cut would hang below the axis.
-    rtChart(cv, {
-      type: "bar",
-      data: { labels: mine.map(r => r.label), datasets: [
-        { label: "Kept", data: mine.map(r => Math.min(r.prior, r.next)), grouped: false,
-          backgroundColor: colors.prior, order: 2, barPercentage: 0.84, categoryPercentage: 0.92,
-          maxBarThickness: 14 },
-        { label: "Change", data: mine.map(r => [Math.min(r.prior, r.next), Math.max(r.prior, r.next)]),
-          grouped: false, backgroundColor: up.map(u => u ? colors.col[p] : "transparent"),
-          borderColor: colors.col[p], borderWidth: up.map(u => u ? 0 : 1.5), borderSkipped: false,
-          order: 1, barPercentage: 0.84, categoryPercentage: 0.92, maxBarThickness: 14 }] },
-      options: { animation: false, maintainAspectRatio: false, responsive: true,
-        interaction: { mode: "index", intersect: false },
-        plugins: { legend: { display: false },
-          tooltip: { filter: c => c.datasetIndex === 1, callbacks: {
-            title: it => {
-              const r = mine[it[0].dataIndex];
-              return rtShort(r.property) + " " + r.label + " · " + rtMD(r.date)
-                   + (r.term ? " · " + r.term + "-mo" : "");
-            },
-            label: c => {
-              const r = mine[c.dataIndex];
-              return ["Prior " + rtPsfS(r.prior) + "/sqft", "New " + rtPsfS(r.next) + "/sqft",
-                      "Change " + rtSgnP(r.next - r.prior) + "/sqft"
-                      + (r.pct != null ? " (" + rtPct(r.pct) + ")" : "")];
-            } } } },
-        scales: {
-          x: { grid: { display: false },
-               ticks: { font: { size: 8.5 }, autoSkip: true, autoSkipPadding: 4, maxRotation: 0 } },
-          y: { min: 0, max: yb.max, grid: gridCfg,
-               ticks: { font: { size: 9 }, stepSize: yb.step, callback: v => "$" + v } } } }
-    });
-  });
 }
 function rtFit(pts) {                          // ordinary least squares, y on x
   const n = pts.length;
@@ -2426,42 +2411,119 @@ function rtPsfTrendCard(d, L, label) {
     + " · LINEAR FIT PER BUILDING · " + label.toUpperCase();
 }
 
-function rtLegend(hostId, colors) {
+// The prior -> new cards' key. Neutral throughout -- whose a stem is, is its
+// box's to say -- with the tick in the chart's own tick colour and the stem
+// and marker in the ink, so the key tells the two ends apart as the chart does.
+// A card with nothing drawn has nothing for a key to explain, so it hides.
+function rtLegend(hostId, any) {
   const host = document.getElementById(hostId);
   host.textContent = "";
-  const add = (style, text) => {
-    const s = elc("span");
-    const i = elc("i");
-    Object.assign(i.style, style);
-    s.append(i, elc("span", null, text));
-    host.appendChild(s);
+  host.hidden = !any;
+  if (!any) return;
+  const NS = "http://www.w3.org/2000/svg";
+  const add = (parts, text) => {
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 12 16");
+    svg.setAttribute("class", "lg");
+    svg.setAttribute("aria-hidden", "true");
+    parts.forEach(([tag, attrs]) => {
+      const e = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+      svg.appendChild(e);
+    });
+    const sp = elc("span");
+    sp.append(svg, elc("span", null, text));
+    host.appendChild(sp);
   };
-  add({ background: colors.prior }, "Prior rent, kept");
-  add({ background: "var(--muted)" }, "Rise to the new rent");
-  add({ border: "1.5px solid var(--muted)", boxSizing: "border-box" }, "Cut — new rent below the prior");
+  const tick = y => ["path", { d: "M2," + y + "H10", fill: "none", "stroke-width": 2, style: "stroke:var(--tick)" }];
+  const stem = (d, dash) => ["path", Object.assign({ d, fill: "none", "stroke-width": 1.5, style: "stroke:var(--text)" },
+                                                   dash ? { "stroke-dasharray": "2 2" } : {})];
+  add([tick(8)], "Prior rent");
+  add([stem("M6,14V4"), tick(14), ["circle", { cx: 6, cy: 4, r: 3, style: "fill:var(--text)" }]], "New rent, a rise");
+  add([stem("M6,2V9.2", true), tick(2),
+       ["circle", { cx: 6, cy: 12, r: 2.6, fill: "none", "stroke-width": 1.4, style: "stroke:var(--text)" }]],
+      "New rent, a cut: dashed, the marker hollow");
 }
+// "missing square footage or a prior rent in the source": what the rows lack,
+// as why() names it, each reason once.
+const rtWants = (rs, why) => {
+  const ws = [...new Set(rs.map(why))];
+  return "missing " + (ws.length > 1 ? ws.slice(0, -1).join(", ") + " or " : "") + ws[ws.length - 1] + " in the source";
+};
+// A prior -> new card's own leave-outs, counted by building. The caller passes
+// only the rows its boxes let it list -- the trade-out % card's rule: a
+// building switched off on a live box is left out, one whose box cannot be
+// ticked is not.
+function rtUndrawn(rs, noun, why) {
+  if (!rs.length) return "";
+  const by = {};
+  rs.forEach(r => { by[r.property] = (by[r.property] || 0) + 1; });
+  return rtPlural(rs.length, noun) + " in this timeframe " + (rs.length === 1 ? "is" : "are") + " not drawn, "
+    + rtWants(rs, why) + ": " + RT.data.properties.filter(p => by[p]).map(p => rtShort(p) + " " + by[p]).join(", ") + ". ";
+}
+// The cuts among the buildings shown, largest first, named up to eight. The
+// chart draws every one; the note is where a reader finds them by name.
+function rtCutList(rows, shown, noun, below) {
+  const cuts = rows.filter(r => r.cut && shown.indexOf(r.property) >= 0).sort((a, b) => a.mv - b.mv);
+  if (!cuts.length) return "";
+  return rtPlural(cuts.length, noun) + " came in below the " + below + ": "
+    + cuts.slice(0, 8).map(r => rtShort(r.property) + " " + r.unit + " (" + rtSgnP(r.mv) + "/sqft)").join(", ")
+    + (cuts.length > 8 ? ", and " + (cuts.length - 8) + " more" : "") + ". ";
+}
+// A building's figures for its box and the note: count, mean move, cuts.
+const rtMoveStat = noun => (p, mine) => {
+  if (!mine.length) return "";
+  const cuts = mine.filter(r => r.cut).length;
+  return rtPlural(mine.length, noun) + " · mean move " + rtSgnP(rtAvg(mine.map(r => r.mv))) + "/sqft"
+       + (cuts ? " · " + rtPlural(cuts, "cut") : "");
+};
 
 function rtTradePsfCard(d, L, label) {
-  const rows = L.filter(l => l.sqft && l.prior != null && rtLpsf(l) != null).map(l => ({
-    property: l.property, label: l.unit || "?", date: l.date, prior: l.prior / l.sqft,
-    next: rtLpsf(l), pct: l.toPct, term: l.term }));
-  rtLegend("rtTpLegend", rtColors());
-  rtBarFacets("rtTpFacets", rows, {
-    caption: (p, mine) => {
-      if (!mine.length) return "";
-      const cuts = mine.filter(r => r.next < r.prior).length;
-      return rtPlural(mine.length, "lease") + " · mean move " + rtSgnP(rtAvg(mine.map(r => r.next - r.prior)))
-           + "/sqft" + (cuts ? " · " + rtPlural(cuts, "cut") : "");
+  const why = l => !l.sqft ? "square footage" : l.prior == null ? "a prior rent"
+                 : rtLpsf(l) == null || rtRent(l) == null ? (RT.mode === "gross" ? "a gross" : "an effective") + " rent"
+                 : null;
+  // The new $/sqft is the tracker's own, as on the trend card above; the move
+  // is taken on the rents. The prior is only ever a rent, so its $/sqft is
+  // unrounded where the tracker's is rounded to the cent -- and set against
+  // each other, a new lease at exactly the prior rent read as a cut.
+  const rows = L.filter(l => !why(l)).map(l => {
+    const lo = l.prior / l.sqft, y = rtLpsf(l), mv = (rtRent(l) - l.prior) / l.sqft;
+    return { property: l.property, unit: l.unit || "?", x: rtDay(l.date), y, lo, mv, cut: mv < 0,
+      tip: [rtShort(l.property) + " " + (l.unit || "") + " · " + rtMD(l.date) + (l.term ? " · " + l.term + "-mo" : ""),
+            "Prior " + rtPsfS(lo) + " → new " + rtPsfS(y) + "/sqft " + rtBasis(),
+            "Change " + rtSgnP(mv) + "/sqft" + (l.toPct != null ? " (" + rtPct(l.toPct) + ")" : "")] };
+  });
+  // a building switched off stays so across a timeframe change, but only a
+  // live box can show or undo that -- see rtTradeoutCard
+  const live = new Set(rows.map(r => r.property));
+  const on = p => !live.has(p) || !RT.hide.tp.has(p);
+  rtLegend("rtTpLegend", rows.length > 0);
+  rtOverlay(rows, {
+    key: "tp", cks: "rtTpCks", wrap: "rtTpWrap", canvas: "rtTpChart", spans: true,
+    withZero: false, yFmt: v => "$" + v, stat: rtMoveStat("lease"),
+    empty: p => {
+      const mine = L.filter(l => !p || l.property === p);
+      if (!mine.length) return "No new lease in this timeframe";
+      return rtPlural(mine.length, "lease") + (p ? " here, " : " in this timeframe, ")
+        + (mine.length > 1 ? "all " : "") + rtWants(mine, why)
+        + (mine.every(l => l.toPct != null) ? " — on the trade-out % chart above" : "");
     },
-    empty: () => "No new lease with a prior rent and square footage in this timeframe" });
-  const cuts = rows.filter(r => r.next < r.prior);
-  document.getElementById("rtTpEyebrow").textContent = "ONE BAR PER NEW LEASE, IN DATE ORDER · $/SQFT · "
-    + label.toUpperCase();
-  document.getElementById("rtTpFoot").textContent =
-    "Each bar is the prior lease's $/sqft with the move to the new lease on top, on a shared scale. "
-    + "The prior rent is as its source reports it; the new rent follows the basis above. "
-    + (cuts.length ? rtPlural(cuts.length, "lease") + " came in below the one " + (cuts.length === 1 ? "it" : "they")
-                     + " replaced, drawn outlined: " + cuts.map(r => rtShort(r.property) + " " + r.label).join(", ") + "." : "");
+    aria: (shown, n) => "Trade-out $/sqft, prior lease to new, by lease date: " + rtPlural(n, "lease")
+      + " across " + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
+    note: (shown, stat) => {
+      const foot = document.getElementById("rtTpFoot");
+      const undrawn = rtUndrawn(L.filter(l => why(l) && on(l.property)), "lease", why);
+      if (!rows.length) { foot.textContent = undrawn; return; }
+      if (!shown.length) { foot.textContent = "No building selected — tick one above. " + undrawn; return; }
+      foot.textContent =
+        "Each stem is one new lease on its lease date, from the prior lease's $/sqft at the grey tick to the "
+        + "new lease's at the building's marker; a stem that runs down is a cut. " + rtOverlayHow()
+        + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
+        + "The prior rent is as its source reports it; the new rent follows the basis above. "
+        + rtCutList(rows, shown, "lease", "prior rent") + undrawn;
+    } });
+  document.getElementById("rtTpEyebrow").textContent = "ONE STEM PER NEW LEASE · PRIOR → NEW $/SQFT, "
+    + rtBasis().toUpperCase() + " · " + label.toUpperCase();
 }
 
 function rtRenewalCard(d, R, label) {
@@ -2494,27 +2556,43 @@ function rtRenewalCard(d, R, label) {
 }
 
 function rtRenewPsfCard(d, R, label) {
-  const rows = R.filter(r => r.sqft && r.oldRate != null && r.newRate != null).map(r => ({
-    property: r.property, label: r.unit || "?", date: r.date, prior: r.oldRate / r.sqft,
-    next: r.newRate / r.sqft, pct: r.incPct }));
-  rtLegend("rtRpLegend", rtColors());
-  const inRange = {};
-  R.forEach(r => { inRange[r.property] = (inRange[r.property] || 0) + 1; });
-  rtBarFacets("rtRpFacets", rows, {
-    caption: (p, mine) => mine.length ? rtPlural(mine.length, "renewal") + " · mean move "
-      + rtSgnP(rtAvg(mine.map(r => r.next - r.prior))) + "/sqft" : "",
-    empty: p => inRange[p]
-      ? rtPlural(inRange[p], "renewal") + " here, none with square footage in the source — they are on the % chart above"
-      : "No renewal in this timeframe" });
-  const missing = R.filter(r => !r.sqft);
-  const mb = {};
-  missing.forEach(r => { mb[r.property] = (mb[r.property] || 0) + 1; });
-  document.getElementById("rtRpEyebrow").textContent =
-    "ONE BAR PER RENEWAL · $/SQFT · " + label.toUpperCase() + " · RENEWAL RATES CARRY ONE BASIS";
-  document.getElementById("rtRpFoot").textContent =
-    "The rent basis above does not move this card: a renewal carries one rate either side. "
-    + (missing.length ? rtPlural(missing.length, "renewal") + " in this timeframe carry no square footage and are "
-                        + "left out here: " + Object.keys(mb).map(p => p + " " + mb[p]).join(", ") + "." : "");
+  const why = r => !r.sqft ? "square footage" : r.oldRate == null || r.newRate == null ? "a rate either side" : null;
+  const rows = R.filter(r => !why(r)).map(r => {
+    const lo = r.oldRate / r.sqft, y = r.newRate / r.sqft, mv = (r.newRate - r.oldRate) / r.sqft;
+    return { property: r.property, unit: r.unit || "?", x: rtDay(r.date), y, lo, mv, cut: mv < 0,
+      tip: [rtShort(r.property) + " " + (r.unit || "") + " · " + rtMD(r.date),
+            "Prior " + rtPsfS(lo) + " → new " + rtPsfS(y) + "/sqft",
+            "Change " + rtSgnP(mv) + "/sqft" + (r.incPct != null ? " (" + rtPct(r.incPct) + ")" : "")] };
+  });
+  const live = new Set(rows.map(r => r.property));
+  const on = p => !live.has(p) || !RT.hide.rp.has(p);
+  rtLegend("rtRpLegend", rows.length > 0);
+  rtOverlay(rows, {
+    key: "rp", cks: "rtRpCks", wrap: "rtRpWrap", canvas: "rtRpChart", noun: "renewal", spans: true,
+    withZero: false, yFmt: v => "$" + v, stat: rtMoveStat("renewal"),
+    empty: p => {
+      const mine = R.filter(r => !p || r.property === p);
+      if (!mine.length) return "No renewal in this timeframe";
+      return rtPlural(mine.length, "renewal") + (p ? " here, " : " in this timeframe, ")
+        + (mine.length > 1 ? "all " : "") + rtWants(mine, why)
+        + (mine.every(r => r.incPct != null) ? " — on the % chart above" : "");
+    },
+    aria: (shown, n) => "Renewal $/sqft, prior rate to new, by lease date: " + rtPlural(n, "renewal")
+      + " across " + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
+    note: (shown, stat) => {
+      const foot = document.getElementById("rtRpFoot");
+      const undrawn = rtUndrawn(R.filter(r => why(r) && on(r.property)), "renewal", why);
+      if (!rows.length) { foot.textContent = undrawn; return; }
+      if (!shown.length) { foot.textContent = "No building selected — tick one above. " + undrawn; return; }
+      foot.textContent =
+        "Each stem is one renewal on its lease date, from the rate before at the grey tick to the renewal "
+        + "rate at the building's marker; a stem that runs down is a cut. " + rtOverlayHow()
+        + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
+        + "The rent basis above does not move this card: a renewal carries one rate either side. "
+        + rtCutList(rows, shown, "renewal", "rate before") + undrawn;
+    } });
+  document.getElementById("rtRpEyebrow").textContent = "ONE STEM PER RENEWAL · PRIOR → NEW $/SQFT · "
+    + label.toUpperCase() + " · RENEWAL RATES CARRY ONE BASIS";
 }
 
 function rtWeeklyCard(d, W, label) {

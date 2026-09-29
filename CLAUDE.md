@@ -913,9 +913,9 @@ in a way the plaintext JSON is not.
   (`--rt-1`..`--rt-5` on the two `:root` blocks) are each theme's own step of one
   validated categorical order.
 
-  **Trade-out %, new-lease $/sqft and renewal % are one chart each, with a
-  box per building** (owner's call, 2026-09-29) — they were five small panels
-  until then. On those three, every building also wears its own marker (`RT_SHAPES`,
+  **Every chart on the tab is one chart, with a box per building** (owner's
+  call, 2026-09-29) — each was five small panels until then. On every one,
+  each building also wears its own marker (`RT_SHAPES`,
   in the colours' fixed order, three longer than the palette so a sixth to
   eighth building, which share the neutral colour, still get one each), drawn
   in its box as well as on the plot. Each $/sqft fit line is named at **its
@@ -931,7 +931,9 @@ in a way the plaintext JSON is not.
   Hover goes to the nearest **dot** only (`rtDots`): Chart.js's own nearest
   mode also weighs a fit line's invisible end points, and the tooltip filter
   runs after it, so pointing at a line's end showed an empty tooltip over a
-  real lease. `rtOverlay` draws all three:
+  real lease. On the two prior → new cards the distance is to the whole stem,
+  so pointing at a grey tick is pointing at that lease. `rtOverlay` draws all
+  five:
 
   - **The boxes are per card**, kept across a timeframe, basis or theme change
     (`RT.hide`) and dropped on Lock.
@@ -950,8 +952,16 @@ in a way the plaintext JSON is not.
   - **The note and the canvas label follow the boxes**, per-building figures
     and all, the way Budget vs Actual's note follows its basket.
 
-  The two prior → new $/sqft cards are still one small panel per building on
-  shared axes, where a panel title does the naming.
+  **The two prior → new $/sqft cards draw each lease as a stem on its lease
+  date** (`rtSpans`): a grey tick at the prior rent, a line in the
+  building's colour, and the building's marker at the new rent. They were
+  bars in lease order, one row per building, and a building's own lease
+  order is not an axis two buildings can share — so the overlay puts them on
+  the same date axis as the cards above them, and the vertical axis takes in
+  both ends of every stem shown. What a card cannot draw (a lease with no
+  prior rent or square footage, a renewal with no square footage) is counted
+  in its note by building and reason, under the box rule above, and a
+  building with nothing drawable keeps a struck-through box saying why.
 - **Every tile carries the rent-weighted trade-out beside the tracker's mean.**
   The mean stays the headline, so the two dashboards agree on it, and the
   weighted figure beside it is the statistic the Landing tab grades; one
@@ -959,9 +969,11 @@ in a way the plaintext JSON is not.
   leases** as the mean, because the tracker withholds a trade-out on a few
   leases that do carry a prior.
 - **A cut is drawn as a cut.** The tracker stacks the change on the prior, so a
-  lease that came in below the one it replaced hangs below the axis. Here the
-  grey runs to the lower of the two rents and the gap is filled for a rise and
-  outlined for a cut.
+  lease that came in below the one it replaced hangs below the axis. Here a
+  cut's stem runs **down** from its tick, is dashed, and on a filled marker
+  ends hollow — the hollow is what shows a cut too small to have a visible
+  stem. A cross is all rim already, so there the direction, the dash and the
+  tooltip carry it. The note names the largest eight cuts and counts the rest.
 - **Occupancy is the newest week by date.** The tracker takes whichever weekly
   row comes last in its file, which is not always the newest. A building with no
   weekly report shows the figure the tracker types in, and the tile says
