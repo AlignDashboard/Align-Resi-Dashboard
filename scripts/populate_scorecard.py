@@ -111,6 +111,17 @@ OUT = "docs/scorecard.json"
 # because that is what the properties' status maps use.
 KPI_TOTAL = "Total Deliquency"
 KPI_SPLIT = "Split Between 30/60/90"
+
+# Total Deliquency is the EliseAI building-metrics export's `Delinquency Rate`
+# wherever that export covers the property -- the outstanding-balance figure,
+# owner's call 2026-09-29, closing B4. So the Yardi AR report stops writing the
+# rate for these four and keeps the 30/60/90 split, which the export does not
+# carry. Palma is not in the export and keeps the report's rate. A static list
+# rather than "whichever ran last", because a last-run-wins race over one cell
+# is what G3 took a week to get out of. It must equal
+# populate_building_metrics.HEADING_TO_SLUG's values; test_delinquency_source.py
+# fails if the two drift apart.
+AR_FROM_EXPORT = frozenset({"chorus", "the-landing", "madelon", "335-third-street"})
 KPI_LTL = "Loss to Lease %"
 KPI_NOI = "NOI Margin %"
 KPI_CTRL = "Controllable OpEx/Unit"
@@ -976,6 +987,11 @@ def main():
         facts["received_at"] = a.received_at
         facts["received_what"] = facts.get("received_what") or "report supplied by hand"
 
+    if facts.get("delq_family") and slug in AR_FROM_EXPORT:
+        facts["total_delinq_pct"] = None
+        facts["delq_why"] = ("filled by the EliseAI building-metrics export for this "
+                             "property (AR_FROM_EXPORT); this report keeps the split")
+
     sc = json.load(open(a.out))
     prop = next((p for p in sc["properties"] if p["slug"] == slug), None)
     if not prop:
@@ -1081,8 +1097,13 @@ def main():
         # The AR report's own family. Registered in SC_FEED_PREFIXES in
         # index.html and the matching list in data.html, and in
         # SCD_DRIVE_FEEDS so the Landing tab's Delinquency tile carries it.
+        # What THIS run filled, not what the cell holds: for a property in
+        # AR_FROM_EXPORT the rate cell carries the export's figure, and naming
+        # it here would claim it back for this family (and strip it from
+        # bldg_kpis below).
+        this_run = measurements(facts)
         filled_here = sorted(k for k in (KPI_TOTAL, KPI_SPLIT)
-                             if prop["values"].get(k, {}).get("display") is not None)
+                             if this_run.get(k, (None, None, None))[1] is not None)
         meas[slug].update({
             "delq_source": facts["source"],
             "delq_as_of": facts["as_of"],
@@ -1097,8 +1118,7 @@ def main():
         for key, names in list(meas[slug].items()):
             if (key.endswith("kpis") and key != "delq_kpis"
                     and isinstance(names, list)):
-                meas[slug][key] = [n for n in names
-                                   if n not in (KPI_TOTAL, KPI_SPLIT)]
+                meas[slug][key] = [n for n in names if n not in filled_here]
     if facts.get("denominator_note"):
         meas[slug]["denominator"] = facts["denominator_note"]
     if facts.get("ltl_month"):
