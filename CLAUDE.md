@@ -3062,5 +3062,19 @@ encrypting the JSON or putting the site behind real auth.
 - Charts come from a Chart.js CDN script tag. Sandboxed environments often block
   it, producing `Chart is not defined` — that is an environment artifact, not a
   page bug.
+- **Dark is the default, on both pages.** `index.html` and `data.html` each set
+  `data-theme` from `localStorage["align-theme"]` in a script before the
+  stylesheet, so a stored choice never flashes the other theme; with nothing
+  stored it is `dark` rather than the machine's `prefers-color-scheme`, which
+  is what it read until 2026-09-29. A dashboard is one artefact shown on
+  screens nobody here controls, and a reader on a light laptop was getting a
+  light copy of a page whose charts and colour bands were chosen on a dark one.
+  The toggle still wins, still persists and still carries between the two
+  pages — a default is what you get before you choose, not instead of choosing,
+  and clearing the stored value returns to dark. Each `:root` block also
+  declares its own `color-scheme`, so the browser's own chrome — scrollbars,
+  the select popup, focus rings — follows the page rather than the machine;
+  without it the dark default arrives with light scrollbars down the deep
+  dive's table on exactly the machines the change was made for.
 - Verify UI changes by serving `docs/` and driving the page in a real browser
   through the password gate, not by reading the diff alone.
