@@ -142,6 +142,14 @@ pipeline parses, so **dropping a fresh direct export in Drive is the whole
 refresh**. `LANDING_DRIVE_PACKET.md` is the list of those exports and where each
 one goes.
 
+**The tab opens on its first card.** A standing paragraph (`#dIntro`) sat above
+the grid explaining that everything here is Drive-fed and that a second,
+workbook-fed tab used to sit beside it; it came off 2026-09-29, by request,
+along with the Operating Summary's own closing note. Nothing it said is lost:
+which report feeds which card is the table below, what the tab cannot show is
+the last card, and the workbook tab it referred to has been gone since
+2026-09-18.
+
 It was `Landing (Drive)`, beside a workbook-fed `The Landing` that showed the
 same building with the V37 workbook still in it. That tab came off on
 2026-09-18 and this one took the plain name. What went with it: eleven cards
@@ -1810,6 +1818,15 @@ window starts at or after the first month rather than clamping, and it filters
 the boxes as well as the select. Clamping would print "T12" over eight months of
 data, which is the kind of label that gets quoted. Twelve months today, so both
 choices and every box are live; a shorter run simply offers fewer.
+
+**The card ends at the table.** The paragraph under it — which pair is being
+compared, which windows the buttons offer, what the scaling is and how the
+variance is coloured — came off 2026-09-29, by request. `ids.note` is optional
+now, the same way `renderScorecard`'s is: a mount that does not declare one
+renders without it, and `reserveTallest` is not asked to hold room for a note
+that is not there. `noteFor` stays, since it is the prose a mount declaring a
+note would get, and `headOf` already puts each column's window and multiplier
+on the column itself — which is where the note's load-bearing half was.
 
 `renderOpSummary` was shared with the workbook-fed Landing tab until that came
 off on 2026-09-18, so both cards always changed together. It is still written to
