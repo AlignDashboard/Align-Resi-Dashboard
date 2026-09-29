@@ -805,8 +805,9 @@ is before it is unlocked.
 the tracker, run the import with `--quiet`, commit only if the data moved. The
 tracker is rebuilt every morning — its repo is one commit, force-replaced, and
 the first one seen was built at 11:09 UTC — so four hours of slack covers a
-late build, and the tab carries the day's snapshot before a Pacific working day
-starts.
+late build. **GitHub starts scheduled runs late, though:** the first six
+started between 18:28 and 21:10 UTC, so once the secret is set, expect the
+day's snapshot around midday Pacific rather than before the working day.
 
 **It needs one secret, `RENTAL_TRACKER_PASSWORD`** — the tracker's password,
 under Settings → Secrets and variables → Actions (open item A18). Until it is
@@ -839,7 +840,17 @@ of the gitignored stores a pipeline run does.
 
 The tab's snapshot line turns red past `SC_STALE_DAYS` (3) — the page's one
 definition of a daily feed gone quiet. The tracker rebuilds daily and this
-copies it daily, so a snapshot that old means one of the two has stopped.
+copies it daily, so a snapshot that old means one of the two is not happening,
+and the line **links to this workflow's run list** (`RT_WORKFLOW_URL`), where
+the newest run's summary says which: `not refreshed` while the secret is
+unset, `already current` when the tracker itself has not moved. It said "see
+the Refresh Rental Rates workflow" in plain text until 2026-09-29, which read
+as a link and was not one.
+
+**Every run until the secret exists is that first case**, and that is what the
+red line on 2026-09-29 was: six scheduled runs and one started by hand, each
+skipping from the password check to the end. The snapshot was refreshed by hand that day (the
+command below), which clears the line for three days, not for good.
 
 By hand, for a snapshot now:
 
