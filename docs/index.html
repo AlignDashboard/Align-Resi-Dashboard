@@ -892,7 +892,6 @@
          change a reader sees.
          ========================================================= -->
     <div class="view" id="view2d" role="tabpanel" aria-labelledby="tabView2d" tabindex="0" hidden>
-    <div class="blu-note" id="dIntro" style="color:var(--muted);margin-bottom:14px;"></div>
     <div class="grid">
 
       <div class="card wide" id="cdOpSummary">
@@ -909,7 +908,6 @@
           <div class="togrow" id="dopTogs" role="group" aria-label="Measured against"></div>
         </div>
         <div id="dopTbl"></div>
-        <div class="blu-note" id="dopNote" style="color:var(--muted);"></div>
       </div>
 
       <!-- Two tile rows, not a scorecard grid. The KPI Scorecard card that
@@ -3913,7 +3911,7 @@ async function renderOpSummary(slug, ids) {
        row(noiLabel, pt.noi, true)]);
     togs.querySelectorAll(".tog").forEach(t =>
       t.setAttribute("aria-pressed", String(t.dataset.cmp === C2)));
-    document.getElementById(ids.note).textContent = noteFor(B, C2);
+    if (noteEl) noteEl.textContent = noteFor(B, C2);
   }
 
   // Rebuild the button row for a base, keeping the comparison if that base
@@ -3974,6 +3972,7 @@ async function renderOpSummary(slug, ids) {
   }
 
   const togs = document.getElementById(ids.togs);
+  const noteEl = ids.note ? document.getElementById(ids.note) : null;
   const sel = ids.sel && document.getElementById(ids.sel);
   if (sel) {
     sel.textContent = "";
@@ -3986,7 +3985,10 @@ async function renderOpSummary(slug, ids) {
     });
   }
   setBase(options[0], null);
-  reserveTallest(document.getElementById(ids.note),
+  // Only a mount that declares a note reserves room for it. The height is
+  // reserved against the tallest note any pair produces, so the card does not
+  // jump as the controls move it between them.
+  if (noteEl) reserveTallest(noteEl,
     options.reduce((acc, b) => acc.concat(
       comparisonsFor(b).map(c => noteFor(b, c))), []));
 
@@ -5125,18 +5127,9 @@ async function loadLandingDrive() {
   const meas = ((SC && SC.measured) || {})[SCD_SLUG] || {};
 
 
-  document.getElementById("dIntro").textContent =
-    "The Landing, built only from Google Drive. Every number on this tab comes from a "
-    + "report the pipeline fetches and parses, so a fresh direct export dropped in Drive "
-    + "is the whole refresh — nothing here is typed in, pasted into a grey tab or carried "
-    + "over from the analyst workbook. A second tab drew the same building from that "
-    + "workbook until 2026-09-18; the workbook still fills several scorecard cells "
-    + "through populate_scorecard --from-landing, but nothing on this page reads it "
-    + "directly. What this tab cannot show, and why, is on the last card.";
-
   /* ---- Operating summary — the T12 statement, unchanged from The Landing ---- */
   section("cdOpSummary", () => renderOpSummary(SCD_SLUG,
-    { card: "cdOpSummary", tbl: "dopTbl", note: "dopNote", sel: "dopSelect",
+    { card: "cdOpSummary", tbl: "dopTbl", sel: "dopSelect",
       togs: "dopTogs" }));
 
   /* ---- Loss to lease — the statement's own rental-income section ---- */
