@@ -5356,7 +5356,7 @@ async function loadLandingDrive() {
         // The AR balance is a snapshot; the month is the denominator, not the
         // window, which is why this is not "monthly" like the revenue tiles.
         period: "point in time",
-        read: v => [v.display, "resident AR over one month's rent"] },
+        read: v => [v.display, "outstanding balance"] },
     ];
 
     const tiles = WANTED.map(t => {
@@ -5833,7 +5833,16 @@ async function loadLandingDrive() {
     // value" is not the same question as "Drive put it there".
     const feed = SCD_DRIVE_FEEDS.find(f => f.prefix === "delq_");
     const driveOwns = scdFeedIsDrive(feed, meas);
-    const rate = driveOwns && prop && scValue(prop, "Total Deliquency");
+    // The rate and the buckets come from different feeds since 2026-09-29: the
+    // EliseAI building-metrics export's Delinquency Rate is the outstanding-
+    // balance figure wherever it covers the property (AR_FROM_EXPORT in
+    // populate_scorecard.py), and the Yardi report keeps the 30/60/90 split.
+    // So the rate follows whichever Drive family lists the cell.
+    const rateFeed = SCD_DRIVE_FEEDS.find(f =>
+      (meas[f.prefix + "kpis"] || []).indexOf("Total Deliquency") >= 0);
+    const rateFromExport = !!rateFeed && rateFeed.prefix === "bldg_";
+    const rate = rateFeed && scdFeedIsDrive(rateFeed, meas) && prop
+      && scValue(prop, "Total Deliquency");
     const split = driveOwns && prop && scValue(prop, "Split Between 30/60/90");
     const parts = (split && split.parts) || null;
     const labels = (split && split.parts_labels) || null;
@@ -5844,7 +5853,7 @@ async function loadLandingDrive() {
       // asserted -- lineage.json attributes its evidence to whichever feed owns
       // the cell, so once the workbook takes it there is no Drive row left to
       // quote, and naming a file the page cannot see would be inventing one.
-      const hasCells = prop && feed.only
+      const hasCells = prop && (feed.only || ["Total Deliquency", "Split Between 30/60/90"])
         .some(k => (scValue(prop, k) || {}).display != null);
       eyebrow.textContent = hasCells ? "NOT DRIVE-FED TODAY" : "AWAITING THE AR REPORT";
       note.textContent = hasCells
@@ -5873,18 +5882,25 @@ async function loadLandingDrive() {
       return new Date(+m[1], +m[2] - 1, +m[3])
         .toLocaleString([], { month: "short", day: "numeric", year: "numeric" });
     };
-    const asOf = asOfDay(meas.as_of);
+    // The date on the eyebrow is the buckets' (the Yardi report's); the rate
+    // carries its own on the line beneath it when it comes from the export.
+    const asOf = asOfDay(meas.delq_as_of || meas.as_of);
     // Every other eyebrow on the page is typed in capitals; this one is built,
     // so it is upper-cased rather than reading as the odd one out.
     eyebrow.textContent = asOf ? "AS OF " + asOf.toUpperCase() : "AS OF DATE NOT RECORDED";
-    eyebrow.title = meas.source
-      ? "From " + meas.source + ". The date is the period the report covers, not "
+    eyebrow.title = (meas.delq_source || meas.source)
+      ? "From " + (meas.delq_source || meas.source) + ". The date is the period the report covers, not "
         + "when it arrived \u2014 the feed table at the foot of this tab carries "
         + "arrivals."
       : "";
 
     statBlock(document.getElementById("ddRate"),
-      rate && rate.display ? [[rate.display, "of one month's revenue"]] : []);
+      rate && rate.display
+        ? [[rate.display, rateFromExport
+            ? "outstanding balance · EliseAI export"
+              + (meas.bldg_as_of ? " as of " + meas.bldg_as_of : "")
+            : "of one month's revenue"]]
+        : []);
 
     if (parts && labels) {
       // One heading per bar, carrying that bar's own value. The chart's y-axis
@@ -5937,9 +5953,13 @@ async function loadLandingDrive() {
       "The report's own past-due buckets, in dollars. The split is reported and never "
       + "graded — a distribution has no single direction it can be good or bad in — so it "
       + "carries no colour and no place in the scorecard's tally. "
-      + (meas.denominator
-          ? "The rate is gross resident AR over " + meas.denominator + ". "
-          : "")
+      + (rateFromExport
+          ? "The rate above is the EliseAI building-metrics export's Delinquency Rate "
+            + "— the outstanding-balance figure — not a ratio of these buckets; the "
+            + "export does not state its denominator. "
+          : meas.denominator
+            ? "The rate is gross resident AR over " + meas.denominator + ". "
+            : "")
       + "The 0–30 bucket, the balance per unit and the largest balances are parsed and "
       + "tied out but stop in data/: they are unit level and the report arrives with "
       + "resident names, so nothing publishes them.";
