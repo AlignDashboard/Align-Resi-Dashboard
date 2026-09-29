@@ -9,12 +9,14 @@
 <script>
   // Applied before first paint so a stored light preference does not flash dark.
   (function () {
+    // Dark is the default, not the OS's preference: this is one dashboard
+    // shown on screens nobody here controls, and a reader on a light machine
+    // got a light copy of a page whose charts and bands were read on a dark
+    // one. The toggle still wins and still persists -- a default is what you
+    // get before you choose, not instead of choosing.
     var t = null;
     try { t = localStorage.getItem("align-theme"); } catch (e) {}
-    if (t !== "light" && t !== "dark") {
-      t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
-        ? "light" : "dark";
-    }
+    if (t !== "light" && t !== "dark") t = "dark";
     document.documentElement.setAttribute("data-theme", t);
   })();
 </script>
@@ -23,6 +25,12 @@
      Chart series colors live in JS (const C) and are shared by both themes;
      only chart chrome — grid lines, ticks, legend — is themed. */
   :root, :root[data-theme="dark"] {
+    /* The browser's own chrome -- scrollbars, the select popup, focus rings --
+       follows the page rather than the machine. Without it a reader on a light
+       OS gets the dark dashboard with light scrollbars down the side of the
+       deep dive's table, which is the seam that made the OS-following default
+       worth keeping in the first place. */
+    color-scheme: dark;
     --ink:        #0e1116;
     --panel:      #161b22;
     --panel-2:    #1c232d;
@@ -55,6 +63,7 @@
     --rt-prior: #3b4452;
   }
   :root[data-theme="light"] {
+    color-scheme: light;
     --ink:        #f4f5f7;
     --panel:      #ffffff;
     --panel-2:    #eef0f3;
