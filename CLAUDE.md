@@ -892,12 +892,33 @@ in a way the plaintext JSON is not.
 
 ### Where it departs from the tracker, and why
 
-- **One small panel per building on shared axes, not five colours on one plot.**
-  No set of five colours clears the colour-vision floors for every pair on a
-  scatter (checked against the palette validator); a panel title always can.
-  Axes are shared within a card, so a height compares across buildings. The
-  colours (`--rt-1`..`--rt-5` on the two `:root` blocks) are each theme's own step
-  of one validated categorical order, and never carry identity alone.
+- **No colour carries a building alone.** No set of five colours clears the
+  colour-vision floors for every pair on a scatter (checked against the palette
+  validator: the worst pair is indistinguishable to a deuteranope in the dark
+  theme), so every chart names its buildings some other way too. The colours
+  (`--rt-1`..`--rt-5` on the two `:root` blocks) are each theme's own step of one
+  validated categorical order.
+
+  **Trade-out % and new-lease $/sqft are one chart each, with a box per
+  building** (owner's call, 2026-09-29) — they were five small panels until
+  then. On those two, every building also wears its own marker (`RT_SHAPES`,
+  in the colours' fixed order), drawn in its box as well as on the plot; each
+  $/sqft fit line is named in the right-hand gutter, level with where it ends;
+  and the tooltip names the building. `rtOverlay` draws both:
+
+  - **The boxes are per card**, kept across a timeframe, basis or theme change
+    (`RT.hide`) and dropped on Lock.
+  - **A building with nothing in the timeframe keeps its box**, struck through
+    and inert, with the reason on hover — the Budget vs Actual property row's
+    rule, so the grid says where a building went rather than losing it.
+  - **The time axis holds still and the vertical axis rescales** to the
+    buildings shown, so switching an outlier's building off lets the rest fill
+    the height. Everything off keeps the last scale, and the note says so.
+  - **The note and the canvas label follow the boxes**, per-building figures
+    and all, the way Budget vs Actual's note follows its basket.
+
+  The other charts are still one small panel per building on shared axes,
+  where a panel title does the naming.
 - **Every tile carries the rent-weighted trade-out beside the tracker's mean.**
   The mean stays the headline, so the two dashboards agree on it, and the
   weighted figure beside it is the statistic the Landing tab grades; one
