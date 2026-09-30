@@ -1172,15 +1172,6 @@
           <div class="blu-note" id="rtPtFoot" style="color:var(--muted);"></div>
         </div>
 
-        <div class="card wide" id="cRtTradePsf">
-          <h2>Trade-out $/sqft &mdash; Prior &rarr; New</h2>
-          <span class="eyebrow" id="rtTpEyebrow"></span>
-          <div class="ckgrid rt-cks" id="rtTpCks" role="group" aria-label="Buildings shown"></div>
-          <div class="rt-legend" id="rtTpLegend"></div>
-          <div class="chartwrap" id="rtTpWrap"><canvas id="rtTpChart" role="img"></canvas></div>
-          <div class="blu-note" id="rtTpFoot" style="color:var(--muted);"></div>
-        </div>
-
         <div class="card wide" id="cRtRenewal">
           <h2>Renewal % by Lease Date</h2>
           <span class="eyebrow" id="rtRnEyebrow"></span>
@@ -1189,13 +1180,21 @@
           <div class="blu-note" id="rtRnFoot" style="color:var(--muted);"></div>
         </div>
 
-        <div class="card wide" id="cRtRenewPsf">
-          <h2>Renewal $/sqft &mdash; Prior &rarr; New</h2>
-          <span class="eyebrow" id="rtRpEyebrow"></span>
-          <div class="ckgrid rt-cks" id="rtRpCks" role="group" aria-label="Buildings shown"></div>
-          <div class="rt-legend" id="rtRpLegend"></div>
-          <div class="chartwrap" id="rtRpWrap"><canvas id="rtRpChart" role="img"></canvas></div>
-          <div class="blu-note" id="rtRpFoot" style="color:var(--muted);"></div>
+        <div class="card wide" id="cRtPriorNew">
+          <div class="card-head">
+            <div>
+              <h2>Prior &rarr; New $/sqft</h2>
+              <span class="eyebrow" id="rtPnEyebrow"></span>
+            </div>
+            <div class="togrow" role="group" aria-label="Which leases">
+              <button class="tog" type="button" data-rt-pn="leases" aria-pressed="true">New leases</button>
+              <button class="tog" type="button" data-rt-pn="renewals" aria-pressed="false">Renewals</button>
+            </div>
+          </div>
+          <div class="ckgrid rt-cks" id="rtPnCks" role="group" aria-label="Buildings shown"></div>
+          <div class="rt-legend" id="rtPnLegend"></div>
+          <div class="chartwrap" id="rtPnWrap"><canvas id="rtPnChart" role="img"></canvas></div>
+          <div class="blu-note" id="rtPnFoot" style="color:var(--muted);"></div>
         </div>
 
         <div class="card wide" id="cRtWeekly">
@@ -1479,8 +1478,9 @@ function maybeLoadLanding(tab) {
        box per building to switch it off (owner's call, 2026-09-29), and on
        each every building also has its own marker, since no set of five
        colours clears the colour-vision floors for every pair on a scatter.
-       The two prior -> new $/sqft cards draw each lease as a stem on its
-       lease date, from the prior rent to the new one (rtSpans).
+       The prior -> new $/sqft card draws each lease as a stem on its lease
+       date, from the prior rent to the new one (rtSpans), with new leases
+       and renewals on a switch in its head.
      - every tile carries the rent-weighted trade-out beside the tracker's
        mean. The mean is the tracker's headline and stays the headline, so
        the two dashboards agree; the weighted figure is what the Landing tab
@@ -1492,13 +1492,14 @@ const RT_KEY = "align-rt-key";
 const RT_WORKFLOW_URL =
   "https://github.com/AlignDashboard/Align-Resi-Dashboard/actions/workflows/refresh_rental_tracker.yml";
 // One empty set per overlay card, keyed as each card's `key`: trade-out %,
-// new-lease $/sqft, trade-out $/sqft prior -> new, renewal %, renewal $/sqft
-// prior -> new. Hoisted, so RT can be built with it.
+// new-lease $/sqft, renewal %, and prior -> new $/sqft -- one set for both of
+// that card's views. Hoisted, so RT can be built with it.
 function rtHideNone() {
-  return { to: new Set(), pt: new Set(), tp: new Set(), rn: new Set(), rp: new Set() };
+  return { to: new Set(), pt: new Set(), rn: new Set(), pn: new Set() };
 }
 const RT = { env: null, data: null, meta: null, range: "max", month: null, mode: "net",
              dt: "leases", dtAll: false, wkAll: false, sort: { key: "date", dir: -1 },
+             pn: "leases",                // the prior -> new card's New leases | Renewals
              // buildings switched off on the overlay cards, one set per card;
              // kept across a timeframe, basis or theme change, dropped on Lock
              hide: rtHideNone(),
@@ -1748,7 +1749,7 @@ const rtEndLabels = {
     ctx.restore();
   }
 };
-// The prior -> new cards draw each lease as a stem on its lease date: a grey
+// The prior -> new card draws each lease as a stem on its lease date: a grey
 // tick at the prior rent, a line in the building's colour, and the building's
 // marker at the new rent. A cut is said three ways: its stem runs down, the
 // stem is dashed, and a filled marker goes hollow -- the last is what shows a
@@ -2146,6 +2147,11 @@ function rtWire() {
     RT.sort = { key: "date", dir: -1 };
     rtRender();
   }));
+  document.querySelectorAll("[data-rt-pn]").forEach(b => b.addEventListener("click", () => {
+    if (RT.pn === b.dataset.rtPn) return;
+    RT.pn = b.dataset.rtPn;
+    rtRender();
+  }));
   document.getElementById("rtLockBtn").addEventListener("click", rtLockAgain);
   // The series colours are the theme's own steps, so a theme change redraws
   // the tab rather than leaving five charts in the other theme's colours.
@@ -2169,6 +2175,8 @@ function rtRender() {
     x.setAttribute("aria-pressed", String(x.dataset.rtMode === RT.mode)));
   document.querySelectorAll("[data-rt-dt]").forEach(x =>
     x.setAttribute("aria-pressed", String(x.dataset.rtDt === RT.dt)));
+  document.querySelectorAll("[data-rt-pn]").forEach(x =>
+    x.setAttribute("aria-pressed", String(x.dataset.rtPn === RT.pn)));
   const sel = document.getElementById("rtMonth");
   if (sel.options.length !== RT.meta.months.length) {
     sel.textContent = "";
@@ -2207,9 +2215,8 @@ function rtRender() {
   section("cRtTiles",    () => rtTiles(d, L, R, W, label));
   section("cRtTradeout", () => rtTradeoutCard(d, L, label));
   section("cRtPsfTrend", () => rtPsfTrendCard(d, L, label));
-  section("cRtTradePsf", () => rtTradePsfCard(d, L, label));
   section("cRtRenewal",  () => rtRenewalCard(d, R, label));
-  section("cRtRenewPsf", () => rtRenewPsfCard(d, R, label));
+  section("cRtPriorNew", () => rtPriorNewCard(d, L, R, label));
   section("cRtWeekly",   () => rtWeeklyCard(d, W, label));
   section("cRtDetail",   () => rtDetailCard(d, L, R, label));
 }
@@ -2411,10 +2418,10 @@ function rtPsfTrendCard(d, L, label) {
     + " · LINEAR FIT PER BUILDING · " + label.toUpperCase();
 }
 
-// The prior -> new cards' key. Neutral throughout -- whose a stem is, is its
+// The prior -> new card's key. Neutral throughout -- whose a stem is, is its
 // box's to say -- with the tick in the chart's own tick colour and the stem
 // and marker in the ink, so the key tells the two ends apart as the chart does.
-// A card with nothing drawn has nothing for a key to explain, so it hides.
+// A view with nothing drawn has nothing for a key to explain, so it hides.
 function rtLegend(hostId, any) {
   const host = document.getElementById(hostId);
   host.textContent = "";
@@ -2450,7 +2457,7 @@ const rtWants = (rs, why) => {
   const ws = [...new Set(rs.map(why))];
   return "missing " + (ws.length > 1 ? ws.slice(0, -1).join(", ") + " or " : "") + ws[ws.length - 1] + " in the source";
 };
-// A prior -> new card's own leave-outs, counted by building. The caller passes
+// The prior -> new card's own leave-outs, counted by building. The caller passes
 // only the rows its boxes let it list -- the trade-out % card's rule: a
 // building switched off on a live box is left out, one whose box cannot be
 // ticked is not.
@@ -2478,7 +2485,43 @@ const rtMoveStat = noun => (p, mine) => {
        + (cuts ? " · " + rtPlural(cuts, "cut") : "");
 };
 
-function rtTradePsfCard(d, L, label) {
+// The prior -> new card: one chart, two views on a New leases | Renewals
+// switch (owner's call, 2026-09-30) -- the Lease Detail card's pair. Both
+// views draw the same stems on the same date axis, so the card keeps one set
+// of boxes for both: a building switched off stays off across the switch, as
+// it does across a timeframe.
+function rtPriorNewCard(d, L, R, label) {
+  const v = RT.pn === "renewals" ? rtRenewPsfView(R) : rtTradePsfView(L);
+  // a building switched off stays so across a timeframe change, but only a
+  // live box can show or undo that -- see rtTradeoutCard
+  const live = new Set(v.rows.map(r => r.property));
+  const on = p => !live.has(p) || !RT.hide.pn.has(p);
+  rtLegend("rtPnLegend", v.rows.length > 0);
+  rtOverlay(v.rows, {
+    key: "pn", cks: "rtPnCks", wrap: "rtPnWrap", canvas: "rtPnChart", spans: true, noun: v.noun,
+    withZero: false, yFmt: t => "$" + t, stat: rtMoveStat(v.noun),
+    empty: p => {
+      const mine = v.all.filter(r => !p || r.property === p);
+      if (!mine.length) return "No " + v.none + " in this timeframe";
+      return rtPlural(mine.length, v.noun) + (p ? " here, " : " in this timeframe, ")
+        + (mine.length > 1 ? "all " : "") + rtWants(mine, v.why)
+        + (mine.every(v.hasPct) ? " — on the " + v.pctCard + " above" : "");
+    },
+    aria: (shown, n) => "Prior to new $/sqft by lease date, " + v.noun + "s: " + rtPlural(n, v.noun)
+      + " across " + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
+    note: (shown, stat) => {
+      const foot = document.getElementById("rtPnFoot");
+      const undrawn = rtUndrawn(v.all.filter(r => v.why(r) && on(r.property)), v.noun, v.why);
+      if (!v.rows.length) { foot.textContent = undrawn; return; }
+      if (!shown.length) { foot.textContent = "No building selected — tick one above. " + undrawn; return; }
+      foot.textContent = v.how + rtOverlayHow()
+        + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
+        + v.basis + rtCutList(v.rows, shown, v.noun, v.below) + undrawn;
+    } });
+  document.getElementById("rtPnEyebrow").textContent = v.eyebrow + " · " + label.toUpperCase();
+}
+// New leases: the prior lease's rent against this one's.
+function rtTradePsfView(L) {
   const why = l => !l.sqft ? "square footage" : l.prior == null ? "a prior rent"
                  : rtLpsf(l) == null || rtRent(l) == null ? (RT.mode === "gross" ? "a gross" : "an effective") + " rent"
                  : null;
@@ -2493,37 +2536,12 @@ function rtTradePsfCard(d, L, label) {
             "Prior " + rtPsfS(lo) + " → new " + rtPsfS(y) + "/sqft " + rtBasis(),
             "Change " + rtSgnP(mv) + "/sqft" + (l.toPct != null ? " (" + rtPct(l.toPct) + ")" : "")] };
   });
-  // a building switched off stays so across a timeframe change, but only a
-  // live box can show or undo that -- see rtTradeoutCard
-  const live = new Set(rows.map(r => r.property));
-  const on = p => !live.has(p) || !RT.hide.tp.has(p);
-  rtLegend("rtTpLegend", rows.length > 0);
-  rtOverlay(rows, {
-    key: "tp", cks: "rtTpCks", wrap: "rtTpWrap", canvas: "rtTpChart", spans: true,
-    withZero: false, yFmt: v => "$" + v, stat: rtMoveStat("lease"),
-    empty: p => {
-      const mine = L.filter(l => !p || l.property === p);
-      if (!mine.length) return "No new lease in this timeframe";
-      return rtPlural(mine.length, "lease") + (p ? " here, " : " in this timeframe, ")
-        + (mine.length > 1 ? "all " : "") + rtWants(mine, why)
-        + (mine.every(l => l.toPct != null) ? " — on the trade-out % chart above" : "");
-    },
-    aria: (shown, n) => "Trade-out $/sqft, prior lease to new, by lease date: " + rtPlural(n, "lease")
-      + " across " + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
-    note: (shown, stat) => {
-      const foot = document.getElementById("rtTpFoot");
-      const undrawn = rtUndrawn(L.filter(l => why(l) && on(l.property)), "lease", why);
-      if (!rows.length) { foot.textContent = undrawn; return; }
-      if (!shown.length) { foot.textContent = "No building selected — tick one above. " + undrawn; return; }
-      foot.textContent =
-        "Each stem is one new lease on its lease date, from the prior lease's $/sqft at the grey tick to the "
-        + "new lease's at the building's marker; a stem that runs down is a cut. " + rtOverlayHow()
-        + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
-        + "The prior rent is as its source reports it; the new rent follows the basis above. "
-        + rtCutList(rows, shown, "lease", "prior rent") + undrawn;
-    } });
-  document.getElementById("rtTpEyebrow").textContent = "ONE STEM PER NEW LEASE · PRIOR → NEW $/SQFT, "
-    + rtBasis().toUpperCase() + " · " + label.toUpperCase();
+  return { rows, all: L, why, noun: "lease", none: "new lease", below: "prior rent",
+    hasPct: l => l.toPct != null, pctCard: "trade-out % chart",
+    how: "Each stem is one new lease on its lease date, from the prior lease's $/sqft at the grey tick to the "
+       + "new lease's at the building's marker; a stem that runs down is a cut. ",
+    basis: "The prior rent is as its source reports it; the new rent follows the basis above. ",
+    eyebrow: "ONE STEM PER NEW LEASE · NEW RENT " + rtBasis().toUpperCase() };
 }
 
 function rtRenewalCard(d, R, label) {
@@ -2555,7 +2573,8 @@ function rtRenewalCard(d, R, label) {
   document.getElementById("rtRnEyebrow").textContent = "ONE DOT PER RENEWAL · " + label.toUpperCase();
 }
 
-function rtRenewPsfCard(d, R, label) {
+// Renewals: the rate before against the renewal rate.
+function rtRenewPsfView(R) {
   const why = r => !r.sqft ? "square footage" : r.oldRate == null || r.newRate == null ? "a rate either side" : null;
   const rows = R.filter(r => !why(r)).map(r => {
     const lo = r.oldRate / r.sqft, y = r.newRate / r.sqft, mv = (r.newRate - r.oldRate) / r.sqft;
@@ -2564,35 +2583,12 @@ function rtRenewPsfCard(d, R, label) {
             "Prior " + rtPsfS(lo) + " → new " + rtPsfS(y) + "/sqft",
             "Change " + rtSgnP(mv) + "/sqft" + (r.incPct != null ? " (" + rtPct(r.incPct) + ")" : "")] };
   });
-  const live = new Set(rows.map(r => r.property));
-  const on = p => !live.has(p) || !RT.hide.rp.has(p);
-  rtLegend("rtRpLegend", rows.length > 0);
-  rtOverlay(rows, {
-    key: "rp", cks: "rtRpCks", wrap: "rtRpWrap", canvas: "rtRpChart", noun: "renewal", spans: true,
-    withZero: false, yFmt: v => "$" + v, stat: rtMoveStat("renewal"),
-    empty: p => {
-      const mine = R.filter(r => !p || r.property === p);
-      if (!mine.length) return "No renewal in this timeframe";
-      return rtPlural(mine.length, "renewal") + (p ? " here, " : " in this timeframe, ")
-        + (mine.length > 1 ? "all " : "") + rtWants(mine, why)
-        + (mine.every(r => r.incPct != null) ? " — on the % chart above" : "");
-    },
-    aria: (shown, n) => "Renewal $/sqft, prior rate to new, by lease date: " + rtPlural(n, "renewal")
-      + " across " + (shown.length ? shown.map(rtShort).join(", ") : "no building"),
-    note: (shown, stat) => {
-      const foot = document.getElementById("rtRpFoot");
-      const undrawn = rtUndrawn(R.filter(r => why(r) && on(r.property)), "renewal", why);
-      if (!rows.length) { foot.textContent = undrawn; return; }
-      if (!shown.length) { foot.textContent = "No building selected — tick one above. " + undrawn; return; }
-      foot.textContent =
-        "Each stem is one renewal on its lease date, from the rate before at the grey tick to the renewal "
-        + "rate at the building's marker; a stem that runs down is a cut. " + rtOverlayHow()
-        + shown.map(p => rtShort(p) + " " + stat[p]).join(" · ") + ". "
-        + "The rent basis above does not move this card: a renewal carries one rate either side. "
-        + rtCutList(rows, shown, "renewal", "rate before") + undrawn;
-    } });
-  document.getElementById("rtRpEyebrow").textContent = "ONE STEM PER RENEWAL · PRIOR → NEW $/SQFT · "
-    + label.toUpperCase() + " · RENEWAL RATES CARRY ONE BASIS";
+  return { rows, all: R, why, noun: "renewal", none: "renewal", below: "rate before",
+    hasPct: r => r.incPct != null, pctCard: "renewal % chart",
+    how: "Each stem is one renewal on its lease date, from the rate before at the grey tick to the renewal "
+       + "rate at the building's marker; a stem that runs down is a cut. ",
+    basis: "The rent basis above does not move this view: a renewal carries one rate either side. ",
+    eyebrow: "ONE STEM PER RENEWAL · RENEWAL RATES CARRY ONE BASIS" };
 }
 
 function rtWeeklyCard(d, W, label) {

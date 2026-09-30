@@ -370,16 +370,6 @@
    "primary": "f-rental_tracker",
    "holds": null
   },
-  "cRtTradePsf": {
-   "card": "Trade-out $/sqft \u2014 Prior \u2192 New",
-   "tab": "Rental Rates",
-   "tables": [],
-   "flows": [
-    "rental_tracker"
-   ],
-   "primary": "f-rental_tracker",
-   "holds": null
-  },
   "cRtRenewal": {
    "card": "Renewal % by Lease Date",
    "tab": "Rental Rates",
@@ -390,8 +380,8 @@
    "primary": "f-rental_tracker",
    "holds": null
   },
-  "cRtRenewPsf": {
-   "card": "Renewal $/sqft \u2014 Prior \u2192 New",
+  "cRtPriorNew": {
+   "card": "Prior \u2192 New $/sqft",
    "tab": "Rental Rates",
    "tables": [],
    "flows": [
@@ -434,7 +424,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-29T17:29:14.460167+00:00",
+  "generated_at": "2026-09-30T15:29:57.182446+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -1227,33 +1217,33 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/comps.json",
-     "as_of": "2026-09-26",
-     "source_file": "2026-09-27 HelloData - Simple - 335 Third Street.xlsx",
-     "landed_at": "2026-09-27T17:28:31.768Z",
+     "as_of": "2026-09-28",
+     "source_file": "2026-09-29 HelloData - Simple - 335 Third Street.xlsx",
+     "landed_at": null,
      "detail": null
     },
     {
      "property": "chorus",
      "file": "data/chorus/comps.json",
-     "as_of": "2026-09-27",
-     "source_file": "2026-09-28 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-09-28T23:28:31.018Z",
+     "as_of": "2026-09-28",
+     "source_file": "2026-09-29 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": null,
      "detail": null
     },
     {
      "property": "madelon",
      "file": "data/madelon/comps.json",
-     "as_of": "2026-09-27",
-     "source_file": "2026-09-28 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-09-28T23:28:31.018Z",
+     "as_of": "2026-09-28",
+     "source_file": "2026-09-29 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": null,
      "detail": null
     },
     {
      "property": "the-landing",
      "file": "data/the-landing/comps.json",
-     "as_of": "2026-09-27",
-     "source_file": "2026-09-28 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-09-28T23:28:31.018Z",
+     "as_of": "2026-09-28",
+     "source_file": "2026-09-29 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": null,
      "detail": null
     }
    ],
@@ -2279,19 +2269,14 @@
      "anchor": "cRtPsfTrend"
     },
     {
-     "card": "Trade-out $/sqft \u2014 Prior \u2192 New",
-     "tab": "Rental Rates",
-     "anchor": "cRtTradePsf"
-    },
-    {
      "card": "Renewal % by Lease Date",
      "tab": "Rental Rates",
      "anchor": "cRtRenewal"
     },
     {
-     "card": "Renewal $/sqft \u2014 Prior \u2192 New",
+     "card": "Prior \u2192 New $/sqft",
      "tab": "Rental Rates",
-     "anchor": "cRtRenewPsf"
+     "anchor": "cRtPriorNew"
     },
     {
      "card": "Weekly Summaries",
@@ -2314,10 +2299,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-09-23",
+     "as_of": "2026-09-29",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-09-23T20:36:27Z",
-     "detail": "163 leases, 250 renewals and 51 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-09-29T22:30:44Z",
+     "detail": "166 leases, 254 renewals and 54 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2367,7 +2352,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-29T17:07:09.630421+00:00",
+     "landed_at": "2026-09-29T17:16:21.397667+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
