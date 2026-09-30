@@ -673,22 +673,25 @@
   #dgTbl table.dt td:nth-child(n+3) { text-align: right; }
   #dgTbl table.dt th:nth-child(1),
   #dgTbl table.dt td:nth-child(1) { width: 12%; }
+  /* Column 2 went from "2 BR" to "2 BR / 2 BA" on 2026-09-30 and takes 5
+     points back off the money and date columns, which carried the widest
+     share. Still content-derived and still summing to 100. */
   #dgTbl table.dt th:nth-child(2),
-  #dgTbl table.dt td:nth-child(2) { width: 7.5%; }
+  #dgTbl table.dt td:nth-child(2) { width: 12.5%; white-space: nowrap; }
   #dgTbl table.dt th:nth-child(3),
   #dgTbl table.dt td:nth-child(3) { width: 8%; }
   #dgTbl table.dt th:nth-child(4),
-  #dgTbl table.dt td:nth-child(4) { width: 14.3%; }
+  #dgTbl table.dt td:nth-child(4) { width: 13.3%; }
   #dgTbl table.dt th:nth-child(5),
-  #dgTbl table.dt td:nth-child(5) { width: 13.2%; }
+  #dgTbl table.dt td:nth-child(5) { width: 12.2%; }
   #dgTbl table.dt th:nth-child(6),
-  #dgTbl table.dt td:nth-child(6) { width: 13.2%; }
+  #dgTbl table.dt td:nth-child(6) { width: 12.2%; }
   #dgTbl table.dt th:nth-child(7),
   #dgTbl table.dt td:nth-child(7) {
-    width: 16.4%; padding-left: 0; white-space: nowrap; }
+    width: 15.4%; padding-left: 0; white-space: nowrap; }
   #dgTbl table.dt th:last-child,
   #dgTbl table.dt td:last-child {
-    width: 15.4%; padding-right: 0; white-space: nowrap; }
+    width: 14.4%; padding-right: 0; white-space: nowrap; }
   .pill { display: inline-block; font-size: 8.5px; letter-spacing: 1px; padding: 2px 7px;
     border: 1px solid; border-radius: 2px; text-transform: uppercase; }
   .pill.good  { color: var(--green); border-color: var(--green); }
@@ -1012,7 +1015,7 @@
 
       <div class="card wide" id="cdInventory">
         <h2>Unit Inventory</h2>
-        <span class="eyebrow" id="diEyebrow">FLOORPLANS · BEDROOMS · ASKING RENT RANGE · FROM THE YARDI UNIT DIRECTORY</span>
+        <span class="eyebrow" id="diEyebrow">FLOORPLANS · BEDROOMS &amp; BATHS · ASKING RENT RANGE · FROM THE YARDI UNIT DIRECTORY</span>
         <div style="display:flex;gap:22px;flex-wrap:wrap;">
           <div style="flex:0 0 auto;min-width:170px;" id="diStats"></div>
           <div class="chartwrap" style="flex:1 1 300px;height:210px;"><canvas id="dcInv"></canvas></div>
@@ -3244,6 +3247,50 @@ const fm$ = n => {                                   // $1.23M / $432k / $512
   return (n < 0 ? "-$" : "$") + Math.round(a).toLocaleString();
 };
 const fmPct = (x, d = 1) => (x * 100).toFixed(d) + "%";
+
+/* A floorplan is quoted as beds BY baths, and two cards draw it: Unit
+   Inventory's bars and Largest Unit Gaps' rows. Spelling it in two places
+   would eventually have one card calling a plan a 2-bed and the other a
+   2x2. Three things these are careful about:
+
+     - Baths are a float because half baths are real (1.5 on four of The
+       Landing's plans), so the trailing .0 is dropped rather than printed.
+     - A missing half is dropped, not invented. Beds with no baths reads
+       "1 bed", baths with no beds reads "1 bath", and only a plan the
+       directory describes in neither way is "Unknown" -- a plan whose baths
+       the parser flagged as disagreeing must not read as a studio.
+     - Zero bedrooms is a studio, and `Number(b) === 0` rather than `!b` so a
+       null never lands there. */
+const bathNum  = b => String(Number(b));                 // 2.0 -> "2", 1.5 -> "1.5"
+const planLabel = (beds, baths) => {                     // "1 bed · 1 bath"
+  const bd = beds  == null ? null : Number(beds) === 0 ? "Studio" : beds + " bed";
+  const ba = baths == null ? null : bathNum(baths) + " bath";
+  return bd && ba ? bd + " · " + ba : bd || ba || "Unknown";
+};
+const planShort = (beds, baths) => {                     // "2 BR / 2 BA"
+  const bd = beds  == null ? null : Number(beds) === 0 ? "Studio" : beds + " BR";
+  const ba = baths == null ? null : bathNum(baths) + " BA";
+  return bd && ba ? bd + " / " + ba : bd || ba || "—";
+};
+// The group a plan belongs to, as one string so it can key an object. "?" for
+// a half the directory does not give, which sorts last within its level.
+const planKey = (beds, baths) =>
+  (beds == null ? "?" : beds) + "|" + (baths == null ? "?" : bathNum(baths));
+const planKeyLabel = k => {
+  const [b, a] = k.split("|");
+  return planLabel(b === "?" ? null : Number(b), a === "?" ? null : Number(a));
+};
+// Studio, 1 bed, 2 bed, ... then unknown; and inside each, fewest baths first.
+// Both "?" tests come before the subtraction because "?" - "?" is NaN, which
+// is falsy and would fall through to the next comparison on its own.
+const planKeyCmp = (x, y) => {
+  const [xb, xa] = x.split("|"), [yb, ya] = y.split("|");
+  return (xb === "?") - (yb === "?") || xb - yb
+      || (xa === "?") - (ya === "?") || xa - ya;
+};
+// The bedroom a group sits under, for relating a bath split back to the
+// bedroom mix the Market Comps tab is cut on.
+const planKeyBeds = k => k.split("|")[0];
 const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 // "2026-08" -> "Aug 26". Hoisted out of the property views: three of them
 // label the same month series, and a month key formatted two ways would read
@@ -6240,11 +6287,14 @@ async function loadLandingDrive() {
 
     /* ---- Largest unit gaps ---- */
     const plans = (dir && dir.plans) || {};
+    // Beds AND baths. A 2x1 and a 2x2 are different products at different
+    // rents, and this column is read as "what is this unit"; the directory
+    // carries both per plan and the baths were on the hover only.
     const bedsCell = u => {
-      const p = plans[u.unit_type], b = p ? p.bedrooms : null;
-      const e = elc("span", null, b == null ? "—" : b === 0 ? "Studio" : b + " BR");
+      const p = plans[u.unit_type];
+      const e = elc("span", null, p ? planShort(p.bedrooms, p.baths) : "—");
       e.title = p
-        ? "Plan " + u.unit_type + " · " + b + " bed / " + p.baths + " bath · "
+        ? "Plan " + u.unit_type + " · " + planLabel(p.bedrooms, p.baths) + " · "
           + p.units + " units of this plan · " + p.sqft_min + "–" + p.sqft_max + " sqft"
         : "Plan " + u.unit_type + " is not in the unit directory";
       return e;
@@ -6258,7 +6308,7 @@ async function loadLandingDrive() {
     };
     const top = rr.gaps.slice(0, 13);
     buildTable(document.getElementById("dgTbl"),
-      [{ t: "Unit" }, { t: "Beds" }, { t: "SF", num: true },
+      [{ t: "Unit" }, { t: "Beds / baths" }, { t: "SF", num: true },
        { t: "In-place", num: true }, { t: "Market", num: true },
        { t: "Gap/yr", num: true }, { t: "Expiry" }, { t: "Status" }],
       top.map(u => ["#" + u.unit, bedsCell(u), (u.sqft || 0).toLocaleString(),
@@ -6270,7 +6320,7 @@ async function loadLandingDrive() {
       "TOP UNITS BY ANNUAL GAP TO MARKET · RENT ROLL OF " + asOf;
     document.getElementById("dgNote").textContent =
       "Rents, square footage and lease dates are the rent roll's own, as of " + asOf
-      + ". Bedrooms come from the Yardi unit directory"
+      + ". Bedrooms and baths come from the Yardi unit directory"
       + (dir ? " of " + dir.as_of + ", joined on the plan code" : ", which has not been fetched yet")
       + ". Occupied units only — a vacant unit's gap is its whole asking rent and would head "
       + "this table on every roll. No resident field reaches this page: the parse is scrubbed "
@@ -6432,17 +6482,19 @@ async function loadLandingDrive() {
     const codes = Object.keys(plans).sort();
     const unitsOf = c => plans[c].units || 0;
     const totalPlanUnits = codes.reduce((t, c) => t + unitsOf(c), 0);
-    // Bedrooms belong to the plan, not the unit, which is the whole reason this
-    // export exists: the rent roll and the workbook both name the plan and
-    // neither defines it.
+    // Bedrooms AND baths belong to the plan, not the unit, which is the whole
+    // reason this export exists: the rent roll and the workbook both name the
+    // plan and neither defines it. The groups were bedrooms alone until
+    // 2026-09-30, and that is not the inventory: The Landing has 11 two-bed
+    // units with one bath and 96 with two, a split of the largest bar on the
+    // card into two products at different rents.
     const beds = {};
     codes.forEach(c => {
-      const b = plans[c].bedrooms;
-      const k = b == null ? "?" : b;
+      const k = planKey(plans[c].bedrooms, plans[c].baths);
       beds[k] = (beds[k] || 0) + unitsOf(c);
     });
-    const bedKeys = Object.keys(beds).sort((a, b) => (a === "?") - (b === "?") || a - b);
-    const bedLabel = k => k === "?" ? "Unknown" : k === "0" || k === 0 ? "Studio" : k + " bed";
+    const bedKeys = Object.keys(beds).sort(planKeyCmp);
+    const bedLabel = planKeyLabel;
 
     // ---- occupancy, from the rent roll ----------------------------------
     // The directory is the building's fixed description and says nothing about
@@ -6455,7 +6507,7 @@ async function loadLandingDrive() {
     const occBed = {};
     Object.keys(occPlan).forEach(code => {
       const p = plans[code], o = occPlan[code];
-      const k = (!p || p.bedrooms == null) ? "?" : p.bedrooms;
+      const k = p ? planKey(p.bedrooms, p.baths) : planKey(null, null);
       const t = occBed[k] || (occBed[k] = { units: 0, leased: 0, vacant: 0 });
       t.units += o.units || 0; t.leased += o.leased || 0; t.vacant += o.vacant || 0;
     });
@@ -6468,8 +6520,7 @@ async function loadLandingDrive() {
     // vacant equal the bar by construction whatever the directory says, and the
     // directory supplies only the bedrooms. Any difference is printed in the
     // note rather than reconciled away.
-    const splitKeys = Object.keys(occBed)
-      .sort((a, b) => (a === "?") - (b === "?") || a - b);
+    const splitKeys = Object.keys(occBed).sort(planKeyCmp);
     const splitTotal = splitKeys.reduce((t, k) => t + occBed[k].units, 0);
     const splitOK = splitTotal > 0;
     const barKeys = splitOK ? splitKeys : bedKeys;
@@ -6482,10 +6533,8 @@ async function loadLandingDrive() {
     // chart -- it cannot disagree with what it sits next to. A studio or an
     // undescribed plan gets a line here the day one exists, for the same
     // reason it gets a bar.
-    const bedStat = k => k === "?" ? "bedrooms unknown"
-      : (k === "0" || k === 0) ? "studios" : k + " bedroom units";
     statBlock(document.getElementById("diStats"),
-      barKeys.map(k => [String(barTotal(k)), bedStat(k)]));
+      barKeys.map(k => [String(barTotal(k)), bedLabel(k)]));
     document.getElementById("diStats").querySelectorAll(".st")
       .forEach(st => { st.style.marginBottom = "10px"; });
 
@@ -6496,6 +6545,27 @@ async function loadLandingDrive() {
     // segment drawn from the axis: Chart.js stacks in dataset order and that is
     // the only thing that decides which end a segment sits at.
     const unitWord = n => n === 1 ? "1 unit" : n + " units";
+    // Splitting by bath is what this card is for, but the bedroom mix is what
+    // the Market Comps tab is cut on and what the market quotes in, so each
+    // bar can still say which share of its bedroom it is. Rolled up from the
+    // bars' own totals rather than from the directory, so it cannot disagree
+    // with the bar it describes.
+    const bedRollup = {};
+    barKeys.forEach(k => {
+      const b = planKeyBeds(k);
+      bedRollup[b] = (bedRollup[b] || 0) + barTotal(k);
+    });
+    const bedShare = k => {
+      const b = planKeyBeds(k), whole = bedRollup[b];
+      if (b === "?" || whole === barTotal(k)) return "";   // the only bath variant
+      return barTotal(k) + " of the " + whole + " "
+        + (b === "0" ? "studios" : b + "-bed units") + " in the building";
+    };
+    // A bar per bed/bath pair is more bars than a bar per bedroom, and this is
+    // a horizontal chart, so the wrapper grows with them rather than squeezing
+    // seven bars into the three bars' 210px.
+    document.getElementById("dcInv").parentElement.style.height =
+      Math.max(210, 30 * barKeys.length + 90) + "px";
     new Chart(document.getElementById("dcInv"), {
       type: "bar",
       data: { labels: barKeys.map(bedLabel),
@@ -6514,20 +6584,28 @@ async function loadLandingDrive() {
             : { display: false },
           tooltip: {
             callbacks: splitOK ? {
-              // Hovering a segment answers about that bedroom type, not the
-              // building: "3 of the 110 2-bed" is the question the bar asks.
-              label: c => c.dataset.label + " " + unitWord(c.parsed.x) + " of the "
-                + barTotal(barKeys[c.dataIndex]) + " " + bedLabel(barKeys[c.dataIndex])
+              // Hovering a segment answers about that bed/bath type, not the
+              // building: "3 of 97" is the question the bar asks, and the
+              // footer relates it back to the bedroom. The group is NOT named
+              // again here -- Chart.js already puts the bar's own label in the
+              // tooltip title, and a label carrying a middle dot of its own
+              // ("2 bed · 2 bath") read as three fields once repeated inside
+              // a sentence that has one.
+              label: c => c.dataset.label + " " + unitWord(c.parsed.x) + " of "
+                + barTotal(barKeys[c.dataIndex])
                 + " · " + fmPct(c.parsed.x / (barTotal(barKeys[c.dataIndex]) || 1), 1),
               footer: items => {
-                const o = occBed[barKeys[items[0].dataIndex]];
+                const k = barKeys[items[0].dataIndex], o = occBed[k];
+                const share = bedShare(k);
                 return o.leased + " leased · " + o.vacant + " vacant · "
-                  + fmPct(o.leased / (o.units || 1), 1) + " occupied";
+                  + fmPct(o.leased / (o.units || 1), 1) + " occupied"
+                  + (share ? "\n" + share : "");
               },
             } : {
               label: c => unitWord(c.parsed.x) + " of the " + totalPlanUnits
-                + " units the directory lists · "
+                + " the directory lists · "
                 + fmPct(c.parsed.x / totalPlanUnits, 0),
+              footer: items => bedShare(barKeys[items[0].dataIndex]),
             },
           },
         },
@@ -6595,11 +6673,15 @@ async function loadLandingDrive() {
               : "")
           + "They stay inside the export's own total, because the tie-out is "
           + "against that row, and out of every published figure: they are not "
-          + "in the unit count, the floorplan table, the bedroom counts or the bars. "
+          + "in the unit count, the floorplan table, the plan counts or the bars. "
         : "")
       + "Rent is the directory's own Rent column, shown per plan as the range across "
-      + "that plan's units. Bedrooms belong to the plan rather than the unit; a plan "
-      + "whose rows disagree is flagged by the parser, never averaged. The directory is "
+      + "that plan's units. Bedrooms and baths belong to the plan rather than the unit; "
+      + "a plan whose rows disagree is flagged by the parser, never averaged. The bars "
+      + "are cut on both, because a 2-bed with one bath and a 2-bed with two are "
+      + "different products at different rents; each bar's hover says which share of "
+      + "its bedroom type it is, since the bedroom is what the market quotes in and "
+      + "what the Market Comps tab is cut on. The directory is "
       + "a description of the building, not a lease report — it carries no resident and "
       + "no lease, which is why nothing in it needs scrubbing."
       + (splitOK
@@ -6607,9 +6689,9 @@ async function loadLandingDrive() {
             + ((rr && rr.as_of) || "—") + " (" + ((rr && rr.source_file) || "—")
             + ") is what they count: the directory cannot say which units are let, and "
             + "the roll cannot say how many bedrooms a floorplan has, so the roll's own "
-            + "plan counts are rolled onto the directory's bedrooms. Each bar is the "
-            + "whole of its bedroom type and the two segments partition it, so leased "
-            + "plus vacant is the bar rather than something added to it."
+            + "plan counts are rolled onto the directory's beds and baths. Each bar is "
+            + "the whole of its bed/bath type and the two segments partition it, so "
+            + "leased plus vacant is the bar rather than something added to it."
             + (splitTotal !== totalPlanUnits
                 ? " The roll counts " + splitTotal + " apartments where the directory "
                   + "lists " + totalPlanUnits + "; the directory also carries waitlist "

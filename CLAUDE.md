@@ -230,7 +230,7 @@ this class, which is why it is worth keeping in the loop.
 | Rollover Schedule | `rent_roll` — lease expirations by month |
 | Expense Load & NOI | `monthly_pl` + `expense_buckets` + `unit_directory` |
 | Expense Deep Dive | `expense_buckets` |
-| Largest Unit Gaps | `rent_roll` + `unit_directory` for the bedroom join |
+| Largest Unit Gaps | `rent_roll` + `unit_directory` for the bed/bath join |
 | Delinquency | the rate from the EliseAI building-metrics export (the outstanding-balance figure, since 2026-09-29), the 30/60/90 bars from the Drive AR report |
 | Unit Inventory | `unit_directory` (**frozen until C5**, see below) + `rent_roll.by_plan` for the leased/vacant split |
 | What Feeds This Tab | `lineage.json` — arrivals, and what is missing |
@@ -1665,7 +1665,47 @@ guesswork would file one building's concessions under another.
 
 ### Occupancy on the Unit Inventory bars
 
-The card's bars are units by bedroom type, each one stacked vacant (teal) from
+**The bars are cut on beds AND baths** since 2026-09-30, by request. Bedrooms
+alone is not the inventory: The Landing has **11 two-bed units with one bath
+and 97 with two**, so the largest bar on the card was two products at different
+rents drawn as one. Seven bars now where there were three, and the wrapper
+grows with them rather than squeezing them into the three bars' 210px.
+
+The bedroom reading is not lost, and that matters because the bedroom is what
+the market quotes in and what the whole Market Comps build-up is cut on: each
+bar's hover closes with its share of its bedroom type (`97 of the 111 2-bed
+units in the building`), rolled up **from the bars' own totals** rather than
+from the directory, so it cannot disagree with the bar it describes. A bedroom
+with only one bath variant gets no such line rather than one saying 11 of 11.
+The line and the bedroom totals behind it reproduce the old bars exactly —
+136 / 111 / 16.
+
+`planLabel`, `planShort`, `planKey`, `planKeyLabel`, `planKeyCmp` and
+`planKeyBeds` sit beside `fmPct` because **two cards draw a floorplan** — these
+bars and Largest Unit Gaps' rows — and spelling it in two places would
+eventually have one calling a plan a 2-bed and the other a 2x2. Three things
+they are careful about, and only the first is exercised by The Landing's own
+data:
+
+- **A half bath is real** (four of The Landing's plans), so `baths` is a float
+  and the trailing `.0` is dropped rather than printed.
+- **A missing half is dropped, not invented.** The parser flags a plan whose
+  rows disagree on baths and leaves it `null`; that plan reads `2 bed`, not
+  `2 bed · 0 bath`, and only a plan with neither is `Unknown`. Zero bedrooms is
+  a studio, tested with `Number(b) === 0` rather than `!b` so a null never
+  lands there.
+- **The keys are strings and the comparator subtracts**, so studios sort first
+  and unknown last, fewest baths first inside a bedroom — and a ten-bed plan
+  would not sort between 1 and 2 the way `localeCompare` puts it.
+
+The `Beds` column on **Largest Unit Gaps** reads `2 BR / 2 BA` for the same
+reason; the baths were on the hover only. Its fixed column widths are
+content-derived and sum to 100, so the wider column took five points back off
+the money and date columns — checked for overflow at 1440 / 1100 / 900 / 700 /
+390px, where only the painted text tells you, since `table-layout: fixed`
+leaves the boxes the width the rule gives them either way.
+
+The card's bars are units by bedroom and bath type, each one stacked vacant (teal) from
 the axis then leased (amber), so the two segments partition the bar rather than
 adding to it. Vacant is first in `datasets` and that is the whole of what puts
 it on the left — Chart.js stacks in dataset order. Hovering a segment gives its
@@ -1686,7 +1726,7 @@ It takes two reports, because neither can draw it alone. The rent roll knows
 which units are let but not how many bedrooms a floorplan has; the unit
 directory knows what a floorplan is and nothing about who is in it. So
 `rent_roll_summary` publishes `by_plan` — `{units, leased, vacant}` per plan
-code — and the page rolls those onto the directory's bedrooms.
+code — and the page rolls those onto the directory's beds and baths.
 
 `by_plan` is **counts only**, which is what lets it leave `data/`. The roll
 itself is unit level and arrives with resident names, so `rent_roll.json` stays
@@ -1725,8 +1765,11 @@ first; the rest of the sheet is a fallback. That roll names two codes
 residential one, and the unit count tying out against the report's own Total row
 is what would catch it if that ever stopped being true.
 
-`scripts/test_occupancy.py` holds it down — 28 checks against a roll and a
-directory built in a temp dir, no network and no fixtures. The ones that matter
+The page-side helpers are checked by driving them directly in node rather
+than by a fixture — nineteen cases covering the studio, half-bath, missing-half
+and sort branches The Landing's own data never reaches.
+`scripts/test_occupancy.py` holds the pipeline side down — 28 checks against a
+roll and a directory built in a temp dir, no network and no fixtures. The ones that matter
 are the invisible failures: a vacant unit carrying a market rent must not count
 as leased, a unit on notice must, nothing unit level may reach the published
 block, a plan the directory cannot describe must be named rather than dropped,
