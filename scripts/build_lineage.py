@@ -939,10 +939,13 @@ OTHER_FLOWS = [
         "source_label": "docs/metrics.json, edited directly",
         "source_detail": "Blocks the pipeline preserves rather than "
                          "regenerates.",
-        "carries": "The eleven planned-metric cards. Expense Trend left this "
+        "carries": "The ten planned-metric cards. Expense Trend left this "
                    "list on 2026-09-17, derived from the T12 statement now, "
-                   "and the trade-out placeholder went with its card on "
-                   "2026-09-28.",
+                   "the trade-out placeholder went with its card on "
+                   "2026-09-28, and the NOI margin placeholder came off on "
+                   "2026-09-30 — both feeds it named have arrived, and the "
+                   "figure is on the Landing tab's Expense Load & NOI card "
+                   "and in its tile row.",
         "steps": [
             {"script": "scripts/build_metrics.py",
              "does": "Loads the existing metrics.json and writes only the "

@@ -3123,7 +3123,7 @@ Five statuses, and they are the page's whole argument:
 | `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
 | `waiting` | Parser written and registered; no file has ever arrived. **No flow is in this state today** — the rent roll was the last one and it landed 2026-09-11, closing C4 |
 | `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
-| `manual` | No feed at all — the placeholder cards are edited into `metrics.json` and carried through each run. Three blocks have left this row: `expense_trend` on 2026-09-17, derived from the T12 statement now, and `psf_vs_peers` the same day and `trade_outs` on 2026-09-28, each with the card it fed |
+| `manual` | No feed at all — the ten placeholder cards are edited into `metrics.json` and carried through each run. Three blocks have left this row: `expense_trend` on 2026-09-17, derived from the T12 statement now, and `psf_vs_peers` the same day and `trade_outs` on 2026-09-28, each with the card it fed. A fourth card left without its block — the `noiMargin` placeholder on 2026-09-30, one entry out of the `placeholders` array rather than a block of its own |
 
 So the T12 points can report an arrival and not just a period,
 `store_expense_ratio` / `store_monthly_pl` / `store_expense_buckets` /
@@ -3304,6 +3304,23 @@ encrypting the JSON or putting the site behind real auth.
   visibility deterrence, not encryption — the source is public and readable. Do
   not treat it as protecting anything. Real financials need client-side
   encryption of `metrics.json` first.
+- **The dashboard no longer says that itself.** A standing footer sat under
+  every tab in two lines — where the numbers come from, and that the gate is
+  client-side only and real financials want AES first — and it came off
+  2026-09-30, by request, with its `#footer` element, its fill and the `footer`
+  CSS rule. It is the page-wide sibling of the Landing tab's footnotes, removed
+  the same day. So the caveat now lives here and in the comment above `#gate`,
+  and a reader of the page is not told it — worth knowing before anyone reads
+  the gate as protection.
+
+  The other line is not lost either: which report feeds every number is the
+  data-flow page, and each card's own `Data ↗` is a shorter route to it than a
+  sentence at the bottom ever was. **`data.html` keeps its own footer**, which
+  was not part of the request and says something the dashboard's did not — that
+  the tables page carries every figure at full precision. `metrics.json`'s
+  `meta.note` is the string the removed line interpolated and is now read by
+  nothing; it stays, because the pipeline preserves that block rather than
+  writing it, so deleting it would be a hand edit to a data file for no gain.
 - `index.html` is the only place the password is entered. Unlocking sets
   `sessionStorage["align-unlocked"]`; `data.html` requires that marker and
   redirects to `index.html?next=data.html` without it, so the data tables are

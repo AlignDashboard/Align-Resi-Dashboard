@@ -164,12 +164,6 @@
       "viz": "bar"
     },
     {
-      "id": "noiMargin",
-      "title": "NOI Margin",
-      "source": "P&L \u00b7 Budget Variance %",
-      "viz": "line"
-    },
-    {
       "id": "cashOnHand",
       "title": "Cash on Hand",
       "source": "Balance Sheet / Treasury",
