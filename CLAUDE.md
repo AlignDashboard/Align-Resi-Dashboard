@@ -184,6 +184,15 @@ Three things the removal is careful about:
 The rule is applied **per number, not per card**. A card is on the tab only if
 every figure on it would move on the next pipeline run.
 
+**Every card on the tab is full width.** Expense Load & NOI and the Expense
+Deep Dive were the last pair sharing a grid row, and each took its own row on
+2026-09-30, by request, in that order. The `#cdNoi` flex override went with the
+change: it existed only because that card was the shorter of the two in one row
+and the row stretched it, leaving ~180px empty below its chart, so the chart
+was given the slack instead. Spanning the row there is no neighbour to match,
+and the chart takes `.card.wide`'s own 320px like every other wide card. If
+either ever goes back to half width, that rule has to come back with it.
+
 **The tab carries no footnotes.** The intro paragraph and the Operating
 Summary's note came off first; the remaining eleven `.blu-note` elements —
 nine per-card notes and the `dMeta` sources line at the bottom — went on

@@ -351,15 +351,6 @@
      for a chartwrap in normal block flow, where min-width is already 0. */
   .chartwrap { position: relative; height: 300px; min-width: 0; }
   .card.wide .chartwrap { height: 320px; }
-  /* This card is shorter than the one it shares a grid row with, so the row
-     stretched it and left ~180px empty below the note -- every other card sits
-     at 13px. Give the chart the slack instead of the bottom of the card: the
-     column lays out as usual and the plot takes whatever height the row turns
-     out to be, keeping the 300px floor when the grid goes single-column and
-     there is no taller neighbour to match. Chart.js already draws this one with
-     maintainAspectRatio:false, so it redraws to the height it is handed. */
-  #cdNoi { display: flex; flex-direction: column; }
-  #cdNoi .chartwrap { flex: 1 1 auto; height: auto; min-height: 300px; }
 
   footer { margin-top: 30px; color: var(--muted); font-size: 10px; letter-spacing: 1px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
   .loaderr { color: var(--red); font-size: 12px; padding: 40px; text-align:center; }
@@ -1031,14 +1022,14 @@
         <div class="chartwrap" style="height:250px;"><canvas id="dcRoll"></canvas></div>
       </div>
 
-      <div class="card" id="cdNoi">
+      <div class="card wide" id="cdNoi">
         <h2>Expense Load &amp; NOI</h2>
         <span class="eyebrow" id="dnoiEyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR</span>
         <div class="ckgrid" id="dnoiCks" role="group" aria-label="Series shown"></div>
         <div class="chartwrap"><canvas id="dcNoi"></canvas></div>
       </div>
 
-      <div class="card" id="cdExpDeep">
+      <div class="card wide" id="cdExpDeep">
         <div class="card-head">
           <div>
             <h2>Expense Deep Dive</h2>
