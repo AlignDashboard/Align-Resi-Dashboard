@@ -424,7 +424,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-30T15:29:57.182446+00:00",
+  "generated_at": "2026-09-30T17:05:23.076996+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -1075,7 +1075,7 @@
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11Z",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "6 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency"
     },
     {
@@ -1083,7 +1083,7 @@
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11Z",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "4 KPI cell(s): AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency"
     },
     {
@@ -1091,7 +1091,7 @@
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11Z",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency, Trade-out %"
     },
     {
@@ -1099,7 +1099,7 @@
      "file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
      "as_of": "2026-09-28",
      "source_file": "EliseAI building metrics export (metrics-building-2026-09-28.csv)",
-     "landed_at": "2026-09-28T17:12:11Z",
+     "landed_at": "2026-09-28T17:12:11.018Z",
      "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency, Trade-out %"
     }
    ],
@@ -1219,7 +1219,7 @@
      "file": "data/335-third-street/comps.json",
      "as_of": "2026-09-28",
      "source_file": "2026-09-29 HelloData - Simple - 335 Third Street.xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-29T17:28:38.477Z",
      "detail": null
     },
     {
@@ -1227,7 +1227,7 @@
      "file": "data/chorus/comps.json",
      "as_of": "2026-09-28",
      "source_file": "2026-09-29 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-29T23:28:31.597Z",
      "detail": null
     },
     {
@@ -1235,7 +1235,7 @@
      "file": "data/madelon/comps.json",
      "as_of": "2026-09-28",
      "source_file": "2026-09-29 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-29T23:28:31.597Z",
      "detail": null
     },
     {
@@ -1243,7 +1243,7 @@
      "file": "data/the-landing/comps.json",
      "as_of": "2026-09-28",
      "source_file": "2026-09-29 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": null,
+     "landed_at": "2026-09-29T23:28:31.597Z",
      "detail": null
     }
    ],
@@ -1350,11 +1350,11 @@
    "evidence": [
     {
      "property": "the-landing",
-     "file": "metrics.json rent_roll",
+     "file": "data/the-landing/rent_roll.json",
      "as_of": "2026-09-21",
      "source_file": "RentRoll09_28_2026.xlsx",
      "landed_at": "2026-09-28T17:10:40.329Z",
-     "detail": "read from the published aggregate \u2014 this store is gitignored (per-unit) and exists only during a pipeline run"
+     "detail": null
     }
    ],
    "status": "live"
@@ -2073,17 +2073,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-09-28",
+     "as_of": "2026-09-29",
      "source_file": null,
-     "landed_at": "2026-09-29T13:14:35Z",
-     "detail": "48 day(s) recorded"
+     "landed_at": "2026-09-30T13:14:07Z",
+     "detail": "49 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-09-28",
+     "as_of": "2026-09-29",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-09-29T13:14:35Z",
+     "landed_at": "2026-09-30T13:14:07Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2352,7 +2352,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-09-29T17:16:21.397667+00:00",
+     "landed_at": "2026-09-30T17:05:22.489183+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
