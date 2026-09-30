@@ -47,6 +47,11 @@
     --on-amber:   #10130f;
     --grid:       #2a323d;
     --tick:       #8b95a4;
+    /* the header's External Links menu, lifted off whatever card it opens over:
+       a step lighter than a card in the dark, white with a softer shadow in the
+       light, which is how each theme shows a surface sitting above another */
+    --pop-bg:     var(--panel-2);
+    --pop-shadow: 0 10px 28px rgba(0,0,0,.45);
     /* scorecard status chips: fill behind the value, plus its edge.
        in-range is deliberately clear — the workbook's v10 legend made the
        in-range band white, carrying no color indicator */
@@ -79,6 +84,8 @@
     --on-amber:   #ffffff;
     --grid:       #dfe3e9;
     --tick:       #5f6a78;
+    --pop-bg:     var(--panel);
+    --pop-shadow: 0 8px 22px rgba(20,26,36,.14);
     --fill-exceeding: rgba(45,117,73,.13);
     --fill-in_range:  transparent;
     --fill-below:     rgba(178,63,40,.13);
@@ -121,13 +128,51 @@
 
   /* ---------- App ---------- */
   #app { display: none; max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
-  header.top { display: flex; align-items: baseline; justify-content: space-between;
+  header.top { display: flex; align-items: center; justify-content: space-between;
     border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 26px; flex-wrap: wrap; gap: 8px; }
   header.top .title { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
   header.top .title span { color: var(--amber); }
   header.top .title a { color: inherit; text-decoration: none; transition: opacity .15s; }
   header.top .title a:hover { opacity: .72; }
-  header.top .meta { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+
+  /* ---------- External links (header, right) ----------
+     A <details> rather than a <select>: these are links, so each one takes a
+     middle click or "open in new tab" like any other, and the menu opens and
+     closes before any script has run. The script only closes it -- on a pick,
+     a click or focus elsewhere, or Esc. margin-left: auto keeps it on the right
+     when the header wraps at phone width, so the menu, anchored to its right
+     edge, always opens inward rather than off the side of the screen. The
+     header centres its row rather than lining up baselines, which suited the
+     line of text this replaced and hung a bordered button 4px below the title. */
+  .xlinks { position: relative; margin-left: auto; }
+  .xlinks > summary { list-style: none; display: flex; align-items: center; gap: 7px;
+    border: 1px solid var(--line); color: var(--muted); padding: 6px 11px;
+    font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;
+    cursor: pointer; white-space: nowrap; user-select: none;
+    transition: color .15s, border-color .15s; }
+  .xlinks > summary::-webkit-details-marker { display: none; }
+  .xlinks > summary:hover, .xlinks[open] > summary { color: var(--amber); border-color: var(--amber); }
+  .xlinks > summary:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+  .xlinks .caret { font-size: 12px; line-height: 1; transition: transform .15s; }
+  .xlinks[open] .caret { transform: rotate(180deg); }
+  .xl-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    width: max-content; min-width: 100%; max-width: calc(100vw - 32px);
+    list-style: none; padding: 4px 0; background: var(--pop-bg);
+    border: 1px solid var(--line); box-shadow: var(--pop-shadow); }
+  .xl-menu a, .xl-menu .xl-none { display: flex; align-items: center; justify-content: space-between;
+    gap: 18px; padding: 9px 14px; white-space: nowrap;
+    font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+  /* No transitions in here, unlike the page's other controls: the rows are
+     not rendered while the menu is shut, so a theme switched in the meantime
+     replayed as a fade from the other theme's colours on the next open. */
+  .xl-menu a { color: var(--text); text-decoration: none; }
+  .xl-menu a .go { color: var(--muted); }
+  .xl-menu a:hover, .xl-menu a:focus-visible { color: var(--amber); background: var(--amber-soft); }
+  .xl-menu a:hover .go, .xl-menu a:focus-visible .go { color: var(--amber); }
+  .xl-menu a:focus-visible { outline: 1px solid var(--amber); outline-offset: -1px; }
+  /* A system with no address yet: listed so the menu is the whole list, but
+     plainly not something to press -- no hover, no pointer, no tab stop. */
+  .xl-menu .xl-none { color: var(--muted); cursor: default; }
 
   /* ---------- View tabs ---------- */
   .tabbar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
@@ -764,6 +809,8 @@
     .tog { padding: 12px 14px; }
     .tmode { padding: 11px 14px; }
     .ck { padding: 8px 0; }
+    .xlinks > summary { padding: 11px 14px; }
+    .xl-menu a, .xl-menu .xl-none { padding: 14px 16px; }
   }
 </style>
 </head>
@@ -791,7 +838,20 @@
       <div class="title"><a href="https://www.alignrealestate.com/users/sign_in"
         target="_blank" rel="noopener noreferrer"
         title="Sign in to Align Real Estate">ALIGN · <span>RESI ASSET MANAGEMENT</span></a></div>
-      <div class="meta" id="metaline">loading…</div>
+      <!-- The systems the team works in, each opening in a new tab. XXX Yardi
+           has no address yet: to give it one, turn its span into an <a> like
+           its neighbours. -->
+      <details class="xlinks" id="xlinks">
+        <summary>External Links <span class="caret" aria-hidden="true">▾</span></summary>
+        <ul class="xl-menu">
+          <li><a href="https://10783align.yardione.com/" target="_blank" rel="noopener noreferrer">Align Yardi <span class="go" aria-hidden="true">↗</span></a></li>
+          <li><a href="https://jp58734.yardione.com/Account/Login?ReturnUrl=%2F" target="_blank" rel="noopener noreferrer">JPM Yardi <span class="go" aria-hidden="true">↗</span></a></li>
+          <li><span class="xl-none">XXX Yardi <span class="pill mut">no link yet</span></span></li>
+          <li><a href="https://login.meetelise.com/u/login/identifier?state=hKFo2SBsWlVtcUt1ZGhwUE1oZTBWelFfR2ZzV0RoYVpMUVUwQqFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIG52Q0NyM1NoallTNDJIMTkwcjYwZjBJLXE3MHNsSXdxo2NpZNkgQ29rTEpuWkxKWUlyOU9tWW43a1hMN0lOeXJ6UUF5Wlc" target="_blank" rel="noopener noreferrer">Elise AI <span class="go" aria-hidden="true">↗</span></a></li>
+          <li><a href="https://align-aim.realpage.com/Logon.aspx?ReturnUrl=%2fForms%2fUI%2fui.main.aspx" target="_blank" rel="noopener noreferrer">Real Page <span class="go" aria-hidden="true">↗</span></a></li>
+          <li><a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer">Google Drive <span class="go" aria-hidden="true">↗</span></a></li>
+        </ul>
+      </details>
     </header>
 
     <div class="tabbar">
@@ -2729,6 +2789,38 @@ themeBtn.addEventListener("click", () => {
 });
 
 /* ============================================================
+   EXTERNAL LINKS (header)
+   The menu is a <details>, so opening and closing it needs no script. This
+   only closes it where a menu is expected to close: on a pick -- each link
+   opens a new tab, so this page stays put with the menu still hanging open
+   over it otherwise -- on a click or focus anywhere else, and on Esc. A
+   modified click (ctrl, cmd, shift: opening several at once) leaves it open.
+   ============================================================ */
+(function () {
+  const xl = document.getElementById("xlinks");
+  if (!xl) return;
+  const summary = xl.querySelector("summary");
+  xl.addEventListener("click", e => {
+    if (e.target.closest(".xl-menu a") && !(e.ctrlKey || e.metaKey || e.shiftKey)) xl.open = false;
+  });
+  document.addEventListener("click", e => {
+    if (xl.open && !xl.contains(e.target)) xl.open = false;
+  });
+  // relatedTarget is null when focus goes nowhere in particular -- a click on
+  // the XXX Yardi row, or the window losing focus to the tab a link opened --
+  // and neither is a reason to close.
+  xl.addEventListener("focusout", e => {
+    if (xl.open && e.relatedTarget && !xl.contains(e.relatedTarget)) xl.open = false;
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || !xl.open) return;
+    const inside = xl.contains(document.activeElement);
+    xl.open = false;
+    if (inside) summary.focus();
+  });
+})();
+
+/* ============================================================
    CHART THEME
    ============================================================ */
 const C = {
@@ -2851,10 +2943,7 @@ async function loadDashboard() {
   // colours depending on which of them rendered first.
   seedPropColors(d.monthly_pl);
 
-  // meta + footer
-  const gen = d.meta?.generated_at ? new Date(d.meta.generated_at).toLocaleString() : "—";
-  document.getElementById("metaline").textContent =
-    (d.meta?.portfolio || "Portfolio") + " · updated " + gen;
+  // footer
   document.getElementById("footer").innerHTML =
     "Data source: metrics.json (written by email ingestion pipeline). " +
     (d.meta?.note || "") +
