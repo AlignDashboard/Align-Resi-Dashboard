@@ -931,9 +931,9 @@ in a way the plaintext JSON is not.
   Hover goes to the nearest **dot** only (`rtDots`): Chart.js's own nearest
   mode also weighs a fit line's invisible end points, and the tooltip filter
   runs after it, so pointing at a line's end showed an empty tooltip over a
-  real lease. On the two prior → new cards the distance is to the whole stem,
-  so pointing at a grey tick is pointing at that lease. `rtOverlay` draws all
-  five:
+  real lease. On the prior → new card the distance is to the whole stem, so
+  pointing at a grey tick is pointing at that lease. `rtOverlay` draws all
+  four:
 
   - **The boxes are per card**, kept across a timeframe, basis or theme change
     (`RT.hide`) and dropped on Lock.
@@ -952,16 +952,33 @@ in a way the plaintext JSON is not.
   - **The note and the canvas label follow the boxes**, per-building figures
     and all, the way Budget vs Actual's note follows its basket.
 
-  **The two prior → new $/sqft cards draw each lease as a stem on its lease
+  **The prior → new $/sqft card draws each lease as a stem on its lease
   date** (`rtSpans`): a grey tick at the prior rent, a line in the
-  building's colour, and the building's marker at the new rent. They were
-  bars in lease order, one row per building, and a building's own lease
-  order is not an axis two buildings can share — so the overlay puts them on
-  the same date axis as the cards above them, and the vertical axis takes in
-  both ends of every stem shown. What a card cannot draw (a lease with no
-  prior rent or square footage, a renewal with no square footage) is counted
-  in its note by building and reason, under the box rule above, and a
-  building with nothing drawable keeps a struck-through box saying why.
+  building's colour, and the building's marker at the new rent. It was two
+  cards of bars in lease order, one row per building, and a building's own
+  lease order is not an axis two buildings can share — so the overlay puts
+  them on the same date axis as the cards above it, and the vertical axis
+  takes in both ends of every stem shown. What a view cannot draw (a lease
+  with no prior rent or square footage, a renewal with no square footage) is
+  counted in its note by building and reason, under the box rule above, and
+  a building with nothing drawable keeps a struck-through box saying why.
+
+  **New leases and renewals are one card, on a switch** (`cRtPriorNew`,
+  owner's call, 2026-09-30) — the Lease Detail card's `New leases` /
+  `Renewals` pair, in the card head. The two had been separate cards with
+  the same stems and the same axes, so the switch changes what is drawn and
+  nothing about how. Three things about it:
+
+  - **One set of boxes serves both views** (`RT.hide.pn`). A building
+    switched off stays off across the switch, as it does across a timeframe;
+    the box rule still holds per view, so a building struck through in one
+    view has its leave-outs listed there whatever it was set to in the other.
+  - **The switch is a view, like Lease Detail's**: it holds through a
+    timeframe, basis or theme change and through Lock, which drops only the
+    boxes. The rent basis moves the New leases view and not the Renewals one,
+    and each view's eyebrow and note say which.
+  - **It sits below Renewal %**, so both % charts its empty-box hovers point
+    a reader to are above it.
 - **Every tile carries the rent-weighted trade-out beside the tracker's mean.**
   The mean stays the headline, so the two dashboards agree on it, and the
   weighted figure beside it is the statistic the Landing tab grades; one
@@ -2904,10 +2921,12 @@ and print which table it actually resolves to. Note the gate marker lives in
 `sessionStorage`, which is per **tab**, so a probe like that has to navigate
 one page from `index.html` to `data.html` rather than opening a second one —
 and it has to visit every tab first, since the property-tab cards and the
-placeholder grid are built on demand. All **46** rendered links land on a real
-target today (46 rather than 35: the nine Rental Rates cards and the
-placeholder cards are generated, so keying the probe on a card `id` missed
-them).
+placeholder grid are built on demand. All **43** rendered links land on a real
+target as of 2026-09-30 (46 when first counted on 2026-09-28; cards have come
+off since, and the two prior → new $/sqft cards became one). Count rendered
+links, not card ids: the Rental Rates cards and the placeholder cards are
+generated, so keying the probe on a card `id` missed them — 35 at the first
+count.
 
 **Resolving is not the same as landing on the right table**, and reading the
 46 against what each card actually draws turned up two more:
