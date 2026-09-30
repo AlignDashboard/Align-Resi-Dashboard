@@ -10,7 +10,7 @@
     "lat": 37.79546,
     "lng": -122.27316
   },
-  "as_of": "2026-09-26",
+  "as_of": "2026-09-28",
   "primary_radius_mi": 1.35,
   "excluded_related": [],
   "subject_by_bed": {
@@ -27,7 +27,7 @@
       "radius_mi": 0.75,
       "primary": false,
       "properties": 9,
-      "listings": 100,
+      "listings": 97,
       "by_bed": {
         "0": {
           "n": 18,
@@ -37,11 +37,11 @@
           "median_psf": 4.3647
         },
         "1": {
-          "n": 58,
-          "median_rent": 2706.5,
-          "mean_rent": 2692.0,
+          "n": 55,
+          "median_rent": 2700.0,
+          "mean_rent": 2690.75,
           "median_sqft": 639.0,
-          "median_psf": 4.2989
+          "median_psf": 4.2574
         },
         "2": {
           "n": 21,
@@ -63,7 +63,7 @@
       "radius_mi": 1.35,
       "primary": true,
       "properties": 9,
-      "listings": 100,
+      "listings": 97,
       "by_bed": {
         "0": {
           "n": 18,
@@ -73,11 +73,11 @@
           "median_psf": 4.3647
         },
         "1": {
-          "n": 58,
-          "median_rent": 2706.5,
-          "mean_rent": 2692.0,
+          "n": 55,
+          "median_rent": 2700.0,
+          "mean_rent": 2690.75,
           "median_sqft": 639.0,
-          "median_psf": 4.2989
+          "median_psf": 4.2574
         },
         "2": {
           "n": 21,
@@ -99,7 +99,7 @@
       "radius_mi": null,
       "primary": false,
       "properties": 9,
-      "listings": 100,
+      "listings": 97,
       "by_bed": {
         "0": {
           "n": 18,
@@ -109,11 +109,11 @@
           "median_psf": 4.3647
         },
         "1": {
-          "n": 58,
-          "median_rent": 2706.5,
-          "mean_rent": 2692.0,
+          "n": 55,
+          "median_rent": 2700.0,
+          "mean_rent": 2690.75,
           "median_sqft": 639.0,
-          "median_psf": 4.2989
+          "median_psf": 4.2574
         },
         "2": {
           "n": 21,
@@ -664,14 +664,14 @@
     "subject_median": 101.0,
     "subject_n": 13,
     "comp_median": 42.0,
-    "comp_n": 250,
+    "comp_n": 253,
     "since": "2025-09-01"
   },
   "concessions": {
     "subject_share": 1.0,
     "subject_n": 26,
-    "comp_share": 0.86,
-    "comp_n": 100
+    "comp_share": 0.8557,
+    "comp_n": 97
   },
   "comps": [
     {
@@ -764,12 +764,12 @@
       "year_built": 2024,
       "units": 157,
       "miles": 0.292,
-      "listings": 14,
+      "listings": 11,
       "by_bed": {
         "1": {
-          "n": 13,
-          "median_rent": 2686.0,
-          "median_sqft": 508.0
+          "n": 10,
+          "median_rent": 2695.5,
+          "median_sqft": 491.0
         },
         "2": {
           "n": 1,
@@ -851,7 +851,7 @@
   ],
   "subject_listings": {
     "current": 26,
-    "oldest_days": 129,
+    "oldest_days": 131,
     "by_bed": {
       "1": 26
     }
@@ -861,8 +861,8 @@
   "market": "San Francisco-Oakland-Hayward, CA",
   "properties_in_file": 10,
   "listings_in_file": 738,
-  "source_file": "2026-09-27 HelloData - Simple - 335 Third Street.xlsx",
-  "landed_at": "2026-09-27T17:28:31.768Z",
+  "source_file": "2026-09-29 HelloData - Simple - 335 Third Street.xlsx",
+  "landed_at": null,
   "checks": [
     {
       "check": "every listed building is described in 'Property Data'",
@@ -873,8 +873,8 @@
     {
       "check": "days on market reconciles to the listing's own dates",
       "ok": true,
-      "closed_listings": 599,
-      "agree": 599,
+      "closed_listings": 602,
+      "agree": 602,
       "rate": 1.0,
       "note": "(removed - first listed) + 1, inclusive of both ends"
     },
@@ -892,8 +892,8 @@
     {
       "check": "the current set is the file's own as-of date",
       "ok": true,
-      "as_of": "2026-09-26",
-      "current": 126
+      "as_of": "2026-09-28",
+      "current": 123
     },
     {
       "check": "Align's own buildings are out of the comp set",
@@ -955,6 +955,7 @@
     "2026-09-23",
     "2026-09-24",
     "2026-09-25",
-    "2026-09-26"
+    "2026-09-26",
+    "2026-09-28"
   ]
 }
