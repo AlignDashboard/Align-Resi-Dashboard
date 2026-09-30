@@ -134,17 +134,23 @@
   header.top .title span { color: var(--amber); }
   header.top .title a { color: inherit; text-decoration: none; transition: opacity .15s; }
   header.top .title a:hover { opacity: .72; }
+  /* The right of the header: when metrics.json was last written, then the
+     External Links menu. One flex item, so the pair wraps under the title as a
+     unit at phone width -- stamp above, button below, both kept right by
+     margin-left: auto, which is what lets the menu, anchored to the button's
+     right edge, always open inward rather than off the side of the screen. */
+  header.top .hright { display: flex; align-items: center; justify-content: flex-end;
+    flex-wrap: wrap; gap: 8px 16px; margin-left: auto; }
+  header.top .meta { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
 
   /* ---------- External links (header, right) ----------
      A <details> rather than a <select>: these are links, so each one takes a
      middle click or "open in new tab" like any other, and the menu opens and
      closes before any script has run. The script only closes it -- on a pick,
-     a click or focus elsewhere, or Esc. margin-left: auto keeps it on the right
-     when the header wraps at phone width, so the menu, anchored to its right
-     edge, always opens inward rather than off the side of the screen. The
-     header centres its row rather than lining up baselines, which suited the
-     line of text this replaced and hung a bordered button 4px below the title. */
-  .xlinks { position: relative; margin-left: auto; }
+     a click or focus elsewhere, or Esc. The header centres its row rather than
+     lining up baselines, which suited two lines of text and hung a bordered
+     button 4px below the title. */
+  .xlinks { position: relative; }
   .xlinks > summary { list-style: none; display: flex; align-items: center; gap: 7px;
     border: 1px solid var(--line); color: var(--muted); padding: 6px 11px;
     font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;
@@ -838,20 +844,23 @@
       <div class="title"><a href="https://www.alignrealestate.com/users/sign_in"
         target="_blank" rel="noopener noreferrer"
         title="Sign in to Align Real Estate">ALIGN · <span>RESI ASSET MANAGEMENT</span></a></div>
-      <!-- The systems the team works in, each opening in a new tab. XXX Yardi
-           has no address yet: to give it one, turn its span into an <a> like
-           its neighbours. -->
-      <details class="xlinks" id="xlinks">
-        <summary>External Links <span class="caret" aria-hidden="true">▾</span></summary>
-        <ul class="xl-menu">
-          <li><a href="https://10783align.yardione.com/" target="_blank" rel="noopener noreferrer">Align Yardi <span class="go" aria-hidden="true">↗</span></a></li>
-          <li><a href="https://jp58734.yardione.com/Account/Login?ReturnUrl=%2F" target="_blank" rel="noopener noreferrer">JPM Yardi <span class="go" aria-hidden="true">↗</span></a></li>
-          <li><span class="xl-none">XXX Yardi <span class="pill mut">no link yet</span></span></li>
-          <li><a href="https://login.meetelise.com/u/login/identifier?state=hKFo2SBsWlVtcUt1ZGhwUE1oZTBWelFfR2ZzV0RoYVpMUVUwQqFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIG52Q0NyM1NoallTNDJIMTkwcjYwZjBJLXE3MHNsSXdxo2NpZNkgQ29rTEpuWkxKWUlyOU9tWW43a1hMN0lOeXJ6UUF5Wlc" target="_blank" rel="noopener noreferrer">Elise AI <span class="go" aria-hidden="true">↗</span></a></li>
-          <li><a href="https://align-aim.realpage.com/Logon.aspx?ReturnUrl=%2fForms%2fUI%2fui.main.aspx" target="_blank" rel="noopener noreferrer">Real Page <span class="go" aria-hidden="true">↗</span></a></li>
-          <li><a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer">Google Drive <span class="go" aria-hidden="true">↗</span></a></li>
-        </ul>
-      </details>
+      <div class="hright">
+        <div class="meta" id="metaline">loading…</div>
+        <!-- The systems the team works in, each opening in a new tab. XXX Yardi
+             has no address yet: to give it one, turn its span into an <a> like
+             its neighbours. -->
+        <details class="xlinks" id="xlinks">
+          <summary>External Links <span class="caret" aria-hidden="true">▾</span></summary>
+          <ul class="xl-menu">
+            <li><a href="https://10783align.yardione.com/" target="_blank" rel="noopener noreferrer">Align Yardi <span class="go" aria-hidden="true">↗</span></a></li>
+            <li><a href="https://jp58734.yardione.com/Account/Login?ReturnUrl=%2F" target="_blank" rel="noopener noreferrer">JPM Yardi <span class="go" aria-hidden="true">↗</span></a></li>
+            <li><span class="xl-none">XXX Yardi <span class="pill mut">no link yet</span></span></li>
+            <li><a href="https://login.meetelise.com/u/login/identifier?state=hKFo2SBsWlVtcUt1ZGhwUE1oZTBWelFfR2ZzV0RoYVpMUVUwQqFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIG52Q0NyM1NoallTNDJIMTkwcjYwZjBJLXE3MHNsSXdxo2NpZNkgQ29rTEpuWkxKWUlyOU9tWW43a1hMN0lOeXJ6UUF5Wlc" target="_blank" rel="noopener noreferrer">Elise AI <span class="go" aria-hidden="true">↗</span></a></li>
+            <li><a href="https://align-aim.realpage.com/Logon.aspx?ReturnUrl=%2fForms%2fUI%2fui.main.aspx" target="_blank" rel="noopener noreferrer">Real Page <span class="go" aria-hidden="true">↗</span></a></li>
+            <li><a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener noreferrer">Google Drive <span class="go" aria-hidden="true">↗</span></a></li>
+          </ul>
+        </details>
+      </div>
     </header>
 
     <div class="tabbar">
@@ -2943,7 +2952,9 @@ async function loadDashboard() {
   // colours depending on which of them rendered first.
   seedPropColors(d.monthly_pl);
 
-  // footer
+  // header timestamp + footer
+  const gen = d.meta?.generated_at ? new Date(d.meta.generated_at).toLocaleString() : "—";
+  document.getElementById("metaline").textContent = "Updated " + gen;
   document.getElementById("footer").innerHTML =
     "Data source: metrics.json (written by email ingestion pipeline). " +
     (d.meta?.note || "") +
