@@ -3302,23 +3302,28 @@ encrypting the JSON or putting the site behind real auth.
   new gated page should follow the same pattern rather than adding its own
   password field — and note the marker is client-side like the gate itself, so
   it deters, it does not protect.
-- **The header's right side is the `External Links` menu** (2026-09-30, by
-  request): Align Yardi, JPM Yardi, XXX Yardi, Elise AI, Real Page and Google
-  Drive, each opening in a new tab. It replaced the `<portfolio> · updated
-  <time>` line; `metrics.json`'s `generated_at` is still on `data.html`'s
-  source bar. It is a `<details>` rather than a `<select>` because these are
-  links — a middle click or "open in new tab" works on each like any other —
-  and it opens without script; the script only closes it (a pick, a click or
-  focus elsewhere, Esc). **XXX Yardi has no address yet** and is listed muted
-  with `no link yet`: to give it one, turn its `span.xl-none` into an `<a>`
-  like its neighbours. The Elise AI address carries a login `state=` token
-  copied from an address bar, so if it starts landing on an error page, swap
-  in the plain sign-in URL. Two traps it records: the header centres its row
-  (baseline alignment hung the bordered button 4px below the title), and the
-  menu's rows carry **no colour transition**, because they are not rendered
-  while it is shut and a theme switched meantime replayed as a fade on the
-  next open. The menu is inside `#app`, so it is behind the gate — which, as
-  above, hides it from sight and not from the source.
+- **The header's right side is the `Updated <time>` stamp and the `External
+  Links` menu** (2026-09-30, by request). The stamp is `metrics.json`'s
+  `generated_at` in the reader's own time zone: what is left of the
+  `<portfolio> · updated <time>` line the menu first replaced outright. The
+  timestamp came back the same day; the portfolio name, which only repeated
+  the title, did not. The two are one flex item (`.hright`), so at phone width
+  they wrap under the title as a pair, right-aligned, the stamp above the
+  button. The menu holds Align Yardi, JPM Yardi, XXX Yardi, Elise AI, Real
+  Page and Google Drive, each opening in a new tab. It is a `<details>` rather
+  than a `<select>` because these are links — a middle click or "open in new
+  tab" works on each like any other — and it opens without script; the script
+  only closes it (a pick, a click or focus elsewhere, Esc). **XXX Yardi has no
+  address yet** and is listed muted with `no link yet`: to give it one, turn
+  its `span.xl-none` into an `<a>` like its neighbours. The Elise AI address
+  carries a login `state=` token copied from an address bar, so if it starts
+  landing on an error page, swap in the plain sign-in URL. Two traps it
+  records: the header centres its row (baseline alignment hung the bordered
+  button 4px below the title), and the menu's rows carry **no colour
+  transition**, because they are not rendered while it is shut and a theme
+  switched meantime replayed as a fade on the next open. The menu is inside
+  `#app`, so it is behind the gate — which, as above, hides it from sight and
+  not from the source.
 - `metrics.json` values flow into the DOM. When rendering anything from it,
   prefer `textContent` / `createElement` over `innerHTML` so pipeline data
   cannot inject markup.
