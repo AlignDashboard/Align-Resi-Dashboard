@@ -124,6 +124,43 @@ wrong-looking number on the page.
 
 ## Closed
 
+2026-09-30 — **The NOI Margin placeholder and the page footer came off**, both
+by request. Neither is a card losing a feed.
+
+The planned-metric grid is **ten** cards now. `noiMargin` was one of the eleven,
+reading `Source: P&L · Budget Variance %` over a stub chart and `■ Awaiting
+data` — and **both feeds it named have arrived.** NOI margin is a line on the
+Landing tab's Expense Load & NOI card, a tile in the row above it and a graded
+scorecard cell; budget variance is the Budget vs Actual card at the top of the
+same Portfolio tab, plus its own KPI tile. A card advertising a gap that has
+since closed is worse than no card, and this one sat several screens below the
+cards answering it. One entry out of `metrics.json`'s `placeholders` array does
+it — `build_metrics` writes only the blocks it derives, so the removal survives
+every run with nothing to remember, the way `psf_vs_peers` and `trade_outs` did,
+and `data.html`'s `t-placeholders` is driven off the same array and drops to ten
+rows by itself. The `handset` flow's own prose is regenerated with the count.
+
+The footer was the two-line block under every tab: the data source, then
+`SECURITY: password gate is client-side only and not encryption` and what to do
+before real financials land (encrypt `metrics.json` client-side, decrypt with
+the password). The `#footer` element, its fill and the `footer` CSS rule are all
+gone, and the comment above `#gate` no longer points at a note that is not
+there. It is the page-wide sibling of the Landing tab's footnote removal the
+same day. **The caveat is now only in CLAUDE.md and in that comment** — worth
+knowing, because the line just deleted was the one place a reader of the page
+was told. Nothing else moved: `data.html` keeps its own footer, worded for a
+page that really does hand over every figure at full precision, and it was not
+part of the request. `metrics.json`'s `meta.note` is the string the first line
+interpolated and is now read by nothing; it stays, since the pipeline preserves
+that block rather than writing it.
+
+Verified through the gate at 1440 and 390, dark and light: no `footer` element
+in the DOM, neither sentence anywhere in the page text, ten placeholder cards
+and no NOI Margin among them, all nine tabs mounting, no card fallen back to
+`— NOT AVAILABLE`, no page errors, no horizontal scroll, and the page ending on
+the last placeholder card with nothing dangling beneath it. `t-placeholders`
+reads ten rows on the data page.
+
 2026-09-28 — **Trade Outs and the KPI Scorecard came off the Portfolio tab**, by
 request, and only from there. Both had a copy elsewhere and both stay: the
 scorecard matrix is still drawn in full on the `Scorecard` tab (same function,

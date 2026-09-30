@@ -424,7 +424,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-09-30T17:05:23.076996+00:00",
+  "generated_at": "2026-09-30T19:03:45.501329+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -2314,7 +2314,7 @@
    "origin_kind": "manual",
    "source_label": "docs/metrics.json, edited directly",
    "source_detail": "Blocks the pipeline preserves rather than regenerates.",
-   "carries": "The eleven planned-metric cards. Expense Trend left this list on 2026-09-17, derived from the T12 statement now, and the trade-out placeholder went with its card on 2026-09-28.",
+   "carries": "The ten planned-metric cards. Expense Trend left this list on 2026-09-17, derived from the T12 statement now, the trade-out placeholder went with its card on 2026-09-28, and the NOI margin placeholder came off on 2026-09-30 \u2014 both feeds it named have arrived, and the figure is on the Landing tab's Expense Load & NOI card and in its tile row.",
    "steps": [
     {
      "script": "scripts/build_metrics.py",

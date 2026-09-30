@@ -352,7 +352,6 @@
   .chartwrap { position: relative; height: 300px; min-width: 0; }
   .card.wide .chartwrap { height: 320px; }
 
-  footer { margin-top: 30px; color: var(--muted); font-size: 10px; letter-spacing: 1px; line-height: 1.7; border-top: 1px solid var(--line); padding-top: 14px; }
   .loaderr { color: var(--red); font-size: 12px; padding: 40px; text-align:center; }
   .empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
     height:100%; text-align:center; gap:10px; color:var(--muted); }
@@ -817,7 +816,7 @@
        NOTE: This is a client-side visibility gate, NOT encryption.
        It deters casual viewing but the page source is readable.
        Before loading REAL financial data, replace this with true
-       client-side AES encryption of metrics.json (see footer note). -->
+       client-side AES encryption of metrics.json. -->
   <div id="gate">
     <div class="mark"></div>
     <h1>Align Asset Dashboard</h1>
@@ -1279,8 +1278,6 @@
 
 
     <div id="propPanels"></div>
-
-    <footer id="footer"></footer>
   </div>
 
 <script>
@@ -2943,14 +2940,14 @@ async function loadDashboard() {
   // colours depending on which of them rendered first.
   seedPropColors(d.monthly_pl);
 
-  // header timestamp + footer
+  // The header timestamp. A standing footer sat under the whole page carrying
+  // the data source and the gate's security caveat; it came off 2026-09-30, by
+  // request, the same way the Landing tab's card footnotes did. Neither
+  // statement is lost: what feeds every number is the data-flow page each card
+  // links to, and the gate's own "deterrence, not encryption" caveat is in the
+  // comment above #gate and in CLAUDE.md. d.meta.note is read by nothing now.
   const gen = d.meta?.generated_at ? new Date(d.meta.generated_at).toLocaleString() : "—";
   document.getElementById("metaline").textContent = "Updated " + gen;
-  document.getElementById("footer").innerHTML =
-    "Data source: metrics.json (written by email ingestion pipeline). " +
-    (d.meta?.note || "") +
-    "<br>SECURITY: password gate is client-side only and not encryption. " +
-    "Before loading real financials, encrypt metrics.json client-side (AES) and decrypt with the password, so raw data never ships in plaintext.";
 
   /* ---- EXPENSE TREND (one line per property, each selectable) ----
      This was three hand-typed expense categories for one building until
