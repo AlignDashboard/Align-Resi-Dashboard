@@ -610,13 +610,24 @@
     .rt-pw { width: 170px; }
   }
 
-  /* The Expense Ratio card's left column: one T12 figure per property shown,
-     in that property's own line colour. It was a single 40px number with a
-     dropdown beside it until 2026-09-17 -- once the properties are toggles
-     there can be several at once, so the figure shrinks and the column grows
-     rather than the card having to pick one building to headline. */
+  /* The Portfolio tab's Expense Load & NOI card (the Expense Ratio card until
+     2026-09-30). Its left column is one T12 figure per property shown, in
+     that property's own line colour, for whichever measure the select is on.
+     It was a single 40px number with a dropdown beside it until 2026-09-17 --
+     once the properties are toggles there can be several at once, so the
+     figure shrinks and the column grows rather than the card having to pick
+     one building to headline. */
   .erstats { display: flex; flex-direction: column; gap: 11px;
     flex: 0 0 auto; padding: 0 10px; }
+  /* The Measure select sits opposite the title, and the eyebrow beside it
+     changes length with the measure ("MONTHLY NOI MARGIN" against "MONTHLY
+     CONTROLLABLE EXPENSE / DOOR"). A heading block sized to its text would
+     push the select onto a line of its own on one measure and not another,
+     moving it out from under the cursor that just used it -- the deep dive's
+     period toggle had exactly that bug. A zero basis makes the heading yield
+     the space and rewrap instead; a select is as wide as its widest option
+     whichever is chosen, so the row holds still. */
+  #cExpRatio .card-head > :first-child { flex: 1 1 0; min-width: 0; }
   .erstats .st .v { font-size: 26px; font-weight: 700; line-height: 1; }
   .erstats .st .k { font-size: 9px; letter-spacing: 1px; color: var(--muted);
     text-transform: uppercase; margin-top: 4px; }
@@ -902,17 +913,25 @@
       </div>
 
 
+      <!-- The Landing tab's Expense Load & NOI card, across the portfolio: one
+           measure at a time on the select, one box per building. It was the
+           Expense Ratio card until 2026-09-30 and keeps that card's id, which
+           lineage.json's card index and data.html's links name. -->
       <div class="card wide" id="cExpRatio">
         <div class="card-head">
           <div>
-            <h2>Expense Ratio</h2>
+            <h2>Expense Load &amp; NOI</h2>
             <span class="eyebrow" id="erEyebrow">LOADING…</span>
+          </div>
+          <div class="opsel">
+            <label for="erMeasure">Measure:</label>
+            <select class="prop-select" id="erMeasure"></select>
           </div>
         </div>
         <div class="ckgrid" id="erCks" role="group" aria-label="Properties shown"></div>
         <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
           <div class="erstats" id="erStats"></div>
-          <div class="chartwrap" style="flex:1 1 340px;height:220px;"><canvas id="expRatio"></canvas></div>
+          <div class="chartwrap" id="erWrap" style="flex:1 1 340px;height:220px;"><canvas id="expRatio"></canvas></div>
         </div>
         <div id="erFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:10px;"></div>
       </div>
@@ -3097,182 +3116,423 @@ async function loadDashboard() {
       '<div class="empty"><div class="dash"></div><div class="big">No expense data yet</div><div class="dash"></div></div>';
   }
 
-  /* ---- EXPENSE RATIO (one line per property, each selectable) ----
-     Still parameterised on ids and a unit, since NOI Margin is meant to use
-     the same pattern. Two things changed on 2026-09-17, by request.
+  /* ---- EXPENSE LOAD & NOI (one measure, one line per property) ----
+     The Landing tab's Expense Load & NOI card reads one building three ways:
+     NOI margin, expense ratio and controllable expense per door. This card
+     reads the portfolio one of those ways at a time -- the Measure select picks
+     which, and a box per building picks whose lines are drawn. By request,
+     2026-09-30. It was the Expense Ratio card and keeps that card's id, for the
+     reason the Landing tab's d- ids stay: lineage.json's card index and
+     data.html's links name it.
 
-     The chart is now **the series the Landing tab draws**: each
-     property's monthly ratio off the stitched monthly_pl run, opex over
-     revenue, exactly as that tab's Expense Load & NOI card computes it. That
-     is a change of source, not a restyle. The block's own trend_values are one
-     point per STATEMENT, so The Landing's line was two points where its P&L
-     carries thirteen months, and it only lengthened when a new file landed
-     rather than as the stitch grows. Checked before switching: the ratio off
-     monthly_pl reproduces the block's published latest_monthly_ratio to the
-     tenth on every overlapping month, for both properties, so the measurement
-     itself did not move.
+     One measure at a time rather than that card's three at once, because the
+     three are not one unit. Two are shares of revenue and the third is dollars
+     a door, which is why the Landing card needs a second axis for it; several
+     buildings on two axes is a chart that cannot be read.
 
-     And the property dropdown is a row of toggles, so the buildings can be
-     read against each other rather than one at a time. Same union month axis
-     as the Expense Trend card and for the same reason -- the statements do not
-     cover the same window, so a series aligned by position would plot one
-     property's July against another's August. propColor keys the line colour
-     on the slug, so a building is the same colour on both cards.
+     Every line is the Landing card's own arithmetic, so a building reads the
+     same on both tabs:
+       NOI margin     noi / revenue, off the stitched monthly_pl run
+       Expense ratio  opex / revenue, off the same run. Until 2026-09-17 this
+                      card drew the expense_ratio block's own trend_values,
+                      one point per STATEMENT -- two for The Landing, where its
+                      P&L carries thirteen months. The ratio off monthly_pl
+                      reproduces the block's latest_monthly_ratio to the tenth
+                      on every month both carry, and test_monthly_pl pins that.
+       Controllable   controllableMonthly() over the unit directory's
+                      residential_units, a month at a time
 
-     The T12 figures move to the left column, one per property shown. They are
-     the block's own published ratio_t12 and stay the headline: a single
-     accrual month swings hard (The Landing reads 3.8% for Aug 26 on the tax
-     reversal and 52.9% for Apr 26 on the assessment), which is exactly why the
-     footnote points at them rather than at the line. */
-  function renderRatioCard(ids, metric, unit, plBlock) {
-    // ids: {cks, stats, eyebrow, foot, canvas}
-    const plBySlug = {};
-    ((plBlock && plBlock.properties) || []).forEach(p => { plBySlug[p.slug] = p; });
+     The boxes are the PORTFOLIO -- metrics.json's `properties` block, the
+     active property master -- not whichever buildings a feed happens to cover.
+     A building the measure cannot draw keeps its box, struck through, with the
+     reason on hover and in the note: the Budget vs Actual row's rule, because
+     "Chorus has no statement on file" is the answer to why the chart shows two
+     buildings, and leaving Chorus off states nothing. Which boxes are live
+     depends on the measure (Palma has a statement and no door count), so the
+     grid is rebuilt on every switch -- in one fixed order, so nothing moves
+     under the reader, and a building switched off stays off across switches.
 
-    const rows = metric.properties.map(p => ({
-      slug: p.slug, name: p.name, t12: p.ratio_t12,
-      // Per-property basis, falling back to the block's. Two properties can be
-      // on different expense anchors -- The Landing's statement has a TOTAL
-      // EXPENSES row and Palma's does not -- so one basis line printed over
-      // both would describe only one of them.
-      basis: p.basis || metric.basis,
-      scope: p.expense_scope || "operating",
-      color: propColor(p.slug),
-      pl: plBySlug[p.slug] || null,
-    }));
-    // A property with a published T12 ratio but no P&L series still gets its
-    // figure; it just has no line to draw.
-    const drawable = rows.filter(r => r.pl && (r.pl.months || []).length
-                                   && r.pl.months.length === (r.pl.revenue || []).length);
-    const months = [...new Set(drawable.flatMap(r => r.pl.months))].sort();
-    const labels = months.map(shortMo);
-    const mixed = new Set(rows.map(r => r.scope)).size > 1;
-    const hidden = new Set();
+     Same union month axis as the Expense Trend card, for the same reason: the
+     statements do not cover the same window, so a series aligned by position
+     would plot one property's July against another's August. It is the union
+     over every building the measure can draw, ticked or not, so the time axis
+     holds still while boxes change and the vertical axis rescales to what is
+     shown.
 
-    // A reversal month runs the ratio negative (Palma's Jun 26 reads -36%), and
-    // the minus has to be the page's typographic one in both places it shows --
-    // the y ticks and the tooltip. Chart.js's default prints a hyphen, and the
-    // Expense Trend card directly above this one already uses the minus.
-    const erPct = v => (v < 0 ? "−" : "") + Math.abs(v) + unit;
-    const erPct1 = v => (v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + unit;
-
-    const statsEl = document.getElementById(ids.stats);
-    const footEl = document.getElementById(ids.foot);
-    const shown = () => rows.filter(r => !hidden.has(r.slug));
-
-    document.getElementById(ids.eyebrow).textContent =
-      (labels.length
-        ? "Monthly " + "·" + " " + labels[0] + " " + "–" + " " + labels[labels.length - 1]
-        : "Awaiting the statement") +
-      " " + "·" + " " + rows.length +
-      (rows.length === 1 ? " PROPERTY" : " PROPERTIES") +
-      (mixed ? " " + "·" + " TWO EXPENSE BASES" : "");
-
-    const seriesFor = r => {
-      const by = {};
-      r.pl.months.forEach((k, i) => {
-        const rev = r.pl.revenue[i];
-        by[k] = rev ? (r.pl.opex[i] / rev) * 100 : null;
-      });
-      return months.map(k => (k in by ? by[k] : null));
-    };
-
-    const chart = labels.length ? new Chart(document.getElementById(ids.canvas), {
-      type: "line",
-      data: { labels, datasets: drawable.map(r => ({
-        label: r.name, data: seriesFor(r),
-        borderColor: r.color, backgroundColor: r.color,
-        tension: .3, borderWidth: 2, pointRadius: 2, spanGaps: false })) },
-      options: { maintainAspectRatio: false, responsive: true,
-        interaction: { mode: "index", intersect: false },
-        plugins: { legend: { display: false },
-          tooltip: { callbacks: { label: c => {
-            const r = drawable[c.datasetIndex];
-            return c.dataset.label + ": " +
-              (c.parsed.y == null ? "n/a" : erPct1(c.parsed.y)) +
-              // The basis rides on the tooltip only where the lines disagree
-              // about it -- the moment a reader is comparing two numbers.
-              (mixed ? " " + "·" + " " + r.basis : "");
-          } } } },
-        scales: { y: { grid: gridCfg, ticks: { callback: erPct } },
-          x: { grid: { display: false },
-               ticks: { maxRotation: 0, autoSkip: true, font: { size: 9 } } } } }
-    }) : null;
-
-    // Built node by node rather than as an HTML string: the names come out of
-    // metrics.json, and pipeline data interpolated into innerHTML is markup
-    // injection waiting for a property with a bracket in its name.
-    const paintStats = () => {
-      statsEl.textContent = "";
-      const list = shown();
-      if (!list.length) {
-        statsEl.appendChild(elc("div", "st", "—"));
-        return;
-      }
-      list.forEach(r => {
-        const st = elc("div", "st");
-        const v = elc("div", "v", r.t12 != null ? erPct(r.t12) : "—");
-        v.style.color = r.color;
-        st.appendChild(v);
-        st.appendChild(elc("div", "k", r.name + " " + "·" + " T12"));
-        statsEl.appendChild(st);
-      });
-    };
-
-    const paintNote = () => {
-      const list = shown();
-      const bits = [];
-      if (mixed && list.length > 1) {
-        bits.push("These lines are not the same expense row, so part of the " +
-                  "distance between them is a difference of basis rather than " +
-                  "of spending.");
-      }
-      bits.push("The lines are each property's monthly ratio off the stitched " +
-                "P&L — the same series the Landing tab's Expense " +
-                "Load & NOI card draws — and a line stops where that " +
-                "property's statements do rather than being drawn across the gap.");
-      bits.push("Monthly ratios are volatile on an accrual basis, since a " +
-                "true-up or a reversal is booked in the month it is found; the " +
-                "T12 figures on the left are the reliable reading.");
-      bits.push(list.length
-        ? list.map(r => r.name + ": " + r.basis).join(" " + "·" + " ") + "."
-        : "No property selected — tick one above.");
-      footEl.textContent = bits.join(" ");
-    };
-
-    // One box per property. A control that cannot change anything is worse
-    // than no control, so a single-property portfolio gets no grid.
+     The T12 figures on the left stay the headline, one per building shown,
+     because a single accrual month swings hard: The Landing's expense ratio
+     reads 3.8% for Aug 26 on the tax reversal and 52.9% for Apr 26 on the
+     assessment. For the expense ratio they are the block's own published
+     ratio_t12, as they always were; the other two are taken over the trailing
+     twelve of the series the line draws, the rule the Landing tab's tiles
+     follow. */
+  function renderLoadCard(ids, d) {
+    // ids: {sel, cks, stats, eyebrow, foot, wrap, canvas}
+    const selEl = document.getElementById(ids.sel);
     const cksEl = document.getElementById(ids.cks);
-    if (rows.length > 1) {
-      ckGrid(cksEl,
-        rows.map(r => ({ slug: r.slug, label: r.name, color: r.color, title: r.basis })),
-        it => !hidden.has(it.slug),
-        it => {
-          if (hidden.has(it.slug)) hidden.delete(it.slug); else hidden.add(it.slug);
-          const i = drawable.findIndex(r => r.slug === it.slug);
-          if (chart && i >= 0) {
-            chart.setDatasetVisibility(i, !hidden.has(it.slug));
-            chart.update();
-          }
-          paintStats();
-          paintNote();
+    const statsEl = document.getElementById(ids.stats);
+    const eyebrowEl = document.getElementById(ids.eyebrow);
+    const footEl = document.getElementById(ids.foot);
+    const wrapEl = document.getElementById(ids.wrap);
+
+    const bySlug = blk => {
+      const o = {};
+      (((d[blk] || {}).properties) || []).forEach(p => { o[p.slug] = p; });
+      return o;
+    };
+    const PL = bySlug("monthly_pl"), ER = bySlug("expense_ratio"),
+          EB = bySlug("expense_buckets"), UD = bySlug("unit_directory");
+    const erBasis = (d.expense_ratio || {}).basis;
+
+    // The portfolio. The union of the three blocks is the fallback for a
+    // metrics.json written before `properties` existed: fewer boxes is a worse
+    // grid, an empty one is a broken card.
+    const roster = ((d.properties || {}).properties) || [];
+    const rows = [];
+    const seen = new Set();
+    (roster.length ? roster
+      : [].concat(...["monthly_pl", "expense_ratio", "expense_buckets"]
+          .map(b => ((d[b] || {}).properties) || [])))
+      .forEach(p => {
+        if (!p || !p.slug || seen.has(p.slug)) return;
+        seen.add(p.slug);
+        const pl = PL[p.slug] || null, erp = ER[p.slug] || null;
+        rows.push({
+          slug: p.slug, name: p.name || p.slug, pl, erp,
+          eb: EB[p.slug] || null,
+          doors: (UD[p.slug] || {}).residential_units || null,
+          // Per property, not per block: The Landing's statement has a TOTAL
+          // EXPENSES row and Palma's does not, so one basis printed over both
+          // would describe only one of them.
+          scope: (pl && pl.expense_scope) || (erp && erp.expense_scope) || "operating",
+          anchor: (pl && pl.expense_anchor) || (erp && erp.expense_anchor) || null,
         });
-    } else {
+      });
+    // Never a blank chart: the empty state a measure with nothing to draw
+    // shows, and the whole card's when there is nothing at all.
+    const emptyState = text => {
+      const empty = elc("div", "empty");
+      empty.appendChild(elc("div", "dash"));
+      empty.appendChild(elc("div", "big", text));
+      empty.appendChild(elc("div", "dash"));
+      wrapEl.textContent = "";
+      wrapEl.appendChild(empty);
+    };
+    if (!rows.length) {
+      eyebrowEl.textContent = "AWAITING SOURCE DATA";
+      // .opsel is display:flex, which outranks the UA sheet's [hidden] rule
+      selEl.parentElement.style.display = "none";
       cksEl.hidden = true;
+      emptyState("No statement data yet");
+      return;
     }
-    paintStats();
-    paintNote();
+
+    const sum = a => a.reduce((t, v) => t + (v || 0), 0);
+    // A reversal month runs a line negative (Palma's Jun 26 expense ratio reads
+    // -36%), and the minus is the page's typographic one everywhere it shows --
+    // the ticks, the tooltip and the figures. Chart.js's default tick prints a
+    // hyphen, and the Expense Trend card above already uses the minus.
+    const pct = v => (v < 0 ? "−" : "") + Math.abs(v) + "%";
+    const pct1 = v => (v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%";
+    const usd = v => (v < 0 ? "−$" : "$") + Math.abs(Math.round(v)).toLocaleString();
+    const hasPl = r => !!(r.pl && Array.isArray(r.pl.revenue) && r.pl.revenue.length);
+    const plMonths = pl => (pl.months && pl.months.length === pl.revenue.length)
+      ? pl.months : monthKeysBack(pl.period_end, pl.revenue.length);
+    // A share of revenue a month at a time -- null for a month with no revenue
+    // rather than a division by zero.
+    const share = (r, f) => r.pl.revenue.map((rev, i) => rev ? (r.pl[f][i] / rev) * 100 : null);
+    // Taken from the END of the run and named for the months it covers. The
+    // stitched run is thirteen months for The Landing, and summing all of it
+    // under "T12" is the error the Landing tab's T12 NOI tile once made.
+    const tail = (r, f) => {
+      const w = Math.min(12, r.pl.revenue.length);
+      const rev = sum(r.pl.revenue.slice(-w));
+      return { v: rev ? (sum(r.pl[f].slice(-w)) / rev) * 100 : null, win: w };
+    };
+    // ratio_basis()'s words for the two rows, so a basis composed here reads
+    // like the one the pipeline publishes for the expense ratio.
+    const expRow = r => r.scope === "total"
+      ? "total expenses" + (r.anchor ? " (" + r.anchor + ")" : "") : "recoverable opex";
+    const revRow = r => r.scope === "total" ? "Total revenue" : "Operating revenue";
+    const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+    const NO_T12 = "no 12-month statement on file";
+
+    // What a measure makes of one building: its monthly line (keys, vals), the
+    // trailing figure beside the chart (fig, over win months), the basis it is
+    // struck on -- and, where it cannot be drawn, `why`, kept short because it
+    // reads as the box's tooltip and inside a sentence in the note.
+    const MEASURES = [
+      { key: "noi", label: "NOI margin", eyebrow: "MONTHLY NOI MARGIN",
+        tick: pct, fmt: pct1, per: "", tip: "after",
+        win: w => (w === 12 ? "T12" : "T" + w),
+        read: r => {
+          if (!hasPl(r)) return { why: NO_T12 };
+          const t = tail(r, "noi");
+          // ratio_basis()'s two forms with NOI in front: the margin is the
+          // ratio's complement on the same row, so the two views of one
+          // statement are worded as one.
+          return { keys: plMonths(r.pl), vals: share(r, "noi"), fig: t.v, win: t.win,
+                   basis: "NOI after " + expRow(r) + " ÷ " + revRow(r) };
+        },
+        about: "The lines are each property's monthly NOI margin off the stitched "
+          + "P&L — NOI over revenue, the same series the Landing tab's Expense "
+          + "Load & NOI card draws, and 100% less the expense ratio on the same "
+          + "statement — and a line stops where that property's statements do "
+          + "rather than being drawn across the gap.",
+        mixed: "These lines do not take NOI after the same expense row, so part of "
+          + "the distance between them is a difference of basis rather than of "
+          + "performance." },
+      { key: "ratio", label: "Expense ratio", eyebrow: "MONTHLY EXPENSE RATIO",
+        tick: pct, fmt: pct1, per: "", tip: "on",
+        win: w => (w === 12 ? "T12" : "T" + w),
+        read: r => {
+          // A published T12 with no P&L series behind it still gets its figure;
+          // it just has no line. Where both exist the published one is the
+          // headline: it is the block's own, and the table the corner link opens.
+          const pub = r.erp && r.erp.ratio_t12 != null ? r.erp.ratio_t12 : null;
+          if (!hasPl(r) && pub == null) return { why: NO_T12 };
+          const t = hasPl(r) ? tail(r, "opex") : { v: null, win: 12 };
+          return { keys: hasPl(r) ? plMonths(r.pl) : [],
+                   vals: hasPl(r) ? share(r, "opex") : [],
+                   fig: pub != null ? pub : t.v, win: pub != null ? 12 : t.win,
+                   basis: (r.erp && r.erp.basis) || erBasis
+                     || cap(expRow(r)) + " ÷ " + revRow(r) };
+        },
+        about: "The lines are each property's monthly ratio off the stitched P&L "
+          + "— the same series the Landing tab's Expense Load & NOI card draws — "
+          + "and a line stops where that property's statements do rather than "
+          + "being drawn across the gap.",
+        mixed: "These lines are not the same expense row, so part of the distance "
+          + "between them is a difference of basis rather than of spending." },
+      { key: "ctrl", label: "Controllable expense / door",
+        eyebrow: "MONTHLY CONTROLLABLE EXPENSE / DOOR",
+        tick: usd, fmt: usd, per: "/mo", tip: "from", zero: true,
+        // A dollar flow, not a share, so a run shorter than a year is scaled
+        // to one rather than summed: seven months of cost beside twelve would
+        // read as a cheaper building.
+        win: w => (w === 12 ? "T12" : "T" + w + " annualised") + " per door",
+        read: r => {
+          if (!r.eb || !r.eb.buckets) {
+            return { why: r.doors ? NO_T12 : "no 12-month statement or door count on file" };
+          }
+          if (!r.doors) {
+            return { why: "no door count on file — the unit directory does not list it" };
+          }
+          const c = controllableMonthly(r.eb);
+          if (!c || !c.length) {
+            return { why: "its expense groups do not name all four the controllable "
+                        + "basket takes out" };
+          }
+          const w = Math.min(12, c.length);
+          return { keys: monthKeysBack(r.eb.period_end, c.length),
+                   vals: c.map(v => v / r.doors),
+                   fig: (sum(c.slice(-w)) / r.doors) * (12 / w), win: w,
+                   basis: cap(expRow(r)) + " less taxes, insurance, utilities and the "
+                     + "management fee ÷ " + r.doors.toLocaleString() + " doors" };
+        },
+        about: "The lines are each property's controllable expense per door, a month "
+          + "at a time — every expense group less taxes, insurance, utilities and "
+          + "the management fee, over the unit directory's door count — the same "
+          + "series the Landing tab's Expense Load & NOI card draws.",
+        // The figure beside the line is twelve of its points added up, and the
+        // scorecard's cell for the same KPI is one of them times twelve -- two
+        // honest per-year numbers a reader will see side by side.
+        left: "They are a year's cost per door, where the scorecard's Controllable "
+          + "OpEx/Unit grades the newest month ×12.",
+        mixed: "These lines do not start from the same expense row, so part of the "
+          + "distance between them is a difference of basis rather than of "
+          + "spending." },
+    ];
+
+    const reads = {};
+    MEASURES.forEach(m => {
+      reads[m.key] = {};
+      rows.forEach(r => { reads[m.key][r.slug] = m.read(r); });
+    });
+    const can = (m, r) => !reads[m.key][r.slug].why;
+    // Colour follows the building, never the measure: one that any measure can
+    // draw wears its propColor on all three, struck through or not, and one no
+    // measure can draw wears the page's muted ink rather than a series colour
+    // it has no line in. propColor is seeded from monthly_pl before any card
+    // mounts, so a building is the same colour here as on Expense Trend.
+    rows.forEach(r => {
+      r.any = MEASURES.some(m => can(m, r));
+      r.color = r.any ? propColor(r.slug) : "var(--muted)";
+    });
+    // One order for every measure, so a switch never moves a box: the buildings
+    // with something to draw first, each group in portfolio order.
+    rows.sort((a, b) => b.any - a.any);
+
+    let current = "ratio";              // what the card showed before it had a select
+    const hidden = new Set();           // switched off by the reader; survives a switch
+    let chart = null;
+
+    selEl.textContent = "";
+    MEASURES.forEach(m => {
+      const o = elc("option", null, m.label);
+      o.value = m.key;
+      selEl.appendChild(o);
+    });
+    selEl.value = current;
+    selEl.addEventListener("change", () => { current = selEl.value; draw(); });
+
+    function draw() {
+      const m = MEASURES.find(x => x.key === current) || MEASURES[1];
+      const R = reads[m.key];
+      const live = rows.filter(r => can(m, r));
+      const drawn = live.filter(r => R[r.slug].keys.length);
+      const months = [...new Set(drawn.flatMap(r => R[r.slug].keys))].sort();
+      const labels = months.map(shortMo);
+      const mixed = new Set(live.map(r => r.scope)).size > 1;
+      const shown = () => live.filter(r => !hidden.has(r.slug));
+
+      eyebrowEl.textContent = m.eyebrow + " · "
+        + (labels.length ? (labels[0] + "–" + labels[labels.length - 1]).toUpperCase()
+                         : "AWAITING THE STATEMENT")
+        + " · " + live.length + (live.length < rows.length ? " OF " + rows.length : "")
+        + (rows.length === 1 ? " PROPERTY" : " PROPERTIES")
+        + (mixed ? " · TWO EXPENSE BASES" : "");
+
+      // A fresh canvas per measure rather than a mutated chart: the axis, its
+      // formatter and every dataset change together, and a destroyed chart
+      // cannot leave a stale option behind.
+      if (chart) { chart.destroy(); chart = null; }
+      wrapEl.textContent = "";
+      let cv = null, opts = null;
+      // Every box switched off keeps a frame rather than collapsing to a 0–1%
+      // axis: it is where the next box turns a line back on. Once the chart
+      // exists that is the scale it last drew; a chart built with every box
+      // already off frames all the lines it could show. Chart.js swaps
+      // opts.scales for its own merged copy on construction, and that copy is
+      // the object to change -- the Rental Rates overlays rely on the same.
+      const frame = () => {
+        if (!opts) return;
+        const y = opts.scales.y;
+        ["min", "max", "suggestedMin", "suggestedMax"].forEach(k => { delete y[k]; });
+        if (shown().length) return;
+        if (chart) { y.min = chart.scales.y.min; y.max = chart.scales.y.max; return; }
+        const vs = drawn.flatMap(r => R[r.slug].vals).filter(v => v != null);
+        if (vs.length) { y.suggestedMin = Math.min(...vs); y.suggestedMax = Math.max(...vs); }
+      };
+      if (labels.length) {
+        cv = elc("canvas");
+        cv.id = ids.canvas;
+        cv.setAttribute("role", "img");
+        wrapEl.appendChild(cv);
+        opts = { maintainAspectRatio: false, responsive: true,
+          interaction: { mode: "index", intersect: false },
+          plugins: { legend: { display: false },
+            tooltip: { callbacks: { label: c => c.dataset.label + ": "
+              + (c.parsed.y == null ? "n/a" : m.fmt(c.parsed.y) + m.per)
+              // The expense row rides on the tooltip only where the lines
+              // disagree about it -- the moment a reader is comparing two
+              // numbers.
+              + (mixed ? " · " + m.tip + " " + expRow(drawn[c.datasetIndex]) : "") } } },
+          scales: { y: { grid: gridCfg, beginAtZero: !!m.zero, ticks: { callback: m.tick } },
+            x: { grid: { display: false },
+                 ticks: { maxRotation: 0, autoSkip: true, font: { size: 9 } } } } };
+        frame();
+        chart = new Chart(cv, {
+          type: "line",
+          data: { labels, datasets: drawn.map(r => {
+            const at = new Map(R[r.slug].keys.map((k, i) => [k, R[r.slug].vals[i]]));
+            return { label: r.name, data: months.map(k => (at.has(k) ? at.get(k) : null)),
+                     borderColor: r.color, backgroundColor: r.color, hidden: hidden.has(r.slug),
+                     tension: .3, borderWidth: 2, pointRadius: 2, spanGaps: false };
+          }) },
+          options: opts,
+        });
+      } else {
+        // the note says why, building by building
+        emptyState("Nothing to draw on this measure yet");
+      }
+
+      // Built node by node rather than as an HTML string: the names come out of
+      // metrics.json, and pipeline data interpolated into innerHTML is markup
+      // injection waiting for a property with a bracket in its name.
+      const paint = () => {
+        const list = shown();
+        statsEl.textContent = "";
+        const figs = list.filter(r => R[r.slug].fig != null);
+        if (!figs.length) statsEl.appendChild(elc("div", "st", "—"));
+        figs.forEach(r => {
+          const x = R[r.slug];
+          const st = elc("div", "st");
+          const v = elc("div", "v", m.fmt(x.fig));
+          v.style.color = r.color;
+          st.appendChild(v);
+          st.appendChild(elc("div", "k", r.name + " · " + m.win(x.win)));
+          statsEl.appendChild(st);
+        });
+
+        if (cv) {
+          const onLine = list.filter(r => R[r.slug].keys.length);
+          cv.setAttribute("aria-label", m.label + " by month, " + labels[0] + " to "
+            + labels[labels.length - 1] + (onLine.length
+              ? ", for " + nameList(onLine.map(r => r.name)) : ", no property selected"));
+        }
+
+        const bits = [];
+        if (mixed && list.length > 1) bits.push(m.mixed);
+        bits.push(m.about);
+        bits.push("Monthly figures are volatile on an accrual basis, since a true-up "
+          + "or a reversal is booked in the month it is found; the T12 figures on "
+          + "the left are the reliable reading." + (m.left ? " " + m.left : ""));
+        bits.push(list.length
+          ? list.map(r => r.name + ": " + R[r.slug].basis).join(" · ") + "."
+          : live.length ? "No property selected — tick one above."
+                        : "No property in the portfolio can be drawn on this measure yet.");
+        // The grid lists buildings this measure cannot draw. A struck-through
+        // box says there is a reason; this says what it is. Grouped BY REASON
+        // rather than a clause per building: the grid is the whole portfolio,
+        // so most of it can be out at once, and one reason said four times
+        // buries the building whose reason differs.
+        const out = rows.filter(r => !can(m, r));
+        if (out.length) {
+          bits.push("The boxes above include "
+            + (out.length === 1 ? "one building" : out.length + " buildings")
+            + " that cannot be drawn on this measure: "
+            + [...new Set(out.map(r => R[r.slug].why))].map(w =>
+                nameList(out.filter(r => R[r.slug].why === w).map(r => r.name))
+                + " (" + w + ")").join("; ")
+            + "."
+            + (out.some(r => R[r.slug].why.indexOf("statement") >= 0)
+                ? " A 12-month statement goes in the Drive “T12 Expenses” folder." : ""));
+        }
+        footEl.textContent = bits.join(" ");
+      };
+
+      // A control that cannot change anything is worse than no control, so a
+      // one-property portfolio gets no grid. Two or more always get one, even
+      // where this measure can draw a single building: the struck-through boxes
+      // are what say why the chart holds one line.
+      cksEl.hidden = rows.length < 2;
+      if (!cksEl.hidden) {
+        ckGrid(cksEl,
+          rows.map(r => ({ slug: r.slug, label: r.name, color: r.color,
+                           disabled: !can(m, r),
+                           title: can(m, r) ? R[r.slug].basis : r.name + ": " + R[r.slug].why })),
+          it => !it.disabled && !hidden.has(it.slug),
+          it => {
+            if (hidden.has(it.slug)) hidden.delete(it.slug); else hidden.add(it.slug);
+            const i = drawn.findIndex(r => r.slug === it.slug);
+            if (chart && i >= 0) {
+              frame();                  // before update: it reads the scale last drawn
+              chart.setDatasetVisibility(i, !hidden.has(it.slug));
+              chart.update();
+            }
+            paint();
+          });
+      }
+      paint();
+    }
+
+    draw();
   }
 
-  const er = d.expense_ratio;
-  if (er && er.available && Array.isArray(er.properties) && er.properties.length) {
-    renderRatioCard(
-      { cks: "erCks", stats: "erStats", eyebrow: "erEyebrow", foot: "erFoot", canvas: "expRatio" },
-      er, "%", d.monthly_pl
-    );
-  } else if (document.getElementById("erEyebrow")) {
-    document.getElementById("erEyebrow").textContent = "AWAITING SOURCE DATA";
-  }
+  section("cExpRatio", () => renderLoadCard(
+    { sel: "erMeasure", cks: "erCks", stats: "erStats", eyebrow: "erEyebrow",
+      foot: "erFoot", wrap: "erWrap", canvas: "expRatio" }, d));
 
   await renderBudgetActual(d);
 
@@ -3373,7 +3633,7 @@ const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct",
 // label the same month series, and a month key formatted two ways would read
 // as two different periods.
 /* One colour per property across the Portfolio tab. Expense Trend and Expense
-   Ratio draw the same buildings off the same block, and a building that is
+   Load & NOI draw the same buildings off the same block, and a building that is
    amber on one card and teal on the other is worse than no colour at all.
    Keyed on slug and seeded from monthly_pl, so the assignment does not depend
    on which card happens to mount first. */
@@ -3457,6 +3717,24 @@ const isNotControllable = n => NOT_CONTROLLABLE.some(k => String(n).toLowerCase(
 // rather than guess.
 const controllableMissing = names =>
   NOT_CONTROLLABLE.filter(k => !names.some(n => String(n).toLowerCase().includes(k)));
+// The controllable basket a month at a time, off one property's expense
+// buckets: every group, less the four above. Null where one of the four cannot
+// be found by name, for controllableMissing's reason. Both Expense Load & NOI
+// cards read it -- the Landing tab's for one building, the Portfolio tab's
+// across them -- so what a door costs is one calculation wherever it is drawn.
+const controllableMonthly = eb => {
+  const names = Object.keys((eb && eb.buckets) || {});
+  if (!names.length || controllableMissing(names).length) return null;
+  return (eb.labels || []).map((_, i) => {
+    let total = 0, excluded = 0;
+    names.forEach(n => {
+      const v = eb.buckets[n][i] || 0;
+      total += v;
+      if (isNotControllable(n)) excluded += v;
+    });
+    return total - excluded;
+  });
+};
 const elc = (tag, cls, text) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -5741,15 +6019,7 @@ async function loadLandingDrive() {
     ctrlWhy = "the statement's account groups no longer name taxes, insurance, "
             + "utilities and the management fee the way this excludes them";
   } else {
-    ctrl = eb.labels.map((_, i) => {
-      let total = 0, excluded = 0;
-      Object.keys(eb.buckets).forEach(n => {
-        const v = eb.buckets[n][i] || 0;
-        total += v;
-        if (isNotControllable(n)) excluded += v;
-      });
-      return total - excluded;
-    });
+    ctrl = controllableMonthly(eb);
   }
   const ctrlKeys = eb ? monthKeysBack(eb.period_end, eb.labels.length) : [];
   const ctrlPerDoorMo = ctrl ? ctrl.map(v => v / doors) : null;

@@ -2129,65 +2129,146 @@ statements built in a temp dir by `test_expense_buckets`' own builders, no
 network and no fixtures. Each guard has a check that fails when the guard is
 removed (verified by mutation).
 
-## Expense Ratio (Portfolio tab)
+## Expense Load & NOI (Portfolio tab)
 
-The card reads **the series the `Landing` tab draws**: each property's
-monthly ratio off the stitched `monthly_pl` run, opex over revenue, exactly as
-that tab's Expense Load & NOI card computes it. And the property dropdown is a
-row of toggles, so the buildings are read against each other rather than one at
-a time. Both changed 2026-09-17, by request.
+**The Landing tab's Expense Load & NOI card, across the portfolio** (by request,
+2026-09-30). A **Measure:** select in the card head picks one of that card's
+three readings — **NOI margin**, **Expense ratio** or **Controllable expense /
+door** — and a box per building picks whose lines are drawn. It was the
+`Expense Ratio` card and still opens on that measure; the id stays `cExpRatio`,
+for the reason the Landing tab's `d-` ids stay — `lineage.json`'s card index and
+`data.html`'s links name it.
 
-**The source change is not a restyle.** The `expense_ratio` block's own
-`trend_values` are one point per *statement*, so The Landing's line was **two
-points** where its P&L carries thirteen months, and it lengthened only when a
-new file landed rather than as the stitch grows. A property with a single
-statement fell back to that statement's twelve months and could never show
-more. Reading `monthly_pl` instead gives every month the pipeline has stitched.
+**One measure at a time, not the Landing card's three at once.** Two are shares
+of revenue and the third is dollars a door, which is why that card needs a
+second axis for it; several buildings on two axes is a chart nobody can read.
 
-Checked before switching, and this is what makes it a change of *source* rather
-than of measurement: the ratio off `monthly_pl` reproduces the block's
-published `latest_monthly_ratio` **to the tenth on every overlapping month, for
-both properties**. The Landing simply gains the thirteenth month (Aug 25,
-32.6%) that the newest statement alone does not carry.
+Every line is the Landing card's own arithmetic, so a building reads the same on
+both tabs:
 
-`test_monthly_pl.py` pins that agreement, because the card now shows one
-store's line beside another store's headline figure: if the two stopped
+| Measure | Line | Figure on the left | The Landing | Palma |
+| --- | --- | --- | --- | --- |
+| NOI margin | `noi / revenue`, the stitched `monthly_pl` run | trailing twelve of that series | **69.3%** | 43.9% |
+| Expense ratio (default) | `opex / revenue`, the same run | the block's own published `ratio_t12` | **30.7%** | 56.1% |
+| Controllable expense / door | `controllableMonthly()` over the unit directory's `residential_units`, $ a month | twelve months per door — a year | **$6,977** | no door count |
+
+`controllableMonthly()` sits beside `NOT_CONTROLLABLE`, and **both Expense Load
+& NOI cards call it**, so what a door costs is one calculation wherever it is
+drawn. The Landing tab's own copy of the loop came out with this change; its
+line and its `$6,757` tile are unchanged, since the arithmetic is the same in
+the same order.
+
+**The per-door figure is not the scorecard's, and the note says so.** The card's
+$6,977 is Sep 25–Aug 26 added up per door; `Controllable OpEx/Unit` grades
+$6,757, the newest month ×12. Both are per door per year, over different
+windows. A run shorter than twelve months is labelled `T<n>` on all three
+measures, and on the per-door figure it is also annualised, since seven months
+of cost beside twelve would read as a cheaper building.
+
+**The boxes are the portfolio** — `metrics.json`'s `properties` block, the
+rule Budget vs Actual's property row follows — not whichever buildings a feed
+happens to cover. A building the measure cannot draw keeps its box, struck
+through and inert, with the reason on hover, and the note groups the reasons
+rather than repeating one per building:
+
+| Measure | Drawn today | Struck through |
+| --- | --- | --- |
+| NOI margin, Expense ratio | The Landing, Palma | Chorus, Madelon, 335 Third Street — no 12-month statement on file |
+| Controllable / door | The Landing | Palma — no door count (the unit directory does not list it); Chorus — no statement; Madelon, 335 Third — neither |
+
+Palma will not gain a door count by itself: the unit directory is a legacy
+report that will never change (C5), so that box stays struck through until a
+unit count comes from somewhere else.
+
+Three things about how the boxes behave:
+
+- **Rebuilt on every switch, in one fixed order** — the buildings any measure
+  can draw first, each group in portfolio order — so a switch changes which
+  boxes are live and never moves one.
+- **A building switched off stays off across switches**, including through a
+  measure where its box is struck through. A struck-through box shows unticked
+  and filters nothing, since it has no line to hide.
+- **Colour follows the building, never the measure.** A building some measure
+  can draw wears its `propColor` on all three, struck through or not; one no
+  measure can draw wears the page's muted ink rather than a series colour it
+  has no line in.
+
+**Every box off keeps a frame** rather than collapsing to a 0–1% axis: the scale
+last drawn, or, when a switch arrives with everything already off, the range of
+every line the measure could show. Chart.js swaps `opts.scales` for its own
+merged copy on construction, and that copy is the object to change — the same
+thing the Rental Rates overlays rely on.
+
+**The select holds still.** The eyebrow beside it changes length with the
+measure, so the heading block has a zero flex basis (`#cExpRatio .card-head >
+:first-child`, the deep dive's fix for its jumping period toggle), and a select
+is as wide as its widest option whichever is chosen.
+
+A measure no building can draw shows the page's empty state with every reason
+in the note, and a `metrics.json` with no statement data at all hides the
+select and says so, rather than leaving a blank canvas.
+
+### What it kept from the Expense Ratio card
+
+**The line has been `monthly_pl` since 2026-09-17, not the `expense_ratio`
+block's own series.** That block's `trend_values` are one point per
+*statement*, so The Landing's line was **two points** where its P&L carries
+thirteen months, and it lengthened only when a new file landed rather than as
+the stitch grows. Checked before switching, and this is what makes it a change
+of *source* rather than of measurement: the ratio off `monthly_pl` reproduces
+the block's published `latest_monthly_ratio` **to the tenth on every
+overlapping month, for both properties**. The Landing simply gains the
+thirteenth month (Aug 25, 32.6%).
+
+`test_monthly_pl.py` pins that agreement, because the expense-ratio view shows
+one store's line beside another store's headline figure: if the two stopped
 describing the same expense row, the line would disagree with the number next
 to it and nothing on the page would say so. Two checks, both verified by
 mutation — the published monthly ratio must equal `monthly_pl`'s own
 opex/revenue, and the two stores must record the same `expense_scope` and
 `expense_anchor`.
 
-**The T12 figures moved to the left column, one per property shown.** They are
-the block's own `ratio_t12` and stay the headline, because a single accrual
-month swings hard: The Landing reads **3.8% for Aug 26** on the tax reversal
-and **52.9% for Apr 26** on the annual assessment, against a T12 of 30.7%. The
-footnote says so and points at the figures rather than at the line. It was a
-single 40px number with a dropdown beside it; with toggles there can be several
-at once, so the figure shrinks and the column grows rather than the card having
-to pick one building to headline.
+**The T12 figures are the headline, one per building shown,** because a single
+accrual month swings hard: The Landing's expense ratio reads **3.8% for Aug 26**
+on the tax reversal and **52.9% for Apr 26** on the annual assessment, against a
+T12 of 30.7%, and its NOI margin reads 96.2% for Aug 26 against 69.3%. The note
+says so and points at the figures rather than at the line.
 
-Everything the **Expense Trend** section above says about the union month axis,
+Everything the **Expense Trend** section below says about the union month axis,
 the `null`-not-zero gaps, `spanGaps`, the mixed-anchor flag and the typographic
-minus applies here for the same reasons — the two cards are twins now. The
-anchor disagreement matters more on this one, though, because a *ratio* invites
-direct comparison in a way two dollar lines do not: The Landing's 30.7% is
-total expenses over total revenue and Palma's 56.1% is recoverable opex over
-operating revenue, which is the `not comparable across account trees` point
-made under **The T12 statement's two expense anchors**. So the eyebrow flags it,
-each tooltip line carries its own basis, and the footnote names both.
+minus applies here for the same reasons. The axis is the union over the
+buildings the *measure* can draw, ticked or not, so it holds still while boxes
+change, and it differs between measures only where their data does: the
+per-door line is the newest statement's twelve months, Sep 25–Aug 26, where the
+P&L lines run Jul 25–Aug 26. **The anchor disagreement reaches all three
+measures.** The Landing's expense row is total expenses (`549999-9999`) and
+Palma's is recoverable opex, so Palma's NOI margin is taken after a different
+row too — the `not comparable across account trees` point made under **The T12
+statement's two expense anchors**. The eyebrow flags it (`TWO EXPENSE BASES`),
+each tooltip line names its own row where the lines disagree, and the note
+gives each building's basis.
 
 **One colour per property across the tab.** `propColor` keys the line colour on
 the slug and is seeded from `monthly_pl` before any card mounts, so a building
-is the same colour on Expense Trend and Expense Ratio. A building that is amber
-on one card and teal on the other is worse than no colour at all, and the two
-cards used to pick their palettes independently.
+is the same colour here and on Expense Trend.
 
-The card's `Data ↗` keeps `t-expratio-*` as its primary — those are the T12
-figures — and gains `t-monthlypl-*`, where the line's numbers live. The
-`t-expratio-<slug>` table went back to its own job with the change: it used to
-publish whichever of the block's two series the card happened to draw, and now
-publishes **both**, each row saying which it is, since the card draws neither.
+The card's `Data ↗` keeps `t-expratio-*` as its primary — the figures it opens
+on — and its tables are the Landing card's list plus that one: `t-monthlypl-*`
+for the lines, `t-buckets-*` and `t-unitdir-*` for the per-door view. The unit
+directory's flow now declares **both** Expense Load & NOI cards, with no primary
+and their tables given explicitly (left out, each would inherit that flow's
+`t-l-units`, which is the workbook's unit table). It did not declare the
+Landing one before either, though that card has always divided by the
+directory's door count.
+
+Verified in the browser at 1440 / 1100 / 900 / 700 / 390px: every figure above
+against a reproduction from `metrics.json`, the boxes through every switch, no
+sideways scroll and no overlap with the corner link at any width, and every tab
+opening with no page error. The branches today's data never reaches — no
+`properties` block, a one-building portfolio (no grid), no directory, a
+seven-month run, a missing published T12, a statement that stops naming one of
+the four exclusions, and no data at all — were each driven by serving a
+doctored `metrics.json` to the real page.
 
 ## Expense Trend (Portfolio tab)
 
@@ -2227,8 +2308,8 @@ Three things it is careful about, and each would be invisible in the numbers:
   expense anchors** above. `mixed_scope` is the pipeline saying so, and the
   card puts it in the eyebrow (`TWO EXPENSE BASES`), on every tooltip line and
   in the footnote, rather than printing one basis over two different expense
-  loads. It is the same trap the Expense Ratio card carries a per-property
-  basis for.
+  loads. It is the same trap the Expense Load & NOI card below it carries a
+  per-property basis for.
 
 **The card names its own outliers, and they are mostly timing.** An accrual
 statement books true-ups and reversals in the month it finds them, so the
@@ -2326,8 +2407,8 @@ appended after and steps past any hue already spoken for.
 
 A **row of property toggles** sits under the card head — one `.tog` button per
 building **in the portfolio**, single-select, matching the `Total` /
-`Categories` pair above it rather than the checkbox grids the Expense Ratio and
-Expense Trend cards use. Those two overlay several properties on one axis;
+`Categories` pair above it rather than the checkbox grids the Expense Load & NOI
+and Expense Trend cards use. Those two overlay several properties on one axis;
 this card cannot, because both its views are one building at a time (two lines,
 or category bars that would be meaningless stacked across buildings) and the
 variance list and note are that building's own figures. So it switches rather
