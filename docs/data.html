@@ -1182,7 +1182,8 @@ async function loadAll() {
       renderTable(host, {
         id: "t-expratio-" + (pr.slug || i), group: "Portfolio",
         title: "Expense Ratio — " + (pr.name || pr.slug),
-        feeds: "Expense Ratio card — the T12 figures beside its chart",
+        feeds: "Expense Load & NOI card (Portfolio tab) — the T12 figures beside "
+             + "its expense ratio view",
         // pr.basis before er.basis: the anchor is per property, not per block.
         note: [pr.basis || er.basis,
                "T12 ratio " + (pr.ratio_t12 != null ? pr.ratio_t12 + "%" : "—"),

@@ -130,12 +130,17 @@ DRIVE_FLOWS = {
             {"file": "scorecard.json", "key": "Controllable OpEx/Unit"},
         ],
         "dashboard": [
-            # Its T12 figures are the expense_ratio block's; since 2026-09-17
-            # its line is the monthly ratio off monthly_pl, the same series the
-            # Landing tab draws, so both tables belong on it.
-            {"card": "Expense Ratio", "tab": "Portfolio", "anchor": "cExpRatio",
+            # The Expense Ratio card until 2026-09-30, and the Landing tab's
+            # Expense Load & NOI card across the portfolio since: one measure
+            # at a time on a select -- NOI margin, expense ratio or
+            # controllable expense per door. The primary stays the published
+            # T12 ratio, the figures it opens on; the lines are monthly_pl, and
+            # the per-door view reads the buckets over the directory's doors,
+            # which is the Landing card's own table list.
+            {"card": "Expense Load & NOI", "tab": "Portfolio", "anchor": "cExpRatio",
              "primary": "t-expratio-*",
-             "tables": ["t-expratio-*", "t-monthlypl-*"]},
+             "tables": ["t-expratio-*", "t-monthlypl-*", "t-buckets-*",
+                        "t-unitdir-*"]},
             # Every property's expense line on one axis, derived from the same
             # stitched series the Operating Summary reads rather than typed in.
             {"card": "Expense Trend", "tab": "Portfolio", "anchor": "cExpTrend",
@@ -627,6 +632,15 @@ DRIVE_FLOWS = {
             # declares this card's link (t-occupancy-*).
             {"card": "Unit Inventory", "tab": "Landing",
              "anchor": "cdInventory", "tables": ["t-unitdir-*"]},
+            # The door count under controllable expense per door, on both
+            # Expense Load & NOI cards. No primary for the same reason: the
+            # lines are the statement's, so the t12 flow declares the links.
+            # Tables given explicitly, or each would inherit this flow's
+            # t-l-units, which is the workbook's unit table.
+            {"card": "Expense Load & NOI", "tab": "Landing",
+             "anchor": "cdNoi", "tables": ["t-unitdir-*"]},
+            {"card": "Expense Load & NOI", "tab": "Portfolio",
+             "anchor": "cExpRatio", "tables": ["t-unitdir-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "primary": "flow", "tables": []},
         ],

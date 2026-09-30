@@ -1,14 +1,17 @@
 {
  "cards": {
   "cExpRatio": {
-   "card": "Expense Ratio",
+   "card": "Expense Load & NOI",
    "tab": "Portfolio",
    "tables": [
     "t-expratio",
-    "t-monthlypl"
+    "t-monthlypl",
+    "t-buckets",
+    "t-unitdir"
    ],
    "flows": [
-    "t12"
+    "t12",
+    "unit_directory"
    ],
    "primary": "t-expratio",
    "holds": "Expense Ratio"
@@ -47,7 +50,8 @@
     "t-unitdir"
    ],
    "flows": [
-    "t12"
+    "t12",
+    "unit_directory"
    ],
    "primary": "t-monthlypl",
    "holds": "Monthly P&L"
@@ -547,13 +551,15 @@
    ],
    "dashboard": [
     {
-     "card": "Expense Ratio",
+     "card": "Expense Load & NOI",
      "tab": "Portfolio",
      "anchor": "cExpRatio",
      "primary": "t-expratio-*",
      "tables": [
       "t-expratio-*",
-      "t-monthlypl-*"
+      "t-monthlypl-*",
+      "t-buckets-*",
+      "t-unitdir-*"
      ]
     },
     {
@@ -1582,6 +1588,22 @@
      "card": "Unit Inventory",
      "tab": "Landing",
      "anchor": "cdInventory",
+     "tables": [
+      "t-unitdir-*"
+     ]
+    },
+    {
+     "card": "Expense Load & NOI",
+     "tab": "Landing",
+     "anchor": "cdNoi",
+     "tables": [
+      "t-unitdir-*"
+     ]
+    },
+    {
+     "card": "Expense Load & NOI",
+     "tab": "Portfolio",
+     "anchor": "cExpRatio",
      "tables": [
       "t-unitdir-*"
      ]
