@@ -940,14 +940,12 @@
       <div class="card wide" id="cdRentCapture">
         <h2>Loss to Lease</h2>
         <div class="chartwrap"><canvas id="dcCapture"></canvas></div>
-        <div class="blu-note" id="dcCaptureFoot" style="color:var(--muted);"></div>
         <!-- The rent roll's half of the same question: where the gap sits
              today, by when each lease can be repriced. The statement says how
              the gap moved, the roll says who is carrying it. -->
         <div id="drcSnapshot" style="margin-top:18px;">
           <span class="eyebrow" id="drcEyebrow">IN-PLACE vs MARKET RENT · FROM THE CURRENT RENT ROLL</span>
           <div class="statrow" id="drcStats"></div>
-          <div class="blu-note" id="drcFoot" style="color:var(--muted);"></div>
         </div>
       </div>
 
@@ -956,14 +954,12 @@
         <span class="eyebrow" id="dtoEyebrow">NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT</span>
         <div class="statrow" id="dtoStats"></div>
         <div class="chartwrap"><canvas id="dcTrade"></canvas></div>
-        <div class="blu-note" id="dtoFoot" style="color:var(--muted);"></div>
       </div>
 
       <div class="card wide" id="cdRollover">
         <h2>Rollover Schedule</h2>
         <span class="eyebrow" id="drlEyebrow">LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE</span>
         <div class="chartwrap" style="height:250px;"><canvas id="dcRoll"></canvas></div>
-        <div class="blu-note" id="drlFoot" style="color:var(--muted);"></div>
       </div>
 
       <div class="card" id="cdNoi">
@@ -971,7 +967,6 @@
         <span class="eyebrow" id="dnoiEyebrow">MONTHLY NOI MARGIN · EXPENSE RATIO · CONTROLLABLE EXPENSE / DOOR</span>
         <div class="ckgrid" id="dnoiCks" role="group" aria-label="Series shown"></div>
         <div class="chartwrap"><canvas id="dcNoi"></canvas></div>
-        <div class="blu-note" id="dnoiFoot" style="color:var(--muted);"></div>
       </div>
 
       <div class="card" id="cdExpDeep">
@@ -988,7 +983,6 @@
         </div>
         <div class="ckgrid" id="dexpCks" role="group" aria-label="Categories shown"></div>
         <div class="chartwrap" id="dexpWrap" style="height:250px;"><canvas id="dcExp"></canvas></div>
-        <div class="blu-note" id="dexpNote" style="color:var(--muted);"></div>
         <div id="dexpTbl" style="max-height:180px;overflow-y:auto;"></div>
       </div>
 
@@ -996,7 +990,6 @@
         <h2>Largest Unit Gaps</h2>
         <span class="eyebrow" id="dgEyebrow">TOP UNITS BY ANNUAL GAP TO MARKET</span>
         <div id="dgTbl"></div>
-        <div class="blu-note" id="dgNote" style="color:var(--muted);"></div>
       </div>
 
       <div class="card wide" id="cdDelq">
@@ -1010,7 +1003,6 @@
           <div class="delq-buckets" id="ddStats"></div>
           <div class="chartwrap" style="flex:1 1 150px;height:200px;"><canvas id="dcDelq"></canvas></div>
         </div>
-        <div class="blu-note" id="ddNote" style="color:var(--muted);"></div>
       </div>
 
       <div class="card wide" id="cdInventory">
@@ -1021,7 +1013,6 @@
           <div class="chartwrap" style="flex:1 1 300px;height:210px;"><canvas id="dcInv"></canvas></div>
         </div>
         <div id="diTbl" style="max-height:240px;overflow-y:auto;margin-top:12px;"></div>
-        <div class="blu-note" id="diNote" style="color:var(--muted);"></div>
       </div>
 
       <div class="card wide" id="cdFeeds">
@@ -1031,11 +1022,9 @@
           <div style="flex:1 1 420px;" id="dfTbl"></div>
           <div style="flex:1 1 380px;" id="dfMissing"></div>
         </div>
-        <div class="blu-note" id="dfNote" style="color:var(--muted);"></div>
       </div>
 
     </div>
-    <div class="blu-note" id="dMeta" style="color:var(--muted);margin-top:14px;"></div>
     </div><!-- /view2d -->
 
     <!-- ============================================================
@@ -4213,7 +4202,7 @@ function renderRentCapture(rc, ids, source) {
   });
   const t = rc.ttm || {};
   const win = (t.months && t.months !== 12) ? ("T" + t.months) : "TTM";
-  document.getElementById(ids.foot).textContent =
+  if (ids.foot) document.getElementById(ids.foot).textContent =
     win + ": potential " + fm$(t.market_potential) + " · income " + fm$(t.rental_income) +
     " · capture " + fmPct(t.capture_rate) + " · loss to lease " + fmPct(t.ltl_pct) +
     ". Yardi market rent table was revised up sharply from Apr 2026, which widens measured loss to lease. " +
@@ -5129,7 +5118,7 @@ async function renderBudgetActual(d) {
    only no-statement fallback the renderer has. */
 async function renderExpenseDeep(slug, ids, wb) {
   const wrap = document.getElementById(ids.wrap);
-  const note = document.getElementById(ids.note);
+  const note = ids.note ? document.getElementById(ids.note) : null;
   const sel = document.getElementById(ids.sel);
   const cks = document.getElementById(ids.cks);
   const card = document.getElementById(ids.card);
@@ -5199,7 +5188,7 @@ async function renderExpenseDeep(slug, ids, wb) {
       + 'publishes it the day it lands.'));
     wrap.appendChild(empty);
     eyebrow.textContent = "AWAITING THE STATEMENT";
-    note.textContent = "";
+    if (note) note.textContent = "";
   }
   function renderT12() {
     sel.hidden = true;
@@ -5222,7 +5211,7 @@ async function renderExpenseDeep(slug, ids, wb) {
             y: { grid: { display: false }, ticks: { font: { size: 8.5 } } } } }
       });
       eyebrow.textContent = "TTM · WORKBOOK";
-      note.textContent = "";
+      if (note) note.textContent = "";
       return;
     }
     // Twelve months on the x axis, one line per Align-tree group, in the
@@ -5273,7 +5262,7 @@ async function renderExpenseDeep(slug, ids, wb) {
       const v = plOpexAt(k);
       return v == null ? t : t + v;
     }, 0) : null;
-    note.textContent = head
+    if (note) note.textContent = head
       + (wb
           ? " vs " + fm$(wb.ttmOpex) + " workbook TTM opex ("
             + tieOut(total, wb.ttmOpex, 5000) + ")."
@@ -5323,7 +5312,7 @@ async function renderExpenseDeep(slug, ids, wb) {
     const wbIdx = wb ? (wb.months || []).indexOf(keys[i]) : -1;
     const wbOpex = wbIdx >= 0 ? wb.opex[wbIdx] : null;
     const plOpex = plOpexAt(keys[i]);
-    note.textContent = shortMo(keys[i]) + " total " + fm$(total)
+    if (note) note.textContent = shortMo(keys[i]) + " total " + fm$(total)
       + (wb
           ? (wbOpex != null
               ? " vs " + fm$(wbOpex) + " workbook opex ("
@@ -5636,7 +5625,7 @@ async function loadLandingDrive() {
   section("cdRentCapture", function rentCaptureDrive() {
     const rc = pick("rent_capture", SCD_SLUG);
     const card = document.getElementById("cdRentCapture");
-    const ok = renderRentCapture(rc, { canvas: "dcCapture", foot: "dcCaptureFoot" },
+    const ok = renderRentCapture(rc, { canvas: "dcCapture" },
       rc ? ("Read from the statement's own RESIDENTIAL RENTAL INCOME section ("
             + (rc.basis || "") + "), which reproduces its total to the cent"
             + (rc.months && rc.months.length < 18
@@ -5645,10 +5634,6 @@ async function loadLandingDrive() {
     if (!ok) {
       // Never leave a blank chart: an absent section is a fact about the feed.
       card.querySelector(".chartwrap").hidden = true;
-      document.getElementById("dcCaptureFoot").textContent =
-        "No rental-income section in this property's statement yet. The card "
-        + "draws metrics.json rent_capture, written by build_metrics from the "
-        + "T12 statement; nothing has been stored for " + SCD_SLUG + ".";
     }
   });
 
@@ -5892,11 +5877,8 @@ async function loadLandingDrive() {
 
   /* ---- Expense load & NOI, entirely from the statement ---- */
   section("cdNoi", function noi() {
-    const foot = document.getElementById("dnoiFoot");
     if (!pl) {
       document.getElementById("dnoiEyebrow").textContent = "AWAITING THE STATEMENT";
-      foot.textContent = "No T12 statement has reached the pipeline for this property, "
-        + "so there is no margin, ratio or expense split to draw.";
       return;
     }
     const keys = (pl.months && pl.months.length === pl.revenue.length)
@@ -5972,27 +5954,12 @@ async function loadLandingDrive() {
           + "card's " + (pl.basis || "statement expense") + " over the same revenue. "
           + "Neither is wrong, and they are not interchangeable. ";
     }
-    foot.textContent =
-      "T12 NOI " + fm$(ttmNoi) + " (" + fmPct(ttmNoi / ttmRev) + " margin) on revenue "
-      + fm$(ttmRev) + ", expense ratio " + fmPct(ttmOpex / ttmRev) + ". Margin and ratio "
-      + "are both taken off the statement's own revenue, expense and NOI lines ("
-      + (pl.basis || "") + "), so the two sum to 100% by construction rather than by "
-      + "agreement, and the same expense line feeds the deep dive beside this card. "
-      + alt
-      + (ctrlAvg
-          ? "Controllable expense/door is the month's operating expense less taxes, "
-            + "insurance, utilities and the management fee, over " + doors + " doors, on "
-            + "the right axis — " + fm$(ctrlAvg) + "/mo averaged across the "
-            + ctrlPerDoorMo.length + " months the statement covers, against "
-            + fm$(ttmOpex / 12 / doors) + "/mo for total expense. The door count is the "
-            + "unit directory's residential_units, not the workbook's."
-          : "Controllable expense/door is not drawn: " + ctrlWhy + ".");
   });
 
   /* ---- Expense deep dive — the same card as The Landing, with no workbook ---- */
   section("cdExpDeep", () => renderExpenseDeep(SCD_SLUG,
     { card: "cdExpDeep", eyebrow: "dexpEyebrow", cks: "dexpCks", wrap: "dexpWrap",
-      canvas: "dcExp", note: "dexpNote", sel: "dexpMonth", tbl: "dexpTbl" }, null));
+      canvas: "dcExp", sel: "dexpMonth", tbl: "dexpTbl" }, null));
 
   /* ---- Trade-outs, from the two leasing feeds.
 
@@ -6140,63 +6107,6 @@ async function loadLandingDrive() {
       "NEW LEASES vs RENEWALS · MONTHLY % OVER PRIOR RENT, RENT-WEIGHTED · "
       + (nl ? (nl.src === "tradeout" ? "TRADEOUT REPORT TO " : "WEEK ENDING ") + nl.as_of
             : "RENEWAL TRACKER ONLY");
-    document.getElementById("dtoFoot").textContent =
-      (nl && nl.src === "tradeout"
-        ? "Teal is the trade-out on the new leases signed that month, from the Yardi "
-          + "lease tradeout report — " + (nl.leases || 0) + " lease(s) over "
-          + newRows.length + " month(s), to "
-          + nl.as_of + ". It replaced the weekly leasing workbook here on 2026-09-17: "
-          + "that feed carries one week per file, so it could only ever draw the "
-          + ((wb && wb.weeks) || 0) + " week(s) on file — "
-          + ((wb && wb.leases) || 0) + " leases in "
-          + ((wb && wb.months || []).length) + " months — against three years of "
-          + "renewal offers. Note the two measure the gap slightly differently: the "
-          + "report works on EFFECTIVE rent, net of concessions on both the new lease "
-          + "and the one it replaced, so a previous lease bought down by a concession "
-          + "shows a larger trade-out than the workbook's rent-to-rent comparison. "
-        : "Teal is the trade-out of the new leases signed that month, from the weekly "
-          + "leasing workbook — " + ((nl && nl.weeks) || 0) + " week(s) on file, the "
-          + "newest ending " + ((nl && nl.as_of) || "—") + ". ")
-      + "Green is the increase on that month's renewal offers, from the renewal tracker"
-      + (rn && rn.covers
-          ? " (" + rn.covers.from + " to " + rn.covers.to + " on the file of "
-            + (rn.as_of || "—") + ")" : "")
-      + ". Both series are RENT-WEIGHTED — each month's total new or offered rent over "
-      + "the total it replaced — so a month is not swung by one small lease, and the "
-      + "teal series is the same measurement the Trade-out % tile above grades. The "
-      + "plain mean of the per-lease rates is on the tooltip: on the renewal side the "
-      + "two agree to within half a point every month, and on the new-lease side they "
-      + "do not, because a concession drives a previous effective rent toward zero and "
-      + "one such lease prints in the hundreds of percent. "
-      + "Each stat above is scoped to this chart's window and says over how many "
-      + "months, because the feeds do not cover the same ground: the tracker runs back "
-      + "to " + ((rn && rn.covers && rn.covers.from) || "—") + ". "
-      + "Axis is the trailing " + WINDOW + " months to " + shortMo(endMo)
-      + "; " + newWin.length + " month(s) report a new lease and " + renWin.length
-      + " report renewal offers — a month with neither is left empty rather than "
-      + "drawn as zero."
-      + (partial ? " " + shortMo(endMo) + " is a part month: the report's window ends "
-                 + partial + ", so it holds only the leases signed up to that date."
-                 : "")
-      // Name the months the axis is set by, against the series' own median, so
-      // the note cannot go stale as months arrive. A thin month is where the
-      // concession effect survives the weighting: with two leases, one whose
-      // previous rent was bought down to $1,471 by a $2,207 concession carries
-      // the month, and the weighted figure protects against that only when
-      // there are enough leases for it to average over.
-      + (spikes.length
-          ? " " + spikes.map(i => shortMo(axis[i]) + " reads " + newPct[i].toFixed(0)
-              + "% on " + counts.new[i] + " lease"
-              + (counts.new[i] === 1 ? "" : "s")).join(" and ")
-            + ", against a median month of " + median.toFixed(0) + "%: a thin month is "
-            + "where a concession still shows through, since a previous rent bought "
-            + "down toward zero lifts the whole month when there is little else in it."
-          : "")
-      + (ahead.length ? " Offers already out for " + ahead.map(shortMo).join(", ")
-          + " sit past the window: a forward offer is not a trailing month." : "")
-      + " Capture at signing is not shown: neither feed carries a market rent at signing "
-      + "to divide by — the tradeout report gives the lease it replaced, not what the "
-      + "unit was asking.";
   });
 
   /* ---- Loss to lease, rollover and unit gaps — all three from the rent roll.
@@ -6234,16 +6144,6 @@ async function loadLandingDrive() {
     // stay: nothing else on the tab carries the loss-to-lease dollars.
     document.getElementById("drcEyebrow").textContent =
       "IN-PLACE vs MARKET RENT · RENT ROLL OF " + asOf;
-    document.getElementById("drcFoot").textContent =
-      "Market rent less in-place rent across the " + rr.occupied + " occupied units on the "
-      + "rent roll of " + asOf + ". Vacant units are "
-      + "excluded: a vacant unit has an asking rent and no in-place rent, so counting it "
-      + "would book the whole asking rent as loss to lease (" + fmPct(rr.loss_to_lease_pct, 1)
-      + " becomes " + fmPct((rr.market_rent_total - rr.actual_rent_total) / rr.market_rent_total, 1)
-      + " on all " + rr.units + "). A rent roll is a single snapshot, so this half reports "
-      + "where the gap sits today; the chart above it is the same gap month by month, from "
-      + "the statement's own revenue lines, and the Rollover Schedule card below splits it "
-      + "by when each lease comes up.";
 
     /* ---- Rollover schedule ---- */
     const roll = rr.rollover;
@@ -6275,15 +6175,6 @@ async function loadLandingDrive() {
     });
     document.getElementById("drlEyebrow").textContent =
       "LEASE EXPIRATIONS BY MONTH · UNCAPTURED RENT AT STAKE · RENT ROLL OF " + asOf;
-    document.getElementById("drlFoot").textContent =
-      "Every occupied unit's lease expiry from the rent roll of " + asOf + ". The first bar "
-      + "is leases that have already run out and are continuing month to month — "
-      + rr.holdovers.units + " units, " + fmPct(rr.holdovers.share_of_occupied, 1)
-      + " of the occupied stock, carrying " + fm$(rr.holdovers.gap_yr)
-      + "/yr of gap to market. The rent roll has no month-to-month column of its own, so a "
-      + "holdover here is derived from the expiry date against the roll's own as-of date."
-      + (rr.undated_leases ? " " + rr.undated_leases + " occupied unit(s) carry no expiry "
-         + "date and are not on the chart." : "");
 
     /* ---- Largest unit gaps ---- */
     const plans = (dir && dir.plans) || {};
@@ -6318,19 +6209,11 @@ async function loadLandingDrive() {
       .forEach((p, i) => { p.textContent = top[i].status; });
     document.getElementById("dgEyebrow").textContent =
       "TOP UNITS BY ANNUAL GAP TO MARKET · RENT ROLL OF " + asOf;
-    document.getElementById("dgNote").textContent =
-      "Rents, square footage and lease dates are the rent roll's own, as of " + asOf
-      + ". Bedrooms and baths come from the Yardi unit directory"
-      + (dir ? " of " + dir.as_of + ", joined on the plan code" : ", which has not been fetched yet")
-      + ". Occupied units only — a vacant unit's gap is its whole asking rent and would head "
-      + "this table on every roll. No resident field reaches this page: the parse is scrubbed "
-      + "before it is written to disk.";
   });
 
   /* ---- Delinquency, from what the Drive AR report actually publishes ---- */
   section("cdDelq", function delq() {
     const eyebrow = document.getElementById("ddEyebrow");
-    const note = document.getElementById("ddNote");
     // Only if a Drive report owns these cells right now. The workbook fills the
     // same two through --from-landing and the last run wins, so "there is a
     // value" is not the same question as "Drive put it there".
@@ -6359,19 +6242,6 @@ async function loadLandingDrive() {
       const hasCells = prop && (feed.only || ["Total Deliquency", "Split Between 30/60/90"])
         .some(k => (scValue(prop, k) || {}).display != null);
       eyebrow.textContent = hasCells ? "NOT DRIVE-FED TODAY" : "AWAITING THE AR REPORT";
-      note.textContent = hasCells
-        ? "This property's delinquency cells carry numbers, and they are not Drive's. "
-          + "The Drive report and the analyst workbook fill the same two KPIs — "
-          + "populate_scorecard --from-pipeline against the report, --from-landing "
-          + "against the workbook's own delinquency tab — so they overwrite each other "
-          + "and the last run wins. Today that is the workbook ("
-          + (meas.source || "source not recorded")
-          + (meas.as_of ? ", covering " + meas.as_of : "") + "), which is why the "
-          + "figures are on the scorecard and not here: real, but not something a fresh "
-          + "Drive export would move. Running --from-pipeline for this property puts "
-          + "the card back, and nothing on this tab needs editing when it does."
-        : "No delinquency report has reached the pipeline for this property. The parser "
-          + "is live and the Drive folder is registered.";
       return;
     }
     // The eyebrow is the report's own as-of date and nothing else. A
@@ -6452,30 +6322,12 @@ async function loadLandingDrive() {
         plugins: [{ id: "delqHeadings", afterUpdate: alignToBars }]
       });
     }
-    note.textContent =
-      "The report's own past-due buckets, in dollars. The split is reported and never "
-      + "graded — a distribution has no single direction it can be good or bad in — so it "
-      + "carries no colour and no place in the scorecard's tally. "
-      + (rateFromExport
-          ? "The rate above is the EliseAI building-metrics export's Delinquency Rate "
-            + "— the outstanding-balance figure — not a ratio of these buckets; the "
-            + "export does not state its denominator. "
-          : meas.denominator
-            ? "The rate is gross resident AR over " + meas.denominator + ". "
-            : "")
-      + "The 0–30 bucket, the balance per unit and the largest balances are parsed and "
-      + "tied out but stop in data/: they are unit level and the report arrives with "
-      + "resident names, so nothing publishes them.";
   });
 
   /* ---- Unit inventory, from the Yardi unit directory ---- */
   section("cdInventory", function inventory() {
-    const note = document.getElementById("diNote");
     if (!dir) {
       document.getElementById("diEyebrow").textContent = "AWAITING THE UNIT DIRECTORY";
-      note.textContent = "No unit directory has been fetched. It lives in the Drive "
-        + "library rather than the drop tree, so GDRIVE_REFERENCE_FOLDER_ID has to be "
-        + "set for the pipeline to reach it (open item C5).";
       return;
     }
     const plans = dir.plans || {};
@@ -6653,69 +6505,6 @@ async function loadLandingDrive() {
     const excluded = (dir.units || 0) - (dir.residential_units || 0);
     const holders = dir.placeholder_units || 0;
     const nonRes = dir.non_residential || [];
-    note.textContent =
-      "The building's fixed description, from " + dir.source_file + " of " + dir.as_of
-      + ". " + (excluded > 0
-        ? "The export lists " + dir.units + " units where " + dir.residential_units
-          + " are apartments. "
-          + (holders > 0
-              ? "Of the other " + excluded + ", " + holders + " "
-                + (holders === 1 ? "is a Yardi waitlist placeholder"
-                                 : "are Yardi waitlist placeholders")
-                + (nonRes.length ? " and " + nonRes.length + " " : ". ")
-              : "The other " + excluded + " ")
-          + (nonRes.length
-              ? (nonRes.length === 1 ? "is not an apartment at all ("
-                                     : "are not apartments at all (")
-                + nonRes.join("; ") + "), carrying no asking rent and no "
-                + "bedrooms — which is what the parser tests, rather than the "
-                + "name, since the next such space will be called something else. "
-              : "")
-          + "They stay inside the export's own total, because the tie-out is "
-          + "against that row, and out of every published figure: they are not "
-          + "in the unit count, the floorplan table, the plan counts or the bars. "
-        : "")
-      + "Rent is the directory's own Rent column, shown per plan as the range across "
-      + "that plan's units. Bedrooms and baths belong to the plan rather than the unit; "
-      + "a plan whose rows disagree is flagged by the parser, never averaged. The bars "
-      + "are cut on both, because a 2-bed with one bath and a 2-bed with two are "
-      + "different products at different rents; each bar's hover says which share of "
-      + "its bedroom type it is, since the bedroom is what the market quotes in and "
-      + "what the Market Comps tab is cut on. The directory is "
-      + "a description of the building, not a lease report — it carries no resident and "
-      + "no lease, which is why nothing in it needs scrubbing."
-      + (splitOK
-          ? " The bars are split by occupancy, and the rent roll of "
-            + ((rr && rr.as_of) || "—") + " (" + ((rr && rr.source_file) || "—")
-            + ") is what they count: the directory cannot say which units are let, and "
-            + "the roll cannot say how many bedrooms a floorplan has, so the roll's own "
-            + "plan counts are rolled onto the directory's beds and baths. Each bar is "
-            + "the whole of its bed/bath type and the two segments partition it, so "
-            + "leased plus vacant is the bar rather than something added to it."
-            + (splitTotal !== totalPlanUnits
-                ? " The roll counts " + splitTotal + " apartments where the directory "
-                  + "lists " + totalPlanUnits + "; the directory also carries waitlist "
-                  + "placeholders and non-apartment records, so the two are not the same "
-                  + "census and the bars follow the roll."
-                : "")
-            + (unknownPlans.length
-                ? " Floorplan" + (unknownPlans.length === 1 ? " " : "s ")
-                  + unknownPlans.join(", ") + (unknownPlans.length === 1 ? " is" : " are")
-                  + " on the roll but not in the directory, so those units sit in the "
-                  + "Unknown bar until the directory describes them."
-                : "")
-            + " Leased means the roll shows a resident and a rent against the unit, so a "
-            + "unit on notice or holding over counts as leased — it has someone in it. "
-            + "Only counts per floorplan are published: the roll itself is unit level, "
-            + "arrives with resident names and stops in data/."
-          : " Occupancy is not shown: it needs a rent roll, and none has been fetched, "
-            + "so the bars are the directory's own unit count.")
-      + (scdBlocker("unit_directory")
-          ? " Note this is the one card here that cannot refresh itself today: "
-            + scdBlocker("unit_directory") + ". The figures are Drive-derived and tied "
-            + "out against the export's own totals, but they are as of that export and "
-            + "will stay there."
-          : "");
   });
 
   /* ---- What feeds this tab, and what it cannot show ---- */
@@ -6784,32 +6573,8 @@ async function loadLandingDrive() {
       const f = flows.find(x => x.id === r.flow);
       return (f ? f.title : r.flow) + ": " + r.blocked;
     });
-    document.getElementById("dfNote").textContent =
-      "Arrival, not coverage: “Arrived” is when the report landed in Drive, “Covers” is "
-      + "the period it describes. A report can be about July and have arrived this "
-      + "morning, or be dated today and have sat unfetched for a week, and only the "
-      + "arrival can show a feed that has stopped running"
-      + (newest
-          ? " — the newest here is " + scAgo(newest, now) + "."
-          : ".")
-      + " The right-hand table is the price of this tab: " + spell(SCD_MISSING.length)
-      + " things The Landing shows that no Drive export can refresh today. "
-      + oneReport.charAt(0).toUpperCase() + oneReport.slice(1)
-      + (blocked.length
-          ? " One note on the left-hand table: " + spell(blocked.length) + " of these "
-            + spell(SCD_FEED_ROWS.length) + " feeds will not refresh — "
-            + blocked.join("; ") + ". Everything it fills is genuinely Drive-derived "
-            + "and ties out, so it belongs here."
-          : "");
   });
 
-  document.getElementById("dMeta").textContent =
-    (dir ? dir.name : "The Landing") + " · "
-    + (dir ? dir.residential_units + " apartments · " : "")
-    + (pl ? "statement to " + pl.period_end + " · " : "")
-    + "sources: " + SCD_FEED_ROWS.length + " Google Drive reports, no analyst workbook. "
-    + "Refreshed by scripts/fetch_drive.py and scripts/build_metrics.py on the daily "
-    + "cron — drop a fresh export in Drive and the next run picks it up.";
 }
 
 

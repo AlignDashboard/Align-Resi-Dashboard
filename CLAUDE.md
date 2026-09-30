@@ -184,6 +184,39 @@ Three things the removal is careful about:
 The rule is applied **per number, not per card**. A card is on the tab only if
 every figure on it would move on the next pipeline run.
 
+**The tab carries no footnotes.** The intro paragraph and the Operating
+Summary's note came off first; the remaining eleven `.blu-note` elements —
+nine per-card notes and the `dMeta` sources line at the bottom — went on
+2026-09-30, with the 224 lines of prose that filled them. The other tabs keep
+theirs (Budget vs Actual's, and the seven on Market Comps), so this is a
+change to one tab rather than to the idiom.
+
+Two things it is careful about:
+
+- **The markup and the code that filled it both went.** An element deleted
+  from under a live `document.getElementById(...).textContent =` throws, and
+  `section()` would have turned that into `— NOT AVAILABLE` on the card — the
+  exact failure the section above documents. Checked in the browser: every tab
+  opens, no page errors, nothing fell back.
+- **The shared renderers keep their note, optionally.** `renderRentCapture`
+  and `renderExpenseDeep` are written to serve any mount and this tab is only
+  their current one, so the note is guarded (`if (ids.foot)`, `ids.note ? … :
+  null`) and the mount simply stops declaring one — the idiom
+  `renderScorecard` and `renderOpSummary` already use.
+
+**Removing them by script needs a real statement scan**, and two shortcuts
+corrupted the file before the third attempt worked. These are long `+`
+concatenations of prose: a character scan for the closing `;` treats an
+apostrophe inside a `//` comment as opening a string and runs off the end of
+the statement — it ate the start of the next comment block and left
+`a rent roll is one snapshot…` dangling at top level — and "delete lines until
+the file parses again" stops one line in, because the concatenation left
+behind is itself a valid expression statement. What works is stripping string
+literals and `//` comments from each line first, then counting brackets until
+the line that closes at depth 0, with `node --check` over the extracted script
+at the end. That last check is what caught both of the earlier attempts, and
+is worth running after any scripted edit to `index.html`.
+
 ### A card that cannot be drawn says so
 
 **Every section on this tab renders inside `section(id, fn)`.** A throw in one
