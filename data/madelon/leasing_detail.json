@@ -1577,6 +1577,63 @@
       "problems": [
         "the filename says the week ends 2026-09-28 and the sheet says 2026-10-04; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
       ]
+    },
+    {
+      "week_ending": "2026-10-01",
+      "source_file": "2026-10-01 10.1.26 - The Madelon - Daily Report .xlsx",
+      "landed_at": "2026-10-02T01:28:33.972Z",
+      "totals": {
+        "leases": 1,
+        "lease_rent": 6761.0,
+        "prior_rent": 4437.0,
+        "tradeout_amount": 2324.0,
+        "tradeout_pct_mean": 0.523777,
+        "sqft": 912.0,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "236",
+          "unit_type": null,
+          "floor_plan": "B4",
+          "beds_baths": "2x2",
+          "sqft": 912.0,
+          "lease_rent": 6761.0,
+          "prior_rent": 4437.0,
+          "tradeout_amount": 2324,
+          "tradeout_pct": 0.523777,
+          "concession": 0.0,
+          "net_rent": 6761,
+          "move_in": "2026-11-01",
+          "term": "12"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 1,
+          "leases": 1
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-10-01 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Madelon (from the filename)"
+        }
+      ],
+      "problems": [
+        "the filename says the week ends 2026-10-01 and the sheet says 2026-10-04; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
+      ]
     }
   ]
 }
