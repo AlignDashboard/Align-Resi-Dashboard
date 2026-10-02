@@ -9639,7 +9639,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6560,
         "source_file": "2026-09-30 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": "2026-09-30T23:28:31.619Z",
+        "landed_at": null,
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -11196,7 +11196,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6560,
         "source_file": "2026-09-30 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": "2026-09-30T23:28:31.619Z",
+        "landed_at": null,
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12801,7 +12801,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6560,
         "source_file": "2026-09-30 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": "2026-09-30T23:28:31.619Z",
+        "landed_at": null,
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13767,7 +13767,7 @@
         "properties_in_file": 10,
         "listings_in_file": 738,
         "source_file": "2026-09-29 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": "2026-09-29T17:28:38.477Z",
+        "landed_at": null,
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
