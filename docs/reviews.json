@@ -1,0 +1,1021 @@
+{
+ "_comment": "Written by scripts/build_reviews_json.py, which holds the hand coding. Never edit by hand.",
+ "property": "the-landing",
+ "building": "The Landing",
+ "address": "1395 22nd Street, San Francisco 94107",
+ "source": "Google Maps review list, newest first, copied by hand",
+ "copied": "2026-09-30",
+ "star_ratings": false,
+ "periods": [
+  {
+   "key": "old",
+   "label": "12+ months ago",
+   "min": 12,
+   "max": null
+  },
+  {
+   "key": "prior",
+   "label": "Oct 2025–Mar 2026",
+   "min": 6,
+   "max": 11
+  },
+  {
+   "key": "recent",
+   "label": "Apr–Sep 2026",
+   "min": 0,
+   "max": 5
+  }
+ ],
+ "themes": [
+  {
+   "code": "P1",
+   "kind": "problem",
+   "label": "Slow or no response",
+   "definition": "Management does not answer emails, calls or office visits, or reaches out only after a bad review.",
+   "says": "Emails, calls and office visits go unanswered: a renewal after five emails (6), a deposit (17), the final lease a week before move-in (3), mail forwarding (12), routine email (18). Review 14 says the website, email and phone are run by AI. Reviews 3 and 6 say management reached out only after a bad review."
+  },
+  {
+   "code": "P3",
+   "kind": "problem",
+   "label": "Fees, price & value",
+   "definition": "Charges outside the lease, package or utility charges, rent seen as poor value, management called greedy or money-first.",
+   "says": "Charges outside the lease until challenged (4), $20 package-locker late fees and “shady fees” (23), rent called “highway robbery” (12) and poor value at $6.5K for a two-bed (18, 10). Management is called greedy or money-first (3, 4, 15, 26)."
+  },
+  {
+   "code": "P4",
+   "kind": "problem",
+   "label": "Staff conduct",
+   "definition": "Staff described as rude, condescending, disorganized, unprofessional or incompetent; staff turnover.",
+   "says": "Staff described as rude, condescending, disorganized or unprofessional (3, 8, 15, 17, 20, 31) or incompetent (3, 4). Review 8 names a staff member as rude. Review 24 points to staff turnover."
+  },
+  {
+   "code": "P5",
+   "kind": "problem",
+   "label": "Building & amenities",
+   "definition": "The gym, common areas, social events, alarms, the building's design or a fading community.",
+   "says": "A small, busy gym (10, 25), common areas less well kept and the monthly social events dropped (4), alarms sounding all day (11), and a long-time resident who “saw the life of it get drained away” (12). Review 24 blames the building's design."
+  },
+  {
+   "code": "P2",
+   "kind": "problem",
+   "label": "Deposits & move-out",
+   "definition": "Deposits returned late or not at all, move-out charges such as cleaning or paint, a hard move-out, slow refunds.",
+   "says": "Deposits returned months late or not yet (17, 31), cleaning and repainting charges despite a professional clean (33), a difficult move-out (20), and a slow refund of a $1,000 application deposit (30)."
+  },
+  {
+   "code": "P6",
+   "kind": "problem",
+   "label": "Packages & mail",
+   "definition": "Package lockers and their fees, lost mail, mail forwarding.",
+   "says": "Luxer package lockers and their late-pickup fees (23), and a mail room that loses mail and never forwarded any after move-out (12)."
+  },
+  {
+   "code": "H1",
+   "kind": "highlight",
+   "label": "Helpful staff",
+   "definition": "Praise for leasing, management, resident services or maintenance staff, by name or in general.",
+   "says": "Tours and the leasing process are praised again and again (16, 19, 22, 27, 32). Lina is named in reviews 19, 21, 22, 27 and 32. Others thank the community manager (16), resident services (21) and a staff member a vendor worked with (29)."
+  },
+  {
+   "code": "H2",
+   "kind": "highlight",
+   "label": "Apartments & building",
+   "definition": "The units, finishes, light, views, appliances, the building itself or its location.",
+   "says": "Light-filled units with East Bay views and modern finishes (27), good appliances in a newer building (25), new units (22) and “very good apartments” (13). Even critical reviews call the building nice (6, 20)."
+  },
+  {
+   "code": "H3",
+   "kind": "highlight",
+   "label": "Amenities & community",
+   "definition": "Common areas, the gym, the conference room, package service, the community feel.",
+   "says": "The conference room by the gym (9), the amenities in general (13, 22) and a “great community” (22)."
+  }
+ ],
+ "reviews": [
+  {
+   "n": 1,
+   "shown": "a week ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "No",
+   "excerpt": null,
+   "note": "Star rating only"
+  },
+  {
+   "n": 2,
+   "shown": "2 weeks ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "No",
+   "excerpt": null,
+   "note": "Star rating only"
+  },
+  {
+   "n": 3,
+   "shown": "3 weeks ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": true,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "P3",
+    "P4"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Greedy, incompetent, and condescending… when I was moving in I emailed, called, and had someone look for [the property manager] in her office but got no response… after leaving a negative review I get contacted by [the property manager] and not when I needed help",
+   "note": "Staff name replaced with role"
+  },
+  {
+   "n": 4,
+   "shown": "3 weeks ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P3",
+    "P4",
+    "P5"
+   ],
+   "owner_reply": "No",
+   "excerpt": "the new management is incompetent and greedy. The common areas aren't well kept, they got rid of the monthly social activities and charge random fees that aren't a part of the lease agreement until you confront them",
+   "note": null
+  },
+  {
+   "n": 5,
+   "shown": "a month ago",
+   "months_ago": 1,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "No",
+   "excerpt": null,
+   "note": "Star rating only"
+  },
+  {
+   "n": 6,
+   "shown": "a month ago",
+   "months_ago": 1,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Mixed",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "H2"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Quite a nice spot to live, I would rate higher but management has not responded to our 5 or so emails about lease renewal options / negotiation. It seems they respond to bad google reviews though!",
+   "note": "Current resident"
+  },
+  {
+   "n": 7,
+   "shown": "a month ago",
+   "months_ago": 1,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "No",
+   "excerpt": null,
+   "note": "Star rating only"
+  },
+  {
+   "n": 8,
+   "shown": "2 months ago",
+   "months_ago": 2,
+   "edited": false,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P4"
+   ],
+   "owner_reply": "No",
+   "excerpt": "[staff member] is so rude and stingy",
+   "note": "Staff name replaced with role; unit number removed"
+  },
+  {
+   "n": 9,
+   "shown": "2 months ago",
+   "months_ago": 2,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H3"
+   ],
+   "owner_reply": "No",
+   "excerpt": "theres a conference room by the gym. took all my meetings here",
+   "note": null
+  },
+  {
+   "n": 10,
+   "shown": "2 months ago",
+   "months_ago": 2,
+   "edited": false,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P3",
+    "P5"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Not worth it - super small gym and nothing worth the price",
+   "note": null
+  },
+  {
+   "n": 11,
+   "shown": "Edited 2 months ago",
+   "months_ago": 2,
+   "edited": true,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P5"
+   ],
+   "owner_reply": "Before edit",
+   "excerpt": "Their alarms have been blasting all day. This is probably annoying 10,000 people in the area.",
+   "note": "Owner's reply says no lease record was found for the reviewer"
+  },
+  {
+   "n": 12,
+   "shown": "Edited 2 months ago",
+   "months_ago": 2,
+   "edited": true,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "P3",
+    "P5",
+    "P6"
+   ],
+   "owner_reply": "Before edit",
+   "excerpt": "saw the life of it get drained away. They have a mail room that loses your mail, lockers for large packages that they charge you $ for… rent is absolute highway robbery (even for SF)… they haven't forwarded a single piece",
+   "note": "Owner's reply answers an earlier, positive version of the review"
+  },
+  {
+   "n": 13,
+   "shown": "2 months ago",
+   "months_ago": 2,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H2",
+    "H3"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Very good apartments and ammenities",
+   "note": null
+  },
+  {
+   "n": 14,
+   "shown": "3 months ago",
+   "months_ago": 3,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1"
+   ],
+   "owner_reply": "No",
+   "excerpt": "The new management SUCKS. Their website, email, and phone are run by AI. No one ever gets back to you. They're never in the office",
+   "note": "Moved out in May 2026"
+  },
+  {
+   "n": 15,
+   "shown": "Edited 4 months ago",
+   "months_ago": 4,
+   "edited": true,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P3",
+    "P4"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Rude, unprofessional, and only concerned with making money.",
+   "note": null
+  },
+  {
+   "n": 16,
+   "shown": "4 months ago",
+   "months_ago": 4,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": "Latiffia",
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "No",
+   "excerpt": "The leasing manager was incredibly welcoming. I also got to meet Latiffia… she went above and beyond to help me and really made my day. Great team!",
+   "note": "Visitor on a tour"
+  },
+  {
+   "n": 17,
+   "shown": "5 months ago",
+   "months_ago": 5,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "P4",
+    "P2"
+   ],
+   "owner_reply": "No",
+   "excerpt": "It's been 3 months since we've moved out and no sign of our deposit check. We have contacted building management repeatedly with zero response. Have never experienced unprofessionalism to this degree",
+   "note": null
+  },
+  {
+   "n": 18,
+   "shown": "6 months ago",
+   "months_ago": 6,
+   "edited": false,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "P3"
+   ],
+   "owner_reply": "No",
+   "excerpt": "doesn't reply to emails. extremely poor customer service, especially when you consider rental for a 2 bedroom apartment is 6.5K per month.",
+   "note": null
+  },
+  {
+   "n": 19,
+   "shown": "6 months ago",
+   "months_ago": 6,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": "Lina",
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Amazing time at The Landing, Lina in particular was incredibly helpful throughout the entire process.",
+   "note": null
+  },
+  {
+   "n": 20,
+   "shown": "6 months ago",
+   "months_ago": 6,
+   "edited": false,
+   "text": "full",
+   "tone": "Mixed",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P4",
+    "P2",
+    "H2"
+   ],
+   "owner_reply": "No",
+   "excerpt": "The building is nice overall but management was not good - rude and disorganized… Move out process was also very difficult.",
+   "note": null
+  },
+  {
+   "n": 21,
+   "shown": "7 months ago",
+   "months_ago": 7,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": "Lina",
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "No",
+   "excerpt": "thank the resident service department for helping me locate a missing package… Thank you, Lina for your support.",
+   "note": null
+  },
+  {
+   "n": 22,
+   "shown": "7 months ago",
+   "months_ago": 7,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": "Lina",
+   "themes": [
+    "H1",
+    "H2",
+    "H3"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Lina and the leasing and management team are the best! Top notch service… this one has a great community, new units, and amenities.",
+   "note": null
+  },
+  {
+   "n": 23,
+   "shown": "7 months ago",
+   "months_ago": 7,
+   "edited": false,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P3",
+    "P6"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Absolutely trash move with LUXER to manage packaging. $20 for late pick up for a package during holidays is insane… absurd amount of shady fees.",
+   "note": null
+  },
+  {
+   "n": 24,
+   "shown": "Edited 7 months ago",
+   "months_ago": 7,
+   "edited": true,
+   "text": "cut off",
+   "tone": "Mixed",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P4",
+    "P5"
+   ],
+   "owner_reply": "Before edit",
+   "excerpt": "I truly believe it is the way property was built, there are only so many things a management company can do. The turnover of staff…",
+   "note": "Owner's reply is three years old"
+  },
+  {
+   "n": 25,
+   "shown": "8 months ago",
+   "months_ago": 8,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Mixed",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P5",
+    "H2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Lived here for 3 years. Nice residence, pretty new building with nice appliances and finishes. The gym is on the smaller side and gets busy during peak hours",
+   "note": "Owner's reply mentions inspection scheduling, deposit accounting and final billing"
+  },
+  {
+   "n": 26,
+   "shown": "8 months ago",
+   "months_ago": 8,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "P3"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "this building has extremely illegal, shady, predatory, and heartbreaking practices. That's what they spend all their time on instead of responding to residents' needs. They are extremely greedy.",
+   "note": "Owner's reply ties it to a lease buy-out clause and reopens the deposit accounting"
+  },
+  {
+   "n": 27,
+   "shown": "9 months ago",
+   "months_ago": 9,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": "Lina",
+   "themes": [
+    "H1",
+    "H2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Beautiful light filled apartment with East Bay views. Lovely modern finishes. Loved the comprehensive tour—Lena was courteous and friendly",
+   "note": "Written 'Lena'; the owner's reply calls her Lina"
+  },
+  {
+   "n": 28,
+   "shown": "Edited 10 months ago",
+   "months_ago": 10,
+   "edited": true,
+   "text": "cut off",
+   "tone": "Unclear",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "No",
+   "excerpt": "Writing a new review. I was a resident this last year (06/24-06/25). There was a change in management halfway through the year.",
+   "note": "Cut off before giving a view"
+  },
+  {
+   "n": 29,
+   "shown": "10 months ago",
+   "months_ago": 10,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": "Parris",
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "I worked with this property as a vendor, and my experience was exceptional. Parris was professional, engaged, and consistently reliable.",
+   "note": "Vendor, not a resident"
+  },
+  {
+   "n": 30,
+   "shown": "10 months ago",
+   "months_ago": 10,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": null,
+   "themes": [
+    "P2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "they require a $1000 security deposit for the application… after I cancelled the application, their return policy…",
+   "note": "Applicant; refund of an application deposit"
+  },
+  {
+   "n": 31,
+   "shown": "10 months ago",
+   "months_ago": 10,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "P4",
+    "P2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "I moved out in May 2025 and didn't receive any portion of my security deposit until this October, only after months of fighting this and being ignored. Management was shady, unresponsive, and unprofessional",
+   "note": null
+  },
+  {
+   "n": 32,
+   "shown": "10 months ago",
+   "months_ago": 10,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": "Lina",
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "No",
+   "excerpt": "I am not a resident, and I've so far only had a chance to interact with the leasing agent Lina… Lina is super kind, caring, and diligent.",
+   "note": "Not a resident"
+  },
+  {
+   "n": 33,
+   "shown": "11 months ago",
+   "months_ago": 11,
+   "edited": false,
+   "text": "full",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P2"
+   ],
+   "owner_reply": "No",
+   "excerpt": "They don't return your security deposit and charge hefty cleaning fees and repainting fees even when you have hired a professional cleaner before leaving",
+   "note": null
+  },
+  {
+   "n": 34,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Mixed",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P3",
+    "H1",
+    "H2"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Apartments are fairly nice and maintenance staff is responsive… priced and marketed like a luxury apartment community and that's definitely not the experience.",
+   "note": null
+  },
+  {
+   "n": 35,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Unclear",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "No",
+   "excerpt": "Typical SF apartment rental experience. Positives:…",
+   "note": "Cut off before giving a view"
+  },
+  {
+   "n": 36,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P4"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "I don't even live in the building and I go to the coffee called Progeny… The way she approached us…",
+   "note": "Café visitor, not a resident"
+  },
+  {
+   "n": 37,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "No",
+   "excerpt": null,
+   "note": "Star rating only"
+  },
+  {
+   "n": 38,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Great Service",
+   "note": null
+  },
+  {
+   "n": 39,
+   "shown": "Edited a year ago",
+   "months_ago": 12,
+   "edited": true,
+   "text": "cut off",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "The current management at The Landing has taken the baton and run with the…",
+   "note": null
+  },
+  {
+   "n": 40,
+   "shown": "Edited a year ago",
+   "months_ago": 12,
+   "edited": true,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "Yes",
+   "excerpt": null,
+   "note": "Star rating only; the owner's reply thanks them for a 5-star review"
+  },
+  {
+   "n": 41,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": "Nicholas",
+   "themes": [
+    "H1",
+    "H3"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Nicholas and the team are doing an amazing job with livening up the community here at The Landing.",
+   "note": null
+  },
+  {
+   "n": 42,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Easily the nicest apartment I've lived in. Top of the line appliances, 10+ ft ceilings, spectacular view.",
+   "note": null
+  },
+  {
+   "n": 43,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H2",
+    "H3"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Nice ambiance, close to dogpatch, clean.",
+   "note": null
+  },
+  {
+   "n": 44,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "Yes",
+   "excerpt": null,
+   "note": "Star rating only; the owner's reply apologises"
+  },
+  {
+   "n": 45,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "I moved in right as the management changed and have had an incredible experience with the new management. They are extremely helpful, someone is always here even on weekends",
+   "note": null
+  },
+  {
+   "n": 46,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P1",
+    "P2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "New management is not better than the old one. Poor communication during the management change. Move out experience is terrible… Wall paint charge is overpriced",
+   "note": null
+  },
+  {
+   "n": 47,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Mixed",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P3"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Overall has been a nice experience. Major flaw is the utilities… we have been charged anywhere from $80-$175 for WATER ALONE on some months.",
+   "note": null
+  },
+  {
+   "n": 48,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": "Marissa",
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Marissa was awesome!! She explained everything in the showing and process.",
+   "note": null
+  },
+  {
+   "n": 49,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Do yourself a favor and avoid this place at all costs! I had a terrible experience with this apartment complex. They didn't return my…",
+   "note": "Deposit theme and move-out taken from the owner's reply, which dates the move-out before the current management"
+  },
+  {
+   "n": 50,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P3",
+    "P5"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "It's stupidly overpriced and poorly designed. The building has like 0 signs… The game room is terrible for hosting",
+   "note": null
+  },
+  {
+   "n": 51,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Mixed",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H3"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Great common area spaces and great for hosting. Gym is well equipped. Package service is great… Apartment itself was pretty average.",
+   "note": null
+  },
+  {
+   "n": 52,
+   "shown": "Edited a year ago",
+   "months_ago": 12,
+   "edited": true,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P4",
+    "P5"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Do not rent here. We moved in thinking it was going to be a great; fun amenities, nice people, friendly staff etc... It was the opposite.",
+   "note": null
+  },
+  {
+   "n": 53,
+   "shown": "a year ago",
+   "months_ago": 12,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "Yes",
+   "excerpt": null,
+   "note": "Star rating only; the owner's reply notes it had no text"
+  }
+ ],
+ "watch": [
+  "Reviews 3 and 6 say management reached out only after a bad review was posted. Review 14 says the website, email and phone are run by AI and no one gets back.",
+  "Review 26 (about Jan 2026) calls the building's practices “illegal, shady, predatory”. The owner's reply ties it to a lease buy-out clause.",
+  "Review 12 praised the building a year ago (the owner's reply thanks them for it) and has since been edited to a negative review."
+ ],
+ "actions": [
+  "Restart public replies to reviews, newest first.",
+  "Close the gap on email and phone, including the hand-off from the AI assistant to staff. A renewal question left unanswered after five emails (review 6) is revenue at risk.",
+  "Audit the move-out and deposit process against California's 21-day deadline for returning a deposit or an itemized statement (Civil Code §1950.5). Reviews 17 and 31 describe waits of three and five months.",
+  "Review how fees are disclosed. Reviewers object to charges outside the lease (review 4) and to $20 package-locker late fees (review 23).",
+  "Invite every new resident to leave a review after move-in. Tours and move-ins earn most of the praise, and Google's rules don't allow asking only satisfied residents."
+ ]
+}

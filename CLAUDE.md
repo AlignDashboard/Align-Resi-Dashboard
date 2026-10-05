@@ -47,6 +47,7 @@ ask for the PR; do not open one preemptively.
 | `docs/data.html` | Two views behind the same gate: the **data-flow** chain, and the **tables** holding every number the JSON carries |
 | `docs/lineage.json` | The chain the flow view draws; written by `scripts/build_lineage.py`, never by hand |
 | `docs/rental_tracker.enc.json` | The Rental Rate Tracker's lease data, **encrypted**; the Rental Rates tab decrypts it in the page. Written by `scripts/import_rental_tracker.py`, never by hand |
+| `docs/reviews.json` | The Landing's Google reviews, coded by hand; the Landing tab's Google reviews view draws it. Written by `scripts/build_reviews_json.py`, never by hand |
 | `scripts/` | `fetch_drive.py` pulls source reports, `build_metrics.py` writes `metrics.json`; `gmail_drive_filing.js` is the Apps Script that files reports into Drive in the first place |
 | `config/` | `properties.json` and `report_map.json` — property list and report routing; `coa_map.json` — JPM/Rubicon→Align chart-of-accounts mapping (refresh with `scripts/extract_coa_map.py <COA workbook.xlsx>` when the mapping workbook changes) |
 | `data/` | Scrubbed per-property pipeline output. Raw reports live in `_downloads/` and are never committed |
@@ -145,7 +146,9 @@ pipeline parses, so **dropping a fresh direct export in Drive is the whole
 refresh**. `LANDING_DRIVE_PACKET.md` is the list of those exports and where each
 one goes.
 
-**The tab opens on its first card.** A standing paragraph (`#dIntro`) sat above
+**The tab opens on its first card**, under the View select that chooses between
+these cards and the Google reviews summary (see *The Google reviews view*
+below). A standing paragraph (`#dIntro`) sat above
 the grid explaining that everything here is Drive-fed and that a second,
 workbook-fed tab used to sit beside it; it came off 2026-09-29, by request,
 along with the Operating Summary's own closing note. Nothing it said is lost:
@@ -499,6 +502,86 @@ It was five until 2026-09-11, when the **monthly loss-to-lease series** came off
 the list: it wanted the statement's revenue detail lines, and the parser now
 reads them — see the rent-capture section below. The rent roll's arrival the
 same day had already closed three rows before that.
+
+### The Google reviews view
+
+A **View** select sits above the Landing tab's grid (2026-10-05, by request:
+"a dropdown menu under the Landing tab"). `Operations` is the default and is
+every card above, unchanged; `Google reviews` swaps the grid for an executive
+summary of The Landing's Google Maps reviews: four tiles, a bottom line, what
+reviewers raise, tone and owner replies by period, problems and highlights with
+what reviewers say, suggested actions, and every review in a collapsed table.
+
+**There is no feed behind it**, and that is the first thing to know:
+
+- Google answers the pipeline's network, and a headless browser in a cloud
+  session, with its "unusual traffic" page. The reviews arrive as the Google
+  Maps list **copied by hand** (newest first) and pasted into a session; the
+  2026-09-30 copy took a network-policy change just to reach Google, and the
+  scrape still hit the CAPTCHA.
+- **The copy carries no star ratings.** Google draws them as an icon and copied
+  text leaves it out, so tone (Positive / Mixed / Negative / Unclear / No text)
+  is read from each review's visible text, and the pane says so above its first
+  card. No rating is published. Stars need the Business Profile (Takeout or its
+  API) or a console snippet run in the reader's own browser on the Maps page.
+- **Dates are relative.** "3 months ago" is `months_ago: 3`, so a month is
+  approximate, and "a year ago" covers 12 to 23 months: the older group is
+  "12+ months ago" and the copy may stop before its oldest review.
+- 25 of the 53 reviews were cut at Google's "More" link and are coded from what
+  was visible.
+
+`scripts/build_reviews_json.py` holds the coding, one row per review: tone, the
+themes it raises, the owner's reply (`Yes`, `No`, or `Before edit` when the
+reply predates the reviewer's latest edit and so answers an older version),
+whether the reviewer has moved out, whether the review is about touring,
+applying or moving in, staff praised by name, and a shortened verbatim excerpt.
+It writes `docs/reviews.json`; never edit the JSON. The script asserts the
+tallies made by hand when the rows were first coded (33 reviews in the last 12
+months, the per-theme counts, negatives and replies per window), so a slipped
+row cannot change the view unnoticed. Change those numbers deliberately, with
+the rows.
+
+**Every figure on the pane is computed from the rows in the page**, each
+bottom-line sentence and its lead included: "Reviews have turned more
+negative" becomes "more positive" if the shares do. The theme descriptions,
+the actions and the watch notes are the only typed prose, and they cite review
+numbers rather than counts. So recoding a row and rerunning the script is the
+whole refresh.
+
+Reviewer names are never recorded and unit numbers come out of excerpts; staff
+a review praises by name keep the name, staff it criticises by name are
+replaced with their role. `docs/reviews.json` is in `check_no_pii.py`'s
+`PUBLISHED` list, so the structural pass covers it, and its keys avoid `name`.
+
+Three things about how the pane is built:
+
+- **Two panes, one tab.** The operations grid is `#dOpsPane` and the reviews
+  grid `#dRevPane`, each a `.grid` carrying `data-pane`, and `setLandingPane()`
+  switches them. `.grid[hidden]` is in the sheet because `.grid`'s
+  `display: grid` outranks the UA `[hidden]` rule, the trap `.opsel` records. A
+  deep link to a card in the hidden pane (`index.html#cdRevTone`) switches the
+  select on the way in, in `focusCardFromHash`.
+- **Lazy, like the tabs.** `reviews.json` is fetched the first time the pane is
+  chosen, so its canvases are visible and sized when built, and each card draws
+  inside `section()`: a missing file reads `— not available` card by card.
+- **Colours.** Problems and negative are the page's red (`C.red`); highlights
+  and positive the Rental Rates blue `#3987e5`, the pair validated on both
+  themes' surfaces (the dashboard's teal fails the chroma floor and 3:1 on
+  white). Mixed is `C.muted`, which `restyleCharts` swaps per theme, and segment
+  labels choose their ink by contrast, so the grey takes dark ink on dark and
+  white on light. Below 520px of chart width the axis labels wrap to two lines;
+  Chart.js clips them at the canvas edge otherwise ("partments & building").
+
+It has no lineage entry, so its cards carry no `Data ↗` link and `reviews.json`
+is neither on the data page nor in What Feeds This Tab; the pane's own Every
+Review card is the table behind it.
+
+Verified in the browser through the gate at 1440, 1100 (light) and 390px: every
+tab opens with no page errors and no sideways scroll, all seven sections draw,
+both charts settle on their own scales, the deep link switches the pane, and
+switching back restores the operations cards. **Judge the charts once they
+settle**: Playwright's full-page capture resizes the viewport and catches
+Chart.js mid-animation, which reads as bars a quarter of their length.
 
 ## The Market Comps Tab
 

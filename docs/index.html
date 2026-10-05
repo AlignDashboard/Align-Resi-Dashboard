@@ -763,6 +763,35 @@
   .opsel label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
     color: var(--muted); white-space: nowrap; }
   .prop-select option { background: var(--panel); color: var(--text); }
+  /* ---------- Landing tab: the View select and the Google reviews pane ----------
+     The select sits above the tab's grid and chooses which of its two panes
+     shows. Both hiding rules are needed: .grid is display:grid and .src sits in
+     a flex row, and either outranks the UA sheet's [hidden] rule -- the same
+     trap .opsel records. */
+  .landsel { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; margin: -6px 0 18px; }
+  .landsel label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .landsel .src { flex: 1 1 280px; min-width: 0; font-size: 10px; letter-spacing: .5px; line-height: 1.6;
+    color: var(--muted); }
+  .grid[hidden], .landsel .src[hidden] { display: none; }
+  .rv-list { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 11.5px;
+    line-height: 1.65; color: var(--text); max-width: 130ch; }
+  .rv-sub { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+    margin: 18px 0 8px; }
+  .rv-scroll { overflow-x: auto; }
+  #cdRevTable table.dt { min-width: 640px; }
+  #cdRevAll table.dt { min-width: 720px; }
+  table.dt td.rv-th { font-weight: 700; padding-left: 10px; white-space: nowrap; }
+  table.dt td.rv-num, table.dt th.rv-num { text-align: right; padding-right: 14px;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.dt td.rv-say { line-height: 1.55; }
+  table.dt td.rv-grp { color: var(--muted); font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    padding-top: 12px; }
+  .rv-key { display: inline-block; width: 9px; height: 9px; margin-right: 6px; vertical-align: -1px; }
+  .rv-note { display: block; color: var(--muted); margin-top: 2px; }
+  .rv-all > summary { cursor: pointer; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); padding: 6px 0; }
+  .rv-all > summary:hover, .rv-all > summary:focus-visible { color: var(--amber); outline: none; }
+  .card.wide .chartwrap.rv-short { height: 190px; }
   .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   /* The deep dive's period toggle used to drop onto a line of its own the moment
      Month was pressed: choosing it reveals the statement-month select, the
@@ -987,7 +1016,15 @@
          change a reader sees.
          ========================================================= -->
     <div class="view" id="view2d" role="tabpanel" aria-labelledby="tabView2d" tabindex="0" hidden>
-    <div class="grid">
+    <div class="landsel">
+      <label for="dViewSel">View</label>
+      <select class="prop-select" id="dViewSel">
+        <option value="ops">Operations</option>
+        <option value="reviews">Google reviews</option>
+      </select>
+      <span class="src" id="dRevSrc" hidden></span>
+    </div>
+    <div class="grid" id="dOpsPane" data-pane="ops">
 
       <div class="card wide" id="cdOpSummary">
         <div class="card-head">
@@ -1100,6 +1137,58 @@
           <div style="flex:1 1 420px;" id="dfTbl"></div>
           <div style="flex:1 1 380px;" id="dfMissing"></div>
         </div>
+      </div>
+
+    </div>
+
+    <!-- Google reviews: the Landing tab's second pane, behind the View
+         select. Drawn from docs/reviews.json by loadReviews() the first time
+         the pane is chosen; see "The Google reviews view" in CLAUDE.md. -->
+    <div class="grid" id="dRevPane" data-pane="reviews" hidden>
+
+      <div class="kpis" id="dRevKpis"></div>
+
+      <div class="card wide" id="cdRevBottom">
+        <h2>Bottom Line</h2>
+        <span class="eyebrow" id="drbEyebrow">LOADING…</span>
+        <ul class="rv-list" id="drbList"></ul>
+      </div>
+
+      <div class="card wide" id="cdRevThemes">
+        <h2>What Reviewers Raise</h2>
+        <span class="eyebrow" id="drtEyebrow">LOADING…</span>
+        <div class="chartwrap"><canvas id="dcRevThemes" role="img"
+          aria-label="Reviews raising each problem and highlight over the last 12 months. The Problems and Highlights card below holds every value."></canvas></div>
+      </div>
+
+      <div class="card wide" id="cdRevTone">
+        <h2>Tone and Owner Replies</h2>
+        <span class="eyebrow" id="drtoEyebrow">LOADING…</span>
+        <div class="chartwrap rv-short"><canvas id="dcRevTone" role="img"
+          aria-label="Share of negative, mixed and positive reviews by period. The table below holds every value."></canvas></div>
+        <div class="rv-scroll" id="drtoTbl"></div>
+      </div>
+
+      <div class="card wide" id="cdRevTable">
+        <h2>Problems and Highlights</h2>
+        <span class="eyebrow" id="drtbEyebrow">LOADING…</span>
+        <div class="rv-scroll" id="drtbTbl"></div>
+      </div>
+
+      <div class="card wide" id="cdRevActions">
+        <h2>What To Do About It</h2>
+        <span class="eyebrow">SUGGESTED ACTIONS · AND WHAT ELSE IS WORTH KNOWING</span>
+        <ol class="rv-list" id="draList"></ol>
+        <div class="rv-sub">Also worth knowing</div>
+        <ul class="rv-list" id="drwList"></ul>
+      </div>
+
+      <div class="card wide" id="cdRevAll">
+        <h2>Every Review</h2>
+        <span class="eyebrow" id="drallEyebrow">LOADING…</span>
+        <details class="rv-all" id="drallDet"><summary id="drallSum">Show every review</summary>
+          <div class="rv-scroll" id="drallTbl"></div>
+        </details>
       </div>
 
     </div>
@@ -1504,6 +1593,9 @@ function focusCardFromHash() {
     const tab = tabs.find(t => t.getAttribute("aria-controls") === view.id);
     if (tab && tab.getAttribute("aria-selected") !== "true") selectTab(tab);
   }
+  // A card in the Landing tab's hidden pane is behind the View select.
+  const pane = card.closest("#view2d [data-pane]");
+  if (pane && pane.hidden) setLandingPane(pane.dataset.pane);
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // The Landing view builds its cards lazily, so give the tab a frame to load
   // before measuring where the card sits.
@@ -1527,6 +1619,432 @@ function maybeLoadLanding(tab) {
   }
   if (tab.id === "tabComps" && !compsStarted) { compsStarted = true; loadComps(); }
   if (tab.id === "tabRates" && !ratesStarted) { ratesStarted = true; loadRates(); }
+}
+
+/* ---- Landing tab: the View select -------------------------------------
+
+   The tab holds two panes and the View select above them chooses one: the
+   Drive-fed operations cards (the default, and everything the tab carried
+   before 2026-10-05) and the Google reviews summary. A pane is a .grid with
+   data-pane. The reviews pane fetches docs/reviews.json the first time it is
+   chosen, so its canvases are visible -- and therefore sized -- when they are
+   built, the same reason the tabs themselves load lazily. */
+let reviewsStarted = false;
+function setLandingPane(which) {
+  const sel = document.getElementById("dViewSel");
+  if (sel.value !== which) sel.value = which;
+  let shown = null;
+  document.querySelectorAll("#view2d [data-pane]").forEach(p => {
+    p.hidden = p.dataset.pane !== which;
+    if (!p.hidden) shown = p;
+  });
+  document.getElementById("dRevSrc").hidden = which !== "reviews";
+  if (which === "reviews" && !reviewsStarted) { reviewsStarted = true; loadReviews(); }
+  if (shown && typeof Chart !== "undefined") {
+    shown.querySelectorAll("canvas").forEach(cv => {
+      const ch = Chart.getChart(cv);
+      if (ch) ch.resize();
+    });
+  }
+}
+document.getElementById("dViewSel").addEventListener("change", e => setLandingPane(e.target.value));
+
+/* ---- Google reviews ----------------------------------------------------
+
+   docs/reviews.json, written by scripts/build_reviews_json.py from a copy of
+   the Google Maps list made by hand: Google answers the pipeline's network
+   with its "unusual traffic" page, so there is no feed. The copy carries no
+   star ratings -- Google draws them as an icon -- so tone is read from each
+   review's text, and the pane says so above its first card.
+
+   Nothing here is a published figure. Every count, share and sentence with a
+   number in it is computed from the rows, so recoding a row in the script is
+   the whole refresh and the prose cannot disagree with the charts beside it.
+   The colours are the page's own red and the Rental Rates blue, a pair
+   validated on both themes' surfaces; the dashboard's teal is too grey to
+   carry a series on white. */
+const rvShare = (a, b) => (b ? a / b : null);
+const rvPct = v => (v === null || v === undefined ? "—" : Math.round(v * 100) + "%");
+const rvAnd = xs => (xs.length < 2 ? xs.join("")
+  : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
+const rvColors = () => ({ warm: C.red, cool: "#3987e5", mid: C.muted });
+// Below this chart width a category label is too long for the axis, which
+// Chart.js clips at the canvas edge rather than wraps: "Apartments & building"
+// read "partments & building" at phone width.
+const RV_NARROW = 520;
+function rvTwoLines(s) {
+  const amp = s.indexOf(" & ");
+  if (amp > 0) return [s.slice(0, amp + 2), s.slice(amp + 3)];
+  const mid = s.length / 2, sp = [...s].map((c, i) => (c === " " ? i : -1)).filter(i => i > 0);
+  if (!sp.length) return s;
+  const at = sp.reduce((a, b) => (Math.abs(b - mid) < Math.abs(a - mid) ? b : a));
+  return [s.slice(0, at), s.slice(at + 1)];
+}
+
+function rvJump(id) {
+  if (location.hash === "#" + id) focusCardFromHash();
+  else location.hash = id;
+}
+
+// Ink for a label set inside a coloured segment: whichever of near-black and
+// white clears the fill by more, so the muted grey -- which changes with the
+// theme -- gets dark ink on dark and white ink on light.
+function rvInk(hex) {
+  const h = String(hex || "").replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(h)) return "#ffffff";
+  const ch = i => {
+    const v = parseInt(h.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  const L = 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4);
+  return 1.05 / (L + 0.05) > (L + 0.05) / 0.056 ? "#ffffff" : "#10130f";
+}
+
+function rvCompute(d) {
+  const per = d.periods || [];
+  const periodOf = m => per.find(p => m >= p.min && (p.max === null || m <= p.max)) || {};
+  const rows = (d.reviews || []).map(r => Object.assign({}, r,
+    { period: periodOf(r.months_ago).key, year: r.months_ago < 12 }));
+  const year = rows.filter(r => r.year), old = rows.filter(r => !r.year);
+  const readable = ["Negative", "Mixed", "Positive"];
+  const byP = {};
+  per.forEach(p => {
+    const rs = rows.filter(r => r.period === p.key);
+    const tone = t => rs.filter(r => r.tone === t).length;
+    byP[p.key] = { label: p.label, n: rs.length,
+      read: rs.filter(r => readable.includes(r.tone)).length,
+      neg: tone("Negative"), mixed: tone("Mixed"), pos: tone("Positive"),
+      replied: rs.filter(r => r.owner_reply === "Yes").length };
+  });
+  const themes = (d.themes || []).map(t => Object.assign({}, t, {
+    year: year.filter(r => r.themes.includes(t.code)).length,
+    old: old.filter(r => r.themes.includes(t.code)).length }));
+  return { d, rows, year, old, byP, per, themes };
+}
+
+async function loadReviews() {
+  let d = null;
+  try {
+    const res = await fetch("reviews.json", { cache: "no-store" });
+    if (res.ok) d = await res.json();
+  } catch (e) { /* every section below reports it */ }
+  const R = d && d.reviews ? rvCompute(d) : null;
+  const need = () => {
+    if (!R) throw new Error("reviews.json could not be read");
+    return R;
+  };
+
+  if (R) {
+    // A YYYY-MM-DD handed to new Date() is UTC midnight, a day early west of
+    // Greenwich -- the trap the Delinquency card's eyebrow records.
+    const [y, m, dd] = String(d.copied || "").split("-").map(Number);
+    const copied = y ? new Date(y, m - 1, dd).toLocaleDateString("en-US",
+      { day: "numeric", month: "short", year: "numeric" }) : "an unrecorded date";
+    document.getElementById("dRevSrc").textContent = R.rows.length + " Google Maps reviews of "
+      + d.building + ", " + d.address + ", copied by hand on " + copied + ". "
+      + (d.star_ratings ? "" : "Star ratings did not come through in the copy, so tone and "
+        + "themes are read from each review's text. ")
+      + "Months are approximate: Google shows dates such as “3 months ago”.";
+  }
+
+  section("dRevKpis", () => rvTiles(need()));
+  section("cdRevBottom", () => rvBottom(need()));
+  section("cdRevThemes", () => rvThemesChart(need()));
+  section("cdRevTone", () => rvTone(need()));
+  section("cdRevTable", () => rvThemeTable(need()));
+  section("cdRevActions", () => rvActions(need()));
+  section("cdRevAll", () => rvEvery(need()));
+}
+
+function rvTiles(R) {
+  const host = document.getElementById("dRevKpis");
+  host.textContent = "";
+  const { recent, prior, old } = R.byP;
+  const negY = R.year.filter(r => r.tone === "Negative");
+  const dep = R.themes.find(t => t.code === "P2");
+  const tile = (v, k, per, s, target) => {
+    const b = elc("button", "kpi");
+    b.type = "button";
+    b.appendChild(elc("div", "v", v));
+    const kk = elc("div", "k", k + " ");
+    kk.appendChild(elc("span", "per", per));
+    b.appendChild(kk);
+    b.appendChild(elc("div", "s", s));
+    const arrow = elc("span", "jump", "↓");
+    arrow.setAttribute("aria-hidden", "true");
+    b.appendChild(arrow);
+    b.title = "Jump to the card behind this figure";
+    b.addEventListener("click", () => rvJump(target));
+    host.appendChild(b);
+  };
+  tile(String(R.year.length), "Reviews", "last 12 mo",
+    recent.n + " in " + recent.label + " · " + prior.n + " in " + prior.label, "cdRevThemes");
+  tile(rvPct(rvShare(recent.neg, recent.read)), "Negative", recent.label,
+    "of " + recent.read + " with readable text · " + rvPct(rvShare(prior.neg, prior.read))
+      + " in " + prior.label, "cdRevTone");
+  tile(rvPct(rvShare(recent.replied, recent.n)), "Answered by the owner", recent.label,
+    rvPct(rvShare(old.replied, old.n)) + " of reviews " + old.label, "cdRevTone");
+  tile(negY.filter(r => r.former_resident).length + " of " + negY.length,
+    "Negative reviews by former residents", "last 12 mo",
+    dep ? R.year.filter(r => r.former_resident && r.themes.includes("P2")).length + " of the "
+      + dep.year + " about deposits and move-out" : "", "cdRevTable");
+}
+
+function rvBottom(R) {
+  const { recent, prior, old } = R.byP;
+  document.getElementById("drbEyebrow").textContent = "GOOGLE REVIEWS · THE LAST 12 MONTHS AGAINST "
+    + "THE " + R.old.length + " OLDER REVIEWS IN THE COPY";
+  const neg = p => rvShare(p.neg, p.read), rep = p => rvShare(p.replied, p.n);
+  const items = [];
+
+  const toneLead = neg(recent) > neg(old) ? "Reviews have turned more negative."
+    : neg(recent) < neg(old) ? "Reviews have turned more positive." : "Tone has held steady.";
+  items.push(toneLead + " " + rvPct(neg(recent)) + " of the reviews with readable text from "
+    + recent.label + " are negative, against " + rvPct(neg(prior)) + " in " + prior.label
+    + " and " + rvPct(neg(old)) + " among reviews from " + old.label + ".");
+
+  const replyLead = rep(recent) === 0 ? "Public replies have stopped."
+    : rep(recent) < rep(old) ? "Public replies have fallen off." : "The owner is still replying.";
+  items.push(replyLead + " The owner answered " + rvPct(rep(old)) + " of reviews from " + old.label
+    + ", " + rvPct(rep(prior)) + " in " + prior.label + " and " + rvPct(rep(recent)) + " in "
+    + recent.label + ".");
+
+  const probs = R.themes.filter(t => t.kind === "problem").sort((a, b) => b.year - a.year).slice(0, 3);
+  const negY = R.year.filter(r => r.tone === "Negative");
+  const dep = R.themes.find(t => t.code === "P2");
+  items.push("Most-raised problems this year: " + rvAnd(probs.map((t, i) =>
+    t.label.toLowerCase() + " (" + t.year + (i ? "" : " reviews") + ")")) + ". Former residents wrote "
+    + negY.filter(r => r.former_resident).length + " of the " + negY.length + " negative reviews"
+    + (dep ? " and " + R.year.filter(r => r.former_resident && r.themes.includes("P2")).length
+      + " of the " + dep.year + " about deposits and move-out" : "") + ".");
+
+  const top = R.themes.filter(t => t.kind === "highlight").sort((a, b) => b.year - a.year)[0];
+  if (top && top.code === "H1") {
+    const praised = R.year.filter(r => r.themes.includes("H1"));
+    const leasing = praised.filter(r => r.about_leasing).length;
+    const names = {};
+    R.year.forEach(r => { if (r.staff_praised) names[r.staff_praised] = (names[r.staff_praised] || 0) + 1; });
+    const named = Object.keys(names).sort((a, b) => names[b] - names[a])[0];
+    items.push("The strength is the staff" + (leasing * 2 > praised.length ? ", above all the leasing team" : "")
+      + ". " + top.year + " reviews praise staff, " + leasing + " of them about touring, applying or "
+      + "moving in" + (named ? ", and " + named + " is named in " + names[named] : "") + ".");
+  } else if (top) {
+    items.push("Most-praised: " + top.label.toLowerCase() + " (" + top.year + " reviews).");
+  }
+
+  const ul = document.getElementById("drbList");
+  ul.textContent = "";
+  items.forEach(t => ul.appendChild(elc("li", null, t)));
+}
+
+// Each bar's count at its end, in text ink: every bar is labelled, which is
+// why the value axis can stay quiet.
+const rvBarEnds = {
+  id: "rvBarEnds",
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = "600 10px " + Chart.defaults.font.family;
+    ctx.fillStyle = Chart.defaults.color;
+    ctx.textBaseline = "middle";
+    chart.data.datasets.forEach((ds, i) => {
+      const meta = chart.getDatasetMeta(i);
+      if (meta.hidden) return;
+      meta.data.forEach((el, j) => {
+        const v = ds.data[j];
+        if (v !== null && v !== undefined) ctx.fillText(String(v), el.x + 6, el.y);
+      });
+    });
+    ctx.restore();
+  }
+};
+
+function rvThemesChart(R) {
+  const col = rvColors();
+  const ts = R.themes;
+  document.getElementById("drtEyebrow").textContent = "LAST 12 MONTHS · REVIEWS RAISING EACH THEME, OF "
+    + R.year.length + " · ONE REVIEW CAN RAISE SEVERAL";
+  const wrap = (s, n) => {
+    const out = [];
+    let line = "";
+    String(s || "").split(" ").forEach(w => {
+      if ((line + " " + w).trim().length > n) { out.push(line); line = w; } else line = (line + " " + w).trim();
+    });
+    if (line) out.push(line);
+    return out;
+  };
+  const series = (label, kind, color) => ({ label, backgroundColor: color, grouped: false,
+    maxBarThickness: 18, borderRadius: 2,
+    data: ts.map(t => (t.kind === kind ? t.year : null)) });
+  new Chart(document.getElementById("dcRevThemes"), {
+    type: "bar",
+    data: { labels: ts.map(t => t.label),
+      datasets: [series("Problems", "problem", col.warm), series("Highlights", "highlight", col.cool)] },
+    options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+      layout: { padding: { right: 22 } },
+      plugins: { legend: legendCfg,
+        tooltip: { filter: it => it.raw !== null && it.raw !== undefined, callbacks: {
+          label: c => " " + c.parsed.x + " of " + R.year.length + " reviews ("
+            + rvPct(rvShare(c.parsed.x, R.year.length)) + ")",
+          afterLabel: c => wrap(ts[c.dataIndex].definition, 48) } } },
+      scales: { x: { beginAtZero: true, grid: gridCfg, ticks: { precision: 0 } },
+        y: { grid: { display: false }, ticks: { callback: function (v) {
+          const s = this.getLabelForValue(v);
+          return this.chart.width < RV_NARROW ? rvTwoLines(s) : s; } } } } },
+    plugins: [rvBarEnds]
+  });
+}
+
+// Each segment's share inside it, when it fits.
+const rvSegLabels = {
+  id: "rvSegLabels",
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = "600 10px " + Chart.defaults.font.family;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    chart.data.datasets.forEach((ds, i) => {
+      const meta = chart.getDatasetMeta(i);
+      if (meta.hidden) return;
+      meta.data.forEach((el, j) => {
+        const v = ds.data[j];
+        if (!v) return;
+        const t = Math.round(v) + "%";
+        if (Math.abs(el.x - el.base) < ctx.measureText(t).width + 8) return;
+        ctx.fillStyle = rvInk(ds.backgroundColor);
+        ctx.fillText(t, (el.x + el.base) / 2, el.y);
+      });
+    });
+    ctx.restore();
+  }
+};
+
+function rvTone(R) {
+  const col = rvColors();
+  document.getElementById("drtoEyebrow").textContent = "SHARE OF REVIEWS WITH READABLE TEXT · "
+    + "TONE IS READ FROM THE TEXT, NOT FROM STARS";
+  const per = R.per.map(p => R.byP[p.key]);
+  const ds = (label, k, color) => ({ label, backgroundColor: color, borderColor: "rgba(0,0,0,0)",
+    borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 26,
+    data: per.map(p => { const s = rvShare(p[k], p.read); return s === null ? 0 : s * 100; }) });
+  new Chart(document.getElementById("dcRevTone"), {
+    type: "bar",
+    data: { labels: per.map(p => [p.label, p.read + " with readable text"]),
+      datasets: [ds("Negative", "neg", col.warm), ds("Mixed", "mixed", col.mid), ds("Positive", "pos", col.cool)] },
+    options: { maintainAspectRatio: false, responsive: true, indexAxis: "y",
+      plugins: { legend: legendCfg, tooltip: { callbacks: {
+        title: c => c[0].label.replace(",", " · "),
+        label: c => " " + c.dataset.label + ": " + Math.round(c.parsed.x) + "% ("
+          + per[c.dataIndex][{ Negative: "neg", Mixed: "mixed", Positive: "pos" }[c.dataset.label]]
+          + " of " + per[c.dataIndex].read + ")" } } },
+      scales: { x: { stacked: true, min: 0, max: 100, grid: gridCfg,
+          ticks: { stepSize: 25, callback: v => v + "%" } },
+        y: { stacked: true, grid: { display: false }, ticks: { callback: function (v, i) {
+          return [per[i].label, per[i].read + (this.chart.width < RV_NARROW ? " readable"
+            : " with readable text")]; } } } } },
+    plugins: [rvSegLabels]
+  });
+
+  const tbl = elc("table", "dt");
+  const hr = elc("tr");
+  hr.appendChild(elc("th", null, ""));
+  per.forEach(p => hr.appendChild(elc("th", "rv-num", p.label)));
+  tbl.appendChild(hr);
+  [["Reviews", p => String(p.n)],
+   ["With readable text", p => String(p.read)],
+   ["Negative", p => rvPct(rvShare(p.neg, p.read))],
+   ["Mixed", p => rvPct(rvShare(p.mixed, p.read))],
+   ["Positive", p => rvPct(rvShare(p.pos, p.read))],
+   ["Answered by the owner", p => rvPct(rvShare(p.replied, p.n))]].forEach(([lab, f]) => {
+    const tr = elc("tr");
+    tr.appendChild(elc("td", null, lab));
+    per.forEach(p => tr.appendChild(elc("td", "rv-num", f(p))));
+    tbl.appendChild(tr);
+  });
+  const host = document.getElementById("drtoTbl");
+  host.textContent = "";
+  host.appendChild(tbl);
+}
+
+function rvThemeTable(R) {
+  const col = rvColors();
+  document.getElementById("drtbEyebrow").textContent = "LAST 12 MONTHS · NUMBERS IN BRACKETS ARE "
+    + "REVIEWS IN THE EVERY REVIEW CARD BELOW · OLDER = THE " + R.old.length + " REVIEWS 12+ MONTHS OLD";
+  const tbl = elc("table", "dt");
+  const hr = elc("tr");
+  [["Theme", null], ["Reviews", "rv-num"], ["Share of " + R.year.length, "rv-num"],
+   ["Share of older", "rv-num"], ["What reviewers say", null]]
+    .forEach(([t, c]) => hr.appendChild(elc("th", c, t)));
+  tbl.appendChild(hr);
+  [["problem", "Problems", col.warm], ["highlight", "Highlights", col.cool]].forEach(([kind, title, color]) => {
+    const g = elc("tr");
+    const gt = elc("td", "rv-grp", title);
+    gt.colSpan = 5;
+    g.appendChild(gt);
+    tbl.appendChild(g);
+    R.themes.filter(t => t.kind === kind).sort((a, b) => b.year - a.year).forEach(t => {
+      const tr = elc("tr");
+      const th = elc("td", "rv-th", t.label);
+      th.style.boxShadow = "inset 3px 0 0 " + color;
+      th.title = t.definition;
+      tr.appendChild(th);
+      tr.appendChild(elc("td", "rv-num", String(t.year)));
+      tr.appendChild(elc("td", "rv-num", rvPct(rvShare(t.year, R.year.length))));
+      tr.appendChild(elc("td", "rv-num", rvPct(rvShare(t.old, R.old.length))));
+      tr.appendChild(elc("td", "rv-say", t.says));
+      tbl.appendChild(tr);
+    });
+  });
+  const host = document.getElementById("drtbTbl");
+  host.textContent = "";
+  host.appendChild(tbl);
+}
+
+function rvActions(R) {
+  const fill = (id, xs) => {
+    const el = document.getElementById(id);
+    el.textContent = "";
+    (xs || []).forEach(t => el.appendChild(elc("li", null, t)));
+  };
+  fill("draList", R.d.actions);
+  fill("drwList", R.d.watch);
+}
+
+function rvEvery(R) {
+  const col = rvColors();
+  const key = { Negative: col.warm, Mixed: col.mid, Positive: col.cool };
+  const label = Object.fromEntries(R.themes.map(t => [t.code, t.label]));
+  document.getElementById("drallEyebrow").textContent = R.rows.length + " REVIEWS, NEWEST FIRST · "
+    + "REVIEWER NAMES AND UNIT NUMBERS LEFT OUT · STAFF CRITICISED BY NAME SHOWN BY ROLE";
+  document.getElementById("drallSum").textContent = "Show all " + R.rows.length + " reviews";
+  const tbl = elc("table", "dt");
+  const hr = elc("tr");
+  ["#", "On Google", "Tone", "Themes", "Owner reply", "What it says"].forEach(t => hr.appendChild(elc("th", null, t)));
+  tbl.appendChild(hr);
+  R.rows.forEach(r => {
+    const tr = elc("tr");
+    tr.appendChild(elc("td", "rv-num", String(r.n)));
+    tr.appendChild(elc("td", null, r.shown));
+    const tone = elc("td");
+    tone.style.whiteSpace = "nowrap";
+    if (key[r.tone]) {
+      const k = elc("span", "rv-key");
+      k.style.background = key[r.tone];
+      tone.appendChild(k);
+    }
+    tone.appendChild(document.createTextNode(r.tone));
+    tr.appendChild(tone);
+    tr.appendChild(elc("td", null, r.themes.map(c => label[c] || c).join(", ") || "—"));
+    tr.appendChild(elc("td", null, { Yes: "Yes", "Before edit": "Before the edit" }[r.owner_reply] || "—"));
+    const say = elc("td", "rv-say", r.excerpt || "");
+    if (r.note) say.appendChild(elc("span", "rv-note", r.note));
+    tr.appendChild(say);
+    tbl.appendChild(tr);
+  });
+  const host = document.getElementById("drallTbl");
+  host.textContent = "";
+  host.appendChild(tbl);
 }
 
 /* ---- Rental Rates ------------------------------------------------------
