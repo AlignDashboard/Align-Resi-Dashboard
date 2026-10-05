@@ -3465,17 +3465,105 @@ first attempt — against runs #94–#97, cancelled after ~5h50m each. Its own
 unbuffered log puts **7.4 of those 9.5 minutes in the Madelon daily reports,
 ~16 s apiece**, and 1.3 in the comps.
 
-What is **not** fixed: the build still re-parses every file ever filed, every
-run, so it still grows — by about 16 s a day, one Madelon report's worth, which
-is years from the limit rather than days. The ten-minute build is also what
-made the commit step's rebuild affordable — see below. The job now runs with
-`PYTHONUNBUFFERED`, so the next slow file names itself in the log's
-timestamps; until then, stdout flushed in 8 KB blocks and a 45-minute gap could
-belong to any file in the block.
+That still left the build re-parsing every file ever filed, every run, so it
+grew by about 16 s a day — until 2026-10-05, when it started keeping its parses
+between runs (see *The build keeps its parses between runs* below). The
+ten-minute build is also what made the commit step's rebuild affordable — see
+below. The job now runs with `PYTHONUNBUFFERED`, so the next slow file names
+itself in the log's timestamps; until then, stdout flushed in 8 KB blocks and a
+45-minute gap could belong to any file in the block.
 
 It takes the newer **data** as well as the newer code, which is the half that
 saves a hand-added feed: the build then accumulates onto the current stores
 rather than the run-start ones.
+
+### The build keeps its parses between runs
+
+`fetch_drive` pulls every file in every registered folder on every run —
+nothing in Drive is ever marked done — and `process_manifest` parsed each one
+afresh, so nearly all of the build was work done the day before. Run #107
+(2026-10-05) spent **362 of its 430 seconds on the daily leasing reports**,
+about 11 s for each Madelon copy, 50 on ninety comp extracts, 12–15 on renewal
+trackers and about 2 on everything else. It also printed **183 `[error] failed
+to parse` lines**: the same files rejected by the same parsers every day — a
+prospect report handed to the renewal-tracker parser, a tracker handed to the
+daily-report one, because a file no entry claims by name goes to every entry
+sharing its folder.
+
+`scripts/parse_cache.py` now keeps each parse, and `process_manifest` asks it
+for the parse of every file. **The parse is the only step skipped**: routing,
+the stores and every log line still run on every file, every run. A parse is
+reused when everything it depends on is unchanged, and the key is all of it:
+
+| Part of the key | Why |
+| --- | --- |
+| the file's bytes and path | parsers read the filename — the daily leasing week label, a property named only in the name |
+| the parser's module and every repo module it imports | walked with `ast`, not grep, so the `from parse_comps import parse` a docstring quotes is not an import |
+| the config files that code names | `properties.json`, `coa_map.json`. **Not `report_map.json`**: the router reads it after the parse, and it is the config file that changes most — ten commits since 2026-09-01 that would each have thrown the cache away |
+| the Python and openpyxl versions, `FORMAT` | a library upgrade can change what a cell reads as |
+
+What may be kept is a list, and the default is no:
+
+- **`CACHED_TYPES`** — daily leasing, comps, lease trade-out, T12, budget,
+  funnel, unit directory — each a type whose parse carries nothing the repo
+  does not already commit.
+- **`NOT_KEPT`**, read afresh every run, with the reason recorded: rent roll and
+  delinquency (a resident on every row; their stores are gitignored), renewal
+  tracker (the MTM tenant code, emitted on purpose so `scrub()` drops it at
+  storage — `test_leasing_and_renewal.py` holds that design), concession
+  burn-off (per-unit rows its store deliberately does not persist). A type in
+  neither list is not kept either: the slow default, not the leaky one.
+- **A backstop**: any parse carrying a `PII_FIELDS` key is refused whatever its
+  type, with a warning annotation.
+- **A failure is kept for every type, as its message alone** — the line the
+  build already prints to the public log every run — so the 183 rejections cost
+  nothing. `OSError` and `MemoryError` are not kept: they describe the machine.
+
+**One parser had to change for this, and no stored output did.**
+`parse_daily_leasing` emitted the leasing associate's first name on every lease
+and left `store_daily_leasing` to drop it. A cache keeping that parse would have
+kept a staff member's name outside the run, so the parser drops it itself now,
+once the column has done its one job of identifying the header row. The store's
+`keep` list still drops it too; `test_leasing_and_renewal.py` fails if it comes
+back.
+
+**It checks itself.** The key can only cover what it can see, so every run
+re-parses one kept file per parser — the one checked least recently — and
+compares the two. A difference means the parse depends on something outside
+the key: the run warns, sets aside every kept parse of that parser and re-reads
+them. A missed dependency that changed every file shows on the next run; one
+that changed a few, within one sweep of that parser's files. Before shipping,
+six of the seven cached parsers were run on synthetic inputs under four hash
+seeds and gave the same parse each time, so the check will not fire on
+Python's own nondeterminism; the unit directory was not, since CI does not
+fetch it (C5).
+
+`_cache/parse/` is gitignored. `update.yml` restores the newest copy from the
+Actions cache before the build and saves its own as the job's **last** step,
+`if: always()` — after the commit step, so a rebuild's parses are kept, and even
+from a run cut short. The commit step's rebuild reuses everything the build
+just parsed, so a lost push race costs seconds rather than another build. An
+entry no run has used for `PRUNE_DAYS` (14) is deleted, so the cache follows the
+drop tree rather than its history. `PARSE_CACHE=off` parses everything afresh.
+
+`scripts/test_parse_cache.py` holds it down — 52 fixture-free checks, ending
+with `process_manifest` itself run on real daily-leasing workbooks with the
+cache off, cold and warm: the warm run stores byte-for-byte what the uncached
+run stores, prints the same log lines, takes this run's arrival time rather than
+the kept one, and leaves neither the associate's nor a resident's name anywhere
+in the cache directory. Eighteen mutations of `parse_cache.py`, each caught —
+among them a key without the file's bytes or path, a closure without imports, a
+cache that keeps any type, keeps machine failures, keeps a parse after the
+caller has written into it, never checks, or lets a fault in its own
+bookkeeping out: losing the cache may only ever cost speed, so `prepare()` and
+`finish()` contain their own faults and the read path does no bookkeeping at
+all. Two things writing them taught:
+**counting parser calls proves nothing** — the self-check re-reads one file per
+run, so a wrongly reused file still shows up in the call log — and the checks
+count the cache's own reuse instead; and a failure kept for a type that may
+not keep its parse **would have outlived the run that disproved it**, warning
+and re-reading the whole parser every run forever, until a fresh parse was
+made to clear the old entry first.
 
 ### The commit step rebuilds on a newer main
 
@@ -3550,9 +3638,10 @@ sits on `890c4d8` with that commit's notes and `e8e9994`'s `resident_calls`
 intact — the same shape of race #106 had lost twenty minutes earlier. The run summary
 says when this happens (`rebuilt N time(s) on a newer main`).
 
-A rebuild costs a whole build, so on a day when commits land every few minutes
-a run can lose the race more than once; after three rebuilds it fails rather
-than overwrite, and the next run carries the reports.
+A rebuild reuses every parse the build just made (see *The build keeps its
+parses between runs*), so it costs seconds rather than another build, and the
+window for a second race is that small too. After three rebuilds it still
+fails rather than overwrite, and the next run carries the reports.
 
 ### Keeping data out of git history (migration, not yet active)
 

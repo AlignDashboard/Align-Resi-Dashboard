@@ -2,7 +2,8 @@
 build_metrics.py
 ----------------
 Runs after fetch_drive.py. For every downloaded file in _downloads/manifest.json:
-  1. runs the file's parser
+  1. runs the file's parser -- or reuses the parse an earlier run made of the
+     same bytes with the same parser code, see parse_cache.py
   2. routes the result to a property (via property code -> config/properties.json)
   3. appends to that property's per-metric history in data/  (keyed by period,
      so re-processing the same statement overwrites rather than duplicates)
@@ -24,6 +25,8 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
+
+import parse_cache                    # noqa: E402
 
 DATA = pathlib.Path("data")
 DOCS = pathlib.Path("docs")
@@ -999,9 +1002,9 @@ def store_daily_leasing(prop, parsed):
     same week (the 9.13.26 week arrived on the 8th, 9th and 10th).
 
     The lease rows carry no resident — the NEW LEASES block has no name column.
-    The leasing associate's first name is dropped here rather than stored: it
-    identifies a person, it is nobody's business on a published page, and the
-    dashboard has no use for it.
+    The leasing associate's first name is dropped by the parser itself, and
+    `keep` below would drop it again: it identifies a person, it is nobody's
+    business on a published page, and the dashboard has no use for it.
     """
     if not parsed.get("as_of"):
         print(f"[warn] {parsed.get('source_file')}: no week-ending date — "
@@ -1318,6 +1321,16 @@ def process_manifest():
     # newest as_of themselves (store_report) rather than trusting this order.
     manifest.sort(key=lambda x: x["name"])
 
+    # The parse is the one step that can be skipped. A file whose bytes, parser
+    # code and config are what an earlier run parsed gets that run's parse
+    # back, and everything below -- routing, the stores, every log line -- runs
+    # on it exactly as on a fresh one. parse_cache.py says what the key covers,
+    # which report types may be kept between runs and how each run checks the
+    # cache against a fresh parse.
+    cache = parse_cache.from_env(person_fields=PII_FIELDS)
+    cache.prepare([i for i in manifest if i["report_type"] in ACCUMULATORS],
+                  lambda i: importlib.import_module(i["parser"]))
+
     t12_by_slug = {}                 # slug -> (prop, [t12 parse, ...])
 
     for item in manifest:
@@ -1326,8 +1339,7 @@ def process_manifest():
             continue
         try:
             mod = importlib.import_module(item["parser"])
-            # every parser exposes parse(path); parse_t12 kept as an alias
-            parsed = (mod.parse if hasattr(mod, "parse") else mod.parse_t12)(item["path"])
+            parsed = cache.parse(item, mod)
         except Exception as e:
             print(f"[error] failed to parse {item['name']}: {e} -- skipping this file")
             continue
@@ -1468,6 +1480,8 @@ def process_manifest():
         print(f"[ok] parsed T12 for {prop['name']} ({parsed['period_end']}) "
               f"from code '{code}'")
         t12_by_slug.setdefault(prop["slug"], (prop, []))[1].append(parsed)
+
+    cache.finish()
 
     # Both of these describe the property as a whole, so they are stored once
     # per property from all of its statements rather than once per file -- a

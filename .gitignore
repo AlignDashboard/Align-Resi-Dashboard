@@ -15,6 +15,11 @@ data/*/delinquency.json
 # away; only scrubbed aggregates are kept.
 _downloads/
 
+# Parses kept between pipeline runs (scripts/parse_cache.py). It carries the
+# parse of no report with a person in it, but it is a runtime cache -- the
+# Actions cache carries it from run to run, git never does.
+_cache/
+
 # Test fixtures are lifted from the analyst workbook and carry real names.
 tests/fixtures/
 

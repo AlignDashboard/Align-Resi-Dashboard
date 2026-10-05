@@ -8,6 +8,7 @@ comment on each check names the failure it is there to catch.
 
 Run: python scripts/test_leasing_and_renewal.py
 """
+import json
 import os
 import shutil
 import sys
@@ -100,6 +101,10 @@ check("reads the NEW LEASES block", r["totals"]["leases"] == 1
       f"got {r['totals']}")
 check("carries the prior rent, which nothing else in the pipeline has",
       r["leases"][0]["prior_rent"] == 3351)
+check("the leasing associate is read with the header and never emitted",
+      "agent" in r["columns"] and not any("agent" in l for l in r["leases"])
+      and "Edwin" not in json.dumps(r, default=str),
+      sorted(r["leases"][0]))
 check("week-ending read from a real date cell", r["as_of"] == "2026-09-06",
       r["as_of"])
 
