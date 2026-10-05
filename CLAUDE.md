@@ -3461,6 +3461,15 @@ green run. (Before *that*, a `git pull --rebase` between tries conflicted on
 the run's own files and spun in a half-rebase — nothing published 2026-09-13 to
 09-15.)
 
+**The old step ran once more after the fix was on `main`.** Run #106 was
+dispatched at 17:28 on 2026-10-05, nine minutes before `3516699` replaced the
+step, and a run keeps the workflow file of the commit it started from. It lost
+its push to `f07404a` at 17:53 and copied its own copy of
+`data/335-third-street/eliseai_daily.json` back over that commit's new
+`resident_calls` field — every step green, the file named only in a warning.
+`e8e9994` restored it three minutes later. So a run already queued when a
+workflow fix lands still runs the old steps, and is worth watching through.
+
 It **rebuilds on the new `main` instead**. The reports are still on the runner
 (`_downloads/` is gitignored, so a reset leaves them), so resetting to the newer
 `main` and running the same build again produces what a run starting now would:
