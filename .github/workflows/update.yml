@@ -61,11 +61,11 @@ jobs:
       # and dropped a hand-added EliseAI day -- four commits undone with every
       # step green and nothing in the log to say so.
       #
-      # Everything from here to the commit is minutes, not hours, so re-syncing
-      # once, here, closes almost the whole window. The reports this run just
-      # fetched are safe: _downloads/ is gitignored, so a reset does not touch
-      # them and nothing is downloaded twice. The residual minutes are what the
-      # push retry below already replays over.
+      # Re-syncing here keeps the build from starting on a stale main. The
+      # reports this run just fetched are safe: _downloads/ is gitignored, so a
+      # reset does not touch them and nothing is downloaded twice. Whatever
+      # lands DURING the build is the commit step's to handle, and it rebuilds
+      # on top of it rather than over it (open item A15).
       - name: Re-sync to main before building
         run: |
           set -euo pipefail
@@ -84,71 +84,13 @@ jobs:
           git reset -q --hard "$after"
           git log -1 --format='building on %h %s'
 
-      - name: Build metrics
-        run: python scripts/build_metrics.py
-
-      # The statement-derived cells --from-landing owns alone -- NOI Margin %,
-      # Concession Load %, Controllable OpEx/Unit, Budget Variance %, Month to
-      # Month Leases -- used to move only when someone ran this by hand, so they
-      # published July figures for a month after the August statement landed
-      # (open item H1).
-      #
-      # It runs BEFORE the --from-pipeline loop, not after, and the order is the
-      # whole point. Both paths fill the same two delinquency cells and the last
-      # run wins; a --from-landing run going last is what put a six-week-old
-      # workbook tab in front of a same-week Drive AR report on 2026-09-03,
-      # moving the published rate from 6.7% to 4.6% with nothing failing and
-      # nothing saying so (open item G3). Going first, its figures stand where
-      # no Drive feed owns the cell and are overwritten where one does.
-      - name: Fill workbook-derived KPI values into the scorecard
-        run: python scripts/populate_scorecard.py --from-landing
-
-      # The measured KPI values have to be filled here, not locally: the reports
-      # only exist on this runner. build_metrics has just written the scrubbed
-      # data/<slug>/delinquency.json that this reads. This is also what takes
-      # the delinquency cells back from the step above, per G3.
-      - name: Fill measured KPI values into the scorecard
-        run: |
-          set -euo pipefail
-          for f in data/*/delinquency.json; do
-            [ -e "$f" ] || continue
-            slug=$(basename "$(dirname "$f")")
-            python scripts/populate_scorecard.py --from-pipeline "$slug"
-          done
-
-      # The building-metrics CSV lands in the Drive EliseAI Reports folder and
-      # needs no parse/accumulate step: populate_building_metrics fills the
-      # scorecard from it directly. Drive's landed_at rides along as the
-      # arrival time, so "data last updated" reflects when the export actually
-      # arrived rather than when someone handed it over. Runs after the
-      # delinquency fill so the never-take-an-owned-cell rule sees the other
-      # feeds' claims.
-      - name: Fill the scorecard from the building-metrics export
-        run: |
-          python - <<'EOF'
-          import json, pathlib, subprocess, sys
-          folder = pathlib.Path("_downloads/bldg_metrics_csv")
-          csvs = sorted(folder.glob("*.csv")) if folder.exists() else []
-          if not csvs:
-              print("no building-metrics CSV this run"); sys.exit(0)
-          newest = csvs[-1]
-          landed = next((e.get("landed_at")
-                         for e in json.load(open("_downloads/manifest.json"))
-                         if e.get("name") == newest.name), None)
-          cmd = [sys.executable, "scripts/populate_building_metrics.py", str(newest)]
-          if landed:
-              cmd += ["--received-at", landed]
-          print("running:", " ".join(cmd))
-          sys.exit(subprocess.call(cmd))
-          EOF
-
-      # After the fills, so the chain reports what this run actually produced —
-      # which reports arrived, when they landed, which scorecard cells each feed
-      # ended up owning. It refuses to write if a card anchor or a data-table id
-      # it names has gone missing, which fails the run rather than publishing a
-      # map that points at nothing.
-      - name: Build the data lineage
-        run: python scripts/build_lineage.py
+      # Metrics, the three scorecard fills in the order G3 and H1 settled, and
+      # the lineage. One script rather than five steps because the commit step
+      # has to be able to run exactly the same thing again on a newer main --
+      # see scripts/build_pipeline.sh for the stages and why they run in that
+      # order. Its log groups each stage and its summary times them.
+      - name: Build metrics, fill the scorecard, build the lineage
+        run: bash scripts/build_pipeline.sh
 
       # The packet PDF lives in Drive for the people who pull the Yardi exports
       # and do not read this repo. It is regenerated from
@@ -170,72 +112,21 @@ jobs:
           GDRIVE_PACKET_FOLDER_ID: ${{ secrets.GDRIVE_PACKET_FOLDER_ID }}
         run: python scripts/upload_packet_pdf.py
 
-      - name: Refuse to commit if personal data leaked into the output
-        run: python scripts/check_no_pii.py
-
-      - name: Commit changes
+      # Commits the run's output and pushes it. Two things it adds over a plain
+      # push, both in scripts/commit_and_push.sh with their history:
+      #
+      #   - check_no_pii.py runs before every commit it makes, so personal data
+      #     cannot reach main by way of a retry any more than the first try.
+      #   - A push that loses a race REBUILDS on the new main instead of copying
+      #     this run's files over it -- the copy is what blanked the Market Comps
+      #     tab on 2026-09-18 (A15). The rebuild reinstalls requirements first,
+      #     since the newer main may have added one. A rejection with main
+      #     unmoved is retried as is, and after three rebuilds it gives up and
+      #     fails the run rather than overwrite anything.
+      - name: Check for personal data, commit and push
+        env:
+          REBUILD: pip install -q -r requirements.txt && bash scripts/build_pipeline.sh
         run: |
-          set -u
-          PATHS="data docs/metrics.json docs/scorecard.json docs/lineage.json"
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
-          git add -A $PATHS 2>/dev/null \
-            || git add docs/metrics.json docs/scorecard.json docs/lineage.json
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-          MSG="Auto-update metrics ($(date -u +%Y-%m-%d))"
-          git commit -qm "$MSG"
-          # The commit only exists on this runner, so a transient 500 from
-          # GitHub on push throws away the whole day's build — reports fetched,
-          # metrics rebuilt, PII checked — with nothing left to recover from.
-          # (Observed 2026-08-13.) Hence the retry.
-          #
-          # What it must NOT do between tries is `git pull --rebase`. Every path
-          # here is regenerated output, so a push that lost a race conflicts on
-          # the very files the run just wrote. The rebase then stops on the
-          # conflict, `|| true` swallows it, and the loop spins in a half-rebase
-          # — "Pulling is not possible because you have unmerged files", then a
-          # detached HEAD it cannot push from. That is not hypothetical: it is
-          # why nothing published between 2026-09-13 and 2026-09-15.
-          #
-          # These paths are this run's product, not a document two authors edit,
-          # so the answer is to replay them onto the new main rather than merge
-          # them line by line — a three-way merge of regenerated JSON yields a
-          # file no run ever wrote. Reset to the remote, restore this run's
-          # files over it, commit again. The commit that landed mid-run keeps
-          # its place in history; only the generated files are overwritten, and
-          # the log names them.
-          for attempt in 1 2 3 4 5; do
-            if git push -q origin HEAD:main; then
-              echo "Pushed on attempt $attempt."
-              exit 0
-            fi
-            if [ "$attempt" -eq 5 ]; then
-              echo "::error::push failed after $attempt attempts"
-              exit 1
-            fi
-            delay=$((2 ** attempt))
-            echo "Push failed; retrying in ${delay}s."
-            sleep "$delay"
-            git fetch -q origin main || continue
-            moved=$(git diff --name-only HEAD origin/main -- $PATHS 2>/dev/null || true)
-            if [ -n "$moved" ]; then
-              echo "::warning::main moved under this run; replaying this run's output over:"
-              echo "$moved" | sed 's/^/  /'
-            fi
-            tmp=$(mktemp -d)
-            for p in $PATHS; do
-              [ -e "$p" ] && cp -a --parents "$p" "$tmp/" 2>/dev/null || true
-            done
-            git reset -q --hard origin/main
-            cp -a "$tmp/." . && rm -rf "$tmp"
-            git add -A $PATHS 2>/dev/null \
-              || git add docs/metrics.json docs/scorecard.json docs/lineage.json
-            if git diff --staged --quiet; then
-              echo "Remote already carries this run's output; nothing left to push."
-              exit 0
-            fi
-            git commit -qm "$MSG"
-          done
+          bash scripts/commit_and_push.sh
