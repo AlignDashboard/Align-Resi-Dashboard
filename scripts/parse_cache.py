@@ -71,6 +71,7 @@ import pathlib
 import pickle
 import sys
 import time
+import warnings
 
 # Bump when the entry or index shape changes: every kept parse is then refused
 # on read, and the next run parses everything once.
@@ -132,6 +133,16 @@ def sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
+def _tree(path):
+    """A module's syntax tree, read quietly. ast.parse compiles the source, so a
+    SyntaxWarning in a parser would otherwise be printed again on every run --
+    reporting it is the import's business, not the cache's."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return ast.parse(pathlib.Path(path).read_text(encoding="utf-8"),
+                         filename=str(path))
+
+
 def module_closure(path):
     """The module at `path` and every module beside it that it imports,
     transitively, as sorted paths.
@@ -148,7 +159,7 @@ def module_closure(path):
         if p in seen:
             continue
         seen.add(p)
-        for node in ast.walk(ast.parse(p.read_text(encoding="utf-8"), filename=str(p))):
+        for node in ast.walk(_tree(p)):
             if isinstance(node, ast.Import):
                 names = [a.name for a in node.names]
             elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
@@ -171,7 +182,7 @@ def configs_named(sources, config_dir):
                if config_dir.is_dir() else {})
     named = set()
     for p in sources:
-        for node in ast.walk(ast.parse(pathlib.Path(p).read_text(encoding="utf-8"))):
+        for node in ast.walk(_tree(p)):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 base = os.path.basename(node.value.strip())
                 if base in present:

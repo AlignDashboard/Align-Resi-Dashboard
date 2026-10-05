@@ -34,6 +34,7 @@ import pathlib
 import shutil
 import sys
 import tempfile
+import warnings
 
 sys.dont_write_bytecode = True    # a rewritten stub must never run from stale bytecode
 
@@ -425,6 +426,27 @@ def section_real_keys():
     every = {n for m in (str(p.stem) for p in scripts.glob("parse_*.py")) for n in names(m)[1]}
     ok("no parser's key covers report_map.json, the file that changes most",
        "report_map.json" not in every, every)
+
+    # Reading a tree compiles the source. Done every run, a warning in any
+    # parser would be printed in every log -- parse_lease_tradeout's docstring
+    # did exactly that on the first run with the cache, on Python 3.12.
+    noisy = pathlib.Path(tempfile.mkdtemp(prefix="noisy_")) / "noisy_parser.py"
+    noisy.write_text('def parse(path):\n    """a pattern like `\\)?%?$`"""\n')
+    with warnings.catch_warnings(record=True) as seen:
+        warnings.simplefilter("always")
+        pc.configs_named(pc.module_closure(noisy), config)
+    ok("reading a parser's tree prints none of its compile warnings",
+       not seen, [str(w.message) for w in seen])
+    dirty = []
+    for src in sorted({s for p in scripts.glob("parse_*.py") for s in pc.module_closure(p)}):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            try:
+                compile(src.read_text(encoding="utf-8"), str(src), "exec")
+            except (SyntaxError, SyntaxWarning, DeprecationWarning) as e:
+                dirty.append(f"{src.name}: {e}")
+    ok("every module a parser's key covers compiles without a warning "
+       "(an invalid escape is a SyntaxError in a later Python)", not dirty, dirty)
 
 
 def build_week(path, rent, prior):
