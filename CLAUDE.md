@@ -2920,6 +2920,38 @@ mirroring the real layout, no network or fixtures. Both archive protections are
 tested *independently*: removing either one alone fails a check, since the name
 guard would otherwise cover for the missing tree scoping.
 
+### A snapshot report never walks backwards
+
+`process_manifest` walks the run's files **in filename order, which is not date
+order.** The filer prefixes its arrival date (`2026-10-05 RentRoll10_05_2026.xlsx`)
+and a hand-dropped export carries none (`RentRoll09_28_2026.xlsx`), so the newer,
+filed report sorts first — `2` before `R` — and the older one is processed after
+it. The six stores that keep one file per property (rent roll, delinquency, unit
+directory, funnel, concession burn-off, renewal tracker) all write through
+`store_report`, which used to take whichever parse came last: every step green,
+the page a week stale, nothing in the log.
+
+**`store_report` keeps the newest `as_of` now**, per property. A parse older than
+the stored one is refused with a `[keep]` line naming both files, and the caller
+is told (`KEPT_NEWER`) so it does not also log `[ok] stored`. An **equal** as-of
+still replaces, so a corrected re-export of the same date wins. The comparison
+(`older_as_of`) only makes a claim when both dates are ISO at the same precision
+— `YYYY-MM-DD`, or `YYYY-MM` for the renewal tracker — so a missing or
+unreadable date stores exactly as before rather than blocking.
+
+In CI the gitignored stores (`rent_roll.json`, `delinquency.json`) do not exist
+at the start of a run, so the guard decides between files **within** one run;
+locally it also protects whatever is already on disk. `stitch`-style series
+(the T12 stores, budgets, comps, lease trade-outs, the weekly leasing workbook)
+are keyed on their own period and were never exposed to this.
+
+`scripts/test_snapshot_order.py` holds it down — 21 fixture-free checks with the
+parser stubbed, driving `process_manifest` through both of its store call sites
+(the single-property shape and the sectioned delinquency shape) with the newer
+file sorting first. Four guards verified by mutation: the comparison, each call
+site's `KEPT_NEWER` check, and the precision match. **Clear `__pycache__`
+between mutation runs.**
+
 ### Two Drive trees
 
 `fetch_drive.py` scans **two** parents, because two different kinds of thing live

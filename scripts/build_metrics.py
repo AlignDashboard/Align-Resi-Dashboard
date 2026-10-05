@@ -19,6 +19,7 @@ import json
 import glob
 import importlib
 import pathlib
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -598,16 +599,57 @@ def scrub(obj):
     return obj
 
 
+# Returned by store_report when it declines to replace a newer snapshot, so the
+# caller can say so instead of logging "[ok] stored" over a file it never wrote.
+KEPT_NEWER = object()
+
+_ISO_AS_OF = re.compile(r"^\d{4}-\d{2}(-\d{2})?$")
+
+
+def older_as_of(new, held):
+    """True only when both dates are known, comparable, and `new` is older.
+
+    Both must be ISO dates of the same precision (YYYY-MM-DD, or YYYY-MM for the
+    renewal tracker), which is what makes string order date order. Anything
+    else -- a missing date, a format nobody planned for -- answers False, so an
+    unreadable date never blocks a store; it just loses the protection.
+    """
+    return (isinstance(new, str) and isinstance(held, str)
+            and bool(_ISO_AS_OF.match(new)) and bool(_ISO_AS_OF.match(held))
+            and len(new) == len(held) and new < held)
+
+
 def store_report(prop, parsed, filename, keys):
     """Write the latest parse of a report to data/<slug>/<filename>.
 
-    One file per property per report, overwritten each run: these reports are
-    point-in-time snapshots, not a series, so history lives in git rather than
-    inside the file. PII is stripped on the way out — see PII_FIELDS.
+    One file per property per report: these reports are point-in-time
+    snapshots, not a series, so history lives in git rather than inside the
+    file. PII is stripped on the way out — see PII_FIELDS.
+
+    "Latest" means the newest as_of, NOT whichever file was processed last.
+    process_manifest walks files in filename order, and the Gmail filer
+    date-prefixes what it files ("2026-10-05 RentRoll10_05_2026.xlsx") while a
+    hand-dropped export carries no prefix ("RentRoll09_28_2026.xlsx"). "2"
+    sorts before "R", so a newer filed report used to be processed first and
+    then overwritten by an older hand-dropped one -- every step green, the page
+    quietly a week stale. So a parse older than what is already stored for this
+    property is refused, and returns KEPT_NEWER. An equal as_of still replaces,
+    so a corrected re-export of the same date wins.
     """
     d = DATA / prop["slug"]
     d.mkdir(parents=True, exist_ok=True)
     fp = d / filename
+    if fp.exists():
+        try:
+            held = json.load(open(fp))
+        except (OSError, ValueError):
+            held = {}
+        if older_as_of(parsed.get("as_of"), held.get("as_of")):
+            print(f"[keep] {prop.get('name', prop['slug'])} {filename}: "
+                  f"{parsed.get('source_file')} is as of {parsed.get('as_of')}, "
+                  f"older than the stored {held.get('source_file')} as of "
+                  f"{held.get('as_of')} -- keeping the newer one")
+            return KEPT_NEWER
     out = {k: scrub(parsed.get(k)) for k in keys}
     out["source_file"] = parsed.get("source_file")
     # When the file landed in Drive, set by process_manifest from the manifest.
@@ -1227,8 +1269,11 @@ def process_manifest():
     rmap_by_type = {e.get("report_type"): e
                     for e in json.load(open("config/report_map.json"))["subfolders"]}
 
-    # Deterministic order: sort by filename so date-prefixed files process
-    # oldest-to-newest and the newest file wins any same-period collision.
+    # Deterministic order: sort by filename, so a run is repeatable. This is NOT
+    # oldest-to-newest -- the filer date-prefixes what it files and a
+    # hand-dropped export carries no prefix, so "2026-10-05 RentRoll…" sorts
+    # ahead of an older "RentRoll09_28…". Snapshot stores therefore keep the
+    # newest as_of themselves (store_report) rather than trusting this order.
     manifest.sort(key=lambda x: x["name"])
 
     t12_by_slug = {}                 # slug -> (prop, [t12 parse, ...])
@@ -1317,7 +1362,8 @@ def process_manifest():
                     print(f"[quarantined] {item['name']} -> {prop['name']}: "
                           f"{prop['quarantine']['reason']}")
                     continue
-                ACCUMULATORS[item["report_type"]](prop, parsed)
+                if ACCUMULATORS[item["report_type"]](prop, parsed) is KEPT_NEWER:
+                    continue
                 print(f"[ok] stored {item['report_type']} for {prop['name']} "
                       f"(as of {parsed.get('as_of') or 'unknown date'})")
                 continue
@@ -1339,7 +1385,8 @@ def process_manifest():
                     one["summary"] = mod.summarise(rows)
                 elif len(secs) == 1:
                     one["summary"] = secs[0].get("summary") or parsed.get("summary")
-                ACCUMULATORS[item["report_type"]](prop, one)
+                if ACCUMULATORS[item["report_type"]](prop, one) is KEPT_NEWER:
+                    continue
                 codes = "+".join(c for c in one["property_codes"] if c)
                 print(f"[ok] stored {item['report_type']} for {prop['name']} "
                       f"from {codes} (as of {parsed.get('as_of') or 'unknown date'})")
