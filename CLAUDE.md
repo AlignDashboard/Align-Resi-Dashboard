@@ -3585,6 +3585,25 @@ an invalid escape becomes a `SyntaxError` in a later Python. Both are checked,
 the second by compiling every module any parser's key covers with warnings as
 errors.
 
+**Verified on the runner the same day.** Run #110 started cold (`Cache not
+found`), parsed 479 files in 678.8 s, kept 452 and saved the cache. Run #112
+restored it and logged `reused 269 parse(s) and 183 known failure(s); parsed
+27 file(s) afresh in 19.8s ... checked 8 parser(s) against a fresh parse, all
+matched` — **its build step took 23 seconds**, against 9–11 minutes for the
+same files cold that evening. Its commit differed from #110's only in three
+wall-clock timestamps (two `generated_at`, and the time the "manual" flow
+reads off `metrics.json`). The 27 read afresh are the never-kept types, and
+the renewal trackers are most of their 19.8 s.
+
+Two things those runs showed that are worth knowing before reading any build
+time. **Hosted runners differ by half again in speed**: the same files parsed
+in 430, 550 and 679 s on three runs that day, so a time is only comparable
+within a run. And **the fetch is now most of the job** — 10 to 12 minutes,
+because it still downloads every file every run. A file whose parse is kept
+need not be downloaded at all, so the cache is what would let that stop too;
+it would change what `fetch_drive` promises the build (a file on disk for every
+manifest entry), and is not done here.
+
 ### The commit step rebuilds on a newer main
 
 Until 2026-10-05 a rejected push reset to the new `main`, copied this run's
