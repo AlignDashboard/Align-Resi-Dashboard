@@ -1,10 +1,10 @@
 name: Refresh Market Comps
 
 # The Market Comps tab's feed is the only one that arrives several times a day,
-# for every market Align asks for. `update.yml` would pick it up -- it fetches
-# the same folder -- but it runs once, has taken four and a half hours, and its
-# retry loop replays whatever it built over anything newer (open item A15). So
-# "the comps tab is refreshed daily" cannot rest on that run alone.
+# for every market Align asks for. `update.yml` picks it up too -- it fetches
+# the same folder -- but it runs once, in the morning, while this export arrives
+# all day. So "the comps tab is refreshed daily" does not rest on that run
+# alone.
 #
 # This does the one feed and touches nothing else: `fetch_drive.py --only
 # market_comps` pulls just that folder, and `refresh_comps.py` rewrites only
@@ -85,11 +85,12 @@ jobs:
               echo "pushed."
               exit 0
             fi
-            # Lost a race. Unlike update.yml, this run's output is CHEAP to
-            # reproduce and its inputs are still on disk, so it replays the
-            # computation on the new main rather than the output over it --
-            # store_comps then reads whatever stores main now carries and keeps
-            # the newest as-of either way.
+            # Lost a race. The inputs are still on disk and the output is
+            # cheap to reproduce, so it replays the computation on the new
+            # main rather than the output over it -- store_comps then reads
+            # whatever stores main now carries and keeps the newest as-of
+            # either way. update.yml's commit step follows the same rule
+            # (scripts/commit_and_push.sh).
             echo "::warning::push rejected; rebuilding the comps block on the current main"
             git fetch origin main
             git reset --hard origin/main

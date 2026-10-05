@@ -845,10 +845,11 @@ comp exports and rewrites **only** `metrics["comps"]`, leaving every other
 block in `docs/metrics.json` exactly as it found it (checked, not assumed).
 
 It exists because the daily cron cannot carry this feed on its own. The export
-arrives several times a day, for every market Align asks for; the cron runs
-once, takes about five hours, and its push-retry loop replays whatever it built
-over anything newer (A15). So "the comps tab is refreshed daily" needs
-something that runs the one feed and touches nothing else.
+arrives several times a day, for every market Align asks for, and the cron runs
+once. (When this was written it also took five hours and its push-retry loop
+copied its output over anything newer — A15, since fixed.) So "the comps tab is
+refreshed daily" needs something that runs the one feed and touches nothing
+else.
 
 It is the same code either way: the block is built by
 `build_metrics.comps_block`, which both callers use, so the published figures
@@ -871,12 +872,12 @@ once. It is `fetch_drive.py --only market_comps` then `refresh_comps.py`, and
 it commits only when a vintage actually moved: a no-change run leaves the tree
 byte-identical, so a quiet day produces no commit at all.
 
-Its push race is handled the opposite way to `update.yml`'s, and deliberately.
-That one replays its own output onto the new main, because rebuilding it costs
-five hours. This one's inputs are still on the runner and rebuilding costs
-seconds, so it **resets to main and re-runs the refresh** — `store_comps` then
-reads whatever stores main now carries and keeps the newest as-of either way.
-Replaying output is what A15 is about; replaying the computation is safe.
+Its push race is handled the way `update.yml`'s now is too: it **resets to
+main and re-runs the refresh** — `store_comps` then reads whatever stores main
+now carries and keeps the newest as-of either way. Replaying the computation is
+safe where replaying the output is not. This workflow did it first because its
+rebuild costs seconds; `update.yml` followed on 2026-10-05, once its own build
+was down to minutes (see *The commit step rebuilds on a newer main*).
 
 `--only <report_type>` is new with it: the daily pipeline never passes it and is
 unchanged, but the whole fetch has taken four and a half hours and this feed
@@ -3379,9 +3380,10 @@ fetched Drive in **2m26s** and then spent **4h54m in `build_metrics.py`**: the
 re-sync fired at 14:50:56 and correctly found main unmoved, the Market Comps
 work merged at 17:08, and at 19:44 the retry loop below replayed the run's
 stale `metrics.json` and `lineage.json` over it — blanking a live tab. The long
-pole is the build, not the fetch, and the guard covers the wrong one. Do not
-read this section as saying the window is closed; it is open for hours a day
-until A15 is taken.
+pole was the build, not the fetch, and the guard covered the wrong one. What
+covers the build window now is the commit step, which rebuilds on top of
+anything that lands during it rather than over it — see *The commit step
+rebuilds on a newer main* below (A15, closed 2026-10-05).
 
 **Why the build took hours** (found 2026-09-28, after runs #94–#97 were all
 cancelled at GitHub's six-hour job limit): openpyxl does not store a sheet's
@@ -3410,10 +3412,8 @@ unbuffered log puts **7.4 of those 9.5 minutes in the Madelon daily reports,
 
 What is **not** fixed: the build still re-parses every file ever filed, every
 run, so it still grows — by about 16 s a day, one Madelon report's worth, which
-is years from the limit rather than days. A15's replay-clobber is untouched,
-but its window shrank with the build, from hours to about twenty minutes, and a
-ten-minute build makes "rebuild on the new main instead of replaying" a cheap
-option where it was not one before. The job now runs with
+is years from the limit rather than days. The ten-minute build is also what
+made the commit step's rebuild affordable — see below. The job now runs with
 `PYTHONUNBUFFERED`, so the next slow file names itself in the log's
 timestamps; until then, stdout flushed in 8 KB blocks and a 45-minute gap could
 belong to any file in the block.
@@ -3422,11 +3422,60 @@ It takes the newer **data** as well as the newer code, which is the half that
 saves a hand-added feed: the build then accumulates onto the current stores
 rather than the run-start ones.
 
-**The retry loop's replay is a clobber, not a merge.** When the push is
-rejected it resets to `origin/main`, copies this run's own output back over the
-top and commits — so anything newer in those paths is overwritten by a build
-that never saw it. It warns and names each file first, which is how run #88 was
-diagnosed, but a warning inside a green run is not a signal anyone receives.
+### The commit step rebuilds on a newer main
+
+Until 2026-10-05 a rejected push reset to the new `main`, copied this run's
+files back over it and committed. That was a clobber, not a merge: anything
+newer in those paths was overwritten by a build that never saw it, which is how
+run #88 blanked the Market Comps tab, and the only trace was a warning inside a
+green run. (Before *that*, a `git pull --rebase` between tries conflicted on
+the run's own files and spun in a half-rebase — nothing published 2026-09-13 to
+09-15.)
+
+It **rebuilds on the new `main` instead**. The reports are still on the runner
+(`_downloads/` is gitignored, so a reset leaves them), so resetting to the newer
+`main` and running the same build again produces what a run starting now would:
+the newer commits' code *and* data — a hand-added EliseAI day, a newer comps
+vintage, a fixed parser — with this run's reports on top. It was only
+affordable once the build took minutes rather than hours.
+
+Two scripts carry it, so that the rebuild cannot drift from the build:
+
+- **`scripts/build_pipeline.sh`** is everything the run derives, in order:
+  metrics, the three scorecard fills in the order G3 and H1 settled, the
+  lineage. The workflow's build step runs it, and the commit step runs it again
+  for a rebuild. It replaced five workflow steps; run side by side against this
+  repo's own stores it wrote the same files as those steps, differing only in
+  two wall-clock timestamps. It times each stage in the run's summary.
+- **`scripts/commit_and_push.sh`** commits and pushes:
+  1. a rejection with `main` **unmoved** is not a race (GitHub returns the odd
+     500), so the same commit is pushed again, with no rebuild;
+  2. `main` **moved**: reset to it, rebuild, commit, push — and the log lists
+     the commits it is building on and which of this run's paths they touched;
+  3. `main` **keeps moving**: after three rebuilds it gives up and **fails the
+     run**, overwriting nothing. A red run is a signal somebody receives; an
+     overwrite never was;
+  4. **`check_no_pii.py` runs before every commit it makes**, rebuilt ones
+     included — it used to be its own step, which guarded the first commit
+     and not the replay.
+
+  Also: a push that landed but reported failure is recognised as landed rather
+  than rebuilt, and a `git commit` that fails fails the run rather than reading
+  as "nothing to commit". The rebuild reinstalls `requirements.txt` first,
+  since the newer `main` may have added a dependency.
+
+`scripts/test_push_race.py` holds it down — 46 checks with real git against a
+bare repository in a temp dir: a shallow runner clone (as `actions/checkout`
+makes it, since the script leans on `HEAD^` and `base..tip`), a second clone that pushes
+"someone else's" commits mid-run, and a fake build whose output is derived from
+the repo it runs in, so "rebuilt on the new main" is something a check can see.
+Mutation-tested: putting the old replay back fails 15 checks, and removing any
+one of the other five guards fails that guard's own checks. A `git clean` in
+the first draft turned out to be dead — everything the first build wrote is in
+the run's own commit, which the reset already discards — and was dropped
+rather than kept as a guard that guards nothing. Not yet seen on the runner: a
+real race. The run summary says when one happens (`rebuilt N time(s) on a newer
+main`).
 
 ### Keeping data out of git history (migration, not yet active)
 
@@ -3490,7 +3539,8 @@ one) but **nothing may persist them**. `build_metrics.scrub()` strips
 
 `scripts/check_no_pii.py` is the check that this holds, and it runs in both
 workflows: `update.yml` will not commit and `deploy.yml` will not publish if it
-fails. Three passes — person-shaped keys in the published JSON, raw reports or
+fails. In `update.yml` it runs inside `commit_and_push.sh`, before every commit
+that script makes — a commit rebuilt after a lost push race included. Three passes — person-shaped keys in the published JSON, raw reports or
 per-unit output tracked in git, and (with `--source <report.xlsx>`) every real
 name in a source report searched for by word boundary in every published file.
 Run it locally the same way after any change to a parser or the extractor.
