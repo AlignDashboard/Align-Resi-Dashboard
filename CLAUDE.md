@@ -3511,9 +3511,22 @@ Mutation-tested: putting the old replay back fails 15 checks, and removing any
 one of the other five guards fails that guard's own checks. A `git clean` in
 the first draft turned out to be dead — everything the first build wrote is in
 the run's own commit, which the reset already discards — and was dropped
-rather than kept as a guard that guards nothing. Not yet seen on the runner: a
-real race. The run summary says when one happens (`rebuilt N time(s) on a newer
-main`).
+rather than kept as a guard that guards nothing.
+
+**Verified on the runner the same day, with a real race.** Run #107
+(`workflow_dispatch` on `3516699`) re-synced onto `e8e9994` after its Drive
+fetch and built for 7m11s; `890c4d8` was pushed while it built, to put the new
+step through a race. Its first push was rejected at 18:14, it annotated the run
+`main moved under this run; rebuilding on 890c4d8 rather than overwriting it`,
+rebuilt in about seven minutes, ran the personal-data check again, and logged
+`Pushed d4dfe5f on attempt 2, after 1 rebuild(s) on a newer main`. Its commit
+sits on `890c4d8` with that commit's notes and `e8e9994`'s `resident_calls`
+intact — the same shape of race #106 had lost twenty minutes earlier. The run summary
+says when this happens (`rebuilt N time(s) on a newer main`).
+
+A rebuild costs a whole build, so on a day when commits land every few minutes
+a run can lose the race more than once; after three rebuilds it fails rather
+than overwrite, and the next run carries the reports.
 
 ### Keeping data out of git history (migration, not yet active)
 
