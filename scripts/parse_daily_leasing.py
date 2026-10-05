@@ -236,6 +236,14 @@ def parse(path):
         # whole pipeline run instead of reporting itself.
         keep=lambda rec: rec.get("unit") is not None and _numeric(rec.get("lease_rent")))
 
+    # The leasing associate's column stays in COLUMNS, as part of the header
+    # row this sheet is recognised by, but the name in it is a person and
+    # nothing downstream reads it. Dropped here rather than at the store, so
+    # the parse itself names no one -- which is what lets parse_cache keep it
+    # between runs instead of re-reading every copy every day.
+    for lease in leases:
+        lease.pop("agent", None)
+
     checks, clean = [], 0
     for lease in leases:
         rent, prior = lease.get("lease_rent"), lease.get("prior_rent")

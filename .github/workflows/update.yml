@@ -84,6 +84,19 @@ jobs:
           git reset -q --hard "$after"
           git log -1 --format='building on %h %s'
 
+      # Every parse the previous run made, so this one re-reads only what is
+      # new or changed: a parse is reused when the file's bytes, the parser's
+      # code and the config it reads all match (scripts/parse_cache.py). The
+      # newest cache is restored by prefix and this run saves its own, so the
+      # chain survives a failed or cancelled run. A cold cache is a full parse,
+      # exactly as before.
+      - name: Restore the parse cache
+        uses: actions/cache/restore@v4
+        with:
+          path: _cache/parse
+          key: parse-cache-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: parse-cache-v1-
+
       # Metrics, the three scorecard fills in the order G3 and H1 settled, and
       # the lineage. One script rather than five steps because the commit step
       # has to be able to run exactly the same thing again on a newer main --
@@ -120,7 +133,8 @@ jobs:
       #   - A push that loses a race REBUILDS on the new main instead of copying
       #     this run's files over it -- the copy is what blanked the Market Comps
       #     tab on 2026-09-18 (A15). The rebuild reinstalls requirements first,
-      #     since the newer main may have added one. A rejection with main
+      #     since the newer main may have added one, and reuses every parse the
+      #     build just made, so it costs seconds. A rejection with main
       #     unmoved is retried as is, and after three rebuilds it gives up and
       #     fails the run rather than overwrite anything.
       - name: Check for personal data, commit and push
@@ -130,3 +144,14 @@ jobs:
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
           bash scripts/commit_and_push.sh
+
+      # Last, so it holds the parses a rebuild in the commit step made too, and
+      # whether or not anything before it succeeded: every parse a build
+      # finished is valid on its own, and a run cut short by the job limit
+      # still leaves the next one less to do.
+      - name: Save the parse cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: _cache/parse
+          key: parse-cache-v1-${{ github.run_id }}-${{ github.run_attempt }}
