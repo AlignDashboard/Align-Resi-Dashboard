@@ -428,7 +428,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-05T17:53:08.825735+00:00",
+  "generated_at": "2026-10-05T18:21:17.867717+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -1661,18 +1661,34 @@
    "steps": [
     {
      "script": "scripts/parse_concession_burnoff.py",
-     "does": "Walks the report as sections and totals the money.",
+     "does": "Walks the concession table as sections and totals the money, stopping at the month-by-month \"Projection by Unit\" table below it, which is not another building.",
      "checks": "Ties out against the report's own total row every run; resident names are read only to tell a data row from a total row and are never emitted."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "The export names no property, so it is stored against the report map's fallback \u2014 Palma, the owner's answer of 2026-09-21. A file that names its own sections routes by those names instead.",
+     "checks": "Aggregates only: as-of, unit count and totals. No unit row is persisted."
     }
    ],
-   "stores": [],
+   "stores": [
+    "data/<slug>/concessions.json"
+   ],
    "publishes": [],
    "dashboard": [],
    "tables": [],
-   "note": "Parses clean and is stored nowhere. The export says only \"For Selected Properties\" and names no property, so attribution would be guesswork \u2014 one building's concessions filed under another.",
+   "note": "Stored, not yet published: nothing on the dashboard draws it. The export says only \"For Selected Properties\"; that it is Palma's is the owner's answer, recorded as unattributed_property in report_map.json.",
    "open_item": "A6",
    "same_as": null,
-   "evidence": [],
+   "evidence": [
+    {
+     "property": "palma",
+     "file": "data/palma/concessions.json",
+     "as_of": "2026-08-10",
+     "source_file": "2026-08-10 ConcessionBurnOff08_10_2026.xlsx",
+     "landed_at": "2026-08-10T17:28:31.133Z",
+     "detail": null
+    }
+   ],
    "status": "partial"
   },
   {
@@ -2374,7 +2390,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-05T17:53:06.884025+00:00",
+     "landed_at": "2026-10-05T18:21:16.235166+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

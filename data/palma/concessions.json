@@ -1,0 +1,58 @@
+{
+  "report_type": "concession_burnoff",
+  "as_of": "2026-08-10",
+  "coverage": "For Selected Properties",
+  "label": null,
+  "unit_count": 19,
+  "totals": {
+    "recurring_concessions": -27495.0,
+    "current_lease_concessions": -27495.0,
+    "concessions_remaining": -27495.0,
+    "market_rent": 219496.0,
+    "lease_rent": 268758.0
+  },
+  "source_file": "2026-08-10 ConcessionBurnOff08_10_2026.xlsx",
+  "landed_at": "2026-08-10T17:28:31.133Z",
+  "checks": [
+    {
+      "section": null,
+      "field": "recurring_concessions",
+      "units_sum": -27495.0,
+      "report_total": -27495.0,
+      "ok": true
+    },
+    {
+      "section": null,
+      "field": "current_lease_concessions",
+      "units_sum": -27495.0,
+      "report_total": -27495.0,
+      "ok": true
+    },
+    {
+      "section": null,
+      "field": "concessions_remaining",
+      "units_sum": -27495.0,
+      "report_total": -27495.0,
+      "ok": true
+    },
+    {
+      "section": null,
+      "field": "market_rent",
+      "units_sum": 219496.0,
+      "report_total": 219496.0,
+      "ok": true
+    },
+    {
+      "section": null,
+      "field": "lease_rent",
+      "units_sum": 268758.0,
+      "report_total": 268758.0,
+      "ok": true
+    },
+    {
+      "check": "stopped at the projection table",
+      "ok": true,
+      "note": "Projection by Unit"
+    }
+  ]
+}
