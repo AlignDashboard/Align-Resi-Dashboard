@@ -508,9 +508,10 @@ same day had already closed three rows before that.
 A **View** select sits above the Landing tab's grid (2026-10-05, by request:
 "a dropdown menu under the Landing tab"). `Operations` is the default and is
 every card above, unchanged; `Google reviews` swaps the grid for an executive
-summary of The Landing's Google Maps reviews: four tiles, a bottom line, what
-reviewers raise, tone and owner replies by period, problems and highlights with
-what reviewers say, suggested actions, and every review in a collapsed table.
+summary of The Landing's Google Maps reviews: four tiles, a bottom line with
+what is going well and where to improve, what reviewers raise, tone and owner
+replies by period, problems and highlights with what reviewers say, two further
+notes, and every review in a collapsed table.
 
 **There is no feed behind it**, and that is the first thing to know:
 
@@ -544,9 +545,20 @@ the rows.
 **Every figure on the pane is computed from the rows in the page**, each
 bottom-line sentence and its lead included: "Reviews have turned more
 negative" becomes "more positive" if the shares do. The theme descriptions,
-the actions and the watch notes are the only typed prose, and they cite review
-numbers rather than counts. So recoding a row and rerunning the script is the
-whole refresh.
+the assessment's findings and next steps, and the watch notes are the only
+typed prose, and they cite review numbers rather than counts. So recoding a row
+and rerunning the script is the whole refresh.
+
+**The Bottom Line card carries the assessment** (2026-10-05, by request): under
+the computed summary, *What we're doing well* and *Where we need to improve*,
+each point a finding that cites review numbers and a `Next:` step. They are
+`assessment` in `reviews.json`, and each names the theme whose count the page
+prints in front of it ("8 of 33 reviews this year"), or `metric: "replies"` for
+the owner's reply rate, so a recount moves those figures without touching the
+prose. The five suggested actions that had a card of their own became those
+next steps, and that card keeps the two remaining watch notes as *Also Worth
+Knowing*. The two groups stack and lay their points in two columns: side by
+side, three strengths beside six improvements left half the card empty.
 
 Reviewer names are never recorded and unit numbers come out of excerpts; staff
 a review praises by name keep the name, staff it criticises by name are
