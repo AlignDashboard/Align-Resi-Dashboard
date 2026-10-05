@@ -1318,6 +1318,11 @@ def process_manifest():
             for sec in parsed.get("sections") or []:
                 c = (sec.get("property_code") or "").lower()
                 p = code_to_prop.get(c)
+                if not p and not c and parsed.get("unattributed"):
+                    # A section with no heading at all, in a file that names
+                    # no property anywhere: not an unknown code but no code,
+                    # and the unattributed branch below decides where it goes.
+                    continue
                 if not p:
                     print(f"[warn] unknown property code '{sec.get('property_code')}' "
                           f"in {item['name']} -- add it to config/properties.json; "
@@ -1355,9 +1360,16 @@ def process_manifest():
                         print(f"[attributed] {item['name']} names no property "
                               f"({parsed.get('coverage')!r}); report_map assigns it "
                               f"to {prop['name']}")
-                    print(f"[warn] unknown property code '{code}' in {item['name']} -- "
-                          f"add it to config/properties.json; skipping")
-                    continue
+                    else:
+                        # Only a file that DOES name a property, under a code
+                        # nobody registered, is skipped here. This print and
+                        # its continue used to sit one level out, so they ran
+                        # after a successful [attributed] as well: the burn-off
+                        # the owner assigned to Palma on 2026-09-21 (A6) was
+                        # logged as assigned and then dropped, every run.
+                        print(f"[warn] unknown property code '{code}' in {item['name']} -- "
+                              f"add it to config/properties.json; skipping")
+                        continue
                 if quarantined(prop, item["report_type"]):
                     print(f"[quarantined] {item['name']} -> {prop['name']}: "
                           f"{prop['quarantine']['reason']}")

@@ -19,16 +19,26 @@ The Resident/Name columns are read only to tell a data row from the total row
 and are NEVER put in the output -- the row dicts simply do not carry them, in
 addition to build_metrics.scrub() stripping PII centrally.
 
-SECTIONS: "For Selected Properties" turned out to mean several property blocks
-in one sheet -- the first real run's tie-out caught it (units summed -29,328
-against a "total" of -1,833, which was the LAST property's subtotal, not a
-grand total). The layout below the header is therefore walked as sections: a
-text-only row opens a section and its text is the section's label; unit rows
-accumulate under it; a money row with no unit number closes it as the
-subtotal. A closing row arriving with no open units after other sections have
-closed is the grand total. Every section must tie out against its own
-subtotal, and the grand total (when present) against the sum of subtotals,
-else the parse is refused.
+SECTIONS: the layout below the header is walked as sections: a text-only row
+opens a section and its text is the section's label; unit rows accumulate under
+it; a money row with no unit number closes it as the subtotal. A closing row
+arriving with no open units after other sections have closed is the grand
+total. Every section must tie out against its own subtotal, and the grand total
+(when present) against the sum of subtotals, else the parse is refused. That
+is the shape a multi-property export would take; none has been seen yet.
+
+THE PROJECTION TABLE IS NOT A SECTION. Below the concession table's own Totals
+row the export carries a footnote and then a second, different table headed
+"Projection by Unit" -- the same units again, with one column per future month
+(Aug 2026 .. Jul 2027) where the concession columns were. Read as a section it
+looks like a second property: 19 "units" whose Oct/Nov/Dec projections land in
+the money columns, and a "subtotal" of -1,833 that is one month's burn. That is
+exactly what the first real run did, and it is why "For Selected Properties"
+was once read as several buildings: units summed -29,328 against a "total" of
+-1,833. The 2026-08-10 export is ONE building, -27,495 of recurring
+concessions, tying to its own Totals row. So the walk stops at that heading
+(PROJECTION_HEADING), and records that it did in `checks`. A file with no
+projection table simply runs to the end, as before.
 
 ATTRIBUTION: each section's label is whatever the heading row says. If a label
 resolves through config/properties.json (codes or aliases), that section
@@ -54,6 +64,11 @@ COLS = ("unit", "unit_type", "_resident", "_name", "move_in", "lease_start",
         "market_rent", "lease_rent", "current_month")
 MONEY = ("recurring_concessions", "current_lease_concessions",
          "concessions_remaining", "market_rent", "lease_rent")
+
+# The heading of the month-by-month projection table below the concession
+# table. Matched on the text-only row's start, case-insensitively; everything
+# from it down is a different table and is not read (see SECTIONS above).
+PROJECTION_HEADING = "projection by unit"
 
 
 def _num(v):
@@ -134,7 +149,12 @@ def parse(path, strict=True):
             # resident-name columns); a unit row with no figures still has its
             # unit type beside it and is noise, not a heading.
             if vals.get("unit") is not None and vals.get("unit_type") is None:
-                label = str(vals["unit"]).strip() or label
+                text = str(vals["unit"]).strip()
+                if text.lower().startswith(PROJECTION_HEADING):
+                    checks.append({"check": "stopped at the projection table",
+                                   "ok": True, "note": text})
+                    break
+                label = text or label
             continue
         if vals.get("unit") is None or                 str(vals.get("unit")).strip().lower().startswith("total"):
             # a money row with no unit closes the open section as its subtotal;

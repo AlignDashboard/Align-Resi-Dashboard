@@ -492,7 +492,7 @@ closing C5 means deleting one field rather than hunting for prose.
 export can refresh today, each with why and what would fix it. The counts in the
 note under it are computed from the list rather than typed, so they cannot go
 stale when a row moves. **Only one of the four is still waiting on a report** —
-a concession burn-off that names its property (A6). The other three are pipeline
+a concession burn-off run for The Landing (the one on file is Palma's, A6). The other three are pipeline
 or page work on feeds that have already arrived: the holdover reconciliation
 needs the rent roll and the tracker joined unit by unit, the delinquency aging
 needs publishing out of a parse that already runs, and the Insights scorecard is
@@ -1797,9 +1797,38 @@ The **concession burn-off export** (Drive `Concession Burnoff` folder) parses
 via `parse_concession_burnoff` — as-of date, unit count and money totals, tied
 out against the report's own total row; resident names are read only to tell a
 data row from the total row and never emitted. The export says only "For
-Selected Properties", naming no property, so until the owner settles which
-building it covers the parse is logged and stored nowhere — attribution by
-guesswork would file one building's concessions under another.
+Selected Properties" and names no building, so it is stored against
+`report_map.json`'s `unattributed_property` — **Palma**, the owner's answer of
+2026-09-21 (A6). That is a fallback for a file that names nothing, not an
+override: a file whose sections name their buildings still routes by those
+names.
+
+**Until 2026-10-05 it was stored nowhere, for three reasons stacked on each
+other**, each of which alone was enough:
+
+- **The parser read the projection table as a second building.** Below the
+  concession table's own `Totals` row the export carries a footnote and then a
+  different table, `Projection by Unit` — the same units with one column per
+  future month. Walked as a section it became a building called "Projection by
+  Unit" whose October–December burn landed in the money columns. That is the
+  original misreading behind "For Selected Properties means several
+  buildings"; the 2026-08-10 file is one building, **−$27,495** of recurring
+  concessions across 19 units, tying to its own `Totals` row. (A6 had recorded
+  −$54,990, exactly twice that; how is not reproducible from here, and the
+  table plus the projection would have read −$29,328.) The walk now stops at that heading (`PROJECTION_HEADING`) and
+  records the stop in `checks`.
+- **So the file never counted as unattributed** — one section carried a label —
+  and the fallback was never consulted.
+- **And had it been, `process_manifest` dropped it anyway.** The `[warn]
+  unknown property code … skipping` and its `continue` sat one level too far
+  out, so they ran after a successful `[attributed]` line too. They now run only
+  for a file that names a property nobody registered, and a section with no
+  heading at all in an unattributed file no longer logs as an "unknown code".
+
+`test_funnel_and_concessions.py` section 7 builds the real layout with invented
+units and drives it through `process_manifest` to `data/palma/concessions.json`;
+each of the three was verified by mutation. Nothing on the dashboard draws the
+store yet, so the flow stays `partial`.
 
 ### Occupancy on the Unit Inventory bars
 

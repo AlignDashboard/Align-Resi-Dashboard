@@ -658,19 +658,28 @@ DRIVE_FLOWS = {
                    "date and the report's own totals.",
         "steps": [
             {"script": "scripts/parse_concession_burnoff.py",
-             "does": "Walks the report as sections and totals the money.",
+             "does": "Walks the concession table as sections and totals the "
+                     "money, stopping at the month-by-month \"Projection by "
+                     "Unit\" table below it, which is not another building.",
              "checks": "Ties out against the report's own total row every run; "
                        "resident names are read only to tell a data row from a "
                        "total row and are never emitted."},
+            {"script": "scripts/build_metrics.py",
+             "does": "The export names no property, so it is stored against the "
+                     "report map's fallback — Palma, the owner's answer of "
+                     "2026-09-21. A file that names its own sections routes by "
+                     "those names instead.",
+             "checks": "Aggregates only: as-of, unit count and totals. No unit "
+                       "row is persisted."},
         ],
-        "stores": [],
+        "stores": ["data/<slug>/concessions.json"],
         "publishes": [],
         "dashboard": [],
         "tables": [],
-        "note": "Parses clean and is stored nowhere. The export says only "
-                "\"For Selected Properties\" and names no property, so "
-                "attribution would be guesswork — one building's concessions "
-                "filed under another.",
+        "note": "Stored, not yet published: nothing on the dashboard draws it. "
+                "The export says only \"For Selected Properties\"; that it is "
+                "Palma's is the owner's answer, recorded as "
+                "unattributed_property in report_map.json.",
         "open_item": "A6",
         "force_status": PARTIAL,
     },

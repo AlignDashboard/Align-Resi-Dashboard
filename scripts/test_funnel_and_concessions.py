@@ -9,12 +9,18 @@ and the 2026-08-10 burn-off export, then checks:
   - a funnel with two communities routes each to its own property
   - deliberately broken files are REFUSED (bad tie-out, moved header)
   - the burn-off's resident names never reach any stored file
-  - the burn-off stores nowhere while the export names no property
+  - the burn-off's month-by-month projection table is not read as a second
+    property, so a file that names no building really is unattributed
+  - an unattributed burn-off stores against report_map's fallback (Palma),
+    end to end through process_manifest
 
 Run: python scripts/test_funnel_and_concessions.py
 """
 
+import contextlib
+import io
 import json
+import os
 import pathlib
 import shutil
 import sys
@@ -131,6 +137,73 @@ def make_burnoff(path, break_tie_out=False, move_header=False):
     wb.save(path)
 
 
+def make_burnoff_real(path):
+    """The layout of the REAL 2026-08-10 export, with invented units and names:
+    no property heading anywhere, the unit rows straight under the header, the
+    table's own Totals row, a footnote, then a second table -- "Projection by
+    Unit" -- repeating the units with one column per future month. That second
+    table is what the parser once read as another building."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Report1"
+    ws.append(["Concession Burn Off"])
+    ws.append(["For Selected Properties"])
+    ws.append(["As Of = 08/10/2026"])
+    ws.append(["Unit", "Unit", "Resident", "Name", "Move In", "Lease Start", "Total",
+               "Current Lease", "Current Lease", "Concession", "Lease", "Market",
+               "Lease", "Current"])
+    ws.append([None, "Type", None, None, "Date", "Date", "Recurring",
+               "Concessions", "Concessions", "End Date", "Term", "Rent", "Rent", "Month"])
+    ws.append([None, None, None, None, None, None, "Concessions", None, "Remaining"])
+    first, last = FAKE_NAMES[0].split()
+    ws.append(["X101", "xA01", "t9000001", f"{first} {last}", "06/07/2025",
+               "06/07/2025 *", "0.00", "0.00", "0.00", None, "12.00",
+               "10,000.00", "14,750.00", "0.00"])
+    ws.append(["X201", "xA01", "t9000002", FAKE_NAMES[1], "10/22/2025",
+               "10/22/2025 *", "-12,000.00", "-12,000.00", "-12,000.00",
+               "01/21/2027", "15.00", "10,000.00", "11,917.00", "0.00"])
+    ws.append(["X302", "xB01", "t9000003", f"{first} {last}", "06/30/2025",
+               "06/30/2026", "0.00", "0.00", "0.00", None, "12.00",
+               "12,458.00", "12,750.00", "0.00"])
+    ws.append(["Totals", None, None, None, None, None, "-12,000.00", "-12,000.00",
+               "-12,000.00", None, None, "32,458.00", "39,417.00", "0.00"])
+    ws.append(["* Resident Lease Start Date is in mid of the month. Current Lease "
+               "Concessions Remaining might be understated."])
+    ws.append(["Projection by Unit"])
+    months = ["Aug 2026", "Sep 2026", "Oct 2026", "Nov 2026", "Dec 2026", "Jan 2027",
+              "Feb 2027", "Mar 2027", "Apr 2027", "May 2027", "Jun 2027", "Jul 2027"]
+    ws.append(["Unit", "Unit Type", "Resident", "Name"] + months)
+    zero = ["0.00"] * 12
+    burn = ["0.00", "-800.00", "-800.00", "-800.00", "-800.00", "-500.00"] + ["0.00"] * 6
+    ws.append(["X101", "xA01", "t9000001", FAKE_NAMES[0]] + zero)
+    ws.append(["X201", "xA01", "t9000002", FAKE_NAMES[1]] + burn)
+    ws.append(["X302", "xB01", "t9000003", FAKE_NAMES[0]] + zero)
+    ws.append(["Totals", None, None, None] + burn)
+    wb.save(path)
+
+
+def run_manifest(work, items):
+    """process_manifest in a scratch dir, the repo's config/ linked in.
+    Returns the log. items: (path, report_type, parser)."""
+    (work / "_downloads").mkdir(parents=True)
+    os.symlink(pathlib.Path(__file__).resolve().parent.parent / "config", work / "config")
+    manifest = [{"report_type": rt, "parser": parser, "path": str(path),
+                 "name": pathlib.Path(path).name,
+                 "landed_at": "2026-08-10T17:28:30Z"} for path, rt, parser in items]
+    (work / "_downloads" / "manifest.json").write_text(json.dumps(manifest))
+    prev_cwd, prev_data = os.getcwd(), bm.DATA
+    bm.DATA = work / "data"
+    out = io.StringIO()
+    try:
+        os.chdir(work)
+        with contextlib.redirect_stdout(out):
+            bm.process_manifest()
+    finally:
+        os.chdir(prev_cwd)
+        bm.DATA = prev_data
+    return out.getvalue()
+
+
 def main():
     tmp = pathlib.Path(tempfile.mkdtemp())
     passed = failed = 0
@@ -229,6 +302,39 @@ def main():
     print("6. stored funnel file carries no person-shaped keys")
     hits = [k for k in stored if any(w in k for w in ("resident", "tenant", "name"))]
     check("no person-shaped keys", not hits, str(hits))
+
+    print("7. concession burn-off — the real layout, unattributed, end to end")
+    rpath = tmp / "2026-08-10 ConcessionBurnOff08_10_2026.xlsx"
+    make_burnoff_real(rpath)
+    r = pcb.parse(str(rpath))
+    check("the projection table is not read as a second property",
+          len(r["sections"]) == 1, str([s.get("label") for s in r["sections"]]))
+    check("...so the file is unattributed, as it says",
+          r["unattributed"] is True and r["sections"][0]["label"] is None)
+    check("only the concession table's units are counted", r["unit_count"] == 3,
+          str(r["unit_count"]))
+    check("totals are the table's own, not table + projection",
+          r["totals"]["recurring_concessions"] == -12000.0, str(r["totals"]))
+    check("the stop is recorded in checks",
+          any(c.get("check") == "stopped at the projection table" for c in r["checks"]))
+    check("and the table still ties out", all(c["ok"] for c in r["checks"]))
+    log = run_manifest(tmp / "e2e", [(rpath, "concession_burnoff",
+                                      "parse_concession_burnoff")])
+    stored_p = tmp / "e2e" / "data" / "palma" / "concessions.json"
+    check("an unattributed burn-off is stored under report_map's fallback (Palma)",
+          stored_p.exists(), log)
+    if stored_p.exists():
+        cp = json.loads(stored_p.read_text())
+        check("...with the table's own figures",
+              cp["unit_count"] == 3 and cp["totals"]["recurring_concessions"] == -12000.0
+              and cp["as_of"] == "2026-08-10", str(cp))
+        blob3 = json.dumps(cp)
+        check("...and no resident name or code",
+              all(w not in blob3 for n in FAKE_NAMES for w in n.split())
+              and "t900000" not in blob3)
+    check("the log says it was attributed", "[attributed]" in log, log)
+    check("and does not also call it an unknown property", "unknown property code" not in log, log)
+    check("and reports it stored", "[ok] stored concession_burnoff for Palma" in log, log)
 
     shutil.rmtree(tmp)
     print(f"\n{passed} passed, {failed} failed")
