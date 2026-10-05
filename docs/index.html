@@ -778,6 +778,17 @@
   .rv-sub { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
     margin: 18px 0 8px; }
   .rv-scroll { overflow-x: auto; }
+  .rv-sub.rv-first { margin-top: 2px; }
+  h3.rv-sub { font-weight: 600; }
+  /* The Bottom Line card's two groups -- what is going well, what needs work --
+     stacked, each laying its points in two columns. Side by side, three
+     strengths beside six improvements left half the card empty. */
+  .rv-assess { margin-top: 6px; }
+  .rv-points { grid-template-columns: 1fr 1fr; gap: 14px 40px; max-width: none; }
+  .rv-points strong { font-weight: 700; color: var(--text); }
+  .rv-next { margin-top: 4px; color: var(--muted); }
+  .rv-next b { color: var(--amber); font-weight: 600; }
+  @media (max-width: 820px) { .rv-points { grid-template-columns: 1fr; } }
   #cdRevTable table.dt { min-width: 640px; }
   #cdRevAll table.dt { min-width: 720px; }
   table.dt td.rv-th { font-weight: 700; padding-left: 10px; white-space: nowrap; }
@@ -1151,7 +1162,9 @@
       <div class="card wide" id="cdRevBottom">
         <h2>Bottom Line</h2>
         <span class="eyebrow" id="drbEyebrow">LOADING…</span>
+        <h3 class="rv-sub rv-first">What the reviews show</h3>
         <ul class="rv-list" id="drbList"></ul>
+        <div class="rv-assess" id="drbAssess"></div>
       </div>
 
       <div class="card wide" id="cdRevThemes">
@@ -1175,11 +1188,9 @@
         <div class="rv-scroll" id="drtbTbl"></div>
       </div>
 
-      <div class="card wide" id="cdRevActions">
-        <h2>What To Do About It</h2>
-        <span class="eyebrow">SUGGESTED ACTIONS · AND WHAT ELSE IS WORTH KNOWING</span>
-        <ol class="rv-list" id="draList"></ol>
-        <div class="rv-sub">Also worth knowing</div>
+      <div class="card wide" id="cdRevWatch">
+        <h2>Also Worth Knowing</h2>
+        <span class="eyebrow">OTHER THINGS IN THE REVIEWS</span>
         <ul class="rv-list" id="drwList"></ul>
       </div>
 
@@ -1752,7 +1763,7 @@ async function loadReviews() {
   section("cdRevThemes", () => rvThemesChart(need()));
   section("cdRevTone", () => rvTone(need()));
   section("cdRevTable", () => rvThemeTable(need()));
-  section("cdRevActions", () => rvActions(need()));
+  section("cdRevWatch", () => rvWatch(need()));
   section("cdRevAll", () => rvEvery(need()));
 }
 
@@ -1835,6 +1846,51 @@ function rvBottom(R) {
   const ul = document.getElementById("drbList");
   ul.textContent = "";
   items.forEach(t => ul.appendChild(elc("li", null, t)));
+
+  // What we're doing well and where we need to improve. The count in front of
+  // each point is the page's own, from the rows; the finding and the next step
+  // are reviews.json's, and cite review numbers rather than counts.
+  const box = document.getElementById("drbAssess");
+  box.textContent = "";
+  const a = R.d.assessment || {};
+  const col = rvColors();
+  const evidence = it => {
+    if (it.metric === "replies") {
+      const k = recent.replied;
+      return (k ? k + " of the " : "None of the ") + recent.n + " reviews from " + recent.label
+        + (k ? " have" : " has") + " a public reply from the owner, against " + rvPct(rep(old))
+        + " of reviews " + old.label + ".";
+    }
+    const t = R.themes.find(x => x.code === it.theme);
+    if (!t) return "";
+    return t.year + " of " + R.year.length + " reviews this year" + (it.former ? ", "
+      + R.year.filter(r => r.former_resident && r.themes.includes(t.code)).length
+      + " of them from former residents" : "") + ".";
+  };
+  [["strengths", "What we\u2019re doing well", col.cool],
+   ["improvements", "Where we need to improve", col.warm]].forEach(([key, title, color]) => {
+    const points = a[key] || [];
+    if (!points.length) return;
+    const side = elc("div");
+    const h = elc("h3", "rv-sub");
+    const sw = elc("span", "rv-key");
+    sw.style.background = color;
+    h.append(sw, document.createTextNode(title));
+    side.appendChild(h);
+    const list = elc("ul", "rv-list rv-points");
+    points.forEach(it => {
+      const li = elc("li");
+      li.appendChild(elc("strong", null, it.lead + ". "));
+      li.appendChild(document.createTextNode((evidence(it) + " " + it.finding).trim()));
+      const next = elc("div", "rv-next");
+      next.appendChild(elc("b", null, "Next: "));
+      next.appendChild(document.createTextNode(it.do));
+      li.appendChild(next);
+      list.appendChild(li);
+    });
+    side.appendChild(list);
+    box.appendChild(side);
+  });
 }
 
 // Each bar's count at its end, in text ink: every bar is labelled, which is
@@ -2001,14 +2057,10 @@ function rvThemeTable(R) {
   host.appendChild(tbl);
 }
 
-function rvActions(R) {
-  const fill = (id, xs) => {
-    const el = document.getElementById(id);
-    el.textContent = "";
-    (xs || []).forEach(t => el.appendChild(elc("li", null, t)));
-  };
-  fill("draList", R.d.actions);
-  fill("drwList", R.d.watch);
+function rvWatch(R) {
+  const el = document.getElementById("drwList");
+  el.textContent = "";
+  (R.d.watch || []).forEach(t => el.appendChild(elc("li", null, t)));
 }
 
 function rvEvery(R) {

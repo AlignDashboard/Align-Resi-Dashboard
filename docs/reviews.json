@@ -1007,15 +1007,68 @@
   }
  ],
  "watch": [
-  "Reviews 3 and 6 say management reached out only after a bad review was posted. Review 14 says the website, email and phone are run by AI and no one gets back.",
   "Review 26 (about Jan 2026) calls the building's practices “illegal, shady, predatory”. The owner's reply ties it to a lease buy-out clause.",
   "Review 12 praised the building a year ago (the owner's reply thanks them for it) and has since been edited to a negative review."
  ],
- "actions": [
-  "Restart public replies to reviews, newest first.",
-  "Close the gap on email and phone, including the hand-off from the AI assistant to staff. A renewal question left unanswered after five emails (review 6) is revenue at risk.",
-  "Audit the move-out and deposit process against California's 21-day deadline for returning a deposit or an itemized statement (Civil Code §1950.5). Reviews 17 and 31 describe waits of three and five months.",
-  "Review how fees are disclosed. Reviewers object to charges outside the lease (review 4) and to $20 package-locker late fees (review 23).",
-  "Invite every new resident to leave a review after move-in. Tours and move-ins earn most of the praise, and Google's rules don't allow asking only satisfied residents."
- ]
+ "assessment": {
+  "strengths": [
+   {
+    "theme": "H1",
+    "lead": "Leasing and tours",
+    "finding": "Tours and the leasing process draw more praise than anything else here (16, 19, 22, 27, 32), and Lina is named again and again (19, 21, 22, 27, 32).",
+    "do": "Make the way Lina runs a tour the standard for the whole team, and carry that attention past move-in, which is where the reviews turn."
+   },
+   {
+    "theme": "H2",
+    "lead": "The apartments themselves",
+    "finding": "Light, East Bay views, modern finishes and appliances are praised (13, 22, 25, 27), and even critical reviewers call the building nice (6, 20). The complaints are about service, not the product.",
+    "do": "Lead tours and marketing with the views, light and finishes, and close the service gaps that make residents say it isn't worth the price (10, 18)."
+   },
+   {
+    "theme": "H3",
+    "lead": "Amenities and community spaces",
+    "finding": "Residents use and like the conference room by the gym (9), the amenities in general (13, 22) and the community feel (22).",
+    "do": "Promote the conference room to residents who work from home, and bring back the monthly social events one reviewer says were dropped (4)."
+   }
+  ],
+  "improvements": [
+   {
+    "theme": "P1",
+    "lead": "Responsiveness",
+    "finding": "The most common complaint: emails, calls and office visits that go unanswered, including a renewal negotiation after five emails (6), a deposit (17) and a final lease a week before move-in (3). One reviewer says the website, email and phone are run by AI and no one gets back (14).",
+    "do": "Set a response standard, such as every email and call answered within one business day; check that questions the AI assistant can't answer reach a person; and send renewal questions straight to leasing, since an unanswered renewal is revenue at risk."
+   },
+   {
+    "metric": "replies",
+    "lead": "Public replies to reviews",
+    "finding": "Public replies stopped around January 2026, and two reviewers say management reached out privately only after a bad review (3, 6), which reads as caring about the rating rather than the resident.",
+    "do": "Reply publicly to every review, newest first and within a couple of days, answering what the review actually says, and follow up privately as well, not instead."
+   },
+   {
+    "theme": "P2",
+    "former": true,
+    "lead": "Move-out and deposits",
+    "finding": "Deposits returned months late or not yet (17, 31), cleaning and repaint charges despite a professional clean (33), and a hard move-out (20). These come from people who have already left, and their reviews stay up.",
+    "do": "Audit the process against California's 21-day deadline for returning a deposit or an itemized statement (Civil Code §1950.5), offer a walkthrough before move-out so charges are not a surprise, and pay refunds by ACH, as the owner's reply to review 31 already promised."
+   },
+   {
+    "theme": "P3",
+    "lead": "Fees and value",
+    "finding": "Charges outside the lease until challenged (4), $20 package-locker late fees and “shady fees” (23), and rent seen as poor value for the service (10, 12, 18). Greedy is the word several reviewers reach for (3, 4, 26).",
+    "do": "Give every resident a one-page fee schedule at signing, audit the charges reviewers say were not in the lease, and lengthen or waive the package-locker late-fee window around holidays."
+   },
+   {
+    "theme": "P4",
+    "lead": "Staff conduct",
+    "finding": "Staff described as rude, condescending, disorganized or unprofessional (3, 8, 15, 17, 20, 31), with staff turnover noted (24). The same building earns praise for its leasing team, so the gap is consistency.",
+    "do": "Coach the on-site team on resident service, follow up on review 8 internally, and hand residents over properly when staff change."
+   },
+   {
+    "theme": "P5",
+    "lead": "Building and community upkeep",
+    "finding": "A small, busy gym (10, 25), common areas less well kept and social events dropped (4), and alarms sounding all day (11).",
+    "do": "Bring back the monthly events, look at the gym at peak hours, and give residents advance notice of alarm tests."
+   }
+  ]
+ }
 }
