@@ -3546,12 +3546,12 @@ just parsed, so a lost push race costs seconds rather than another build. An
 entry no run has used for `PRUNE_DAYS` (14) is deleted, so the cache follows the
 drop tree rather than its history. `PARSE_CACHE=off` parses everything afresh.
 
-`scripts/test_parse_cache.py` holds it down — 52 fixture-free checks, ending
+`scripts/test_parse_cache.py` holds it down — 54 fixture-free checks, ending
 with `process_manifest` itself run on real daily-leasing workbooks with the
 cache off, cold and warm: the warm run stores byte-for-byte what the uncached
 run stores, prints the same log lines, takes this run's arrival time rather than
 the kept one, and leaves neither the associate's nor a resident's name anywhere
-in the cache directory. Eighteen mutations of `parse_cache.py`, each caught —
+in the cache directory. Twenty mutations, each caught —
 among them a key without the file's bytes or path, a closure without imports, a
 cache that keeps any type, keeps machine failures, keeps a parse after the
 caller has written into it, never checks, or lets a fault in its own
@@ -3564,6 +3564,17 @@ count the cache's own reuse instead; and a failure kept for a type that may
 not keep its parse **would have outlived the run that disproved it**, warning
 and re-reading the whole parser every run forever, until a fresh parse was
 made to clear the old entry first.
+
+**The first live run found one more thing.** Run #109 printed
+`SyntaxWarning: invalid escape sequence '\)'` three times: `ast.parse` compiles
+the source it reads, so a parser docstring with a stray backslash
+(`parse_lease_tradeout._num`'s regex example) was reported again on every run
+— Python 3.12 shows that warning, the 3.11 these tests ran on hides it. The
+cache now reads trees with warnings off, since reporting them is the import's
+business, and the docstring is a raw string, which leaves its text identical:
+an invalid escape becomes a `SyntaxError` in a later Python. Both are checked,
+the second by compiling every module any parser's key covers with warnings as
+errors.
 
 ### The commit step rebuilds on a newer main
 

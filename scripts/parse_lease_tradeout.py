@@ -138,7 +138,7 @@ def _open_workbook(path):
 
 
 def _num(v):
-    """A Yardi money/percent/count cell as a float, or None.
+    r"""A Yardi money/percent/count cell as a float, or None.
 
     The export writes a negative two different ways in the same row, and puts
     the symbols in an order a single regex gets wrong: the dollar column uses
