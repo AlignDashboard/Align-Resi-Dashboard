@@ -15,6 +15,7 @@ The history store in data/ IS the database -- versioned in git, no external DB.
 """
 
 import os
+import datetime
 import json
 import glob
 import importlib
@@ -619,7 +620,26 @@ def older_as_of(new, held):
             and len(new) == len(held) and new < held)
 
 
-def store_report(prop, parsed, filename, keys):
+def older_landed(new, held):
+    """True / False when both Drive arrival times read; None when either does not.
+
+    The vintage for a report whose as_of is NOT the date of the copy -- see the
+    renewal tracker in store_report. None is "no claim", so the caller falls
+    back to as_of: a parse from a local path carries no landed_at at all.
+    """
+    def ts(v):
+        if not isinstance(v, str):
+            return None
+        try:
+            t = datetime.datetime.fromisoformat(v.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
+    a, b = ts(new), ts(held)
+    return None if a is None or b is None else a < b
+
+
+def store_report(prop, parsed, filename, keys, vintage="as_of"):
     """Write the latest parse of a report to data/<slug>/<filename>.
 
     One file per property per report: these reports are point-in-time
@@ -635,6 +655,11 @@ def store_report(prop, parsed, filename, keys):
     quietly a week stale. So a parse older than what is already stored for this
     property is refused, and returns KEPT_NEWER. An equal as_of still replaces,
     so a corrected re-export of the same date wins.
+
+    vintage="landed_at" is for a report whose as_of describes what it COVERS
+    rather than when the copy was made -- the renewal tracker, whose as_of is
+    its furthest-forward month sheet. There the later Drive arrival wins, and
+    as_of decides only when an arrival time is missing on either side.
     """
     d = DATA / prop["slug"]
     d.mkdir(parents=True, exist_ok=True)
@@ -644,7 +669,15 @@ def store_report(prop, parsed, filename, keys):
             held = json.load(open(fp))
         except (OSError, ValueError):
             held = {}
-        if older_as_of(parsed.get("as_of"), held.get("as_of")):
+        earlier = (older_landed(parsed.get("landed_at"), held.get("landed_at"))
+                   if vintage == "landed_at" else None)
+        if earlier:
+            print(f"[keep] {prop.get('name', prop['slug'])} {filename}: "
+                  f"{parsed.get('source_file')} landed {parsed.get('landed_at')}, "
+                  f"before the stored {held.get('source_file')} landed "
+                  f"{held.get('landed_at')} -- keeping the later arrival")
+            return KEPT_NEWER
+        if earlier is None and older_as_of(parsed.get("as_of"), held.get("as_of")):
             print(f"[keep] {prop.get('name', prop['slug'])} {filename}: "
                   f"{parsed.get('source_file')} is as of {parsed.get('as_of')}, "
                   f"older than the stored {held.get('source_file')} as of "
@@ -1094,10 +1127,19 @@ def store_renewal_tracker(prop, parsed):
     rather than adding to it. The MTM roster's per-unit rows go through the
     central scrub, which is what drops the Yardi tenant code the sheet carries
     beside each unit.
+
+    The later ARRIVAL wins, not the later as_of. A tracker's as_of is its
+    furthest-forward month sheet, so it only says how far ahead the copy
+    reaches: on 2026-10-05 the Landing's 2026-09-21 copy read as 2026-11
+    because its December sheets were split in two and not yet parsed, and the
+    2026-09-08 copy, whose single December sheet was, displaced it -- two
+    weeks of statuses and a 33-unit MTM roster back to 31. One sheet the parser
+    cannot read should cost that sheet, not the whole file.
     """
     return store_report(prop, parsed, "renewal_tracker.json",
                         ["report_type", "property", "as_of", "covers", "months",
-                         "mtm", "unread_sheets", "problems"])
+                         "mtm", "unread_sheets", "problems"],
+                        vintage="landed_at")
 
 
 def _vintage(value):
