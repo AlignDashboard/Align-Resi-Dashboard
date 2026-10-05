@@ -136,8 +136,10 @@ an overwrite. Two scripts carry it: `build_pipeline.sh` (the five derive steps,
 now one definition the rebuild reuses; same output as the steps it replaced,
 bar two timestamps) and `commit_and_push.sh` (the race rules, with
 `check_no_pii.py` before every commit). `test_push_race.py` is the guard, 46
-checks, each rule verified by mutation. Not yet seen on the runner: a real race;
-the run summary will say `rebuilt N time(s)` when one happens.
+checks, each rule verified by mutation. Verified on the runner the same day: run
+#107 lost its push to `890c4d8` (pushed while it built, to force the race),
+rebuilt on it and pushed `d4dfe5f` on the second attempt with every newer
+commit intact.
 
 The old step ran once more after the fix was on main. Run #106, dispatched at
 17:28 on `fec2780`, lost its push to `f07404a` at 17:53 and copied its own copy
