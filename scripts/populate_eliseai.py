@@ -55,12 +55,17 @@ WINDOW_DAYS = 7
 # the rest are recorded as context for the leasing funnel, not scored.
 # EliseAI keeps adding lead-state sections; each new one is recorded rather than
 # dropped. "Unresponsive Leads" first appeared 2026-08-19, "Inactive Leads"
-# 2026-08-24. Days recorded before a section existed simply lack the key, which
-# reads as zero like any other absent count.
+# 2026-08-24, "Review N resident call(s)" 2026-09-29. Days recorded before a
+# section existed simply lack the key, which reads as zero like any other absent
+# count.
+# resident_calls is the "Review N resident call(s)" line, and it is deliberately
+# NOT folded into Open Elise Tasks: that cell is pending knowledge only
+# (OPEN_TASKS_FROM_KNOWLEDGE below), and adding a second series into it would
+# change a graded KPI rather than record a new one. It feeds no KPI today.
 DAY_FIELDS = ("new_leads", "tours_today", "tours_booked_since_yesterday",
               "applications", "cancelled_leads", "unsubscribed",
               "unresponsive_leads", "inactive_leads",
-              "escalations_open", "pending_knowledge")
+              "escalations_open", "pending_knowledge", "resident_calls")
 
 
 def series_path(slug):

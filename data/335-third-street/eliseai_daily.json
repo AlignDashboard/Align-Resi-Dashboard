@@ -1,5 +1,5 @@
 {
-  "_comment": "Daily counts from the EliseAI 'Leasing AI Daily Report' emails to dashboard@alignrealestate.com. COUNTS ONLY, extracted by hand from each email: the emails list prospects by name with email and phone, and none of that may persist anywhere in this repo (see CLAUDE.md, tenant/prospect names must not leave the pipeline). A section absent from an email means zero that day - EliseAI omits empty sections. 'escalations_open' is the length of the escalations list, which reads as currently-open items rather than that day's new ones.",
+  "_comment": "Daily counts from the EliseAI 'Leasing AI Daily Report' emails to dashboard@alignrealestate.com. COUNTS ONLY, extracted by hand from each email: the emails list prospects by name with email and phone, and none of that may persist anywhere in this repo (see CLAUDE.md, tenant/prospect names must not leave the pipeline). A section absent from an email means zero that day - EliseAI omits empty sections. 'escalations_open' is the length of the escalations list, which reads as currently-open items rather than that day's new ones. 'resident_calls' is the \"Review N resident call(s)\" line, which first appeared on the report covering 2026-09-29; it is recorded as context and feeds no KPI - Open Elise Tasks stays the pending-knowledge count alone.",
   "property_label_in_email": "335 3rd Street",
   "days": [
     {
@@ -667,7 +667,8 @@
       "unresponsive_leads": 1,
       "inactive_leads": 0,
       "escalations_open": 6,
-      "pending_knowledge": 4
+      "pending_knowledge": 4,
+      "resident_calls": 1
     },
     {
       "date": "2026-09-30",
@@ -681,7 +682,8 @@
       "unresponsive_leads": 0,
       "inactive_leads": 0,
       "escalations_open": 1,
-      "pending_knowledge": 5
+      "pending_knowledge": 5,
+      "resident_calls": 1
     },
     {
       "date": "2026-10-01",
@@ -695,7 +697,8 @@
       "unresponsive_leads": 1,
       "inactive_leads": 0,
       "escalations_open": 8,
-      "pending_knowledge": 5
+      "pending_knowledge": 5,
+      "resident_calls": 1
     },
     {
       "date": "2026-10-02",
@@ -709,7 +712,8 @@
       "unresponsive_leads": 0,
       "inactive_leads": 0,
       "escalations_open": 9,
-      "pending_knowledge": 5
+      "pending_knowledge": 5,
+      "resident_calls": 1
     },
     {
       "date": "2026-10-03",
@@ -723,7 +727,8 @@
       "unresponsive_leads": 0,
       "inactive_leads": 0,
       "escalations_open": 9,
-      "pending_knowledge": 0
+      "pending_knowledge": 0,
+      "resident_calls": 0
     },
     {
       "date": "2026-10-04",
@@ -737,7 +742,8 @@
       "unresponsive_leads": 0,
       "inactive_leads": 0,
       "escalations_open": 19,
-      "pending_knowledge": 0
+      "pending_knowledge": 0,
+      "resident_calls": 0
     }
   ],
   "_comment_received_at": "'received_at' is when the email landed in the dashboard@alignrealestate.com mailbox (UTC), which is what the page reports as the data's last-updated time - distinct from 'date', the day the counts describe. For an email forwarded in by hand rather than sent straight from EliseAI, this is when the forward arrived, so it can run later than EliseAI's own send time (2026-08-05 and 2026-08-13 are both forwards). No sender address is stored."
