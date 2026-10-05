@@ -37,7 +37,7 @@ except Exception:                                    # noqa: BLE001
                   "tenant", "name")
 
 PUBLISHED = ["docs/metrics.json", "docs/landing.json", "docs/scorecard.json",
-             "docs/lineage.json"]
+             "docs/lineage.json", "docs/reviews.json"]
 # "name" appears legitimately as a label in aggregate structures (a floorplan's
 # name, a metric's name), so it is only a finding when the object it sits in
 # looks like a person rather than a thing.
