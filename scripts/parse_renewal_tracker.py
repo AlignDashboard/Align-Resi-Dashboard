@@ -27,6 +27,12 @@ What makes this file awkward, and what each guard is for:
     column is what separates "offered" from "renewed", so counts are reported
     per status rather than as one "renewals" number that would silently mean
     different things on different sheets.
+  * **A month can be two sheets.** From the 2026-09-15 copy December 2026 and
+    January 2027 are "December First 2026" / "December Second 2026 ", split by
+    lease end with the same columns. Read by month name alone they were "not a
+    month sheet", so the copy looked a month SHORTER than the 2026-09-08 one --
+    which the store's newest-wins guard then preferred. The halves are joined
+    into one month; a month with one half only is published and flagged.
 
 Usage:
     from parse_renewal_tracker import parse
@@ -100,6 +106,24 @@ def sheet_month(title):
     if not m:
         return None
     return f"{int(m.group(2)):04d}-{MONTHS[m.group(1).lower()]:02d}"
+
+
+# From the 2026-09-15 copy the Landing tracker splits a month in two by lease
+# end -- "December First 2026" to about the 15th, "December Second 2026 " after
+# it -- with the same columns as a whole-month sheet and no unit on both.
+HALF_RE = re.compile(
+    r"^(january|february|march|april|may|june|july|august|september|october|"
+    r"november|december)\s+(first|second|1st|2nd)\s+(\d{4})", re.I)
+HALVES = {"first": "first", "1st": "first", "second": "second", "2nd": "second"}
+
+
+def sheet_half(title):
+    """'December First 2026' | 'December Second 2026 ' -> ('2026-12', 'first'|'second')."""
+    m = HALF_RE.match(title.strip())
+    if not m:
+        return None
+    return (f"{int(m.group(3)):04d}-{MONTHS[m.group(1).lower()]:02d}",
+            HALVES[m.group(2).lower()])
 
 
 def _num(v):
@@ -251,6 +275,7 @@ def parse(path):
     # which turns the 499-row x 81-column 2024 sheets into minutes of work.
     wb = openpyxl.load_workbook(path, data_only=True)
     months, unread, mtm = [], [], None
+    halves = {}                     # month -> {"first"|"second": [(title, rows, hdr)]}
     problems, checks = [], []
 
     for title in wb.sheetnames:
@@ -284,7 +309,9 @@ def parse(path):
             }
             continue
 
-        month = sheet_month(title)
+        month, half = sheet_month(title), None
+        if month is None:
+            month, half = sheet_half(title) or (None, None)
         if month is None:
             unread.append({"sheet": title, "why": "not a month sheet"})
             continue
@@ -293,8 +320,41 @@ def parse(path):
         except LayoutError as e:
             unread.append({"sheet": title, "why": str(e)})
             continue
+        if half:
+            halves.setdefault(month, {}).setdefault(half, []).append((title, rows, hdr))
+            continue
         summary = _month_summary(month, rows)
         summary.update({"sheet": title, "header_row": hdr})
+        months.append(summary)
+
+    # A month split across two half sheets is ONE month: the halves are joined,
+    # not weighed against each other the way a duplicated sheet is below. Taking
+    # the fuller half would drop the other half's offers, which is the same
+    # silent loss that rule exists to prevent. A month with one half only is
+    # published from it -- the forward edge of the tracker can get its second
+    # half later -- and said to be partial.
+    for month, parts in sorted(halves.items()):
+        picked = []
+        for half in ("first", "second"):
+            cands = parts.get(half) or []
+            if not cands:
+                continue
+            best = max(cands, key=lambda c: _month_summary(month, c[1])["leases"])
+            if len(cands) > 1:
+                problems.append(
+                    f"the {half} half of {month} appears on {len(cands)} sheets ("
+                    + ", ".join(repr(c[0]) for c in cands)
+                    + f"); the fuller one, {best[0]!r}, is used")
+            picked.append((half, best))
+        summary = _month_summary(month, [r for _, (_, rows, _) in picked for r in rows])
+        summary.update({"sheet": " + ".join(t for _, (t, _, _) in picked),
+                        "header_row": picked[0][1][2],
+                        "halves": [h for h, _ in picked]})
+        if len(picked) < 2:
+            problems.append(
+                f"{month} has only its {picked[0][0]} half in the file "
+                f"({picked[0][1][0]!r}); the month is published from that half "
+                f"alone and reads short")
         months.append(summary)
 
     # Two sheets can name the same month ("July 2025" and "July 2025 (2)").

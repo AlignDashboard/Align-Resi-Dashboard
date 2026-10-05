@@ -340,6 +340,44 @@ check("a filename naming no property is reported",
       r["property"] is None and any("names no known property" in x
                                     for x in r["problems"]), r["problems"])
 
+# From the 2026-09-15 copy a month can be two sheets, split by lease end:
+# "December First 2026" and "December Second 2026 " (trailing space and all).
+# Read by name alone they were "not a month sheet", the copy read a month
+# SHORTER than an older one, and the store kept the older copy.
+def units(rows, first_unit):
+    return [[r[0], r[1], first_unit + i] + r[3:] for i, r in enumerate(rows)]
+
+
+p = build_renewal(f"{TMP}/Landing tracker halves.xlsx",
+                  {"November 2026": (MODERN, units(modern_rows * 2, 100)),
+                   "December First 2026": (MODERN, units(modern_rows * 3, 200)),
+                   "December Second 2026 ": (MODERN, units(modern_rows * 4, 300)),
+                   "January First 2027": (MODERN, units(modern_rows, 400))})
+r = parse_renewal(p)
+dec = next((m for m in r["months"] if m["month"] == "2026-12"), None)
+check("two half sheets are read as one month, both halves' offers joined",
+      dec is not None and dec["leases"] == 7 and dec["halves"] == ["first", "second"],
+      dec)
+check("...and neither half is filed as 'not a month sheet'",
+      not any("First" in u["sheet"] or "Second" in u["sheet"]
+              for u in r["unread_sheets"]), r["unread_sheets"])
+check("the copy reads as far forward as its half sheets go",
+      r["as_of"] == "2027-01" and r["covers"]["to"] == "2027-01", r["covers"])
+jan = next((m for m in r["months"] if m["month"] == "2027-01"), None)
+check("a month with one half only is published from it and flagged",
+      jan is not None and jan["leases"] == 1 and jan["halves"] == ["first"]
+      and any("only its first half" in x for x in r["problems"]), r["problems"])
+
+p = build_renewal(f"{TMP}/Landing tracker dup half.xlsx",
+                  {"December First 2026": (MODERN, units(modern_rows * 3, 200)),
+                   "December First 2026 (2)": (MODERN, units(modern_rows, 500)),
+                   "December Second 2026": (MODERN, units(modern_rows * 2, 300))})
+r = parse_renewal(p)
+check("one half on two sheets keeps the fuller copy, joined to the other half",
+      r["months"][0]["leases"] == 5
+      and any("first half of 2026-12 appears on 2 sheets" in x for x in r["problems"]),
+      (r["months"], r["problems"]))
+
 try:
     p = build_renewal(f"{TMP}/Landing tracker empty.xlsx",
                       {"Summary": (["a", "b", "c"], [[1, 2, 3]])})

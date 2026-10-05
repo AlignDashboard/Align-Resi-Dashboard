@@ -10,14 +10,17 @@ prefix ("RentRoll09_28_2026.xlsx"), and "2" sorts before "R". So the newer roll
 was processed first and the older one overwrote it -- every step green, the
 page a week stale, nothing in the log.
 
-store_report now keeps the newest as_of. Checked here:
+store_report now keeps the newest as_of -- or, for the renewal tracker, whose
+as_of is how far forward the copy reaches rather than when it was made, the
+latest Drive arrival. Checked here:
 
   * the comparison itself -- older, newer, equal, missing and mismatched dates;
   * store_report directly -- an older parse is refused, an equal one replaces;
   * process_manifest end to end, through BOTH of its store call sites (the
     single-property shape the rent roll uses and the sectioned shape the
     delinquency summary uses), with the newer file sorting first by name;
-  * the log -- a refused file says "[keep]" and is not reported as stored.
+  * the log -- a refused file says "[keep]" and is not reported as stored;
+  * the renewal tracker -- a later copy reading a month shorter still wins.
 
 Fixture-free and offline: the parsers are stubbed, so no workbook (and no
 resident name) is involved.
@@ -76,6 +79,18 @@ def delq(as_of, src):
                                           "summary": {}, "residents": []}]}
 
 
+def tracker(as_of, src, landed=None):
+    # A renewal tracker's as_of is its furthest-forward month SHEET, not the
+    # date of the copy -- which is why its store compares arrivals instead.
+    t = {"report_type": "renewal_tracker", "property": "The Landing",
+         "property_code": "The Landing", "as_of": as_of, "source_file": src,
+         "covers": {"from": "2024-01", "to": as_of}, "months": [], "mtm": None,
+         "unread_sheets": [], "problems": [], "checks": []}
+    if landed:
+        t["landed_at"] = landed
+    return t
+
+
 def run_manifest(tmp, items):
     """Write the reports and a manifest into tmp, run process_manifest there.
 
@@ -86,12 +101,12 @@ def run_manifest(tmp, items):
     (work / "_downloads").mkdir(parents=True)
     os.symlink(os.path.join(REPO, "config"), work / "config")
     manifest = []
-    for name, rtype, parsed in items:
+    for name, rtype, parsed, *landed in items:
         p = work / "_downloads" / name
         p.write_text(json.dumps(parsed))
         manifest.append({"report_type": rtype, "parser": "stub_snapshot_parser",
                          "path": str(p), "name": name,
-                         "landed_at": "2026-10-05T12:00:00Z"})
+                         "landed_at": landed[0] if landed else "2026-10-05T12:00:00Z"})
     (work / "_downloads" / "manifest.json").write_text(json.dumps(manifest))
 
     prev_cwd, prev_data = os.getcwd(), bm.DATA
@@ -190,6 +205,53 @@ def main():
         held = json.load(open(d / "rent_roll.json"))
         ok("the later file still wins", held["as_of"] == "2026-09-21", held)
         ok("and nothing is refused", "[keep]" not in log, log)
+
+        print("\n6. the renewal tracker: the later ARRIVAL wins, not the later as_of")
+        L = bm.older_landed
+        ok("an earlier arrival is older", L("2026-09-08T23:28:49.326Z", "2026-09-21T23:28:34.027Z"))
+        ok("a later one is not", L("2026-09-21T23:28:34.027Z", "2026-09-08T23:28:49.326Z") is False)
+        ok("a missing arrival makes no claim", L(None, "2026-09-21T23:28:34.027Z") is None)
+        ok("an unreadable one makes no claim", L("last Tuesday", "2026-09-21T23:28:34Z") is None)
+        prev = bm.DATA
+        bm.DATA = pathlib.Path(tmp) / "tracker"
+        try:
+            fp = bm.DATA / "the-landing" / "renewal_tracker.json"
+            with contextlib.redirect_stdout(io.StringIO()):
+                bm.store_renewal_tracker(LANDING, tracker("2026-12", "(42).xlsx",
+                                                          "2026-09-08T23:28:49.326Z"))
+                r = bm.store_renewal_tracker(LANDING, tracker("2026-11", "(47).xlsx",
+                                                              "2026-09-21T23:28:34.027Z"))
+            held = json.load(open(fp))
+            ok("a later copy reading a month SHORTER still replaces (the 2026-10-05 bug)",
+               r is not bm.KEPT_NEWER and held["source_file"] == "(47).xlsx", held)
+            with contextlib.redirect_stdout(io.StringIO()):
+                r = bm.store_renewal_tracker(LANDING, tracker("2027-06", "(40).xlsx",
+                                                              "2026-09-02T23:28:00Z"))
+            held = json.load(open(fp))
+            ok("an earlier copy reaching FURTHER forward is refused",
+               r is bm.KEPT_NEWER and held["source_file"] == "(47).xlsx", held)
+            with contextlib.redirect_stdout(io.StringIO()):
+                r = bm.store_renewal_tracker(LANDING, tracker("2026-10", "local.xlsx"))
+            ok("with no arrival time, as_of decides as before",
+               r is bm.KEPT_NEWER and json.load(open(fp))["source_file"] == "(47).xlsx")
+        finally:
+            bm.DATA = prev
+
+        print("\n7. process_manifest: the Landing trackers of 2026-10-05")
+        old = "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx"
+        new = "2026-09-21 Landing 2025 Renewal Tracker - Full (47).xlsx"
+        # an older copy dropped by hand: no arrival prefix, so it sorts LAST
+        hand = "Landing 2025 Renewal Tracker - Full (40).xlsx"
+        log, d = run_manifest(tmp, [
+            (new, "renewal_tracker", tracker("2026-11", new), "2026-09-21T23:28:34.027Z"),
+            (old, "renewal_tracker", tracker("2026-12", old), "2026-09-08T23:28:49.326Z"),
+            (hand, "renewal_tracker", tracker("2026-12", hand), "2026-09-02T18:00:00Z"),
+        ])
+        held = json.load(open(d / "renewal_tracker.json"))
+        ok("the copy that arrived last is what is stored, a month short or not",
+           held["source_file"] == new, held)
+        ok("the hand-dropped earlier copy, processed last, is refused by its arrival",
+           "[keep]" in log and hand in log and "keeping the later arrival" in log, log)
     finally:
         sys.path.remove(str(stubdir))
         shutil.rmtree(tmp, ignore_errors=True)

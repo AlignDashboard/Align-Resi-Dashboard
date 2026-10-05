@@ -1993,6 +1993,17 @@ increase that is off by a whole rent. Two more things:
   a month of renewals as an empty month.
 - **A sheet whose header cannot be matched is recorded as unread**, never read
   with the wrong columns, and the skipped sheets are surfaced as a problem.
+- **A month can be two sheets.** From the 2026-09-15 copy the Landing splits
+  December 2026 and January 2027 by lease end — `December First 2026` to about
+  the 15th, `December Second 2026 ` (trailing space) after it — with a
+  month sheet's own columns and no unit on both. They are **joined** into one
+  month (`halves` on the point, both titles in `sheet`), not weighed against
+  each other as a duplicated sheet is: taking the fuller half would drop the
+  other half's offers. A month with one half on file is published from it and
+  flagged as short. Until 2026-10-05 the halves read as "not a month sheet",
+  which cost December's offers (16 on the 09-21 copy, against the 6 the 09-08
+  copy's single sheet carried) and made the copy look a month older than it was
+  — see *A snapshot report never walks backwards*.
 
 The monthly offer counts tie out against the 2026-09-08 weekly email's own
 renewal table — 18 / 7 / 13 / 6 for September through December — which is an
@@ -2017,11 +2028,12 @@ renewal increase: a turned unit captures roughly ten times what a renewal does,
 which is the comparison the card exists to make. Capture at signing is absent
 and the card says so — the leasing workbook carries no market rent at signing.
 
-`scripts/test_leasing_and_renewal.py` holds both down: 36 checks against
+`scripts/test_leasing_and_renewal.py` holds both down: 41 checks against
 workbooks built in a temp dir, no fixtures and no network, since the real files
 carry names and are gitignored. The five load-bearing guards — the STOP
 markers, the arithmetic offer resolution, the money coercion, the filename week
-label and the arrival-prefix exception — were each verified by mutation, and
+label and the arrival-prefix exception — were each verified by mutation, as
+were the half-month join and its recognition (2026-10-05), and
 two were found to be *untested* on the first attempt because the synthetic rows
 did not reproduce the real column overlap. **Clear `__pycache__` between
 mutation runs**: restoring a file with `cp` can leave an older mtime, and
@@ -2981,17 +2993,31 @@ still replaces, so a corrected re-export of the same date wins. The comparison
 — `YYYY-MM-DD`, or `YYYY-MM` for the renewal tracker — so a missing or
 unreadable date stores exactly as before rather than blocking.
 
+**The renewal tracker compares arrivals instead** (`vintage="landed_at"`, since
+2026-10-05). Its `as_of` is its furthest-forward month *sheet* — how far ahead
+the copy reaches, not when it was made — so one sheet the parser could not read
+made a newer copy look older. That happened the day the guard went in: the
+Landing's 2026-09-21 copy split December into two half sheets, read as reaching
+only November, and the 2026-09-08 copy displaced it — two weeks of statuses
+and a 33-unit MTM roster back to 31, on the Trade-outs card. So the later Drive
+arrival (`older_landed`) wins there, and `as_of` decides only when either side
+has no arrival time, as in a local run. The parser reads half sheets now too
+(see *The two leasing parsers*), but a sheet it cannot read should cost that
+sheet, not the whole file.
+
 In CI the gitignored stores (`rent_roll.json`, `delinquency.json`) do not exist
 at the start of a run, so the guard decides between files **within** one run;
 locally it also protects whatever is already on disk. `stitch`-style series
 (the T12 stores, budgets, comps, lease trade-outs, the weekly leasing workbook)
 are keyed on their own period and were never exposed to this.
 
-`scripts/test_snapshot_order.py` holds it down — 21 fixture-free checks with the
+`scripts/test_snapshot_order.py` holds it down — 30 fixture-free checks with the
 parser stubbed, driving `process_manifest` through both of its store call sites
 (the single-property shape and the sectioned delinquency shape) with the newer
-file sorting first. Four guards verified by mutation: the comparison, each call
-site's `KEPT_NEWER` check, and the precision match. **Clear `__pycache__`
+file sorting first, and the tracker's 2026-10-05 case by arrival. Seven guards
+verified by mutation: the comparison, each call site's `KEPT_NEWER` check, the
+precision match, the tracker's arrival vintage, its refusal of an earlier
+arrival, and its fall-back to `as_of` without one. **Clear `__pycache__`
 between mutation runs.**
 
 ### Two Drive trees
