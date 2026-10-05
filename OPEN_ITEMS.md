@@ -139,6 +139,13 @@ bar two timestamps) and `commit_and_push.sh` (the race rules, with
 checks, each rule verified by mutation. Not yet seen on the runner: a real race;
 the run summary will say `rebuilt N time(s)` when one happens.
 
+The old step ran once more after the fix was on main. Run #106, dispatched at
+17:28 on `fec2780`, lost its push to `f07404a` at 17:53 and copied its own copy
+of `data/335-third-street/eliseai_daily.json` back over that commit's new
+`resident_calls` field, green throughout; `e8e9994` restored it. A run keeps the
+workflow file of the commit it started from, so a run already queued when a
+workflow fix lands still runs the old steps.
+
 2026-09-30 — **The NOI Margin placeholder and the page footer came off**, both
 by request. Neither is a card losing a feed.
 
