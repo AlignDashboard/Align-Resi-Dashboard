@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-05T18:21:16.235166+00:00",
+    "generated_at": "2026-10-05T20:07:35.601494+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -2913,13 +2913,13 @@
           "mean_tradeout": 0.793863
         },
         "renewals": {
-          "as_of": "2026-12",
+          "as_of": "2027-01",
           "covers": {
             "from": "2024-01",
-            "to": "2026-12"
+            "to": "2027-01"
           },
-          "landed_at": "2026-09-08T23:28:49.326Z",
-          "source_file": "2026-09-08 Landing 2025 Renewal Tracker - Full (42).xlsx",
+          "landed_at": "2026-09-21T23:28:34.027Z",
+          "source_file": "2026-09-21 Landing 2025 Renewal Tracker - Full (47).xlsx",
           "months": [
             {
               "month": "2024-01",
@@ -3327,9 +3327,9 @@
               "current_rent": 84251.0,
               "offered_rent": 89561.0,
               "statuses": {
-                "MTM": 2,
+                "MTM": 1,
                 "Notice": 3,
-                "Renewed": 13
+                "Renewed": 14
               }
             },
             {
@@ -3353,11 +3353,9 @@
               "current_rent": 80475.0,
               "offered_rent": 87465.0,
               "statuses": {
-                "MTM": 1,
+                "MTM": 2,
                 "Notice": 3,
-                "Offer Accepted": 1,
-                "Renewed": 12,
-                "Waiting For Response": 1
+                "Renewed": 13
               }
             },
             {
@@ -3382,33 +3380,47 @@
               "current_rent": 57627.0,
               "offered_rent": 83373.0,
               "statuses": {
-                "Notice": 1,
+                "Notice": 2,
                 "Offer Accepted": 1,
                 "Renewed": 1,
-                "Waiting For Response": 10
+                "Waiting For Response": 9
               }
             },
             {
               "month": "2026-12",
-              "leases": 6,
-              "mean_increase": 0.158289,
-              "wtd_increase": 0.158838,
-              "current_rent": 28463.0,
-              "offered_rent": 32984.0,
+              "leases": 16,
+              "mean_increase": 0.374601,
+              "wtd_increase": 0.378717,
+              "current_rent": 79257.0,
+              "offered_rent": 109273.0,
               "statuses": {
-                "Offer Accepted": 3,
-                "Waiting For Response": 3
+                "(blank)": 1,
+                "Notice": 1,
+                "Offer Accepted": 2,
+                "Renewed": 1,
+                "Waiting For Response": 12
+              }
+            },
+            {
+              "month": "2027-01",
+              "leases": 15,
+              "mean_increase": 0.241384,
+              "wtd_increase": 0.23241,
+              "current_rent": 73138.0,
+              "offered_rent": 90136.0,
+              "statuses": {
+                "Waiting For Response": 15
               }
             }
           ],
           "mtm": {
-            "units": 31,
-            "current_rent": 150376.0,
-            "market_rent": 222370.0,
+            "units": 33,
+            "current_rent": 160445.0,
+            "market_rent": 237541.0,
             "statuses": {
-              "(blank)": 3,
-              "Notice": 2,
-              "Renewed": 3,
+              "(blank)": 2,
+              "Notice": 4,
+              "Renewed": 4,
               "Waiting For Response": 23
             },
             "rows_without_rent": 0
