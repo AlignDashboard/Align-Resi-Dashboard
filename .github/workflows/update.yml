@@ -148,9 +148,11 @@ jobs:
       # Last, so it holds the parses a rebuild in the commit step made too, and
       # whether or not anything before it succeeded: every parse a build
       # finished is valid on its own, and a run cut short by the job limit
-      # still leaves the next one less to do.
+      # still leaves the next one less to do. Skipped when there is nothing to
+      # save -- a fetch that failed means no build, and the action would only
+      # warn "Cache save failed" over an empty path.
       - name: Save the parse cache
-        if: always()
+        if: always() && hashFiles('_cache/parse/**') != ''
         uses: actions/cache/save@v4
         with:
           path: _cache/parse

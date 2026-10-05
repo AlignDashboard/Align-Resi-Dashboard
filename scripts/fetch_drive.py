@@ -61,6 +61,13 @@ from googleapiclient.http import MediaIoBaseDownload
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 DL_ROOT = pathlib.Path("_downloads")
 
+# Drive answers the odd request with a 500 ("Unknown Error") or a 429, and one
+# of those used to end the run: #111 (2026-10-05) died five minutes into the
+# fetch on a single download and published nothing. The client library retries
+# exactly those, with exponential backoff, when it is told how many times --
+# the default is never. Five is about a minute of backoff at worst.
+API_RETRIES = 5
+
 # Folders the rescue sweep never reads, wherever they appear. An archive holds
 # superseded copies of live reports on purpose: "2026-07-14 RentRoll…" next to
 # four other July exports is a decision, not a misfile, and pulling it back in
@@ -92,7 +99,7 @@ def _list_children(svc, parent_id, mime=None):
                     "createdTime, modifiedTime)"),
             pageToken=token,
             includeItemsFromAllDrives=True, supportsAllDrives=True,
-        ).execute()
+        ).execute(num_retries=API_RETRIES)
         out.extend(resp.get("files", []))
         token = resp.get("nextPageToken")
         if not token:
@@ -107,7 +114,7 @@ def _download(svc, file_id, dest):
         dl = MediaIoBaseDownload(fh, req)
         done = False
         while not done:
-            _, done = dl.next_chunk()
+            _, done = dl.next_chunk(num_retries=API_RETRIES)
 
 
 def main():
