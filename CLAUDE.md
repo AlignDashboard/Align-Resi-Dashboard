@@ -2969,10 +2969,19 @@ The sweep is scoped, and each limit exists for a reason:
 | Never a name two report types claim | Reported and skipped. Entries agreeing on `report_type` *and* `parser` are one claim wearing two folder names (the funnel parses from two folders, delinquency from two), so only a real disagreement is ambiguous |
 | Never over an existing download | Two folders holding one filename would overwrite on disk and let the second parse win |
 
-`scripts/test_fetch_sweep.py` holds this down — 30 checks against a stubbed Drive
+`scripts/test_fetch_sweep.py` holds this down — 32 checks against a stubbed Drive
 mirroring the real layout, no network or fixtures. Both archive protections are
 tested *independently*: removing either one alone fails a check, since the name
 guard would otherwise cover for the missing tree scoping.
+
+**A transient Drive error is retried, not fatal.** Drive answers the odd
+request with a 500 (`Unknown Error`) or a 429, and the client library retries
+exactly those with exponential backoff — but only when `num_retries` says how
+many times, and its default is never. So one 500 on one download ended run
+#111 (2026-10-05) five minutes into the fetch, with nothing published.
+`API_RETRIES` (5, about a minute of backoff at worst) now goes on every folder
+listing and every download chunk; `test_fetch_sweep.py` section 8 drives the
+real calls against a recording client, and dropping either fails a check.
 
 ### A snapshot report never walks backwards
 

@@ -118,6 +118,8 @@ def main():
     _stub_google()
     sys.path.insert(0, str(ROOT / "scripts"))
     import fetch_drive as fd                                    # noqa: E402
+    # run() swaps these two for stubs; section 8 needs the real ones.
+    real_list, real_download = fd._list_children, fd._download
 
     work = tempfile.mkdtemp()
     (pathlib.Path(work) / "config").symlink_to(ROOT / "config")
@@ -324,6 +326,47 @@ def main():
     check("nothing in the folder goes unread",
           {n for v in claimed_by.values() for n in v} | set(nobody)
           <= {e["name"] for e in man})
+
+    print("\n8. a transient Drive error is retried, not fatal")
+    # The real list and download calls, against a client that records what it
+    # is asked. The library only retries a 500 or a 429 when num_retries says
+    # so, and #111 died on one 500 because nothing did.
+    asked = []
+
+    class Request:
+        def execute(self, **kw):
+            asked.append(("list", kw))
+            return {"files": [{"id": "f1", "name": "a.xlsx"}]}
+
+    class Files:
+        def list(self, **kw):
+            return Request()
+
+        def get_media(self, **kw):
+            return "media"
+
+    class Client:
+        def files(self):
+            return Files()
+
+    class Download:
+        def __init__(self, fh, req):
+            self.chunks = 0
+
+        def next_chunk(self, **kw):
+            asked.append(("chunk", kw))
+            self.chunks += 1
+            return None, self.chunks == 3
+
+    fd.MediaIoBaseDownload = Download
+    got = real_list(Client(), "R")
+    real_download(Client(), "f1", pathlib.Path(work) / "dl" / "a.xlsx")
+    lists = [kw for what, kw in asked if what == "list"]
+    chunks = [kw for what, kw in asked if what == "chunk"]
+    check("every folder listing asks the client to retry",
+          got and lists and all(kw.get("num_retries", 0) >= 3 for kw in lists))
+    check("every download chunk asks the client to retry",
+          len(chunks) == 3 and all(kw.get("num_retries", 0) >= 3 for kw in chunks))
 
     os.chdir(ROOT)
     shutil.rmtree(work, ignore_errors=True)
