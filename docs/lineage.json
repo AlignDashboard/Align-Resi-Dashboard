@@ -428,7 +428,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-05T21:33:08.890814+00:00",
+  "generated_at": "2026-10-06T17:21:05.342009+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -845,10 +845,10 @@
    "evidence": [
     {
      "property": "Landing",
-     "file": "2026-09-28 rs_rp_DelinquencySummaryReport - The Landing (1).xlsx",
+     "file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
      "as_of": null,
-     "source_file": "2026-09-28 rs_rp_DelinquencySummaryReport - The Landing (1).xlsx",
-     "landed_at": "2026-09-29T01:28:47.323Z",
+     "source_file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "landed_at": "2026-10-06T00:28:39.541Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     },
     {
@@ -921,10 +921,10 @@
    "evidence": [
     {
      "property": "Landing",
-     "file": "2026-09-28 rs_rp_DelinquencySummaryReport - The Landing (1).xlsx",
+     "file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
      "as_of": null,
-     "source_file": "2026-09-28 rs_rp_DelinquencySummaryReport - The Landing (1).xlsx",
-     "landed_at": "2026-09-29T01:28:47.323Z",
+     "source_file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "landed_at": "2026-10-06T00:28:39.541Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     },
     {
@@ -1223,33 +1223,33 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/comps.json",
-     "as_of": "2026-09-28",
-     "source_file": "2026-09-29 HelloData - Simple - 335 Third Street.xlsx",
-     "landed_at": "2026-09-29T17:28:38.477Z",
+     "as_of": "2026-10-04",
+     "source_file": "2026-10-05 HelloData - Simple - 335 Third Street.xlsx",
+     "landed_at": "2026-10-05T23:28:56.418Z",
      "detail": null
     },
     {
      "property": "chorus",
      "file": "data/chorus/comps.json",
-     "as_of": "2026-10-03",
-     "source_file": "2026-10-04 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (4).xlsx",
-     "landed_at": "2026-10-04T23:29:41.295Z",
+     "as_of": "2026-10-04",
+     "source_file": "2026-10-05 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-10-05T23:28:34.320Z",
      "detail": null
     },
     {
      "property": "madelon",
      "file": "data/madelon/comps.json",
-     "as_of": "2026-10-03",
-     "source_file": "2026-10-04 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (4).xlsx",
-     "landed_at": "2026-10-04T23:29:41.295Z",
+     "as_of": "2026-10-04",
+     "source_file": "2026-10-05 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-10-05T23:28:34.320Z",
      "detail": null
     },
     {
      "property": "the-landing",
      "file": "data/the-landing/comps.json",
-     "as_of": "2026-10-03",
-     "source_file": "2026-10-04 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay) (4).xlsx",
-     "landed_at": "2026-10-04T23:29:41.295Z",
+     "as_of": "2026-10-04",
+     "source_file": "2026-10-05 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-10-05T23:28:34.320Z",
      "detail": null
     }
    ],
@@ -1733,9 +1733,9 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/leasing_funnel.json",
-     "as_of": "2026-09-29",
-     "source_file": "2026-09-29 leasing_funnel_report_2026-09-29.xlsx",
-     "landed_at": "2026-09-29T15:28:38.218Z",
+     "as_of": "2026-10-06",
+     "source_file": "2026-10-06 leasing_funnel_report_2026-10-06.xlsx",
+     "landed_at": "2026-10-06T15:28:30.354Z",
      "detail": null
     }
    ],
@@ -1782,9 +1782,9 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/leasing_funnel.json",
-     "as_of": "2026-09-29",
-     "source_file": "2026-09-29 leasing_funnel_report_2026-09-29.xlsx",
-     "landed_at": "2026-09-29T15:28:38.218Z",
+     "as_of": "2026-10-06",
+     "source_file": "2026-10-06 leasing_funnel_report_2026-10-06.xlsx",
+     "landed_at": "2026-10-06T15:28:30.354Z",
      "detail": null
     }
    ],
@@ -2111,17 +2111,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-10-04",
+     "as_of": "2026-10-05",
      "source_file": null,
-     "landed_at": "2026-10-05T13:12:12Z",
-     "detail": "54 day(s) recorded"
+     "landed_at": "2026-10-05T20:19:43Z",
+     "detail": "55 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-10-04",
+     "as_of": "2026-10-05",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-10-05T13:12:12Z",
+     "landed_at": "2026-10-05T20:19:43Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2337,10 +2337,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-04",
+     "as_of": "2026-10-05",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-04T18:35:19Z",
-     "detail": "169 leases, 255 renewals and 58 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-10-05T21:56:16Z",
+     "detail": "169 leases, 265 renewals and 58 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2390,7 +2390,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-05T21:33:08.280912+00:00",
+     "landed_at": "2026-10-06T17:21:04.844270+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
