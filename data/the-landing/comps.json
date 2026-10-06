@@ -1232,7 +1232,7 @@
   "properties_in_file": 36,
   "listings_in_file": 6588,
   "source_file": "2026-10-05 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-  "landed_at": null,
+  "landed_at": "2026-10-05T23:28:34.320Z",
   "checks": [
     {
       "check": "every listed building is described in 'Property Data'",
