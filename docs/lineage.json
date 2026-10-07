@@ -428,7 +428,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-06T17:21:05.342009+00:00",
+  "generated_at": "2026-10-07T17:54:21.863976+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -1223,33 +1223,33 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/comps.json",
-     "as_of": "2026-10-04",
-     "source_file": "2026-10-05 HelloData - Simple - 335 Third Street.xlsx",
-     "landed_at": "2026-10-05T23:28:56.418Z",
+     "as_of": "2026-10-05",
+     "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
+     "landed_at": "2026-10-06T17:28:32.665Z",
      "detail": null
     },
     {
      "property": "chorus",
      "file": "data/chorus/comps.json",
-     "as_of": "2026-10-04",
-     "source_file": "2026-10-05 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-10-05T23:28:34.320Z",
+     "as_of": "2026-10-05",
+     "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-10-06T23:28:31.629Z",
      "detail": null
     },
     {
      "property": "madelon",
      "file": "data/madelon/comps.json",
-     "as_of": "2026-10-04",
-     "source_file": "2026-10-05 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-10-05T23:28:34.320Z",
+     "as_of": "2026-10-05",
+     "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-10-06T23:28:31.629Z",
      "detail": null
     },
     {
      "property": "the-landing",
      "file": "data/the-landing/comps.json",
-     "as_of": "2026-10-04",
-     "source_file": "2026-10-05 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-     "landed_at": "2026-10-05T23:28:34.320Z",
+     "as_of": "2026-10-05",
+     "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
+     "landed_at": "2026-10-06T23:28:31.629Z",
      "detail": null
     }
    ],
@@ -2337,10 +2337,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-05",
+     "as_of": "2026-10-06",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-05T21:56:16Z",
-     "detail": "169 leases, 265 renewals and 58 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-10-06T20:07:46Z",
+     "detail": "170 leases, 266 renewals and 59 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2390,7 +2390,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-06T17:21:04.844270+00:00",
+     "landed_at": "2026-10-07T17:54:20.009937+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
