@@ -10,7 +10,7 @@
     "lat": 37.79546,
     "lng": -122.27316
   },
-  "as_of": "2026-10-04",
+  "as_of": "2026-10-05",
   "primary_radius_mi": 1.35,
   "excluded_related": [],
   "subject_by_bed": {
@@ -38,8 +38,8 @@
         },
         "1": {
           "n": 55,
-          "median_rent": 2774.0,
-          "mean_rent": 2700.2,
+          "median_rent": 2765.0,
+          "mean_rent": 2698.84,
           "median_sqft": 639.0,
           "median_psf": 4.2574
         },
@@ -74,8 +74,8 @@
         },
         "1": {
           "n": 55,
-          "median_rent": 2774.0,
-          "mean_rent": 2700.2,
+          "median_rent": 2765.0,
+          "mean_rent": 2698.84,
           "median_sqft": 639.0,
           "median_psf": 4.2574
         },
@@ -110,8 +110,8 @@
         },
         "1": {
           "n": 55,
-          "median_rent": 2774.0,
-          "mean_rent": 2700.2,
+          "median_rent": 2765.0,
+          "mean_rent": 2698.84,
           "median_sqft": 639.0,
           "median_psf": 4.2574
         },
@@ -865,7 +865,7 @@
   ],
   "subject_listings": {
     "current": 27,
-    "oldest_days": 137,
+    "oldest_days": 138,
     "by_bed": {
       "1": 27
     }
@@ -875,8 +875,8 @@
   "market": "San Francisco-Oakland-Hayward, CA",
   "properties_in_file": 10,
   "listings_in_file": 739,
-  "source_file": "2026-10-05 HelloData - Simple - 335 Third Street.xlsx",
-  "landed_at": "2026-10-05T23:28:56.418Z",
+  "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
+  "landed_at": null,
   "checks": [
     {
       "check": "every listed building is described in 'Property Data'",
@@ -906,7 +906,7 @@
     {
       "check": "the current set is the file's own as-of date",
       "ok": true,
-      "as_of": "2026-10-04",
+      "as_of": "2026-10-05",
       "current": 121
     },
     {
@@ -971,6 +971,7 @@
     "2026-09-25",
     "2026-09-26",
     "2026-09-28",
-    "2026-10-04"
+    "2026-10-04",
+    "2026-10-05"
   ]
 }
