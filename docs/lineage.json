@@ -132,20 +132,6 @@
    "primary": "t-sc-matrix",
    "holds": "KPI Scorecard matrix"
   },
-  "psc-palma": {
-   "card": "KPI Scorecard \u2014 Palma",
-   "tab": "Palma",
-   "tables": [
-    "t-sc-overrides",
-    "t-sc-arrivals",
-    "t-sc-matrix"
-   ],
-   "flows": [
-    "delinquency"
-   ],
-   "primary": "t-sc-measured",
-   "holds": "Measured KPI values"
-  },
   "cdDelq": {
    "card": "Delinquency",
    "tab": "Landing",
@@ -155,49 +141,6 @@
    ],
    "flows": [
     "delinquency"
-   ],
-   "primary": "t-sc-measured",
-   "holds": "Measured KPI values"
-  },
-  "psc-chorus": {
-   "card": "KPI Scorecard \u2014 Chorus",
-   "tab": "Chorus",
-   "tables": [
-    "t-sc-arrivals",
-    "t-sc-matrix",
-    "t-sc-thresholds"
-   ],
-   "flows": [
-    "bldg_metrics"
-   ],
-   "primary": "t-sc-measured",
-   "holds": "Measured KPI values"
-  },
-  "psc-madelon": {
-   "card": "KPI Scorecard \u2014 Madelon",
-   "tab": "Madelon",
-   "tables": [
-    "t-sc-arrivals",
-    "t-sc-matrix",
-    "t-sc-thresholds"
-   ],
-   "flows": [
-    "bldg_metrics"
-   ],
-   "primary": "t-sc-measured",
-   "holds": "Measured KPI values"
-  },
-  "psc-335-third-street": {
-   "card": "KPI Scorecard \u2014 335 Third St",
-   "tab": "335 Third St",
-   "tables": [
-    "t-sc-arrivals",
-    "t-sc-matrix",
-    "t-sc-thresholds"
-   ],
-   "flows": [
-    "bldg_metrics",
-    "eliseai_daily"
    ],
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
@@ -428,7 +371,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-07T17:54:21.863976+00:00",
+  "generated_at": "2026-10-08T00:12:15.964017+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -801,17 +744,6 @@
      ]
     },
     {
-     "card": "KPI Scorecard \u2014 Palma",
-     "tab": "Palma",
-     "anchor": "psc-palma",
-     "primary": "t-sc-measured",
-     "tables": [
-      "t-sc-overrides",
-      "t-sc-arrivals",
-      "t-sc-matrix"
-     ]
-    },
-    {
      "card": "Delinquency",
      "tab": "Landing",
      "anchor": "cdDelq",
@@ -1033,39 +965,6 @@
      "anchor": "cdFeeds",
      "primary": "flow",
      "tables": []
-    },
-    {
-     "card": "KPI Scorecard \u2014 Chorus",
-     "tab": "Chorus",
-     "anchor": "psc-chorus",
-     "primary": "t-sc-measured",
-     "tables": [
-      "t-sc-arrivals",
-      "t-sc-matrix",
-      "t-sc-thresholds"
-     ]
-    },
-    {
-     "card": "KPI Scorecard \u2014 Madelon",
-     "tab": "Madelon",
-     "anchor": "psc-madelon",
-     "primary": "t-sc-measured",
-     "tables": [
-      "t-sc-arrivals",
-      "t-sc-matrix",
-      "t-sc-thresholds"
-     ]
-    },
-    {
-     "card": "KPI Scorecard \u2014 335 Third St",
-     "tab": "335 Third St",
-     "anchor": "psc-335-third-street",
-     "primary": "t-sc-measured",
-     "tables": [
-      "t-sc-arrivals",
-      "t-sc-matrix",
-      "t-sc-thresholds"
-     ]
     }
    ],
    "tables": [
@@ -1356,11 +1255,11 @@
    "evidence": [
     {
      "property": "the-landing",
-     "file": "data/the-landing/rent_roll.json",
+     "file": "metrics.json rent_roll",
      "as_of": "2026-10-05",
      "source_file": "RentRoll10_05_2026.xlsx",
      "landed_at": "2026-10-05T17:26:43.605Z",
-     "detail": null
+     "detail": "read from the published aggregate \u2014 this store is gitignored (per-unit) and exists only during a pipeline run"
     }
    ],
    "status": "live"
@@ -2087,15 +1986,6 @@
       "t-sc-measured",
       "t-sc-arrivals"
      ]
-    },
-    {
-     "card": "KPI Scorecard \u2014 335 Third St",
-     "tab": "335 Third St",
-     "anchor": "psc-335-third-street",
-     "primary": "t-sc-measured",
-     "tables": [
-      "t-sc-arrivals"
-     ]
     }
    ],
    "tables": [
@@ -2337,10 +2227,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-06",
+     "as_of": "2026-10-07",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-06T20:07:46Z",
-     "detail": "170 leases, 266 renewals and 59 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-10-07T20:31:44Z",
+     "detail": "171 leases, 266 renewals and 60 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
