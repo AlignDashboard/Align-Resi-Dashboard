@@ -124,6 +124,17 @@ wrong-looking number on the page.
 
 ## Closed
 
+2026-10-08 (later) — **Loss to lease has a card of its own, and Leased % joined
+Leasing & Occupancy**, by request. As the first measure on the leasing card,
+loss to lease was also its default, and it hid the rest: one building drawn off
+the T12 statement and the rent roll, where the export measures draw four. It is
+the Portfolio tab's Loss to Lease card now, with no select since it has one
+view, and Leasing & Occupancy opens on Tours. Leased % is 100 less the same
+export's exposure rate — the reading the scorecard's Leased % and the Landing
+tab's tile take from the newest export, matched to the tenth for all four
+buildings — and the leased % placeholder came off with it. Four placeholders
+remain.
+
 2026-10-08 — **Five planned-metric placeholders became one Leasing & Occupancy
 card on the Portfolio tab**, by request: loss to lease, tours, leads,
 applications and occupancy, in Expense Load & NOI's format — a measure on a

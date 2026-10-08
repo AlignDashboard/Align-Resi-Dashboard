@@ -1605,8 +1605,8 @@ script on the newest one automatically, passing Drive's `landed_at` as the
 arrival — the hand-off step only exists for a CSV that never reached Drive.
 
 **Every export is kept, not just the newest** (2026-10-08). The fill reads one
-file and keeps nothing, so the leads, tours, applications and occupancy each
-export carries never became a series. `parse_building_metrics` now reads every
+file and keeps nothing, so the leads, tours, applications, occupancy and
+exposure each export carries never became a series. `parse_building_metrics` now reads every
 export — one section per building row, routed through the property master like
 any report — and `store_building_metrics` keeps one point per export date in
 `data/<slug>/building_metrics.json`, published as `metrics.json`'s
@@ -2328,7 +2328,7 @@ for the reason the Landing tab's `d-` ids stay — `lineage.json`'s card index a
 `data.html`'s links name it.
 
 Since 2026-10-08 it is drawn by **`renderMeasureCard`**, which it shares with
-**Leasing & Occupancy** below it — see that section. Nothing it renders moved
+**Loss to Lease** and **Leasing & Occupancy** below it — see that section. Nothing it renders moved
 but its colours and markers, which was checked rather than assumed: driven
 against the committed page on every measure, every toggle path and the seven
 doctored `metrics.json` cases, the two render identically apart from colour.
@@ -2451,7 +2451,7 @@ gives each building's basis.
 **One colour and one marker per property across the tab.** `propColor` and
 `propShape` key on the slug, seeded from the property master's own order before
 any card mounts, so a building is the same colour and shape on Expense Trend,
-here and on Leasing & Occupancy. Since 2026-10-08 the colours are the page's
+here, on Loss to Lease and on Leasing & Occupancy. Since 2026-10-08 the colours are the page's
 validated categorical order, `--rt-1..5` — the Rental Rates tab's — read at
 draw time because each theme has its own step: The Landing blue (circle),
 Chorus orange (square), Madelon green (triangle), 335 Third gold (diamond),
@@ -2485,44 +2485,64 @@ seven-month run, a missing published T12, a statement that stops naming one of
 the four exclusions, and no data at all — were each driven by serving a
 doctored `metrics.json` to the real page.
 
-## Leasing & Occupancy (Portfolio tab)
+## Loss to Lease and Leasing & Occupancy (Portfolio tab)
 
-**Five of the planned-metric placeholders as one card** (by request,
-2026-10-08) — loss to lease, tours, leads, applications and occupancy — in
-Expense Load & NOI's format: a **Measure:** select, a box per building, a figure
-per building on the left. The five came out of `metrics.json`'s `placeholders`
-array; the five left are effective vs gross rent, renewals, cash on hand,
-marketing per lease and leased %.
+**Six of the planned-metric placeholders became two cards** (by request,
+2026-10-08), both in Expense Load & NOI's format — a box per building, a figure
+per building on the left:
 
-Both cards are drawn by **`renderMeasureCard`**, which Expense Load & NOI's own
-renderer became the same day, so what a struck-through box means, what survives
-a switch, the held frame and the fixed box order are one piece of code rather
-than two that could drift. A card hands it its buildings and its measures; a
-measure's `read(r)` returns the line, the figure on the left and what that
-figure is, and its basis — or `why` it cannot be drawn.
+- **Loss to Lease** (`cLossToLease`) — one measure, so no select.
+- **Leasing & Occupancy** (`cLeasing`) — a **Measure:** select over tours,
+  leads, applications, occupancy and **leased %**. It opens on **Tours**.
+
+For a few hours loss to lease was the first measure on Leasing & Occupancy and
+its default, and it hid the rest: it draws one building where the export draws
+four, on a different source and a different axis, so the card read as a
+loss-to-lease card with nothing else on it. It took a card of its own the same
+day, by request, and **Leased %** joined the select from the same export. The
+six placeholders came out of `metrics.json`'s `placeholders` array; the four
+left are effective vs gross rent, renewals, cash on hand and marketing per
+lease.
+
+All three Portfolio measure cards are drawn by **`renderMeasureCard`**, which
+Expense Load & NOI's own renderer became that day, so what a struck-through box
+means, what survives a switch, the held frame and the fixed box order are one
+piece of code rather than three that could drift. A card hands it its buildings
+and its measures; a measure's `read(r)` returns the line, the figure on the
+left and what that figure is, and its basis — or `why` it cannot be drawn. A
+card of one measure declares no `sel`: a select with a single option is a
+control that cannot change anything, and its prose says "here" where a
+multi-measure card says "on this measure".
 
 Every number is read per building off a block the pipeline already publishes,
-so a building appears here the day its own report does; nothing on the card
+so a building appears the day its own report does; nothing on either card
 names one:
 
-| Measure | Line | Figure on the left | Drawn today |
+| Card · measure | Line | Figure on the left | Drawn today |
 | --- | --- | --- | --- |
-| Loss to lease (default) | the T12 statement's loss-to-lease account ÷ market rent potential, a month at a time (`rent_capture`) — the two series under the Landing tab's Loss to Lease card | the newest rent roll's (market − in-place) ÷ market over occupied units where a roll is on file, else the line's own T12 | The Landing, **38.2%** on the roll of Oct 5 |
-| Tours | First Tours Attended over the trailing month to each export (`building_metrics`) | the newest export's | The Landing, Chorus, Madelon, 335 Third |
-| Leads | New Prospects, the same | the same | the same four |
-| Applications | Applications Completed, the same | the same | the same four |
-| Occupancy | Occupancy Rate at period end on each export | the same | the same four |
+| Loss to Lease | the T12 statement's loss-to-lease account ÷ market rent potential, a month at a time (`rent_capture`) — the two series under the Landing tab's Loss to Lease card | the newest rent roll's (market − in-place) ÷ market over occupied units where a roll is on file, else the line's own T12 | The Landing, **38.2%** on the roll of Oct 5 |
+| Leasing · Tours (default) | First Tours Attended over the trailing month to each export (`building_metrics`) | the newest export's | The Landing, Chorus, Madelon, 335 Third |
+| Leasing · Leads | New Prospects, the same | the same | the same four |
+| Leasing · Applications | Applications Completed, the same | the same | the same four |
+| Leasing · Occupancy | Occupancy Rate at period end on each export | the same | the same four |
+| Leasing · Leased % | 100 − Exposure Rate at period end on each export | the same — which **is** the scorecard's Leased % cell: 94.3 / 92.3 / 93.1 / 23.7% on Oct 5, checked to the tenth | the same four |
 
 **Loss to lease is two measurements, and the card says how far apart they
 sit.** The roll's figure is what the scorecard's `Loss to Lease %` grades (A8)
-and what the Loss to Lease card prints beneath its chart; the statement's
-series is the only loss-to-lease *history* there is, since no roll history is
-published. They are not the same thing — the GL books loss to lease against the
-month's own potential — so the note sets them side by side from the numbers:
-The Landing reads 38.2% on its roll of Oct 5 against 30.2% for Aug 26 and 18.4%
-over the statement's T12. Palma is struck through: its statement is on the
-Align tree, one of its two building codes carries no loss-to-lease account, and
-the block's own `problems` list says so.
+and what the Landing tab's Loss to Lease card prints beneath its chart; the
+statement's series is the only loss-to-lease *history* there is, since no roll
+history is published. They are not the same thing — the GL books loss to lease
+against the month's own potential — so the note sets them side by side from the
+numbers: The Landing reads 38.2% on its roll of Oct 5 against 30.2% for Aug 26
+and 18.4% over the statement's T12. Palma is struck through: its statement is
+on the Align tree, one of its two building codes carries no loss-to-lease
+account, and the block's own `problems` list says so.
+
+**Leased % reads below occupancy**, and the note says why: exposure counts units
+on notice as well as vacant ones, less those already re-let, so The Landing is
+98.9% occupied and 94.3% leased on the same export. It is the reading the
+scorecard and the Landing tab's Leased % tile take from the newest export, so
+the figure on the left and the tile cannot disagree.
 
 **The export measures are on a time axis, not a month one.** The exports came a
 week apart, then three weeks, then a week again, and evenly spaced points would
@@ -2532,36 +2552,41 @@ phone width seven weekly ticks ran into each other — in straight segments,
 since a curve would invent readings between two exports. The hover lists every
 building on the nearest export date: one file carries them all.
 
-**Each point is a trailing month, so neighbouring points overlap.** Two exports
+**Each count is a trailing month, so neighbouring points overlap.** Two exports
 a week apart share three weeks of their counts, and the note says to read a
 line as a rolling month and never to add its points together.
 
-The occupancy view's note adds two things, both computed:
+The occupancy and leased views' notes add, computed:
 
-- **335 Third Street is in lease-up** (13.2% occupied on Oct 5, 0% before it
-  opened), so with it shown the stabilised buildings share the top of a 0–100%
-  axis. The note says to switch it off, and the axis rescales to 95–99.5%.
-  Under 50% is `populate_building_metrics`' own lease-up line.
-- **The Landing's rent roll disagrees by a unit.** The roll of Oct 5 reads 98.5%
-  occupied — the count the Unit Inventory bars are split on — where the export
-  of the same day reads 98.9%: 4 vacant units against 3. Said only where a roll
-  is on file, and the unit counts only where the two share a date.
+- **335 Third Street is in lease-up** (13.2% occupied and 23.7% leased on Oct
+  5, 0% occupied before it opened), so with it shown the stabilised buildings
+  share the top of a 0–100% axis. The note says to switch it off, and the axis
+  rescales — to 95–99.5% on occupancy, 92–99% on leased. Lease-up is read off
+  the building's newest occupancy under 50%, `populate_building_metrics`' own
+  line, on both views; the sentence quotes each view's own figure.
+- **On occupancy, The Landing's rent roll disagrees by a unit.** The roll of Oct
+  5 reads 98.5% occupied — the count the Unit Inventory bars are split on —
+  where the export of the same day reads 98.9%: 4 vacant units against 3. Said
+  only where a roll is on file, and the unit counts only where the two share a
+  date.
 
-Palma is struck through on all four export measures — the export does not cover
-it — so on this card it wears the muted ink rather than its colour, and the note
-says a building EliseAI adds to the export is drawn from its next export on,
-which is the only fix there is.
+Palma is struck through on every export measure — the export does not cover it
+— so on Leasing & Occupancy it wears the muted ink rather than its colour, and
+the note says a building EliseAI adds to the export is drawn from its next
+export on, which is the only fix there is.
 
-The card's `Data ↗` opens `t-bldgmetrics-<slug>`: one row per export —
-occupancy, leased (100 − exposure), vacant units, leads, first tours booked and
-attended, applications, leases signed, the file and when it landed. The
-loss-to-lease tables (`t-rentcap-*`, `t-rentroll-*`) are declared on the same
-card by their own flows, without a primary.
+The cards' `Data ↗` links: Loss to Lease opens `t-rentcap-<slug>` (the line's
+table, declared by the T12 flow; the rent roll adds `t-rentroll-*` without a
+primary), and Leasing & Occupancy opens `t-bldgmetrics-<slug>` — one row per
+export: occupancy, leased (100 − exposure), vacant units, leads, first tours
+booked and attended, applications, leases signed, the file and when it landed.
+The rent roll is declared on Leasing & Occupancy too, for the occupancy note.
 
 Verified in the browser at 1440 / 1100 / 900 / 700 / 390px dark, and at 1440
 light: every figure above against `metrics.json`, the boxes through every
 switch and a theme change, the held frame with every box off, no sideways
-scroll and no overlap with the corner link. Doctored `metrics.json` files drove
+scroll and no overlap with the corner link, and Expense Load & NOI rendering
+identically to the commit before the split. Doctored `metrics.json` files drove
 the branches today's data never reaches — no `building_metrics` block, no
 `properties` block, a one-building portfolio, a blank cell mid-series (the line
 breaks), a building missing from the newest export (its figure keeps its own
@@ -3453,7 +3478,9 @@ when first counted on 2026-09-28; cards have come off since — the two prior �
 new $/sqft cards became one, the four property-tab scorecard slices went on
 2026-10-08, measured as exactly 42 → 38 against the previous commit rather
 than assumed, and later that day five placeholder cards, each with a link,
-became the one Leasing & Occupancy card: 38 → 34, measured the same way). Count rendered links, not card ids: the Rental Rates cards are
+became the one Leasing & Occupancy card: 38 → 34, measured the same way; the
+leased % placeholder's link then gave way to the Loss to Lease card's own,
+34 → 34). Count rendered links, not card ids: the Rental Rates cards are
 generated, so keying the probe on a card `id` missed them — 35 at the first
 count.
 
@@ -3567,7 +3594,7 @@ Five statuses, and they are the page's whole argument:
 | `partial` | It arrives and parses and ties out. Nothing publishes it — the chain stops in `data/` (the funnel, the concession burn-off) |
 | `waiting` | Parser written and registered; no file has ever arrived. **No flow is in this state today** — the rent roll was the last one and it landed 2026-09-11, closing C4 |
 | `no-parser` | Folder registered so a file dropped in it reaches the fetch log; the parser needs one sample file. Collapsed into a single block rather than five identical empty chains |
-| `manual` | No feed at all — the five placeholder cards are edited into `metrics.json` and carried through each run. Three blocks have left this row: `expense_trend` on 2026-09-17, derived from the T12 statement now, and `psf_vs_peers` the same day and `trade_outs` on 2026-09-28, each with the card it fed. A fourth card left without its block — the `noiMargin` placeholder on 2026-09-30, one entry out of the `placeholders` array rather than a block of its own — and five more the same way on 2026-10-08: loss to lease, tours, leads, applications and occupancy, now the Leasing & Occupancy card |
+| `manual` | No feed at all — the four placeholder cards are edited into `metrics.json` and carried through each run. Three blocks have left this row: `expense_trend` on 2026-09-17, derived from the T12 statement now, and `psf_vs_peers` the same day and `trade_outs` on 2026-09-28, each with the card it fed. A fourth card left without its block — the `noiMargin` placeholder on 2026-09-30, one entry out of the `placeholders` array rather than a block of its own — and six more the same way on 2026-10-08: loss to lease, now its own card, and tours, leads, applications, occupancy and leased %, now the Leasing & Occupancy card |
 
 So the T12 points can report an arrival and not just a period,
 `store_expense_ratio` / `store_monthly_pl` / `store_expense_buckets` /

@@ -603,10 +603,10 @@
     .rt-pw { width: 170px; }
   }
 
-  /* The Portfolio tab's two measure cards -- Expense Load & NOI (the Expense
-     Ratio card until 2026-09-30) and Leasing & Occupancy. The left column is
-     one figure per property shown, in that property's own line colour, for
-     whichever measure the select is on.
+  /* The Portfolio tab's measure cards -- Expense Load & NOI (the Expense
+     Ratio card until 2026-09-30), Loss to Lease and Leasing & Occupancy. The
+     left column is one figure per property shown, in that property's own line
+     colour, for whichever measure the card is on.
      It was a single 40px number with a dropdown beside it until 2026-09-17 --
      once the properties are toggles there can be several at once, so the
      figure shrinks and the column grows rather than the card having to pick
@@ -985,10 +985,24 @@
         <div id="erFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:10px;"></div>
       </div>
 
-      <!-- Five of the planned-metric placeholders -- loss to lease, tours,
-           leads, applications and occupancy -- as one card in Expense Load &
-           NOI's format: a measure on the select, a box per building. Both are
-           drawn by renderMeasureCard. By request, 2026-10-08. -->
+      <!-- Loss to lease across the portfolio, its own card since 2026-10-08 by
+           request. One measure, so no select: a box per building. Drawn by
+           renderMeasureCard, like the cards either side of it. -->
+      <div class="card wide" id="cLossToLease">
+        <h2>Loss to Lease</h2>
+        <span class="eyebrow" id="llEyebrow">LOADING…</span>
+        <div class="ckgrid" id="llCks" role="group" aria-label="Properties shown"></div>
+        <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">
+          <div class="erstats" id="llStats"></div>
+          <div class="chartwrap" id="llWrap" style="flex:1 1 340px;height:220px;"><canvas id="llChart"></canvas></div>
+        </div>
+        <div id="llFoot" style="font-size:9px;letter-spacing:.5px;color:var(--muted);line-height:1.5;margin-top:10px;"></div>
+      </div>
+
+      <!-- Planned-metric placeholders -- tours, leads, applications,
+           occupancy and leased % -- as one card in Expense Load & NOI's
+           format: a measure on the select, a box per building. Drawn by
+           renderMeasureCard. By request, 2026-10-08. -->
       <div class="card wide" id="cLeasing">
         <div class="card-head">
           <div>
@@ -3789,15 +3803,19 @@ async function loadDashboard() {
     : dayLong(a) + " – " + dayLong(b);
 
   function renderMeasureCard(ids, card) {
-    // ids: {sel, cks, stats, eyebrow, foot, wrap, canvas}
+    // ids: {sel, cks, stats, eyebrow, foot, wrap, canvas}. A card of one
+    // measure declares no sel: a select with a single option is a control
+    // that cannot change anything -- the Loss to Lease card is that case.
     // card: {rows, measures, initial, emptyText}
-    const selEl = document.getElementById(ids.sel);
+    const selEl = ids.sel ? document.getElementById(ids.sel) : null;
     const cksEl = document.getElementById(ids.cks);
     const statsEl = document.getElementById(ids.stats);
     const eyebrowEl = document.getElementById(ids.eyebrow);
     const footEl = document.getElementById(ids.foot);
     const wrapEl = document.getElementById(ids.wrap);
     const rows = card.rows, MEASURES = card.measures;
+    // A card of one measure is that measure, so its prose says "here".
+    const onThis = MEASURES.length > 1 ? "on this measure" : "here";
 
     // Never a blank chart: the empty state a measure with nothing to draw
     // shows, and the whole card's when there is nothing at all.
@@ -3812,7 +3830,7 @@ async function loadDashboard() {
     if (!rows.length) {
       eyebrowEl.textContent = "AWAITING SOURCE DATA";
       // .opsel is display:flex, which outranks the UA sheet's [hidden] rule
-      selEl.parentElement.style.display = "none";
+      if (selEl) selEl.parentElement.style.display = "none";
       cksEl.hidden = true;
       emptyState(card.emptyText);
       return;
@@ -3833,14 +3851,16 @@ async function loadDashboard() {
     const hidden = new Set();           // switched off by the reader; survives a switch
     let chart = null;
 
-    selEl.textContent = "";
-    MEASURES.forEach(m => {
-      const o = elc("option", null, m.label);
-      o.value = m.key;
-      selEl.appendChild(o);
-    });
-    selEl.value = current;
-    selEl.addEventListener("change", () => { current = selEl.value; draw(); });
+    if (selEl) {
+      selEl.textContent = "";
+      MEASURES.forEach(m => {
+        const o = elc("option", null, m.label);
+        o.value = m.key;
+        selEl.appendChild(o);
+      });
+      selEl.value = current;
+      selEl.addEventListener("change", () => { current = selEl.value; draw(); });
+    }
 
     function draw() {
       const m = MEASURES.find(x => x.key === current) || MEASURES[0];
@@ -3947,7 +3967,7 @@ async function loadDashboard() {
         });
       } else {
         // the note says why, building by building
-        emptyState("Nothing to draw on this measure yet");
+        emptyState("Nothing to draw " + onThis + " yet");
       }
 
       // Built node by node rather than as an HTML string: the names come out of
@@ -3988,7 +4008,7 @@ async function loadDashboard() {
         // rest only where two of the buildings shown disagree.
         if (!list.length) {
           bits.push(live.length ? "No property selected — tick one above."
-                                : "No property in the portfolio can be drawn on this measure yet.");
+                                : "No property in the portfolio can be drawn " + onThis + " yet.");
         } else if (m.listBasis || new Set(list.map(r => R[r.slug].basis)).size > 1) {
           bits.push(list.map(r => r.name + ": " + R[r.slug].basis).join(" · ") + ".");
         }
@@ -4002,7 +4022,7 @@ async function loadDashboard() {
           const whys = [...new Set(out.map(r => R[r.slug].why))];
           bits.push("The boxes above include "
             + (out.length === 1 ? "one building" : out.length + " buildings")
-            + " that cannot be drawn on this measure: "
+            + " that cannot be drawn " + onThis + ": "
             + whys.map(w => nameList(out.filter(r => R[r.slug].why === w).map(r => r.name))
                 + " (" + w + ")").join("; ")
             + "." + (m.fix ? m.fix(whys) : ""));
@@ -4218,72 +4238,29 @@ async function loadDashboard() {
     { sel: "erMeasure", cks: "erCks", stats: "erStats", eyebrow: "erEyebrow",
       foot: "erFoot", wrap: "erWrap", canvas: "expRatio" }, d));
 
-  /* ---- LEASING & OCCUPANCY (one measure, one line per property) ----
-     Five of the Portfolio tab's placeholder cards -- loss to lease, tours,
-     leads, applications and occupancy -- made one card in Expense Load &
-     NOI's format, by request, 2026-10-08: a measure on the select, a box per
-     building. Read per building off blocks the pipeline already publishes, so
-     a building appears here the day its own report does; nothing on this card
-     names one.
+  /* ---- LOSS TO LEASE (one line per property) ----
+     Loss to lease across the portfolio, on its own card since 2026-10-08, by
+     request: it was the first measure on Leasing & Occupancy for a day, where
+     it sat on a different source, a different axis and a different set of
+     buildings from the export measures beside it -- and, as the card's
+     default, hid them. One measure, so no select; a box per building.
 
-       Loss to lease  the line is the T12 statement's loss-to-lease account
-                      over its market rent potential, a month at a time -- the
-                      two series under the Landing tab's Loss to Lease card
-                      (rent_capture). The figure on the left is the newest rent
-                      roll's where one is on file: (market - in-place) / market
-                      over occupied units, which is what the scorecard's Loss
-                      to Lease % grades (A8) and what that card prints beneath
-                      its chart. Two measurements, and the note says how far
-                      apart they sit rather than letting one stand in for the
-                      other: The Landing's roll read 38.2% when its statement's
-                      newest month read 30.2%.
-       Tours          First Tours Attended, trailing month
-       Leads          New Prospects, trailing month
-       Applications   Applications Completed, trailing month
-       Occupancy      Occupancy Rate at period end
-                      -- all four off the EliseAI building-metrics export
-                      (building_metrics), every export kept as a point on its
-                      own date since 2026-10-08. It is the export behind the
-                      Landing tab's Leased % tile; before then only the newest
-                      one was read, by the scorecard fill.
+     The line is the T12 statement's loss-to-lease account over its market
+     rent potential, a month at a time -- the two series under the Landing
+     tab's Loss to Lease card (rent_capture). The figure on the left is the
+     newest rent roll's where one is on file: (market - in-place) / market
+     over occupied units, which is what the scorecard's Loss to Lease % grades
+     (A8) and what that card prints beneath its chart. Two measurements, and
+     the note says how far apart they sit rather than letting one stand in for
+     the other: The Landing's roll read 38.2% when its statement's newest
+     month read 30.2%.
 
-     Each export point is a trailing MONTH to its own date, so two points a
-     week apart share three weeks of their counts. The line is a rolling
-     month and the note says so; nothing here adds points together. */
-  function renderLeasingCard(ids, d) {
-    const BM = bySlug(d, "building_metrics"), RC = bySlug(d, "rent_capture"),
-          RR = bySlug(d, "rent_roll");
-    const rows = portfolioRows(d, ["building_metrics", "rent_capture", "rent_roll"])
-      .map(r => Object.assign(r, {
-        bm: (((BM[r.slug] || {}).points) || []).filter(q => q && /^\d{4}-\d{2}-\d{2}$/.test(q.as_of || "")),
-        rc: RC[r.slug] || null, rr: RR[r.slug] || null }));
-
-    const NOT_IN_EXPORT = "not in the EliseAI building-metrics export";
-    const exportFix = whys => whys.indexOf(NOT_IN_EXPORT) >= 0
-      ? " A building EliseAI adds to the export is drawn here from its next export on." : "";
-    // One export column as a line on its own dates. A blank cell stays a gap
-    // in the line rather than a zero, and the figure on the left is the newest
-    // reading the building actually has, dated by its own export.
-    const fromExport = (field, label, figWord) => r => {
-      if (!r.bm.length) return { why: NOT_IN_EXPORT };
-      const has = r.bm.filter(q => q[field] != null);
-      if (!has.length) return { why: "the export leaves its " + label + " blank" };
-      const lastPt = has[has.length - 1];
-      return { keys: r.bm.map(q => q.as_of),
-               vals: r.bm.map(q => (q[field] == null ? null : q[field])),
-               fig: lastPt[field], figKey: figWord + dayShort(lastPt.as_of), lastPt,
-               basis: "EliseAI building-metrics export, " + label };
-    };
-    const ROLLING = "Each point is the trailing month to its own export date, so two "
-      + "points a week apart share three weeks of their count: read a line as a "
-      + "rolling month, and never add its points together. The figures on the "
-      + "left are the newest export's.";
-    const counts = { axis: "day", along: "by export date", awaiting: "AWAITING THE EXPORT",
-                     tick: mCount, fmt: mCount, per: "", zero: true, integer: true,
-                     left: ROLLING, fix: exportFix };
-    const ofExport = what => "The lines are each building's " + what + " over the trailing "
-      + "month to each EliseAI building-metrics export, one point per export date. It is "
-      + "the export behind the Landing tab's Leased % tile.";
+     Read per building off blocks the pipeline already publishes, so a
+     building appears here the day its statement or roll does. */
+  function renderLossLeaseCard(ids, d) {
+    const RC = bySlug(d, "rent_capture"), RR = bySlug(d, "rent_roll");
+    const rows = portfolioRows(d, ["rent_capture", "rent_roll"])
+      .map(r => Object.assign(r, { rc: RC[r.slug] || null, rr: RR[r.slug] || null }));
 
     // The statement's loss-to-lease series, where the statement carries the
     // account. Palma's rent section is on the Align tree, where one of its two
@@ -4335,9 +4312,9 @@ async function loadDashboard() {
           + "across the gap.",
         left: "The figure on the left is the newest rent roll's where one is on file — "
           + "market rent less in-place rent over market rent, across occupied units — "
-          + "which is what the scorecard's Loss to Lease % grades and what the Loss to "
-          + "Lease card prints beneath its chart. It is a different measurement from the "
-          + "line, so the two need not agree.",
+          + "which is what the scorecard's Loss to Lease % grades and what the Landing "
+          + "tab's Loss to Lease card prints beneath its chart. It is a different "
+          + "measurement from the line, so the two need not agree.",
         // How far apart the two readings sit, building by building, from the
         // numbers themselves -- so the note cannot go stale as statements and
         // rolls arrive.
@@ -4354,44 +4331,123 @@ async function loadDashboard() {
         fix: whys => whys.some(w => w.indexOf("rent roll") >= 0)
           ? " A 12-month statement goes in the Drive “T12 Expenses” folder, a rent roll "
             + "in “Rent Roll”." : "" },
+    ];
+
+    renderMeasureCard(ids, { rows, measures: MEASURES, initial: "ltl",
+                             emptyText: "No statement or rent roll data yet" });
+  }
+
+  section("cLossToLease", () => renderLossLeaseCard(
+    { cks: "llCks", stats: "llStats", eyebrow: "llEyebrow",
+      foot: "llFoot", wrap: "llWrap", canvas: "llChart" }, d));
+
+  /* ---- LEASING & OCCUPANCY (one measure, one line per property) ----
+     Planned-metric placeholders made one card in Expense Load & NOI's format,
+     by request, 2026-10-08: a measure on the select, a box per building. It
+     opens on Tours. Every measure is the EliseAI building-metrics export
+     (building_metrics), every export kept as a point on its own date since
+     2026-10-08 -- the export behind the Landing tab's Leased % tile, of which
+     only the newest copy was read before, by the scorecard fill:
+
+       Tours          First Tours Attended, trailing month
+       Leads          New Prospects, trailing month
+       Applications   Applications Completed, trailing month
+       Occupancy      Occupancy Rate at period end
+       Leased %       100 less the Exposure Rate at period end -- the reading
+                      the scorecard's Leased % takes from the newest export, so
+                      the figure on the left is that cell
+
+     Read per building, so a building EliseAI adds to the export appears here
+     from its next export on; nothing on this card names one.
+
+     Each count is a trailing MONTH to its own export date, so two points a
+     week apart share three weeks of their counts. The line is a rolling
+     month and the note says so; nothing here adds points together. */
+  function renderLeasingCard(ids, d) {
+    const BM = bySlug(d, "building_metrics"), RR = bySlug(d, "rent_roll");
+    const rows = portfolioRows(d, ["building_metrics", "rent_roll"])
+      .map(r => Object.assign(r, {
+        bm: (((BM[r.slug] || {}).points) || []).filter(q => q && /^\d{4}-\d{2}-\d{2}$/.test(q.as_of || "")),
+        rr: RR[r.slug] || null }));
+
+    const NOT_IN_EXPORT = "not in the EliseAI building-metrics export";
+    const exportFix = whys => whys.indexOf(NOT_IN_EXPORT) >= 0
+      ? " A building EliseAI adds to the export is drawn here from its next export on." : "";
+    // One export column as a line on its own dates, through `f` where the
+    // measure is derived from the column (leased is 100 less exposure). A
+    // blank cell stays a gap in the line rather than a zero, and the figure on
+    // the left is the newest reading the building actually has, dated by its
+    // own export.
+    const fromExport = o => r => {
+      if (!r.bm.length) return { why: NOT_IN_EXPORT };
+      const val = q => (q[o.field] == null ? null : o.f ? o.f(q[o.field]) : q[o.field]);
+      const has = r.bm.filter(q => q[o.field] != null);
+      if (!has.length) return { why: "the export leaves its " + o.label + " blank" };
+      const lastPt = has[has.length - 1];
+      return { keys: r.bm.map(q => q.as_of), vals: r.bm.map(val),
+               fig: val(lastPt), figKey: o.figWord + dayShort(lastPt.as_of), lastPt,
+               basis: "EliseAI building-metrics export, " + (o.basis || o.label) };
+    };
+    const ROLLING = "Each point is the trailing month to its own export date, so two "
+      + "points a week apart share three weeks of their count: read a line as a "
+      + "rolling month, and never add its points together. The figures on the "
+      + "left are the newest export's.";
+    const counts = { axis: "day", along: "by export date", awaiting: "AWAITING THE EXPORT",
+                     tick: mCount, fmt: mCount, per: "", zero: true, integer: true,
+                     left: ROLLING, fix: exportFix };
+    const shares = { axis: "day", along: "by export date", awaiting: "AWAITING THE EXPORT",
+                     tick: mPct, fmt: mPct1, per: "", fix: exportFix };
+    const ofExport = what => "The lines are each building's " + what + " over the trailing "
+      + "month to each EliseAI building-metrics export, one point per export date. It is "
+      + "the export behind the Landing tab's Leased % tile.";
+
+    // A building in lease-up sits so far below the rest that, shown, it
+    // flattens them against the top of the axis. Lease-up is read off the
+    // building's newest occupancy, under 50% -- the line
+    // populate_building_metrics draws (LEASEUP_OCCUPANCY_UNDER) -- and the
+    // sentence quotes the measure's own figure.
+    const occNow = r => {
+      for (let i = r.bm.length - 1; i >= 0; i--) if (r.bm[i].occupancy != null) return r.bm[i].occupancy;
+      return null;
+    };
+    const leaseUp = (list, R, word) => {
+      const low = list.filter(r => occNow(r) != null && occNow(r) < 50 && R[r.slug].fig != null);
+      if (!low.length || low.length === list.length) return "";
+      const one = low.length === 1;
+      return nameList(low.map(r => r.name)) + (one ? " is" : " are")
+        + " in lease-up (" + low.map(r => mPct1(R[r.slug].fig)).join(", ") + " " + word
+        + "), so with " + (one ? "it" : "them") + " shown the others share the top of "
+        + "the axis — switch " + (one ? "it" : "them")
+        + " off above and the axis rescales to the rest.";
+    };
+
+    const MEASURES = [
       Object.assign({}, counts, { key: "tours", label: "Tours",
         eyebrow: "FIRST TOURS ATTENDED · TRAILING MONTH",
-        read: fromExport("first_tours_attended", "first tours attended", "month to "),
+        read: fromExport({ field: "first_tours_attended", label: "first tours attended",
+                           figWord: "month to " }),
         about: ofExport("first tours attended") + " First tours, because that is the "
           + "count every export carries: Total Tours Attended left the file on "
           + "2026-09-22." }),
       Object.assign({}, counts, { key: "leads", label: "Leads",
         eyebrow: "NEW PROSPECTS · TRAILING MONTH",
-        read: fromExport("new_prospects", "new prospects", "month to "),
+        read: fromExport({ field: "new_prospects", label: "new prospects",
+                           figWord: "month to " }),
         about: ofExport("new prospects (EliseAI's count of leads)") }),
       Object.assign({}, counts, { key: "apps", label: "Applications",
         eyebrow: "APPLICATIONS COMPLETED · TRAILING MONTH",
-        read: fromExport("applications_completed", "applications completed", "month to "),
+        read: fromExport({ field: "applications_completed", label: "applications completed",
+                           figWord: "month to " }),
         about: ofExport("applications completed") }),
-      { key: "occ", label: "Occupancy", eyebrow: "OCCUPANCY", axis: "day",
-        along: "by export date", awaiting: "AWAITING THE EXPORT",
-        tick: mPct, fmt: mPct1, per: "", fix: exportFix,
-        read: fromExport("occupancy", "occupancy", "as at "),
+      Object.assign({}, shares, { key: "occ", label: "Occupancy", eyebrow: "OCCUPANCY",
+        read: fromExport({ field: "occupancy", label: "occupancy", figWord: "as at " }),
         about: "The lines are each building's occupancy at period end on each EliseAI "
           + "building-metrics export, one point per export date. It is the export behind "
-          + "the Landing tab's Leased % tile, which reads 100% less the same file's "
-          + "exposure rate instead.",
+          + "the Landing tab's Leased % tile, which reads the same file's exposure rate "
+          + "instead — the Leased % view of this card.",
         left: "The figures on the left are the newest export's.",
         extra: (list, R) => {
-          const bits = [];
-          // A building in lease-up sits so far below the rest that, shown,
-          // it flattens them against the top of the axis. Under 50% is the
-          // line populate_building_metrics draws for lease-up
-          // (LEASEUP_OCCUPANCY_UNDER).
-          const low = list.filter(r => R[r.slug].fig != null && R[r.slug].fig < 50);
-          if (low.length && low.length < list.length) {
-            const one = low.length === 1;
-            bits.push(nameList(low.map(r => r.name)) + (one ? " is" : " are")
-              + " in lease-up (" + low.map(r => mPct1(R[r.slug].fig)).join(", ")
-              + " occupied), so with " + (one ? "it" : "them") + " shown the others share "
-              + "the top of the axis — switch " + (one ? "it" : "them")
-              + " off above and the axis rescales to the rest.");
-          }
+          const bits = [leaseUp(list, R, "occupied")];
           // Where a rent roll is on file it says the same thing its own way,
           // and the Landing tab's Unit Inventory bars split on the roll's.
           list.forEach(r => {
@@ -4407,11 +4463,23 @@ async function loadDashboard() {
                  ? ": the export counts " + mCount(pt.vacant_units) + " vacant units, the roll "
                    + mCount(rr.vacant) + "." : "."));
           });
-          return bits.join(" ");
-        } },
+          return bits.filter(Boolean).join(" ");
+        } }),
+      Object.assign({}, shares, { key: "leased", label: "Leased %",
+        eyebrow: "LEASED · 100% LESS EXPOSURE",
+        read: fromExport({ field: "exposure", label: "exposure rate", figWord: "as at ",
+                           f: v => 100 - v, basis: "100% less the exposure rate" }),
+        about: "The lines are each building's leased percentage on each EliseAI "
+          + "building-metrics export — 100% less its exposure rate at period end — one "
+          + "point per export date. It is the reading the scorecard's Leased % takes from "
+          + "the newest export, and the Landing tab's Leased % tile shows.",
+        left: "The figures on the left are the newest export's. Exposure counts units on "
+          + "notice as well as vacant ones, less those already re-let, so a building can "
+          + "read fuller on the Occupancy view than it does here.",
+        extra: (list, R) => leaseUp(list, R, "leased") }),
     ];
 
-    renderMeasureCard(ids, { rows, measures: MEASURES, initial: "ltl",
+    renderMeasureCard(ids, { rows, measures: MEASURES, initial: "tours",
                              emptyText: "No leasing or occupancy data yet" });
   }
 

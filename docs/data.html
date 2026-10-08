@@ -1248,8 +1248,8 @@ async function loadAll() {
       renderTable(host, {
         id: "t-rentcap-" + (pr.slug || i), group: "Portfolio",
         title: "Rent capture — " + (pr.name || pr.slug),
-        feeds: "Loss to Lease card (Landing tab), and the loss-to-lease line on the "
-             + "Leasing & Occupancy card (Portfolio tab)",
+        feeds: "Loss to Lease cards (Landing and Portfolio tabs) — the monthly series "
+             + "each one draws",
         note: [pr.basis, "statement period ending " + (pr.period_end || "—"),
                "codes " + ((pr.source_codes || []).join("+") || "—"),
                pr.tieout_max_gap != null
@@ -1725,8 +1725,9 @@ async function loadAll() {
       renderTable(host, {
         id: "t-rentroll-" + (pr.slug || i), group: "Portfolio",
         title: "Rent roll — summary — " + (pr.name || pr.slug),
-        feeds: "Loss to Lease card (Landing tab), and the loss-to-lease figure on the "
-             + "Leasing & Occupancy card (Portfolio tab)",
+        feeds: "Loss to Lease cards (Landing and Portfolio tabs) — the figures beside "
+             + "the series — and the rent-roll occupancy in the Leasing & Occupancy "
+             + "card's note (Portfolio tab)",
         note: src + pr.basis,
         cols: [{ key: "k", label: "Measure" }, { key: "v", label: "Value" }],
         rows: [
@@ -1876,7 +1877,7 @@ async function loadAll() {
         id: "t-bldgmetrics-" + (pr.slug || i), group: "Portfolio",
         title: "Leasing & occupancy, by export — " + (pr.name || pr.slug),
         feeds: "Leasing & Occupancy card (Portfolio tab) — its tours, leads, "
-             + "applications and occupancy lines",
+             + "applications, occupancy and leased % lines",
         note: [bmb.basis,
                pts.length + (pts.length === 1 ? " export" : " exports") + " on file"
                  + (pts.length ? ", " + pts[0].as_of + " to " + pts[pts.length - 1].as_of : ""),

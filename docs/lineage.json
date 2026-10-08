@@ -84,21 +84,19 @@
    "primary": "t-rentcap",
    "holds": "Rent capture"
   },
-  "cLeasing": {
-   "card": "Leasing & Occupancy",
+  "cLossToLease": {
+   "card": "Loss to Lease",
    "tab": "Portfolio",
    "tables": [
     "t-rentcap",
-    "t-bldgmetrics",
     "t-rentroll"
    ],
    "flows": [
     "t12",
-    "bldg_metrics",
     "rent_roll"
    ],
-   "primary": "t-bldgmetrics",
-   "holds": "Leasing & occupancy, by export"
+   "primary": "t-rentcap",
+   "holds": "Rent capture"
   },
   "cdFeeds": {
    "card": "What Feeds This Tab",
@@ -160,6 +158,20 @@
    ],
    "primary": "t-sc-measured",
    "holds": "Measured KPI values"
+  },
+  "cLeasing": {
+   "card": "Leasing & Occupancy",
+   "tab": "Portfolio",
+   "tables": [
+    "t-bldgmetrics",
+    "t-rentroll"
+   ],
+   "flows": [
+    "bldg_metrics",
+    "rent_roll"
+   ],
+   "primary": "t-bldgmetrics",
+   "holds": "Leasing & occupancy, by export"
   },
   "cmcVerdict": {
    "card": "Market Rent Check",
@@ -387,7 +399,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-08T00:52:34.872455+00:00",
+  "generated_at": "2026-10-08T16:16:16.870738+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -571,9 +583,10 @@
      ]
     },
     {
-     "card": "Leasing & Occupancy",
+     "card": "Loss to Lease",
      "tab": "Portfolio",
-     "anchor": "cLeasing",
+     "anchor": "cLossToLease",
+     "primary": "t-rentcap-*",
      "tables": [
       "t-rentcap-*"
      ]
@@ -1325,13 +1338,22 @@
      "holds": "The leased/vacant split on the bedroom bars"
     },
     {
+     "card": "Loss to Lease",
+     "tab": "Portfolio",
+     "anchor": "cLossToLease",
+     "tables": [
+      "t-rentroll-*"
+     ],
+     "holds": "Loss to lease as at the newest roll"
+    },
+    {
      "card": "Leasing & Occupancy",
      "tab": "Portfolio",
      "anchor": "cLeasing",
      "tables": [
       "t-rentroll-*"
      ],
-     "holds": "Loss to lease and occupancy as at the newest roll"
+     "holds": "Occupancy as at the newest roll"
     }
    ],
    "tables": [
@@ -2333,7 +2355,7 @@
    "origin_kind": "manual",
    "source_label": "docs/metrics.json, edited directly",
    "source_detail": "Blocks the pipeline preserves rather than regenerates.",
-   "carries": "The five planned-metric cards. Expense Trend left this list on 2026-09-17, derived from the T12 statement now, the trade-out placeholder went with its card on 2026-09-28, and the NOI margin placeholder came off on 2026-09-30 \u2014 both feeds it named have arrived, and the figure is on the Landing tab's Expense Load & NOI card and in its tile row. Five more came off on 2026-10-08 \u2014 loss to lease, tours, leads, applications and occupancy \u2014 as one Leasing & Occupancy card fed by the T12 statement, the rent roll and the EliseAI building-metrics export.",
+   "carries": "The four planned-metric cards. Expense Trend left this list on 2026-09-17, derived from the T12 statement now, the trade-out placeholder went with its card on 2026-09-28, and the NOI margin placeholder came off on 2026-09-30 \u2014 both feeds it named have arrived, and the figure is on the Landing tab's Expense Load & NOI card and in its tile row. Six more came off on 2026-10-08: loss to lease as a card of its own, fed by the T12 statement and the rent roll, and tours, leads, applications, occupancy and leased % as one Leasing & Occupancy card fed by the EliseAI building-metrics export.",
    "steps": [
     {
      "script": "scripts/build_metrics.py",

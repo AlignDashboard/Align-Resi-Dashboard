@@ -150,12 +150,6 @@
       "title": "Marketing Spend / Lease",
       "source": "Marketing Spend + Leasing Report",
       "viz": "bar"
-    },
-    {
-      "id": "leasedPct",
-      "title": "Leased %",
-      "source": "Property Status",
-      "viz": "line"
     }
   ],
   "expense_ratio": {
