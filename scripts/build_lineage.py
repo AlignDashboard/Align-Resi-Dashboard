@@ -167,11 +167,11 @@ DRIVE_FLOWS = {
              "anchor": "cdRentCapture", "primary": "t-rentcap-*",
              "tables": ["t-rentcap-*"]},
             # The same section's loss-to-lease series, one line per building,
-            # as one measure of the Portfolio tab's Leasing & Occupancy card.
-            # No primary: the card's other four measures are the EliseAI
-            # export's, and that flow declares the link.
-            {"card": "Leasing & Occupancy", "tab": "Portfolio", "anchor": "cLeasing",
-             "tables": ["t-rentcap-*"]},
+            # on the Portfolio tab's own Loss to Lease card. The line is this
+            # table, so this flow holds the link; the rent roll adds the figure
+            # beside it.
+            {"card": "Loss to Lease", "tab": "Portfolio", "anchor": "cLossToLease",
+             "primary": "t-rentcap-*", "tables": ["t-rentcap-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "primary": "flow", "tables": []},
         ],
@@ -421,11 +421,15 @@ DRIVE_FLOWS = {
              "primary": "t-occupancy-*", "tables": ["t-occupancy-*", "t-unitdir-*"],
              "holds": "The leased/vacant split on the bedroom bars"},
             # The figure beside the loss-to-lease line on the Portfolio tab's
-            # Leasing & Occupancy card, and the roll's occupancy its note sets
-            # against the export's. No primary, for the t12 entry's reason.
+            # Loss to Lease card, and the roll's occupancy that the Leasing &
+            # Occupancy card's note sets against the export's. No primary on
+            # either: the line's flow (t12) and the export's hold those links.
+            {"card": "Loss to Lease", "tab": "Portfolio", "anchor": "cLossToLease",
+             "tables": ["t-rentroll-*"],
+             "holds": "Loss to lease as at the newest roll"},
             {"card": "Leasing & Occupancy", "tab": "Portfolio", "anchor": "cLeasing",
              "tables": ["t-rentroll-*"],
-             "holds": "Loss to lease and occupancy as at the newest roll"},
+             "holds": "Occupancy as at the newest roll"},
         ],
         "tables": ["t-rentroll-*", "t-occupancy-*", "t-rollover-*", "t-gaps-*"],
         "note": "Live since 2026-09-11, the first roll ever to reach the "
@@ -567,8 +571,8 @@ DRIVE_FLOWS = {
             {"card": "Leased % and Trade-out % tiles", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
             # Since 2026-10-08: every export kept as a point per date, drawn one
-            # measure at a time -- tours, leads, applications and occupancy --
-            # beside the statement's loss to lease. This flow holds the link.
+            # measure at a time -- tours, leads, applications, occupancy and
+            # leased %. This flow holds the link.
             {"card": "Leasing & Occupancy", "tab": "Portfolio", "anchor": "cLeasing",
              "primary": "t-bldgmetrics-*", "tables": ["t-bldgmetrics-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
@@ -981,16 +985,17 @@ OTHER_FLOWS = [
         "source_label": "docs/metrics.json, edited directly",
         "source_detail": "Blocks the pipeline preserves rather than "
                          "regenerates.",
-        "carries": "The five planned-metric cards. Expense Trend left this "
+        "carries": "The four planned-metric cards. Expense Trend left this "
                    "list on 2026-09-17, derived from the T12 statement now, "
                    "the trade-out placeholder went with its card on "
                    "2026-09-28, and the NOI margin placeholder came off on "
                    "2026-09-30 — both feeds it named have arrived, and the "
                    "figure is on the Landing tab's Expense Load & NOI card "
-                   "and in its tile row. Five more came off on 2026-10-08 — "
-                   "loss to lease, tours, leads, applications and occupancy — "
-                   "as one Leasing & Occupancy card fed by the T12 statement, "
-                   "the rent roll and the EliseAI building-metrics export.",
+                   "and in its tile row. Six more came off on 2026-10-08: "
+                   "loss to lease as a card of its own, fed by the T12 "
+                   "statement and the rent roll, and tours, leads, "
+                   "applications, occupancy and leased % as one Leasing & "
+                   "Occupancy card fed by the EliseAI building-metrics export.",
         "steps": [
             {"script": "scripts/build_metrics.py",
              "does": "Loads the existing metrics.json and writes only the "
