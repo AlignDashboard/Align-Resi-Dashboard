@@ -1,0 +1,90 @@
+{
+  "report_type": "bldg_metrics_csv",
+  "property": "Chorus",
+  "points": [
+    {
+      "as_of": "2026-08-19",
+      "source_file": "metrics-building-2026-08-19.csv",
+      "landed_at": "2026-08-19T19:20:41.512Z",
+      "heading": "Chorus",
+      "occupancy": 96.6346,
+      "exposure": 4.3269,
+      "vacant_units": 14.0,
+      "new_prospects": 313.0,
+      "first_tours_booked": 100.0,
+      "first_tours_attended": 72.0,
+      "applications_completed": 16.0,
+      "leases_signed": 9.0
+    },
+    {
+      "as_of": "2026-08-26",
+      "source_file": "metrics-building-2026-08-26.csv",
+      "landed_at": "2026-08-26T20:52:09.827Z",
+      "heading": "Chorus",
+      "occupancy": 97.1154,
+      "exposure": 5.2885,
+      "vacant_units": 12.0,
+      "new_prospects": 356.0,
+      "first_tours_booked": 102.0,
+      "first_tours_attended": 74.0,
+      "applications_completed": 16.0,
+      "leases_signed": 10.0
+    },
+    {
+      "as_of": "2026-08-31",
+      "source_file": "metrics-building-2026-08-31.csv",
+      "landed_at": "2026-08-31T17:55:34.425Z",
+      "heading": "Chorus",
+      "occupancy": 97.1154,
+      "exposure": 5.7692,
+      "vacant_units": 12.0,
+      "new_prospects": 352.0,
+      "first_tours_booked": 105.0,
+      "first_tours_attended": 70.0,
+      "applications_completed": 14.0,
+      "leases_signed": 11.0
+    },
+    {
+      "as_of": "2026-09-22",
+      "source_file": "metrics-building-2026-09-22.csv",
+      "landed_at": "2026-09-22T22:27:05.607Z",
+      "heading": "Chorus",
+      "occupancy": 96.1538,
+      "exposure": 7.4519,
+      "vacant_units": 16.0,
+      "new_prospects": 302.0,
+      "first_tours_booked": 93.0,
+      "first_tours_attended": 67.0,
+      "applications_completed": 15.0,
+      "leases_signed": 14.0
+    },
+    {
+      "as_of": "2026-09-28",
+      "source_file": "metrics-building-2026-09-28.csv",
+      "landed_at": "2026-09-28T17:12:11.018Z",
+      "heading": "Chorus",
+      "occupancy": 96.3942,
+      "exposure": 7.6923,
+      "vacant_units": 15.0,
+      "new_prospects": 285.0,
+      "first_tours_booked": 102.0,
+      "first_tours_attended": 79.0,
+      "applications_completed": 15.0,
+      "leases_signed": 17.0
+    },
+    {
+      "as_of": "2026-10-05",
+      "source_file": "metrics-building-2026-10-05.csv",
+      "landed_at": "2026-10-05T17:24:01.066Z",
+      "heading": "Chorus",
+      "occupancy": 95.4327,
+      "exposure": 7.6923,
+      "vacant_units": 19.0,
+      "new_prospects": 295.0,
+      "first_tours_booked": 115.0,
+      "first_tours_attended": 88.0,
+      "applications_completed": 20.0,
+      "leases_signed": 13.0
+    }
+  ]
+}

@@ -43,9 +43,10 @@ fill_measured() {
   done
 }
 
-# The building-metrics CSV lands in the Drive EliseAI Reports folder and needs
-# no parse/accumulate step: populate_building_metrics fills the scorecard from
-# it directly. Drive's landed_at rides along as the arrival time, so "data last
+# The building-metrics CSV lands in the Drive EliseAI Reports folder and is read
+# twice: build_metrics keeps every export as a point per date (the Portfolio
+# tab's Leasing & Occupancy card), and this fills the scorecard from the newest
+# one directly. Drive's landed_at rides along as the arrival time, so "data last
 # updated" reflects when the export actually arrived rather than when someone
 # handed it over. Runs after the delinquency fill so the never-take-an-owned-
 # cell rule sees the other feeds' claims.

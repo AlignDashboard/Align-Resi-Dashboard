@@ -1,0 +1,90 @@
+{
+  "report_type": "bldg_metrics_csv",
+  "property": "The Landing",
+  "points": [
+    {
+      "as_of": "2026-08-19",
+      "source_file": "metrics-building-2026-08-19.csv",
+      "landed_at": "2026-08-19T19:20:41.512Z",
+      "heading": "The Landing",
+      "occupancy": 98.4791,
+      "exposure": 3.0418,
+      "vacant_units": 4.0,
+      "new_prospects": 112.0,
+      "first_tours_booked": 19.0,
+      "first_tours_attended": 16.0,
+      "applications_completed": 8.0,
+      "leases_signed": 7.0
+    },
+    {
+      "as_of": "2026-08-26",
+      "source_file": "metrics-building-2026-08-26.csv",
+      "landed_at": "2026-08-26T20:52:09.827Z",
+      "heading": "The Landing",
+      "occupancy": 98.8593,
+      "exposure": 1.9011,
+      "vacant_units": 3.0,
+      "new_prospects": 111.0,
+      "first_tours_booked": 26.0,
+      "first_tours_attended": 18.0,
+      "applications_completed": 8.0,
+      "leases_signed": 6.0
+    },
+    {
+      "as_of": "2026-08-31",
+      "source_file": "metrics-building-2026-08-31.csv",
+      "landed_at": "2026-08-31T17:55:34.425Z",
+      "heading": "The Landing",
+      "occupancy": 98.0989,
+      "exposure": 2.6616,
+      "vacant_units": 5.0,
+      "new_prospects": 107.0,
+      "first_tours_booked": 30.0,
+      "first_tours_attended": 22.0,
+      "applications_completed": 10.0,
+      "leases_signed": 5.0
+    },
+    {
+      "as_of": "2026-09-22",
+      "source_file": "metrics-building-2026-09-22.csv",
+      "landed_at": "2026-09-22T22:27:05.607Z",
+      "heading": "The Landing",
+      "occupancy": 99.2395,
+      "exposure": 3.8023,
+      "vacant_units": 2.0,
+      "new_prospects": 84.0,
+      "first_tours_booked": 25.0,
+      "first_tours_attended": 18.0,
+      "applications_completed": 6.0,
+      "leases_signed": 6.0
+    },
+    {
+      "as_of": "2026-09-28",
+      "source_file": "metrics-building-2026-09-28.csv",
+      "landed_at": "2026-09-28T17:12:11.018Z",
+      "heading": "The Landing",
+      "occupancy": 99.2395,
+      "exposure": 5.3232,
+      "vacant_units": 2.0,
+      "new_prospects": 101.0,
+      "first_tours_booked": 24.0,
+      "first_tours_attended": 14.0,
+      "applications_completed": 4.0,
+      "leases_signed": 5.0
+    },
+    {
+      "as_of": "2026-10-05",
+      "source_file": "metrics-building-2026-10-05.csv",
+      "landed_at": "2026-10-05T17:24:01.066Z",
+      "heading": "The Landing",
+      "occupancy": 98.8593,
+      "exposure": 5.7034,
+      "vacant_units": 3.0,
+      "new_prospects": 101.0,
+      "first_tours_booked": 19.0,
+      "first_tours_attended": 12.0,
+      "applications_completed": 3.0,
+      "leases_signed": 3.0
+    }
+  ]
+}

@@ -1248,7 +1248,8 @@ async function loadAll() {
       renderTable(host, {
         id: "t-rentcap-" + (pr.slug || i), group: "Portfolio",
         title: "Rent capture — " + (pr.name || pr.slug),
-        feeds: "Loss to Lease card (Landing tab)",
+        feeds: "Loss to Lease card (Landing tab), and the loss-to-lease line on the "
+             + "Leasing & Occupancy card (Portfolio tab)",
         note: [pr.basis, "statement period ending " + (pr.period_end || "—"),
                "codes " + ((pr.source_codes || []).join("+") || "—"),
                pr.tieout_max_gap != null
@@ -1724,7 +1725,8 @@ async function loadAll() {
       renderTable(host, {
         id: "t-rentroll-" + (pr.slug || i), group: "Portfolio",
         title: "Rent roll — summary — " + (pr.name || pr.slug),
-        feeds: "Loss to Lease card (Landing tab)",
+        feeds: "Loss to Lease card (Landing tab), and the loss-to-lease figure on the "
+             + "Leasing & Occupancy card (Portfolio tab)",
         note: src + pr.basis,
         cols: [{ key: "k", label: "Measure" }, { key: "v", label: "Value" }],
         rows: [
@@ -1861,6 +1863,44 @@ async function loadAll() {
           rows: rn.months || [], filterable: true,
         });
       }
+    });
+
+    // The EliseAI building-metrics export, one row per export date: the
+    // tours, leads, applications and occupancy lines on the Portfolio tab's
+    // Leasing & Occupancy card. Every export is kept since 2026-10-08; before
+    // that only the newest was read, straight into the scorecard.
+    const bmb = d.building_metrics || {};
+    (bmb.properties || []).forEach((pr, i) => {
+      const pts = pr.points || [];
+      renderTable(host, {
+        id: "t-bldgmetrics-" + (pr.slug || i), group: "Portfolio",
+        title: "Leasing & occupancy, by export — " + (pr.name || pr.slug),
+        feeds: "Leasing & Occupancy card (Portfolio tab) — its tours, leads, "
+             + "applications and occupancy lines",
+        note: [bmb.basis,
+               pts.length + (pts.length === 1 ? " export" : " exports") + " on file"
+                 + (pts.length ? ", " + pts[0].as_of + " to " + pts[pts.length - 1].as_of : ""),
+               "Leased is 100% less the exposure rate, which is how the scorecard "
+                 + "reads Leased % off the same file. Tours are first tours "
+                 + "attended: Total Tours Attended left the export on 2026-09-22."]
+              .filter(Boolean).join(" · "),
+        cols: [{ key: "as_of", label: "Export date" },
+               { key: "occupancy", label: "Occupancy", fmt: "pct1" },
+               { key: "leased", label: "Leased", fmt: "pct1" },
+               { key: "vacant_units", label: "Vacant units", fmt: "int" },
+               { key: "new_prospects", label: "Leads (new prospects)", fmt: "int" },
+               { key: "first_tours_booked", label: "First tours booked", fmt: "int" },
+               { key: "first_tours_attended", label: "Tours (first attended)", fmt: "int" },
+               { key: "applications_completed", label: "Applications completed", fmt: "int" },
+               { key: "leases_signed", label: "Leases signed", fmt: "int" },
+               { key: "source_file", label: "File" },
+               { key: "landed_at", label: "Landed" }],
+        // The export prints percentages; this page's pct formats take a fraction.
+        rows: pts.map(q => Object.assign({}, q, {
+          occupancy: isNum(q.occupancy) ? q.occupancy / 100 : null,
+          leased: isNum(q.exposure) ? (100 - q.exposure) / 100 : null })),
+        filterable: true,
+      });
     });
 
     renderTable(host, {

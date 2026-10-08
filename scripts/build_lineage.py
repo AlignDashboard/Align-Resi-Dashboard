@@ -166,6 +166,12 @@ DRIVE_FLOWS = {
             {"card": "Loss to Lease", "tab": "Landing",
              "anchor": "cdRentCapture", "primary": "t-rentcap-*",
              "tables": ["t-rentcap-*"]},
+            # The same section's loss-to-lease series, one line per building,
+            # as one measure of the Portfolio tab's Leasing & Occupancy card.
+            # No primary: the card's other four measures are the EliseAI
+            # export's, and that flow declares the link.
+            {"card": "Leasing & Occupancy", "tab": "Portfolio", "anchor": "cLeasing",
+             "tables": ["t-rentcap-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "primary": "flow", "tables": []},
         ],
@@ -414,6 +420,12 @@ DRIVE_FLOWS = {
             {"card": "Unit Inventory", "tab": "Landing", "anchor": "cdInventory",
              "primary": "t-occupancy-*", "tables": ["t-occupancy-*", "t-unitdir-*"],
              "holds": "The leased/vacant split on the bedroom bars"},
+            # The figure beside the loss-to-lease line on the Portfolio tab's
+            # Leasing & Occupancy card, and the roll's occupancy its note sets
+            # against the export's. No primary, for the t12 entry's reason.
+            {"card": "Leasing & Occupancy", "tab": "Portfolio", "anchor": "cLeasing",
+             "tables": ["t-rentroll-*"],
+             "holds": "Loss to lease and occupancy as at the newest roll"},
         ],
         "tables": ["t-rentroll-*", "t-occupancy-*", "t-rollover-*", "t-gaps-*"],
         "note": "Live since 2026-09-11, the first roll ever to reach the "
@@ -500,23 +512,40 @@ DRIVE_FLOWS = {
     },
     ("EliseAI Reports", "bldg_metrics_csv"): {
         "id": "bldg_metrics",
-        "example": 'metricsbuilding<YYYYMMDD>.csv',
+        "example": 'metrics-building-<YYYY-MM-DD>.csv',
         "title": "EliseAI building-metrics export",
-        "carries": "79 columns per property — exposure, trade-out, closing "
-                   "ratio, renewal rate, containment, response time.",
+        "carries": "One row per building — occupancy and exposure, new "
+                   "prospects, tours and applications over the trailing month, "
+                   "trade-out, renewal rate, containment, response time. 79 "
+                   "columns when it began, 40 since 2026-09-22 (B9).",
         "steps": [
+            {"script": "scripts/parse_building_metrics.py",
+             "does": "Reads every export, one section per building row, dated "
+                     "by the filename's last date — the filer's arrival prefix "
+                     "is not the export's.",
+             "checks": "Each building's counts must reproduce the export's own "
+                       "Prospect to Tour Attended and Prospect to App Completed "
+                       "rates or that building is refused; a column the card "
+                       "draws, gone from the header, refuses the file."},
+            {"script": "scripts/build_metrics.py",
+             "does": "Routes each row to its property by the master's codes, "
+                     "aliases and names, and keeps one point per export date.",
+             "checks": "A later export never supersedes an earlier date's "
+                       "point; a date filed twice keeps the later arrival."},
             {"script": "scripts/populate_building_metrics.py",
              "does": "Fills nine KPIs where the export's column means what the "
-                     "KPI means, for every property in the file. No parse or "
-                     "accumulate step — it writes the scorecard directly.",
+                     "KPI means, for every property in the file. Reads the "
+                     "newest export itself and writes the scorecard directly; "
+                     "the store above is for the Portfolio tab's card.",
              "checks": "Never takes a cell another feed owns; a property under "
                        "50% occupancy is filled but left ungraded rather than "
                        "scored red for not having opened; implausible cells "
                        "(Chorus's +119.78% executed increase) are skipped and "
                        "the skip recorded in the basis."},
         ],
-        "stores": [],
+        "stores": ["data/<slug>/building_metrics.json"],
         "publishes": [
+            {"file": "metrics.json", "key": "building_metrics"},
             {"file": "scorecard.json", "key": "Leased %"},
             {"file": "scorecard.json", "key": "Trade-out %"},
             {"file": "scorecard.json", "key": "Closing Ratio"},
@@ -537,10 +566,15 @@ DRIVE_FLOWS = {
             # unchanged.
             {"card": "Leased % and Trade-out % tiles", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
+            # Since 2026-10-08: every export kept as a point per date, drawn one
+            # measure at a time -- tours, leads, applications and occupancy --
+            # beside the statement's loss to lease. This flow holds the link.
+            {"card": "Leasing & Occupancy", "tab": "Portfolio", "anchor": "cLeasing",
+             "primary": "t-bldgmetrics-*", "tables": ["t-bldgmetrics-*"]},
             {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "primary": "flow", "tables": []},
         ],
-        "tables": ["t-sc-measured", "t-sc-arrivals"],
+        "tables": ["t-bldgmetrics-*", "t-sc-measured", "t-sc-arrivals"],
         "note": "The widest feed on the page: it is the only one that says "
                 "anything at all about Chorus and Madelon.",
         "open_item": "B6",
@@ -947,13 +981,16 @@ OTHER_FLOWS = [
         "source_label": "docs/metrics.json, edited directly",
         "source_detail": "Blocks the pipeline preserves rather than "
                          "regenerates.",
-        "carries": "The ten planned-metric cards. Expense Trend left this "
+        "carries": "The five planned-metric cards. Expense Trend left this "
                    "list on 2026-09-17, derived from the T12 statement now, "
                    "the trade-out placeholder went with its card on "
                    "2026-09-28, and the NOI margin placeholder came off on "
                    "2026-09-30 — both feeds it named have arrived, and the "
                    "figure is on the Landing tab's Expense Load & NOI card "
-                   "and in its tile row.",
+                   "and in its tile row. Five more came off on 2026-10-08 — "
+                   "loss to lease, tours, leads, applications and occupancy — "
+                   "as one Leasing & Occupancy card fed by the T12 statement, "
+                   "the rent roll and the EliseAI building-metrics export.",
         "steps": [
             {"script": "scripts/build_metrics.py",
              "does": "Loads the existing metrics.json and writes only the "
@@ -1221,7 +1258,24 @@ def gather_evidence(flow):
         rows += evidence_from_scorecard("eliseai_")
         return rows
     if flow["id"] == "bldg_metrics":
-        return evidence_from_scorecard("bldg_")
+        # Two halves since 2026-10-08: every export kept as a point per date,
+        # and the newest filling the scorecard. The points are dated by
+        # export and carry their own file, which _points_evidence -- written
+        # for statement periods -- does not read.
+        rows = []
+        for slug, doc in _slug_files("data/<slug>/building_metrics.json"):
+            pts = (doc or {}).get("points") or []
+            if not pts:
+                continue
+            last = pts[-1]
+            rows.append({"property": slug,
+                         "file": "data/%s/building_metrics.json" % slug,
+                         "as_of": last.get("as_of"),
+                         "source_file": last.get("source_file"),
+                         "landed_at": last.get("landed_at"),
+                         "detail": f"{len(pts)} export(s) kept, "
+                                   f"{pts[0].get('as_of')} to {last.get('as_of')}"})
+        return rows + evidence_from_scorecard("bldg_")
     if flow["id"] in ("delinquency", "delinquency_alt"):
         # The report's own family since G3 closed (2026-09-21). Reading the
         # unprefixed one credited it with whatever that family last listed --
