@@ -116,14 +116,14 @@
     {
       "drive_folder": "EliseAI Reports",
       "report_type": "bldg_metrics_csv",
-      "parser": null,
+      "parser": "parse_building_metrics",
       "file_glob": "*.csv",
       "name_patterns": [
         "metrics-building*.csv",
         "metricsbuilding*.csv"
       ],
       "status": "active",
-      "_comment": "The building-metrics CSV. No parse/accumulate step -- update.yml runs populate_building_metrics.py on the newest one after the scorecard fill, passing Drive's landed_at as the arrival time."
+      "_comment": "The building-metrics CSV, read twice. update.yml runs populate_building_metrics.py on the newest one after the scorecard fill, passing Drive's landed_at as the arrival time; and since 2026-10-08 parse_building_metrics reads every one so data/<slug>/building_metrics.json keeps a point per export date -- the Portfolio tab's Leasing & Occupancy card."
     },
     {
       "drive_folder": "Building Info",

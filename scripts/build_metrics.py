@@ -780,6 +780,69 @@ def store_leasing_funnel(prop, parsed):
                          "by_month"])
 
 
+# What a building-metrics export point keeps. Counts are over the export's
+# trailing month; the rates are point-in-time at its date.
+BLDG_FIELDS = ("occupancy", "exposure", "vacant_units", "new_prospects",
+               "first_tours_booked", "first_tours_attended",
+               "applications_completed", "leases_signed")
+
+
+def store_building_metrics(prop, parsed):
+    """data/<slug>/building_metrics.json -- one point per export, accumulated.
+
+    populate_building_metrics.py fills the scorecard from the newest export and
+    keeps nothing else, so until 2026-10-08 an export's leads, tours,
+    applications and occupancy were on the page for a day and gone. Every
+    export is fetched every run, so this keeps one point per export DATE and
+    the series back-fills itself from whatever Drive still holds.
+
+    Keyed on as_of, the filename date. The filer keeps an arrival-prefixed copy
+    beside any hand-dropped one, and the two are one point: an equal date is
+    replaced only by a later Drive arrival, so re-processing is idempotent and
+    a corrected re-export of the same date wins. Exports are never superseded
+    by later ones -- each is its own trailing month -- which is why this is not
+    store_report's newest-wins snapshot.
+
+    A building whose counts fail the export's own rates (parse_building_metrics)
+    is reported and not kept: a refused point is a gap, not a zero. Counts and
+    rates only; the export carries nothing about a person.
+    """
+    sec = (parsed.get("sections") or [{}])[0]
+    if sec.get("refused"):
+        print(f"[refused] {parsed.get('source_file')} -> {prop['name']}: "
+              f"{sec['refused']} -- not stored")
+        # KEPT_NEWER only so the router does not print "[ok] stored" after it.
+        return KEPT_NEWER
+    as_of = parsed.get("as_of")
+    if not as_of:
+        print(f"[warn] {parsed.get('source_file')} -> {prop['name']}: no export "
+              f"date -- not stored")
+        return KEPT_NEWER
+    d = DATA / prop["slug"]
+    d.mkdir(parents=True, exist_ok=True)
+    fp = d / "building_metrics.json"
+    held = {}
+    if fp.exists():
+        try:
+            held = json.load(open(fp))
+        except (OSError, ValueError):
+            held = {}
+    points = {p["as_of"]: p for p in held.get("points") or [] if p.get("as_of")}
+    point = {"as_of": as_of, "source_file": parsed.get("source_file"),
+             "landed_at": parsed.get("landed_at"), "heading": sec.get("property_code"),
+             **{k: sec.get(k) for k in BLDG_FIELDS}}
+    prev = points.get(as_of)
+    if prev and older_landed(point["landed_at"], prev.get("landed_at")):
+        print(f"[skip] {parsed.get('source_file')} -> {prop['name']}: export of "
+              f"{as_of} already held from a later arrival")
+        return KEPT_NEWER
+    points[as_of] = point
+    out = {"report_type": "bldg_metrics_csv", "property": prop["name"],
+           "points": sorted(points.values(), key=lambda p: p["as_of"])}
+    json.dump(scrub(out), open(fp, "w"), indent=2, default=str)
+    return fp
+
+
 def store_concessions(prop, parsed):
     """data/<slug>/concessions.json — aggregates only, per the repo rule that
     committed files carry no unit-level detail. The per-unit rows stay in the
@@ -1150,6 +1213,39 @@ def _vintage(value):
     return str(value)[:10] if value else None
 
 
+def building_metrics_block(props):
+    """metrics["building_metrics"] -- every export kept, per active building.
+
+    What the Portfolio tab's Leasing & Occupancy card draws for tours, leads,
+    applications and occupancy: one point per export date, published from
+    data/<slug>/building_metrics.json in date order. A building the export does
+    not cover (Palma) has no store and is simply absent; the card lists it and
+    says why. A function rather than inline so a back-fill can publish exactly
+    what a pipeline run would.
+    """
+    out = []
+    for p in props:
+        if not p.get("active", True):
+            continue
+        fp = DATA / p["slug"] / "building_metrics.json"
+        if not fp.exists():
+            continue
+        pts = sorted(json.load(open(fp)).get("points") or [], key=lambda x: x["as_of"])
+        if not pts:
+            continue
+        out.append({"slug": p["slug"], "name": p["name"],
+                    "points": [{k: pt.get(k) for k in
+                                ("as_of", "landed_at", "source_file") + BLDG_FIELDS}
+                               for pt in pts]})
+        print(f"[ok] building metrics for {p['name']}: {len(pts)} export(s), "
+              f"{pts[0]['as_of']}..{pts[-1]['as_of']}")
+    return {"available": bool(out), "properties": out,
+            "basis": "EliseAI building-metrics export, one point per export date: "
+                     "occupancy and exposure as at that date; new prospects, first "
+                     "tours attended and applications completed over the trailing "
+                     "month to it (owner, 2026-08-20)."}
+
+
 def comps_block(props, metrics):
     """metrics["comps"] — the market, and the Yardi market rent table measured
     against it.
@@ -1297,6 +1393,7 @@ ACCUMULATORS = {
     "renewal_tracker": store_renewal_tracker,
     "lease_tradeout": store_lease_tradeout,
     "market_comps": store_comps,
+    "bldg_metrics_csv": store_building_metrics,
 }
 
 
@@ -2293,6 +2390,7 @@ def build_metrics_json():
     metrics["rent_capture"] = {"available": bool(rc_props), "properties": rc_props}
 
     metrics["comps"] = comps_block(props, metrics)
+    metrics["building_metrics"] = building_metrics_block(props)
 
     if expense_ratio_props:
         metrics["expense_ratio"] = {

@@ -134,30 +134,6 @@
       "viz": "line"
     },
     {
-      "id": "lossToLease",
-      "title": "Loss to Lease",
-      "source": "Rent Roll",
-      "viz": "line"
-    },
-    {
-      "id": "tours",
-      "title": "# of Tours",
-      "source": "Property Status",
-      "viz": "bar"
-    },
-    {
-      "id": "leads",
-      "title": "# of Leads",
-      "source": "Property Status",
-      "viz": "bar"
-    },
-    {
-      "id": "applications",
-      "title": "# of Applications",
-      "source": "Property Status \u00b7 Closing Ratio",
-      "viz": "bar"
-    },
-    {
       "id": "renewals",
       "title": "Renewals",
       "source": "Lease Expiration + Renewal Workbook",
@@ -174,12 +150,6 @@
       "title": "Marketing Spend / Lease",
       "source": "Marketing Spend + Leasing Report",
       "viz": "bar"
-    },
-    {
-      "id": "occupancy",
-      "title": "Occupancy %",
-      "source": "Property Status",
-      "viz": "line"
     },
     {
       "id": "leasedPct",
@@ -14037,5 +14007,347 @@
         "name": "Palma"
       }
     ]
+  },
+  "building_metrics": {
+    "available": true,
+    "properties": [
+      {
+        "slug": "the-landing",
+        "name": "The Landing",
+        "points": [
+          {
+            "as_of": "2026-08-19",
+            "landed_at": "2026-08-19T19:20:41.512Z",
+            "source_file": "metrics-building-2026-08-19.csv",
+            "occupancy": 98.4791,
+            "exposure": 3.0418,
+            "vacant_units": 4.0,
+            "new_prospects": 112.0,
+            "first_tours_booked": 19.0,
+            "first_tours_attended": 16.0,
+            "applications_completed": 8.0,
+            "leases_signed": 7.0
+          },
+          {
+            "as_of": "2026-08-26",
+            "landed_at": "2026-08-26T20:52:09.827Z",
+            "source_file": "metrics-building-2026-08-26.csv",
+            "occupancy": 98.8593,
+            "exposure": 1.9011,
+            "vacant_units": 3.0,
+            "new_prospects": 111.0,
+            "first_tours_booked": 26.0,
+            "first_tours_attended": 18.0,
+            "applications_completed": 8.0,
+            "leases_signed": 6.0
+          },
+          {
+            "as_of": "2026-08-31",
+            "landed_at": "2026-08-31T17:55:34.425Z",
+            "source_file": "metrics-building-2026-08-31.csv",
+            "occupancy": 98.0989,
+            "exposure": 2.6616,
+            "vacant_units": 5.0,
+            "new_prospects": 107.0,
+            "first_tours_booked": 30.0,
+            "first_tours_attended": 22.0,
+            "applications_completed": 10.0,
+            "leases_signed": 5.0
+          },
+          {
+            "as_of": "2026-09-22",
+            "landed_at": "2026-09-22T22:27:05.607Z",
+            "source_file": "metrics-building-2026-09-22.csv",
+            "occupancy": 99.2395,
+            "exposure": 3.8023,
+            "vacant_units": 2.0,
+            "new_prospects": 84.0,
+            "first_tours_booked": 25.0,
+            "first_tours_attended": 18.0,
+            "applications_completed": 6.0,
+            "leases_signed": 6.0
+          },
+          {
+            "as_of": "2026-09-28",
+            "landed_at": "2026-09-28T17:12:11.018Z",
+            "source_file": "metrics-building-2026-09-28.csv",
+            "occupancy": 99.2395,
+            "exposure": 5.3232,
+            "vacant_units": 2.0,
+            "new_prospects": 101.0,
+            "first_tours_booked": 24.0,
+            "first_tours_attended": 14.0,
+            "applications_completed": 4.0,
+            "leases_signed": 5.0
+          },
+          {
+            "as_of": "2026-10-05",
+            "landed_at": "2026-10-05T17:24:01.066Z",
+            "source_file": "metrics-building-2026-10-05.csv",
+            "occupancy": 98.8593,
+            "exposure": 5.7034,
+            "vacant_units": 3.0,
+            "new_prospects": 101.0,
+            "first_tours_booked": 19.0,
+            "first_tours_attended": 12.0,
+            "applications_completed": 3.0,
+            "leases_signed": 3.0
+          }
+        ]
+      },
+      {
+        "slug": "chorus",
+        "name": "Chorus",
+        "points": [
+          {
+            "as_of": "2026-08-19",
+            "landed_at": "2026-08-19T19:20:41.512Z",
+            "source_file": "metrics-building-2026-08-19.csv",
+            "occupancy": 96.6346,
+            "exposure": 4.3269,
+            "vacant_units": 14.0,
+            "new_prospects": 313.0,
+            "first_tours_booked": 100.0,
+            "first_tours_attended": 72.0,
+            "applications_completed": 16.0,
+            "leases_signed": 9.0
+          },
+          {
+            "as_of": "2026-08-26",
+            "landed_at": "2026-08-26T20:52:09.827Z",
+            "source_file": "metrics-building-2026-08-26.csv",
+            "occupancy": 97.1154,
+            "exposure": 5.2885,
+            "vacant_units": 12.0,
+            "new_prospects": 356.0,
+            "first_tours_booked": 102.0,
+            "first_tours_attended": 74.0,
+            "applications_completed": 16.0,
+            "leases_signed": 10.0
+          },
+          {
+            "as_of": "2026-08-31",
+            "landed_at": "2026-08-31T17:55:34.425Z",
+            "source_file": "metrics-building-2026-08-31.csv",
+            "occupancy": 97.1154,
+            "exposure": 5.7692,
+            "vacant_units": 12.0,
+            "new_prospects": 352.0,
+            "first_tours_booked": 105.0,
+            "first_tours_attended": 70.0,
+            "applications_completed": 14.0,
+            "leases_signed": 11.0
+          },
+          {
+            "as_of": "2026-09-22",
+            "landed_at": "2026-09-22T22:27:05.607Z",
+            "source_file": "metrics-building-2026-09-22.csv",
+            "occupancy": 96.1538,
+            "exposure": 7.4519,
+            "vacant_units": 16.0,
+            "new_prospects": 302.0,
+            "first_tours_booked": 93.0,
+            "first_tours_attended": 67.0,
+            "applications_completed": 15.0,
+            "leases_signed": 14.0
+          },
+          {
+            "as_of": "2026-09-28",
+            "landed_at": "2026-09-28T17:12:11.018Z",
+            "source_file": "metrics-building-2026-09-28.csv",
+            "occupancy": 96.3942,
+            "exposure": 7.6923,
+            "vacant_units": 15.0,
+            "new_prospects": 285.0,
+            "first_tours_booked": 102.0,
+            "first_tours_attended": 79.0,
+            "applications_completed": 15.0,
+            "leases_signed": 17.0
+          },
+          {
+            "as_of": "2026-10-05",
+            "landed_at": "2026-10-05T17:24:01.066Z",
+            "source_file": "metrics-building-2026-10-05.csv",
+            "occupancy": 95.4327,
+            "exposure": 7.6923,
+            "vacant_units": 19.0,
+            "new_prospects": 295.0,
+            "first_tours_booked": 115.0,
+            "first_tours_attended": 88.0,
+            "applications_completed": 20.0,
+            "leases_signed": 13.0
+          }
+        ]
+      },
+      {
+        "slug": "madelon",
+        "name": "Madelon",
+        "points": [
+          {
+            "as_of": "2026-08-19",
+            "landed_at": "2026-08-19T19:20:41.512Z",
+            "source_file": "metrics-building-2026-08-19.csv",
+            "occupancy": 98.0198,
+            "exposure": 1.9802,
+            "vacant_units": 4.0,
+            "new_prospects": 376.0,
+            "first_tours_booked": 78.0,
+            "first_tours_attended": 56.0,
+            "applications_completed": 15.0,
+            "leases_signed": 7.0
+          },
+          {
+            "as_of": "2026-08-26",
+            "landed_at": "2026-08-26T20:52:09.827Z",
+            "source_file": "metrics-building-2026-08-26.csv",
+            "occupancy": 99.0099,
+            "exposure": 3.4653,
+            "vacant_units": 2.0,
+            "new_prospects": 362.0,
+            "first_tours_booked": 75.0,
+            "first_tours_attended": 54.0,
+            "applications_completed": 12.0,
+            "leases_signed": 7.0
+          },
+          {
+            "as_of": "2026-08-31",
+            "landed_at": "2026-08-31T17:55:34.425Z",
+            "source_file": "metrics-building-2026-08-31.csv",
+            "occupancy": 97.5248,
+            "exposure": 3.9604,
+            "vacant_units": 5.0,
+            "new_prospects": 331.0,
+            "first_tours_booked": 78.0,
+            "first_tours_attended": 52.0,
+            "applications_completed": 11.0,
+            "leases_signed": 7.0
+          },
+          {
+            "as_of": "2026-09-22",
+            "landed_at": "2026-09-22T22:27:05.607Z",
+            "source_file": "metrics-building-2026-09-22.csv",
+            "occupancy": 96.5347,
+            "exposure": 6.9307,
+            "vacant_units": 7.0,
+            "new_prospects": 244.0,
+            "first_tours_booked": 53.0,
+            "first_tours_attended": 32.0,
+            "applications_completed": 2.0,
+            "leases_signed": 4.0
+          },
+          {
+            "as_of": "2026-09-28",
+            "landed_at": "2026-09-28T17:12:11.018Z",
+            "source_file": "metrics-building-2026-09-28.csv",
+            "occupancy": 96.0396,
+            "exposure": 7.9208,
+            "vacant_units": 8.0,
+            "new_prospects": 220.0,
+            "first_tours_booked": 52.0,
+            "first_tours_attended": 28.0,
+            "applications_completed": 2.0,
+            "leases_signed": 4.0
+          },
+          {
+            "as_of": "2026-10-05",
+            "landed_at": "2026-10-05T17:24:01.066Z",
+            "source_file": "metrics-building-2026-10-05.csv",
+            "occupancy": 95.5446,
+            "exposure": 6.9307,
+            "vacant_units": 9.0,
+            "new_prospects": 219.0,
+            "first_tours_booked": 43.0,
+            "first_tours_attended": 22.0,
+            "applications_completed": 3.0,
+            "leases_signed": 3.0
+          }
+        ]
+      },
+      {
+        "slug": "335-third-street",
+        "name": "335 Third Street",
+        "points": [
+          {
+            "as_of": "2026-08-19",
+            "landed_at": "2026-08-19T19:20:41.512Z",
+            "source_file": "metrics-building-2026-08-19.csv",
+            "occupancy": 0.0,
+            "exposure": 91.8919,
+            "vacant_units": 37.0,
+            "new_prospects": 81.0,
+            "first_tours_booked": 28.0,
+            "first_tours_attended": 15.0,
+            "applications_completed": 4.0,
+            "leases_signed": 0.0
+          },
+          {
+            "as_of": "2026-08-26",
+            "landed_at": "2026-08-26T20:52:09.827Z",
+            "source_file": "metrics-building-2026-08-26.csv",
+            "occupancy": 0.0,
+            "exposure": 86.8421,
+            "vacant_units": 38.0,
+            "new_prospects": 79.0,
+            "first_tours_booked": 32.0,
+            "first_tours_attended": 19.0,
+            "applications_completed": 7.0,
+            "leases_signed": 0.0
+          },
+          {
+            "as_of": "2026-08-31",
+            "landed_at": "2026-08-31T17:55:34.425Z",
+            "source_file": "metrics-building-2026-08-31.csv",
+            "occupancy": 0.0,
+            "exposure": 84.2105,
+            "vacant_units": 38.0,
+            "new_prospects": 71.0,
+            "first_tours_booked": 22.0,
+            "first_tours_attended": 14.0,
+            "applications_completed": 7.0,
+            "leases_signed": 0.0
+          },
+          {
+            "as_of": "2026-09-22",
+            "landed_at": "2026-09-22T22:27:05.607Z",
+            "source_file": "metrics-building-2026-09-22.csv",
+            "occupancy": 10.5263,
+            "exposure": 78.9474,
+            "vacant_units": 34.0,
+            "new_prospects": 82.0,
+            "first_tours_booked": 23.0,
+            "first_tours_attended": 18.0,
+            "applications_completed": 6.0,
+            "leases_signed": 4.0
+          },
+          {
+            "as_of": "2026-09-28",
+            "landed_at": "2026-09-28T17:12:11.018Z",
+            "source_file": "metrics-building-2026-09-28.csv",
+            "occupancy": 10.5263,
+            "exposure": 73.6842,
+            "vacant_units": 34.0,
+            "new_prospects": 81.0,
+            "first_tours_booked": 27.0,
+            "first_tours_attended": 19.0,
+            "applications_completed": 5.0,
+            "leases_signed": 5.0
+          },
+          {
+            "as_of": "2026-10-05",
+            "landed_at": "2026-10-05T17:24:01.066Z",
+            "source_file": "metrics-building-2026-10-05.csv",
+            "occupancy": 13.1579,
+            "exposure": 76.3158,
+            "vacant_units": 33.0,
+            "new_prospects": 91.0,
+            "first_tours_booked": 28.0,
+            "first_tours_attended": 17.0,
+            "applications_completed": 4.0,
+            "leases_signed": 3.0
+          }
+        ]
+      }
+    ],
+    "basis": "EliseAI building-metrics export, one point per export date: occupancy and exposure as at that date; new prospects, first tours attended and applications completed over the trailing month to it (owner, 2026-08-20)."
   }
 }

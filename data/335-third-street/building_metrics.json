@@ -1,0 +1,90 @@
+{
+  "report_type": "bldg_metrics_csv",
+  "property": "335 Third Street",
+  "points": [
+    {
+      "as_of": "2026-08-19",
+      "source_file": "metrics-building-2026-08-19.csv",
+      "landed_at": "2026-08-19T19:20:41.512Z",
+      "heading": "335 3rd Street",
+      "occupancy": 0.0,
+      "exposure": 91.8919,
+      "vacant_units": 37.0,
+      "new_prospects": 81.0,
+      "first_tours_booked": 28.0,
+      "first_tours_attended": 15.0,
+      "applications_completed": 4.0,
+      "leases_signed": 0.0
+    },
+    {
+      "as_of": "2026-08-26",
+      "source_file": "metrics-building-2026-08-26.csv",
+      "landed_at": "2026-08-26T20:52:09.827Z",
+      "heading": "335 3rd Street",
+      "occupancy": 0.0,
+      "exposure": 86.8421,
+      "vacant_units": 38.0,
+      "new_prospects": 79.0,
+      "first_tours_booked": 32.0,
+      "first_tours_attended": 19.0,
+      "applications_completed": 7.0,
+      "leases_signed": 0.0
+    },
+    {
+      "as_of": "2026-08-31",
+      "source_file": "metrics-building-2026-08-31.csv",
+      "landed_at": "2026-08-31T17:55:34.425Z",
+      "heading": "335 3rd Street",
+      "occupancy": 0.0,
+      "exposure": 84.2105,
+      "vacant_units": 38.0,
+      "new_prospects": 71.0,
+      "first_tours_booked": 22.0,
+      "first_tours_attended": 14.0,
+      "applications_completed": 7.0,
+      "leases_signed": 0.0
+    },
+    {
+      "as_of": "2026-09-22",
+      "source_file": "metrics-building-2026-09-22.csv",
+      "landed_at": "2026-09-22T22:27:05.607Z",
+      "heading": "335 3rd Street",
+      "occupancy": 10.5263,
+      "exposure": 78.9474,
+      "vacant_units": 34.0,
+      "new_prospects": 82.0,
+      "first_tours_booked": 23.0,
+      "first_tours_attended": 18.0,
+      "applications_completed": 6.0,
+      "leases_signed": 4.0
+    },
+    {
+      "as_of": "2026-09-28",
+      "source_file": "metrics-building-2026-09-28.csv",
+      "landed_at": "2026-09-28T17:12:11.018Z",
+      "heading": "335 3rd Street",
+      "occupancy": 10.5263,
+      "exposure": 73.6842,
+      "vacant_units": 34.0,
+      "new_prospects": 81.0,
+      "first_tours_booked": 27.0,
+      "first_tours_attended": 19.0,
+      "applications_completed": 5.0,
+      "leases_signed": 5.0
+    },
+    {
+      "as_of": "2026-10-05",
+      "source_file": "metrics-building-2026-10-05.csv",
+      "landed_at": "2026-10-05T17:24:01.066Z",
+      "heading": "335 3rd Street",
+      "occupancy": 13.1579,
+      "exposure": 76.3158,
+      "vacant_units": 33.0,
+      "new_prospects": 91.0,
+      "first_tours_booked": 28.0,
+      "first_tours_attended": 17.0,
+      "applications_completed": 4.0,
+      "leases_signed": 3.0
+    }
+  ]
+}

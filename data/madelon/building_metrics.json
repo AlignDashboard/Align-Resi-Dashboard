@@ -1,0 +1,90 @@
+{
+  "report_type": "bldg_metrics_csv",
+  "property": "Madelon",
+  "points": [
+    {
+      "as_of": "2026-08-19",
+      "source_file": "metrics-building-2026-08-19.csv",
+      "landed_at": "2026-08-19T19:20:41.512Z",
+      "heading": "The Madelon",
+      "occupancy": 98.0198,
+      "exposure": 1.9802,
+      "vacant_units": 4.0,
+      "new_prospects": 376.0,
+      "first_tours_booked": 78.0,
+      "first_tours_attended": 56.0,
+      "applications_completed": 15.0,
+      "leases_signed": 7.0
+    },
+    {
+      "as_of": "2026-08-26",
+      "source_file": "metrics-building-2026-08-26.csv",
+      "landed_at": "2026-08-26T20:52:09.827Z",
+      "heading": "The Madelon",
+      "occupancy": 99.0099,
+      "exposure": 3.4653,
+      "vacant_units": 2.0,
+      "new_prospects": 362.0,
+      "first_tours_booked": 75.0,
+      "first_tours_attended": 54.0,
+      "applications_completed": 12.0,
+      "leases_signed": 7.0
+    },
+    {
+      "as_of": "2026-08-31",
+      "source_file": "metrics-building-2026-08-31.csv",
+      "landed_at": "2026-08-31T17:55:34.425Z",
+      "heading": "The Madelon",
+      "occupancy": 97.5248,
+      "exposure": 3.9604,
+      "vacant_units": 5.0,
+      "new_prospects": 331.0,
+      "first_tours_booked": 78.0,
+      "first_tours_attended": 52.0,
+      "applications_completed": 11.0,
+      "leases_signed": 7.0
+    },
+    {
+      "as_of": "2026-09-22",
+      "source_file": "metrics-building-2026-09-22.csv",
+      "landed_at": "2026-09-22T22:27:05.607Z",
+      "heading": "The Madelon",
+      "occupancy": 96.5347,
+      "exposure": 6.9307,
+      "vacant_units": 7.0,
+      "new_prospects": 244.0,
+      "first_tours_booked": 53.0,
+      "first_tours_attended": 32.0,
+      "applications_completed": 2.0,
+      "leases_signed": 4.0
+    },
+    {
+      "as_of": "2026-09-28",
+      "source_file": "metrics-building-2026-09-28.csv",
+      "landed_at": "2026-09-28T17:12:11.018Z",
+      "heading": "The Madelon",
+      "occupancy": 96.0396,
+      "exposure": 7.9208,
+      "vacant_units": 8.0,
+      "new_prospects": 220.0,
+      "first_tours_booked": 52.0,
+      "first_tours_attended": 28.0,
+      "applications_completed": 2.0,
+      "leases_signed": 4.0
+    },
+    {
+      "as_of": "2026-10-05",
+      "source_file": "metrics-building-2026-10-05.csv",
+      "landed_at": "2026-10-05T17:24:01.066Z",
+      "heading": "The Madelon",
+      "occupancy": 95.5446,
+      "exposure": 6.9307,
+      "vacant_units": 9.0,
+      "new_prospects": 219.0,
+      "first_tours_booked": 43.0,
+      "first_tours_attended": 22.0,
+      "applications_completed": 3.0,
+      "leases_signed": 3.0
+    }
+  ]
+}

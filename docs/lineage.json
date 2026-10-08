@@ -84,6 +84,22 @@
    "primary": "t-rentcap",
    "holds": "Rent capture"
   },
+  "cLeasing": {
+   "card": "Leasing & Occupancy",
+   "tab": "Portfolio",
+   "tables": [
+    "t-rentcap",
+    "t-bldgmetrics",
+    "t-rentroll"
+   ],
+   "flows": [
+    "t12",
+    "bldg_metrics",
+    "rent_roll"
+   ],
+   "primary": "t-bldgmetrics",
+   "holds": "Leasing & occupancy, by export"
+  },
   "cdFeeds": {
    "card": "What Feeds This Tab",
    "tab": "Landing",
@@ -371,7 +387,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-08T00:12:15.964017+00:00",
+  "generated_at": "2026-10-08T00:52:34.872455+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -550,6 +566,14 @@
      "tab": "Landing",
      "anchor": "cdRentCapture",
      "primary": "t-rentcap-*",
+     "tables": [
+      "t-rentcap-*"
+     ]
+    },
+    {
+     "card": "Leasing & Occupancy",
+     "tab": "Portfolio",
+     "anchor": "cLeasing",
      "tables": [
       "t-rentcap-*"
      ]
@@ -884,26 +908,42 @@
    "origin_kind": "drive",
    "source_label": "EliseAI Reports",
    "source_detail": "Drive folder \u00b7 *.csv",
-   "example": "metricsbuilding<YYYYMMDD>.csv",
-   "carries": "79 columns per property \u2014 exposure, trade-out, closing ratio, renewal rate, containment, response time.",
+   "example": "metrics-building-<YYYY-MM-DD>.csv",
+   "carries": "One row per building \u2014 occupancy and exposure, new prospects, tours and applications over the trailing month, trade-out, renewal rate, containment, response time. 79 columns when it began, 40 since 2026-09-22 (B9).",
    "filed_by": [
     "eliseai",
     "funnelreport",
     "leasingfunnel"
    ],
    "report_type": "bldg_metrics_csv",
-   "parser": null,
+   "parser": "parse_building_metrics",
    "registered": "active",
    "documented": true,
    "steps": [
     {
+     "script": "scripts/parse_building_metrics.py",
+     "does": "Reads every export, one section per building row, dated by the filename's last date \u2014 the filer's arrival prefix is not the export's.",
+     "checks": "Each building's counts must reproduce the export's own Prospect to Tour Attended and Prospect to App Completed rates or that building is refused; a column the card draws, gone from the header, refuses the file."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Routes each row to its property by the master's codes, aliases and names, and keeps one point per export date.",
+     "checks": "A later export never supersedes an earlier date's point; a date filed twice keeps the later arrival."
+    },
+    {
      "script": "scripts/populate_building_metrics.py",
-     "does": "Fills nine KPIs where the export's column means what the KPI means, for every property in the file. No parse or accumulate step \u2014 it writes the scorecard directly.",
+     "does": "Fills nine KPIs where the export's column means what the KPI means, for every property in the file. Reads the newest export itself and writes the scorecard directly; the store above is for the Portfolio tab's card.",
      "checks": "Never takes a cell another feed owns; a property under 50% occupancy is filled but left ungraded rather than scored red for not having opened; implausible cells (Chorus's +119.78% executed increase) are skipped and the skip recorded in the basis."
     }
    ],
-   "stores": [],
+   "stores": [
+    "data/<slug>/building_metrics.json"
+   ],
    "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "building_metrics"
+    },
     {
      "file": "scorecard.json",
      "key": "Leased %"
@@ -960,6 +1000,15 @@
      "tile": true
     },
     {
+     "card": "Leasing & Occupancy",
+     "tab": "Portfolio",
+     "anchor": "cLeasing",
+     "primary": "t-bldgmetrics-*",
+     "tables": [
+      "t-bldgmetrics-*"
+     ]
+    },
+    {
      "card": "What Feeds This Tab",
      "tab": "Landing",
      "anchor": "cdFeeds",
@@ -968,6 +1017,7 @@
     }
    ],
    "tables": [
+    "t-bldgmetrics-*",
     "t-sc-measured",
     "t-sc-arrivals"
    ],
@@ -975,6 +1025,38 @@
    "open_item": "B6",
    "same_as": null,
    "evidence": [
+    {
+     "property": "335-third-street",
+     "file": "data/335-third-street/building_metrics.json",
+     "as_of": "2026-10-05",
+     "source_file": "metrics-building-2026-10-05.csv",
+     "landed_at": "2026-10-05T17:24:01.066Z",
+     "detail": "6 export(s) kept, 2026-08-19 to 2026-10-05"
+    },
+    {
+     "property": "chorus",
+     "file": "data/chorus/building_metrics.json",
+     "as_of": "2026-10-05",
+     "source_file": "metrics-building-2026-10-05.csv",
+     "landed_at": "2026-10-05T17:24:01.066Z",
+     "detail": "6 export(s) kept, 2026-08-19 to 2026-10-05"
+    },
+    {
+     "property": "madelon",
+     "file": "data/madelon/building_metrics.json",
+     "as_of": "2026-10-05",
+     "source_file": "metrics-building-2026-10-05.csv",
+     "landed_at": "2026-10-05T17:24:01.066Z",
+     "detail": "6 export(s) kept, 2026-08-19 to 2026-10-05"
+    },
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/building_metrics.json",
+     "as_of": "2026-10-05",
+     "source_file": "metrics-building-2026-10-05.csv",
+     "landed_at": "2026-10-05T17:24:01.066Z",
+     "detail": "6 export(s) kept, 2026-08-19 to 2026-10-05"
+    },
     {
      "property": "Landing",
      "file": "EliseAI building metrics export (metrics-building-2026-10-05.csv)",
@@ -1241,6 +1323,15 @@
       "t-unitdir-*"
      ],
      "holds": "The leased/vacant split on the bedroom bars"
+    },
+    {
+     "card": "Leasing & Occupancy",
+     "tab": "Portfolio",
+     "anchor": "cLeasing",
+     "tables": [
+      "t-rentroll-*"
+     ],
+     "holds": "Loss to lease and occupancy as at the newest roll"
     }
    ],
    "tables": [
@@ -2242,7 +2333,7 @@
    "origin_kind": "manual",
    "source_label": "docs/metrics.json, edited directly",
    "source_detail": "Blocks the pipeline preserves rather than regenerates.",
-   "carries": "The ten planned-metric cards. Expense Trend left this list on 2026-09-17, derived from the T12 statement now, the trade-out placeholder went with its card on 2026-09-28, and the NOI margin placeholder came off on 2026-09-30 \u2014 both feeds it named have arrived, and the figure is on the Landing tab's Expense Load & NOI card and in its tile row.",
+   "carries": "The five planned-metric cards. Expense Trend left this list on 2026-09-17, derived from the T12 statement now, the trade-out placeholder went with its card on 2026-09-28, and the NOI margin placeholder came off on 2026-09-30 \u2014 both feeds it named have arrived, and the figure is on the Landing tab's Expense Load & NOI card and in its tile row. Five more came off on 2026-10-08 \u2014 loss to lease, tours, leads, applications and occupancy \u2014 as one Leasing & Occupancy card fed by the T12 statement, the rent roll and the EliseAI building-metrics export.",
    "steps": [
     {
      "script": "scripts/build_metrics.py",
