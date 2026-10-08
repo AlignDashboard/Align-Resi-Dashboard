@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-07T17:54:20.009937+00:00",
+    "generated_at": "2026-10-08T17:58:55.325783+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -3396,8 +3396,8 @@
         "new_leases": {
           "weeks": 7,
           "as_of": "2026-10-11",
-          "landed_at": "2026-10-07T02:28:30.178Z",
-          "source_file": "2026-10-06 10.05.2026- 10.11.2026- Chorus - Daily Report.xlsx",
+          "landed_at": "2026-10-08T02:28:31.837Z",
+          "source_file": "2026-10-07 10.05.2026- 10.11.2026- Chorus - Daily Report (2).xlsx",
           "months": [
             {
               "month": "2026-09",
@@ -9651,7 +9651,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -11245,7 +11245,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12892,7 +12892,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13875,7 +13875,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
