@@ -473,13 +473,6 @@
   .sc-swatch.sc-state-exceeding { background: var(--fill-exceeding); border-color: var(--edge-exceeding); }
   .sc-swatch.sc-state-below     { background: var(--fill-below);     border-color: var(--edge-below); }
 
-  /* per-property slice shown at the top of a property view */
-  .sc-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 6px 18px; }
-  .sc-strip .g { grid-column: 1 / -1; font-size: 9px; letter-spacing: 2px; color: var(--amber);
-    text-transform: uppercase; margin-top: 8px; }
-  .sc-strip .m { display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    font-size: 10.5px; color: var(--text); border-bottom: 1px solid var(--line); padding: 3px 0; }
-  .sc-strip .m .nm { color: var(--muted); }
   .sc-note { font-size: 9px; letter-spacing: .5px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
   .sc-legend .sc-legend-note .val { font-variant-numeric: tabular-nums; }
   .sc-legend .sc-legend-note .val.ungraded { color: var(--muted); font-weight: 500; }
@@ -1463,9 +1456,6 @@ window.addEventListener("load", () => { if (!sessionUnlocked()) pwInput.focus();
    To fill one in, give it a view like The Landing's and drop it from
    this list. Slugs match config/properties.json.
    ============================================================ */
-// Scorecard slices to render on property tabs once scorecard.json loads
-// (filled by buildPropertyTabs, consumed in the scorecard section below).
-const propScorecardMounts = [];
 const PLACEHOLDER_PROPERTIES = [
   { slug: "chorus",           name: "Chorus" },
   { slug: "madelon",          name: "Madelon" },
@@ -1501,45 +1491,6 @@ const PLACEHOLDER_PROPERTIES = [
     const grid = document.createElement("div");
     grid.className = "grid";
 
-    // Every property gets its own scorecard slice above the placeholder, the
-    // same card The Landing has. Rendered once scorecard.json arrives
-    // (renderPropertyScorecard reads the shared SC, and says so plainly if the
-    // property is not on the grid at all).
-    {
-      const ids = {
-        eyebrow: "psc-" + p.slug + "-eyebrow", health: "psc-" + p.slug + "-health",
-        strip: "psc-" + p.slug + "-strip", legend: "psc-" + p.slug + "-legend",
-        note: "psc-" + p.slug + "-note",
-      };
-      const sc = document.createElement("div");
-      sc.className = "card wide";
-      // Named so the data page can link to it and it can carry a corner link
-      // of its own, like every card in the static markup does.
-      sc.id = "psc-" + p.slug;
-      const head = document.createElement("div");
-      head.className = "card-head";
-      const hleft = document.createElement("div");
-      const h2 = document.createElement("h2");
-      h2.textContent = "KPI Scorecard — " + p.name;
-      const eyebrow = document.createElement("span");
-      eyebrow.className = "eyebrow"; eyebrow.id = ids.eyebrow; eyebrow.textContent = "LOADING…";
-      hleft.append(h2, eyebrow);
-      const health = document.createElement("div");
-      health.className = "sc-health"; health.id = ids.health;
-      head.append(hleft, health);
-      const strip = document.createElement("div");
-      strip.className = "sc-strip"; strip.id = ids.strip;
-      const legend = document.createElement("div");
-      legend.className = "sc-legend"; legend.id = ids.legend;
-      const note = document.createElement("div");
-      note.className = "sc-note"; note.id = ids.note;
-      sc.append(head, strip, legend, note);
-      grid.appendChild(sc);
-      // scPromise is declared further down the script — record the mount and
-      // let the scorecard section render it once the JSON arrives
-      propScorecardMounts.push({ slug: p.slug, ids });
-    }
-
     const card = document.createElement("div");
     card.className = "card wide";
     card.style.minHeight = "300px";
@@ -1552,8 +1503,13 @@ const PLACEHOLDER_PROPERTIES = [
     big.textContent = p.name;
     const why = document.createElement("div");
     why.className = "why";
+    // A KPI Scorecard slice sat above this until 2026-10-08, by request. The
+    // Scorecard tab's Property select renders the same property's cells off
+    // the same scRollUp, so the capability is not lost and the line below
+    // says where it went rather than apologising for it.
     why.textContent = "Placeholder. This property's full view has not been " +
-      "built yet — its KPI scorecard slice is above.";
+      "built yet. Its KPI scorecard is on the Scorecard tab — pick it from " +
+      "the Property select there.";
     const dash2 = document.createElement("div"); dash2.className = "dash";
     empty.append(dash1, big, why, dash2);
     card.appendChild(empty);
@@ -4918,8 +4874,8 @@ async function renderScorecard(ids, chosen) {
   if (!noteEl) return;   // nothing below this builds anything but the note
 
   // Not sliced for one property: "Most below-target" is a top-3 by design,
-  // but "Below target:" reads as the whole list, and The Landing has four.
-  // renderPropertyScorecard names all of them on the property's own tab too.
+  // but "Below target:" reads as the whole list, and The Landing has four,
+  // so the filtered branch names every one of them.
   const weakest = only
     ? P.below_metrics
     : P.by_metric.filter(m => m.counts.below > 0)
@@ -4954,23 +4910,14 @@ async function renderScorecard(ids, chosen) {
     (unmapped.length ? " Not yet in the property master: " + unmapped.join(", ") + "." : "") +
     " Source: " + SC.meta.source_workbook + ".";
 }
-// No `note` on this mount: the Scorecard tab carries no closing prose. The
-// Portfolio view carried a second copy of this same matrix until 2026-09-28
-// and was the only mount here declaring a note; the property tabs still do,
-// through renderPropertyScorecard, so that path stays.
+// No `note` on this mount: the Scorecard tab carries no closing prose, and
+// this is the only mount of renderScorecard on the page -- the Portfolio
+// view's second copy of the matrix came off 2026-09-28. So `ids.note` is a
+// shape nothing declares today rather than a path a live card walks; the
+// optional branch stays because that is what a mount wanting prose would use.
 renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
                   legend: "scLegend", chart: "scChart",
                   select: "scPropSelect" });
-// property-tab scorecard slices registered by buildPropertyTabs (e.g. Palma)
-scPromise.then(() => propScorecardMounts.forEach(m => renderPropertyScorecard(m.slug, m.ids)));
-
-// Groups a property tab leaves off its own scorecard. A display filter only:
-// scorecard.json still carries all 28 KPIs, the portfolio scorecard and every
-// other property tab still show all seven groups, and nothing here writes back.
-const SC_HIDDEN_GROUPS = {
-  "the-landing": ["AR/AP Metrics", "Maintenance Metrics", "Resident Experience",
-                  "Open EliseAI Tasks"],
-};
 
 // The header figures for whichever groups a tab is showing. Hiding cells without
 // this would leave the head counting KPIs the card no longer displays -- The
@@ -5007,92 +4954,6 @@ function scRollUp(p, groups) {
   };
 }
 
-// A property's own slice of the scorecard, for the top of its view.
-function renderPropertyScorecard(slug, ids) {
-  // The Landing's card carries no eyebrow: the health block beside the heading
-  // already says how many KPIs are graded and how many are below. So the
-  // summary line is written only where one exists...
-  const eyebrowText = t => {
-    const e = ids.eyebrow && document.getElementById(ids.eyebrow);
-    if (e) e.textContent = t;
-  };
-  // ...but the two states where the card would otherwise render blank have to
-  // be said somewhere, so those fall back to the note line.
-  const cannotRender = t => {
-    const e = ids.eyebrow && document.getElementById(ids.eyebrow);
-    const n = e || document.getElementById(ids.note);
-    if (n) n.textContent = t;
-  };
-  if (!SC) {
-    cannotRender("SCORECARD UNAVAILABLE");
-    return;
-  }
-  const p = SC.properties.find(x => x.slug === slug);
-  if (!p) {
-    cannotRender("NOT ON THE SCORECARD YET");
-    return;
-  }
-  const hidden = new Set(SC_HIDDEN_GROUPS[slug] || []);
-  const groups = SC.groups.filter(g => !hidden.has(g.name));
-  const roll = scRollUp(p, groups);
-  eyebrowText(
-    roll.scored === 0
-      ? "NO KPI MEASURED YET · " + roll.coverage.total + " CELLS AWAITING A FEED"
-      : roll.counts.below === 0
-        ? "ALL " + roll.scored + " GRADED KPIs AT OR ABOVE TARGET"
-        : roll.counts.below + " OF " + roll.scored + " GRADED KPIs BELOW TARGET");
-
-  const health = document.getElementById(ids.health);
-  health.textContent = "";
-  const big = elc("div", "big", roll.at_or_above == null ? "—" : fmPct(roll.at_or_above, 0));
-  if (roll.scored) big.classList.add("sc-state-" + scTone(roll.counts));
-  health.appendChild(big);
-  health.appendChild(elc("div", "lbl", roll.scored
-    ? "at or above target · " + roll.scored + " of " + roll.coverage.total + " graded"
-    : "nothing measured yet"));
-  // this property's own feeds only — the portfolio head carries the rest
-  const upd = scUpdatedEl(slug);
-  if (upd) health.appendChild(upd);
-
-  const strip = document.getElementById(ids.strip);
-  strip.textContent = "";
-  const unscored = scUnscoredSet();
-  groups.forEach(g => {
-    strip.appendChild(elc("div", "g", g.name));
-    g.metrics.forEach(name => {
-      const m = elc("div", "m");
-      const st = p.statuses[name];
-      const v = scValue(p, name);
-      const un = unscored.has(name);
-      m.appendChild(elc("span", "nm", name));
-      m.appendChild(scChip(st, v, un, p.label, name, (p.status_source || {})[name]));
-      m.title = scCellTitle(name, st, v, un, null, (p.status_source || {})[name]);
-      strip.appendChild(m);
-    });
-  });
-
-  scLegendInto(document.getElementById(ids.legend));
-  // Palma North/South are in lease-up: four KPIs are scored against the
-  // workbook's lease-up overrides rather than the stabilised bands.
-  const ov = slug === "palma" && SC.leaseup_overrides
-    ? "Lease-up overrides apply here: " +
-      SC.leaseup_overrides.map(o => o.kpi + " (" + String(o.approach || "").toLowerCase().replace(/\.$/, "") + ")").join("; ") + ". "
-    : "";
-  // Say what is not on this tab, so a shorter card is not mistaken for the whole
-  // scorecard: the hidden groups stay on the portfolio card and in the JSON.
-  const off = SC.groups.filter(g => hidden.has(g.name)).map(g => g.name);
-  document.getElementById(ids.note).textContent =
-    (roll.below_metrics.length
-      ? "Below target: " + roll.below_metrics.join(", ") + ". " : "") +
-    (off.length
-      ? "This tab shows " + roll.coverage.total + " of the scorecard’s "
-        + SC.groups.reduce((t, g) => t + g.metrics.length, 0) + " KPIs — "
-        + off.join(", ") + " are left off here and stay on the portfolio scorecard. "
-      : "") +
-    ov +
-    (scHasValues(SC) ? "" : "\u201c" + SC_PENDING + "\u201d marks a value not supplied yet. ") +
-    SC.meta.note;
-}
 
 /* ---- Operating summary (a trailing window vs the window before it) ----
    Written to serve any mount rather than one card, because it never read the

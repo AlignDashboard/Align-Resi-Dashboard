@@ -1429,11 +1429,24 @@ PROPERTIES · 65%" over a single row is a figure that gets quoted at the wrong
 scale.
 
 The head is not a second opinion on the published numbers. It comes from
-`scRollUp(p, SC.groups)` — the same function the property tabs use — over
-**every** group rather than the property-tab subset in `SC_HIDDEN_GROUPS`, and
-that reproduces `scorecard.json`'s own per-property `scored` / `counts` /
-`coverage` / `at_or_above` exactly (checked in-browser against The Landing:
-13 of 27 graded, 6/3/4, 69%).
+`scRollUp(p, SC.groups)` over **every** group, and that reproduces
+`scorecard.json`'s own per-property `scored` / `counts` / `coverage` /
+`at_or_above` exactly (checked in-browser against The Landing: 13 of 27
+graded, 6/3/4, 69%).
+
+**This is the only place a single property's scorecard is drawn**, since
+2026-10-08. Each placeholder property tab carried its own slice of the same
+matrix — `psc-<slug>`, built by `buildPropertyTabs` and rendered by
+`renderPropertyScorecard` — and the owner asked for those tabs to be a
+placeholder and nothing else. Nothing is lost: this select answers the same
+question off the same `scRollUp` and the same `scorecard.json`, and the
+placeholder says so rather than leaving the reader to find it. What went with
+the card is what only it used — the mount array, the 110-line renderer,
+`SC_HIDDEN_GROUPS` (its only reader) and the `.sc-strip` rules. `scRollUp`,
+`scChip`, `scCellTitle`, `scTone`, `scUpdatedEl`, `scValue` and
+`scUnscoredSet` are all still read by this card or the Landing tiles and
+stayed; `.sc-note` stayed too, as the class a mount declaring a note would
+use.
 
 Three things it does deliberately:
 
@@ -1442,15 +1455,14 @@ Three things it does deliberately:
   *sits against the others* — a question filtering would destroy rather than
   answer. (This tab has no note block to say so — see below.)
 - **The filter is a view of this card, not of the data.** Only a mount that
-  declares `ids.select` gets one, so the property tabs' slices of the same
-  matrix — same function, same `scorecard.json` — have no select and never
-  filter. The Portfolio view carried a second full copy of this card, also
-  without a select, until it was removed by request on 2026-09-28; the
-  Scorecard tab is the only place the whole matrix is drawn now.
+  declares `ids.select` gets one. The Portfolio view carried a second full copy
+  of this card, without a select, until it was removed by request on
+  2026-09-28, and the property tabs carried their own slices until 2026-10-08;
+  this is the only mount of `renderScorecard` on the page now.
 - **The single-property figure is coloured, the portfolio's is not.** Worst
-  state across one building's cells is unambiguous (`scTone`), which is why the
-  property tabs colour theirs; an average across five buildings has no band
-  that turns it into a verdict, which is why the portfolio's stays plain.
+  state across one building's cells is unambiguous (`scTone`); an average
+  across five buildings has no band that turns it into a verdict, which is why
+  the portfolio's stays plain.
 
 A property with **no slug** — on the scorecard but not yet in the property
 master, which the note already names — is still selectable, keyed on its label.
@@ -1460,9 +1472,12 @@ It gets no "data last updated" line rather than the portfolio's, because
 **This tab carries no closing note.** The standing paragraph that used to end
 the card came off 2026-09-16, by request. `ids.note` is optional now: a mount
 that does not declare one renders without it, and `renderScorecard` returns
-before building it. The Portfolio view's copy was the other mount declaring a
-note and went with the card on 2026-09-28, so the property tabs are what keep
-that path alive, through `renderPropertyScorecard`.
+before building it. **No mount declares one today** — the Portfolio view's copy
+was the other one and went with the card on 2026-09-28. This file used to say
+the property tabs kept that path alive through `renderPropertyScorecard`,
+which was never true: that was a separate renderer building its own note, not
+a mount of this one. The branch stays as the shape a mount wanting prose would
+use, not because something walks it.
 
 What that paragraph carried is still on the card, which is why dropping it
 loses nothing material: coverage (`31 of 135 graded · 12 reported, not graded ·
@@ -3230,8 +3245,12 @@ so the scorecard's per-cell links from `index.html` are unaffected.
 Each row also links **out**: a card name under "On the dashboard" goes to
 `index.html#<cardId>`, and the dashboard selects the owning tab and flashes the
 card. Every Portfolio card now carries an id for this (`cExpRatio`, `cExpTrend`,
-`cBudgetActual`); the Landing cards already had them, and the property tabs'
-scorecard cards are named `psc-<slug>` by `buildPropertyTabs`.
+`cBudgetActual`); the Landing cards already had them. The property tabs'
+scorecard cards were named `psc-<slug>` by `buildPropertyTabs` until
+2026-10-08; those four `dashboard` entries came out of `build_lineage.py` with
+them, which the anchor check forces — a declared anchor the markup does not
+define refuses the write, and these were the only anchors the JS-prefix rule
+there was matching.
 
 **And every card links back.** Each card on the dashboard carries a small
 `Data ↗` in its **top-right corner** that jumps to where its own numbers live
@@ -3278,11 +3297,12 @@ open every tab, read each card's `a.cardsrc` href, follow it into `data.html`
 and print which table it actually resolves to. Note the gate marker lives in
 `sessionStorage`, which is per **tab**, so a probe like that has to navigate
 one page from `index.html` to `data.html` rather than opening a second one —
-and it has to visit every tab first, since the property-tab cards and the
-placeholder grid are built on demand. All **43** rendered links land on a real
-target as of 2026-09-30 (46 when first counted on 2026-09-28; cards have come
-off since, and the two prior → new $/sqft cards became one). Count rendered
-links, not card ids: the Rental Rates cards and the placeholder cards are
+and it has to visit every tab first, since the generated cards are built on
+demand. All **38** rendered links land on a real target as of 2026-10-08 (46
+when first counted on 2026-09-28; cards have come off since — the two prior →
+new $/sqft cards became one, and the four property-tab scorecard slices went
+on 2026-10-08, measured as exactly 42 → 38 against the previous commit rather
+than assumed). Count rendered links, not card ids: the Rental Rates cards are
 generated, so keying the probe on a card `id` missed them — 35 at the first
 count.
 
@@ -3312,11 +3332,11 @@ One trap came with that table. `build_lineage` reads a table's title out of
 literal em-dash like every other table, and the extractor decodes the escape
 anyway so the next one cannot repeat it.
 
-Three links are a judgement rather than an error, and are left as they are: the
-four property-tab scorecard cards point at `t-sc-measured` rather than
-`t-sc-matrix` (they are about one property's measured cells and their feeds),
+Two links are a judgement rather than an error, and are left as they are:
 `cBudgetActual` points at the plan rather than the actuals it is subtracted
-from, and `cmcMethod` — the limits block — points at the comp set.
+from, and `cmcMethod` — the limits block — points at the comp set. A third was
+the four property-tab scorecard cards pointing at `t-sc-measured` rather than
+`t-sc-matrix`; those cards came off on 2026-10-08.
 
 Three details worth knowing:
 

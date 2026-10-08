@@ -455,9 +455,6 @@ DRIVE_FLOWS = {
             {"card": "KPI Scorecard — Total Deliquency", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
-            {"card": "KPI Scorecard — Palma", "tab": "Palma",
-             "anchor": "psc-palma", "primary": "t-sc-measured",
-             "tables": ["t-sc-overrides", "t-sc-arrivals", "t-sc-matrix"]},
             # The Drive-only tab shows the rate and the 30/60/90 split -- the
             # two cells this report fills. The per-unit aging behind them stops
             # in data/, so that tab has no aging chart of its own.
@@ -542,15 +539,6 @@ DRIVE_FLOWS = {
              "anchor": "dkpisSc", "tile": True},
             {"card": "What Feeds This Tab", "tab": "Landing",
              "anchor": "cdFeeds", "primary": "flow", "tables": []},
-            {"card": "KPI Scorecard — Chorus", "tab": "Chorus",
-             "anchor": "psc-chorus", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
-            {"card": "KPI Scorecard — Madelon", "tab": "Madelon",
-             "anchor": "psc-madelon", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
-            {"card": "KPI Scorecard — 335 Third St", "tab": "335 Third St",
-             "anchor": "psc-335-third-street", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals", "t-sc-matrix", "t-sc-thresholds"]},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The widest feed on the page: it is the only one that says "
@@ -800,9 +788,6 @@ OTHER_FLOWS = [
             {"card": "KPI Scorecard — 335 Third St", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals"]},
-            {"card": "KPI Scorecard — 335 Third St", "tab": "335 Third St",
-             "anchor": "psc-335-third-street", "primary": "t-sc-measured",
-             "tables": ["t-sc-arrivals"]},
         ],
         "tables": ["t-sc-measured", "t-sc-arrivals"],
         "note": "The T/L/A triple is shown and never graded: the published band "
@@ -1385,9 +1370,11 @@ def run_checks(flows):
     problems, warnings = [], []
 
     idx_ids, idx_text = page_ids("docs/index.html", [r'id="([A-Za-z0-9_-]+)"'])
-    # Cards built in JavaScript name themselves by concatenation
-    # (sc.id = "psc-" + p.slug), so record the prefix and accept any anchor
-    # under it -- otherwise every property tab's card reads as undefined.
+    # A card built in JavaScript can name itself by concatenation
+    # (sc.id = "psc-" + p.slug, as the property tabs' scorecard slices did
+    # until 2026-10-08), so record the prefix and accept any anchor under it --
+    # otherwise such a card reads as undefined. Nothing matches today, which
+    # only means every declared anchor is an exact id in the markup.
     idx_prefixes = set(re.findall(r'\.id\s*=\s*"([A-Za-z0-9_-]+-)"\s*\+', idx_text))
 
     def index_defines(anchor):
