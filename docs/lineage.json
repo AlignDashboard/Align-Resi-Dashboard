@@ -399,7 +399,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-09T17:36:05.167664+00:00",
+  "generated_at": "2026-10-10T16:14:49.080034+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -2340,10 +2340,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-08",
+     "as_of": "2026-10-09",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-08T20:37:54Z",
-     "detail": "171 leases, 266 renewals and 61 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-10-09T20:03:23Z",
+     "detail": "171 leases, 266 renewals and 62 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2393,7 +2393,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-09T17:36:03.446846+00:00",
+     "landed_at": "2026-10-10T16:14:48.594572+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
