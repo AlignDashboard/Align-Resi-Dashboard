@@ -3704,7 +3704,7 @@ reused when everything it depends on is unchanged, and the key is all of it:
 
 | Part of the key | Why |
 | --- | --- |
-| the file's bytes and path | parsers read the filename — the daily leasing week label, a property named only in the name |
+| the file's bytes (md5) and path | parsers read the filename — the daily leasing week label, a property named only in the name. md5 because Drive reports it in a listing, which is what lets the fetch skip a file — see the next section |
 | the parser's module and every repo module it imports | walked with `ast`, not grep, so the `from parse_comps import parse` a docstring quotes is not an import |
 | the config files that code names | `properties.json`, `coa_map.json`. **Not `report_map.json`**: the router reads it after the parse, and it is the config file that changes most — ten commits since 2026-09-01 that would each have thrown the cache away |
 | the Python and openpyxl versions, `FORMAT` | a library upgrade can change what a cell reads as |
@@ -3746,15 +3746,15 @@ Python's own nondeterminism; the unit directory was not, since CI does not
 fetch it (C5).
 
 `_cache/parse/` is gitignored. `update.yml` restores the newest copy from the
-Actions cache before the build and saves its own as the job's **last** step,
+Actions cache before the fetch and saves its own as the job's **last** step,
 `if: always()` — after the commit step, so a rebuild's parses are kept, and even
 from a run cut short. The commit step's rebuild reuses everything the build
 just parsed, so a lost push race costs seconds rather than another build. An
 entry no run has used for `PRUNE_DAYS` (14) is deleted, so the cache follows the
 drop tree rather than its history. `PARSE_CACHE=off` parses everything afresh.
 
-`scripts/test_parse_cache.py` holds it down — 54 fixture-free checks, ending
-with `process_manifest` itself run on real daily-leasing workbooks with the
+`scripts/test_parse_cache.py` holds it down — 89 fixture-free checks (the last
+35 are the fetch's, below), with `process_manifest` itself run on real daily-leasing workbooks with the
 cache off, cold and warm: the warm run stores byte-for-byte what the uncached
 run stores, prints the same log lines, takes this run's arrival time rather than
 the kept one, and leaves neither the associate's nor a resident's name anywhere
@@ -3796,11 +3796,81 @@ the renewal trackers are most of their 19.8 s.
 Two things those runs showed that are worth knowing before reading any build
 time. **Hosted runners differ by half again in speed**: the same files parsed
 in 430, 550 and 679 s on three runs that day, so a time is only comparable
-within a run. And **the fetch is now most of the job** — 10 to 12 minutes,
-because it still downloads every file every run. A file whose parse is kept
-need not be downloaded at all, so the cache is what would let that stop too;
-it would change what `fetch_drive` promises the build (a file on disk for every
-manifest entry), and is not done here.
+within a run. And **the fetch was then most of the job** — 10 to 12 minutes,
+because it still downloaded every file every run. It stopped on 2026-10-12.
+
+### The fetch skips what the build has parsed
+
+Once the build kept its parses, the fetch was the whole job: run #118
+(2026-10-11) spent **6m19s fetching and 25 s building**, and 379 s of the fetch
+was 452 downloads — 254 daily leasing copies, 140 comp extracts — almost every
+one a file whose parse the cache already held. (Before the 2026-10-09 tidy of
+the comp folders, C9, the rescue sweep also pulled the formatted `HelloData -
+Full` twins out of the auto-derived folders: 54 of them, 270 s of #112's ten
+minutes, every one skipped by the parser.)
+
+**`fetch_drive --skip-parsed` lists every file as before and downloads only
+what the build cannot answer without.** Drive's listing carries each file's
+`md5Checksum`, and the cache keys a file on exactly that, so "have we parsed
+these bytes with this parser code and config?" is answered before a byte moves
+(`ParseCache.has`). A yes leaves the file in Drive; the manifest lists it all
+the same, with its Drive id, its md5 and `"downloaded": false`, so the build
+sees the same set of files either way and keys each one identically — on the
+bytes when they are on disk, on Drive's md5 when they are not.
+
+**A yes is a weak promise, and the build keeps it honest.** The build may need
+a file's bytes after all: main moved during the run and a parser changed, the
+self-check picked that file (one per parser, every run), or a kept parse would
+not read. `call_parser` then downloads it first, through `fetch_drive.fetch_one`
+and the `fetch` hook `process_manifest` passes. Every way that can fail **ends
+the run** — no `GDRIVE_SA_KEY` in the step, a download that fails after
+retries, a file whose bytes no longer match the listing — because the
+alternative is a build that carries on without the report and publishes as
+though it never arrived. `call_parser` enforces that whatever the hook raised:
+as an ordinary exception a failed download would be caught three ways, all
+wrong — kept as the file's failure, read by the self-check as a parse that
+differs (setting the parser's whole cache aside), or printed as one more
+`[error]` line while the build carried on. Both building steps in `update.yml`
+carry `GDRIVE_SA_KEY` for this — the service account the fetch and the packet
+upload already use; the steps already hold the checkout's push credential.
+
+Four things it is careful about:
+
+- **Only what the parse alone reads.** `READ_FROM_DISK` names the types
+  something else reads straight from `_downloads/` — today the building-metrics
+  CSV, which `build_pipeline.sh` hands to the scorecard fill as a file — and
+  those are always downloaded. A test scans every script and skipping workflow
+  for `_downloads/<type>` and fails on a type the list does not name.
+- **Drive's checksum, never a copy on disk.** `has()` keys on the listed md5
+  alone: a local file of the same name may be an older export. When the fetch
+  leaves a file in Drive, a local copy with other bytes is deleted so nothing
+  reads it; one that is Drive's file stays.
+- **One file per path, counted by path.** The old guard against two folders
+  holding one filename was `dest.exists()`, which a file left in Drive never
+  satisfies — so it is a set of paths taken this run. (A local re-run therefore
+  downloads over its earlier `_downloads/` rather than skipping every file and
+  writing an empty manifest, which is what it used to do.)
+- **Opt-in.** Only `update.yml` passes `--skip-parsed`, and it restores the
+  cache before the fetch so the two read the same `_cache/parse`.
+  `refresh_comps.yml` reads its files straight from `_downloads/market_comps`
+  and has no cache, and `inspect.yml` exists to download things; a test fails
+  if another workflow that fetches starts skipping. `PARSE_CACHE=off` downloads
+  everything, with a line saying so.
+
+The key moved from sha256 to md5 for this, so `FORMAT` is 2 and the Actions
+cache prefix `parse-cache-v2-`: the first run after it starts cold, parses
+everything once and downloads everything once, exactly as a run did before
+either change.
+
+`test_parse_cache.py` sections 7 and 8 hold it down — the real
+`fetch_drive.main` and `process_manifest` against a stubbed Drive serving real
+daily-leasing workbooks: a warm fetch leaves the three kept reports in Drive and
+downloads only the never-kept rent roll, the warm build stores byte-for-byte
+what a build with every file on disk stores and downloads exactly the one file
+its self-check re-reads, and a build whose kept parses are gone downloads every
+file it needs and still stores the same. Fourteen mutations, thirteen caught;
+the one missed — recording Drive's listed md5 for a downloaded file instead of
+its bytes' — changes nothing, since a file on disk is always keyed from disk.
 
 ### The commit step rebuilds on a newer main
 

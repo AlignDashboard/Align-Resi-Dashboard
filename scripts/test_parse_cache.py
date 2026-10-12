@@ -20,7 +20,14 @@ every step green. So this holds down, without a fixture or the network:
   5. the real parsers' keys -- what they import and which config they name;
   6. end to end through process_manifest with the real daily leasing parser:
      a warm run stores exactly what a run with no cache stores, parses
-     nothing, and leaves no name anywhere in the cache directory.
+     nothing, and leaves no name anywhere in the cache directory;
+  7. the fetch, through fetch_drive.main and process_manifest against a
+     stubbed Drive: a file whose parse is kept is left in Drive and keyed on
+     Drive's own md5, the build stores exactly what it stores with every
+     file on disk, a file it needs after all is downloaded then -- and a
+     file it cannot get ends the run rather than going missing from it;
+  8. the contract around it: nothing the daily run executes reads a file the
+     fetch may leave in Drive, and update.yml restores the cache first.
 
 Run: python scripts/test_parse_cache.py
 """
@@ -572,6 +579,417 @@ def section_end_to_end(tmp):
        len(list((warm / "_cache" / "parse" / "entries").glob("*.pickle"))) == 3)
 
 
+def _google_stubs():
+    """fetch_drive imports the Drive client at module scope. Every call into
+    it is replaced below, so where the library is absent a shell will do."""
+    import types
+    for name in ("google", "google.oauth2", "googleapiclient",
+                 "googleapiclient.discovery", "googleapiclient.http"):
+        sys.modules.setdefault(name, types.ModuleType(name))
+    for mod, attr, val in (
+            ("google.oauth2", "service_account", types.SimpleNamespace(
+                Credentials=types.SimpleNamespace(
+                    from_service_account_info=lambda *a, **k: None))),
+            ("googleapiclient.discovery", "build", lambda *a, **k: None),
+            ("googleapiclient.http", "MediaIoBaseDownload", object)):
+        if not hasattr(sys.modules[mod], attr):
+            setattr(sys.modules[mod], attr, val)
+
+
+class Drive:
+    """The Drive the fetch lists and downloads from: folders of files, each
+    with the md5 Drive reports for it. Every download is recorded."""
+
+    def __init__(self, fd):
+        self.fd = fd
+        self.blobs, self.tree = {}, {"R": []}
+        self.downloads, self.fail = [], False
+        fd._service = lambda: "svc"
+        fd._list_children = self.list
+        fd._download = self.download
+        fd._build_svc = None
+
+    def put(self, folder, name, data, fid=None):
+        import hashlib
+        fid = fid or f"{folder}/{name}"
+        if not any(n == folder for _, n, _ in self.tree["R"]):
+            self.tree["R"].append(("folder", folder, folder))
+        self.tree.setdefault(folder, [])
+        self.tree[folder] = [e for e in self.tree[folder] if e[2] != fid]
+        self.tree[folder].append(("file", name, fid))
+        self.blobs[fid] = (data, hashlib.md5(data).hexdigest())
+        return fid
+
+    def list(self, svc, pid, mime=None):
+        out = []
+        for kind, name, fid in self.tree.get(pid, []):
+            f = {"id": fid, "name": name, "createdTime": "2026-10-05T12:00:00Z",
+                 "modifiedTime": "2026-10-05T12:00:00Z",
+                 "mimeType": ("application/vnd.google-apps.folder" if kind == "folder"
+                              else "application/octet-stream")}
+            if kind == "file":
+                f.update(md5Checksum=self.blobs[fid][1], size=str(len(self.blobs[fid][0])))
+            out.append(f)
+        return out
+
+    def download(self, svc, fid, dest):
+        if self.fail == "partway":
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(self.blobs[fid][0][:10])
+            raise ConnectionError("connection reset partway through")
+        if self.fail:
+            raise ConnectionError("Drive said 500")
+        self.downloads.append(fid)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(self.blobs[fid][0])
+
+    def took(self):
+        got, self.downloads = self.downloads, []
+        return got
+
+
+REPORT_MAP = {"subfolders": [
+    {"drive_folder": "Daily Leasing Reports", "report_type": "daily_leasing_report",
+     "parser": "parse_daily_leasing", "status": "active", "file_glob": "*.xlsx"},
+    {"drive_folder": "Rent Roll", "report_type": "rent_roll",
+     "parser": "stub_roll_parser", "status": "active", "file_glob": "*.xlsx"},
+    {"drive_folder": "EliseAI Reports", "report_type": "bldg_metrics_csv",
+     "parser": "parse_building_metrics", "status": "active", "file_glob": "*.csv"},
+]}
+
+
+def section_fetch(tmp):
+    print("\n7. the fetch leaves what it has parsed in Drive")
+    _google_stubs()
+    import fetch_drive as fd
+    drive = Drive(fd)
+    weeks = [("2026-09-08 Daily Report- Week Ending 9.7.26.xlsx", 5973, 3351),
+             ("2026-09-15 Daily Report- Week Ending 9.14.26.xlsx", 6100, 5800),
+             ("2026-09-22 Daily Report- Week Ending 9.21.26.xlsx", 5400, 5500)]
+    src = pathlib.Path(tmp) / "fetch_src"
+    src.mkdir()
+    for name, rent, prior in weeks:
+        build_week(src / name, rent, prior)
+        drive.put("Daily Leasing Reports", name, (src / name).read_bytes())
+    roll = {"report_type": "rent_roll", "property": "The Landing",
+            "property_code": "p0005611", "as_of": "2026-09-21",
+            "source_file": "RentRoll09_21_2026.xlsx", "totals": {"units": 1},
+            "units": [{"unit": "650", "resident_name": "Resident Zed",
+                       "rent": 5973, "occupied": True}], "checks": []}
+    drive.put("Rent Roll", "RentRoll09_21_2026.xlsx", json.dumps(roll).encode())
+    daily = {f"Daily Leasing Reports/{n}" for n, _, _ in weeks}
+
+    def workdir(name):
+        work = pathlib.Path(tmp) / name
+        (work / "config").mkdir(parents=True)
+        for f in pathlib.Path(REPO, "config").glob("*.json"):
+            if f.name != "report_map.json":
+                os.symlink(f, work / "config" / f.name)
+        (work / "config" / "report_map.json").write_text(json.dumps(REPORT_MAP))
+        return work
+
+    @contextlib.contextmanager
+    def inside(work, cache_env=None, key="sa-key"):
+        saved = {k: os.environ.get(k) for k in ("PARSE_CACHE", "GDRIVE_SA_KEY",
+                                                "GDRIVE_FOLDER_ID", "GITHUB_STEP_SUMMARY")}
+        prev_cwd, prev_data, prev_argv = os.getcwd(), bm.DATA, sys.argv
+        for k in saved:
+            os.environ.pop(k, None)
+        if cache_env is not None:
+            os.environ["PARSE_CACHE"] = cache_env
+        if key:
+            os.environ["GDRIVE_SA_KEY"] = key
+        os.environ["GDRIVE_FOLDER_ID"] = "R"
+        bm.DATA = work / "data"
+        os.chdir(work)
+        try:
+            yield
+        finally:
+            os.chdir(prev_cwd)
+            bm.DATA, sys.argv = prev_data, prev_argv
+            for k, v in saved.items():
+                os.environ.pop(k, None)
+                if v is not None:
+                    os.environ[k] = v
+
+    def fetch(work, *args, cache_env=None, fresh=True):
+        if fresh:
+            shutil.rmtree(work / "_downloads", ignore_errors=True)
+        out = io.StringIO()
+        with inside(work, cache_env), contextlib.redirect_stdout(out):
+            sys.argv = ["fetch_drive.py", *args]
+            fd.main()
+        man = json.loads((work / "_downloads" / "manifest.json").read_text())
+        return man, out.getvalue()
+
+    def build(work, cache_env=None, key="sa-key"):
+        shutil.rmtree(work / "data", ignore_errors=True)
+        out = io.StringIO()
+        with inside(work, cache_env, key), contextlib.redirect_stdout(out):
+            bm.process_manifest()
+        files = {str(p.relative_to(work / "data")): p.read_bytes()
+                 for p in sorted((work / "data").rglob("*.json"))}
+        return out.getvalue(), files
+
+    def ids(man, left):
+        return {f"{i['found_in']}/{i['name']}" for i in man
+                if i.get("downloaded") is (not left)}
+
+    entries = lambda work: list((work / "_cache" / "parse" / "entries").glob("*.pickle"))  # noqa: E731
+
+    # The reference: every file downloaded and parsed, no cache at all.
+    plain = workdir("fetch_plain")
+    man, _ = fetch(plain, "--skip-parsed", cache_env="off")
+    ok("with the cache off, --skip-parsed downloads every file",
+       len(drive.took()) == 4 and all(i["downloaded"] for i in man))
+    _, want = build(plain, cache_env="off")
+
+    work = workdir("fetch_cached")
+    man, _ = fetch(work, "--skip-parsed")
+    ok("a cold fetch downloads every file", len(drive.took()) == 4)
+    ok("...and records each one's Drive id and md5, the md5 of its bytes",
+       all(i["drive_id"] and i["md5"] == drive.blobs[i["drive_id"]][1] for i in man))
+    _, cold = build(work)
+    ok("the cold build stores what the build with no cache stores", cold == want)
+
+    man, flog = fetch(work, "--skip-parsed")
+    ok("a warm fetch leaves the three kept weekly reports in Drive",
+       ids(man, left=True) == daily, sorted(ids(man, left=True)))
+    ok("...and downloads only the rent roll, whose parse is never kept",
+       drive.took() == ["Rent Roll/RentRoll09_21_2026.xlsx"])
+    ok("...and still lists all four in the manifest", len(man) == 4)
+    ok("...each left one keyed on the md5 Drive reported",
+       all(i["md5"] == drive.blobs[i["drive_id"]][1] for i in man if not i["downloaded"]))
+    ok("the fetch says what it left and why",
+       "3 left in Drive" in flog and "kept, not downloaded" in flog, flog[-300:])
+    log, got = build(work)
+    ok("the warm build stores exactly what the build with every file stores",
+       got == want, [k for k in want if got.get(k) != want.get(k)])
+    fetched = drive.took()
+    ok("the build downloaded exactly one file: the one its self-check re-read",
+       len(fetched) == 1 and fetched[0] in daily, fetched)
+    ok("...and says so", log.count("[fetched]") == 1)
+    ok("the build reused all three weekly reports' parses",
+       "reused 3 parse(s)" in log, [l for l in log.splitlines() if "[cache]" in l])
+
+    # main moved between the fetch and the build and the parses no longer
+    # match -- here, every kept parse is gone. Every file is needed after all.
+    man, _ = fetch(work, "--skip-parsed")
+    drive.took()
+    for e in entries(work):
+        e.unlink()
+    log, got = build(work)
+    ok("a build whose kept parses do not answer downloads every file it needs",
+       sorted(drive.took()) == sorted(daily))
+    ok("...and still stores exactly what the build with every file stores", got == want)
+
+    # The same, but Drive cannot be reached: the run must end, not carry on
+    # without the files.
+    man, _ = fetch(work, "--skip-parsed")
+    for e in entries(work):
+        e.unlink()
+    drive.fail = True
+    try:
+        build(work)
+        ended = None
+    except SystemExit as e:
+        ended = str(e)
+    drive.fail = False
+    ok("a file the build needs and cannot download ends the run",
+       ended is not None and "could not be downloaded" in ended, ended)
+    ok("...and no failure is kept for it, so the next run reads it",
+       not entries(work))
+
+    man, _ = fetch(work, "--skip-parsed")       # nothing kept: all four come down
+    build(work)
+
+    # Warm, but the one file the self-check re-reads cannot be downloaded: a
+    # check that cannot run is not a check that failed.
+    man, _ = fetch(work, "--skip-parsed")
+    before = sorted(e.name for e in entries(work))
+    drive.fail = True
+    try:
+        build(work)
+        ended = None
+    except SystemExit as e:
+        ended = str(e)
+    drive.fail = False
+    ok("a self-check whose file cannot be downloaded ends the run",
+       ended is not None and "could not be downloaded" in ended, ended)
+    ok("...and sets no kept parse aside", sorted(e.name for e in entries(work)) == before)
+    man, _ = fetch(work, "--skip-parsed")
+    for e in entries(work):
+        e.unlink()
+    try:
+        build(work, key=None)
+        ended = None
+    except SystemExit as e:
+        ended = str(e)
+    ok("without the Drive key in the step, the run ends naming the file",
+       ended is not None and "GDRIVE_SA_KEY" in ended and "Daily Report" in ended, ended)
+
+    # Back to a warm cache for the rest.
+    fetch(work, "--skip-parsed")
+    build(work)
+    drive.took()
+
+    man, _ = fetch(work)
+    ok("without --skip-parsed every file is downloaded, cache or no cache",
+       len(drive.took()) == 4 and all(i["downloaded"] for i in man))
+
+    first = weeks[0][0]
+    build_week(src / first, 6200, 3351)
+    drive.put("Daily Leasing Reports", first, (src / first).read_bytes())
+    man, _ = fetch(work, "--skip-parsed")
+    ok("a report whose bytes changed in Drive is downloaded again",
+       f"Daily Leasing Reports/{first}" in drive.took())
+    build(work)
+
+    # A copy on disk from an earlier local run, with other bytes than Drive's.
+    man, _ = fetch(work, "--skip-parsed")
+    drive.took()
+    stale = work / "_downloads" / "daily_leasing_report" / weeks[1][0]
+    stale.parent.mkdir(parents=True, exist_ok=True)
+    stale.write_bytes(b"an older copy")
+    man, _ = fetch(work, "--skip-parsed", fresh=False)
+    took = drive.took()
+    ok("a stale local copy of a file left in Drive is removed, so nothing reads it",
+       not stale.exists() and not set(took) & daily, (stale.exists(), took))
+    same = work / "_downloads" / "daily_leasing_report" / weeks[2][0]
+    same.write_bytes((src / weeks[2][0]).read_bytes())
+    fetch(work, "--skip-parsed", fresh=False)
+    ok("...while a local copy that IS Drive's file is left where it is", same.exists())
+
+    # The same filename in two folders: the second must not be taken, whether
+    # or not the first was downloaded.
+    drive.took()
+    drive.put("Leasing Copies", weeks[1][0], b"same name, other folder", fid="dup")
+    REPORT_MAP["subfolders"].append(
+        {"drive_folder": "Leasing Copies", "report_type": "daily_leasing_report",
+         "parser": "parse_daily_leasing", "status": "active", "file_glob": "*.xlsx"})
+    (work / "config" / "report_map.json").write_text(json.dumps(REPORT_MAP))
+    man, flog = fetch(work, "--skip-parsed")
+    REPORT_MAP["subfolders"].pop()
+    (work / "config" / "report_map.json").write_text(json.dumps(REPORT_MAP))
+    paths = [i["path"] for i in man]
+    ok("a second file of the same name is not taken over one left in Drive",
+       len(paths) == len(set(paths)) and "dup" not in drive.took()
+       and "already taken" in flog, flog[-400:])
+    drive.tree["R"] = [e for e in drive.tree["R"] if e[1] != "Leasing Copies"]
+
+    # A type something other than the parser reads from disk is always fetched.
+    drive.put("EliseAI Reports", "metrics-building-2026-10-05.csv", b"a,b\n1,2\n")
+    probe = {"path": "_downloads/bldg_metrics_csv/metrics-building-2026-10-05.csv",
+             "md5": drive.blobs["EliseAI Reports/metrics-building-2026-10-05.csv"][1]}
+    with inside(work):
+        cache = pc.ParseCache(pc.DEFAULT_DIR)
+        k = cache.key(probe, pc._Named("parse_building_metrics",
+                                        pathlib.Path(HERE) / "parse_building_metrics.py"))
+        (cache.entries / f"{k}.pickle").write_bytes(b"")
+        held = cache.has(probe, "parse_building_metrics")
+    drive.took()
+    man, _ = fetch(work, "--skip-parsed")
+    ok("a building-metrics CSV is downloaded even when its parse is kept, "
+       "since the scorecard fill reads it from disk",
+       held and "EliseAI Reports/metrics-building-2026-10-05.csv" in drive.took())
+
+    # A fetch hook that raises an ordinary exception: the file's parse is
+    # unknown, not failed, so the run ends and nothing is kept for it.
+    with inside(work):
+        it = dict(next(i for i in man if not i["downloaded"]))
+        pathlib.Path(it["path"]).unlink(missing_ok=True)
+        cache = pc.ParseCache(pc.DEFAULT_DIR, log=lambda *_: None,
+                              fetch=lambda i: (_ for _ in ()).throw(RuntimeError("no route")))
+        mod = importlib.import_module(it["parser"])
+        k = cache.key(it, mod)
+        (cache.entries / f"{k}.pickle").unlink(missing_ok=True)
+        try:
+            cache.parse(it, mod)
+            raised = None
+        except BaseException as e:                      # noqa: BLE001
+            raised = e
+        kept_after = (cache.entries / f"{k}.pickle").exists()
+    ok("a hook that fails with an ordinary exception still ends the run, and "
+       "nothing is kept as the file's failure",
+       isinstance(raised, SystemExit) and "no route" in str(raised)
+       and not kept_after, (raised, kept_after))
+
+    # fetch_one on its own: a download cut off partway leaves nothing behind
+    # for a later step -- or a later local run -- to read as the file.
+    item = next(i for i in man if not i["downloaded"])
+    drive.fail = "partway"
+    with inside(work):
+        pathlib.Path(item["path"]).unlink(missing_ok=True)
+        try:
+            fd.fetch_one(item)
+            ended = None
+        except SystemExit as e:
+            ended = str(e)
+        partial = pathlib.Path(item["path"]).exists()
+    drive.fail = False
+    ok("a download cut off partway ends the run and leaves no partial file",
+       ended is not None and "could not be downloaded" in ended and not partial,
+       (ended, partial))
+
+    # fetch_one on its own: a file that changed between the listing and the
+    # download is not parsed under the old copy's key.
+    item = next(i for i in man if not i["downloaded"])
+    item = dict(item, md5="0" * 32)
+    with inside(work):
+        try:
+            fd.fetch_one(item)
+            ended = None
+        except SystemExit as e:
+            ended = str(e)
+        gone = not pathlib.Path(item["path"]).exists()
+    ok("a file whose bytes no longer match the listing ends the run, and is not left on disk",
+       ended is not None and "changed in Drive" in ended and gone, ended)
+
+
+def section_contract():
+    print("\n8. what the fetch may leave in Drive, and the workflow around it")
+    import re
+    sys.path.insert(0, HERE)
+    import fetch_drive as fd
+    rtypes = {e.get("report_type") for e in json.load(
+        open(os.path.join(REPO, "config", "report_map.json")))["subfolders"]}
+    # Everything the daily run executes, and every workflow that skips.
+    skipping = [p for p in pathlib.Path(REPO, ".github", "workflows").glob("*.yml")
+                if "--skip-parsed" in p.read_text()]
+    sources = [p for p in pathlib.Path(HERE).iterdir()
+               if p.suffix in (".py", ".sh") and not p.name.startswith("test_")
+               and p.name != "fetch_drive.py"] + skipping
+    readers = {}
+    for p in sources:
+        for m in re.finditer(r"_downloads/([A-Za-z_]+)", p.read_text()):
+            if m.group(1) in rtypes:
+                readers.setdefault(m.group(1), set()).add(p.name)
+    stray = {t: sorted(f) for t, f in readers.items() if t not in fd.READ_FROM_DISK}
+    ok("every report type read from _downloads/ outside the parse is one the fetch "
+       "always downloads (READ_FROM_DISK)", not stray, stray)
+    ok("...and the scorecard fill's CSV is one of them",
+       "bldg_metrics_csv" in readers and "bldg_metrics_csv" in fd.READ_FROM_DISK, readers)
+
+    wf = pathlib.Path(REPO, ".github", "workflows", "update.yml").read_text()
+    steps = {m.group(1).strip(): m.start()
+             for m in re.finditer(r"^      - name: (.+)$", wf, re.M)}
+    body = lambda name: wf[steps[name]:min([v for v in steps.values()  # noqa: E731
+                                            if v > steps[name]] + [len(wf)])]
+    ok("update.yml restores the parse cache before the fetch reads it",
+       steps["Restore the parse cache"] < steps["Fetch reports from Google Drive"])
+    ok("...and the fetch is told to skip what it has parsed",
+       "--skip-parsed" in body("Fetch reports from Google Drive"))
+    ok("...and both steps that build can download what the fetch left in Drive",
+       all("GDRIVE_SA_KEY" in body(n) for n in
+           ("Build metrics, fill the scorecard, build the lineage",
+            "Check for personal data, commit and push")))
+    others = [p.name for p in pathlib.Path(REPO, ".github", "workflows").glob("*.yml")
+              if p.name != "update.yml" and "fetch_drive.py" in p.read_text()
+              and p in skipping]
+    ok("no other workflow that fetches skips, since none has the build's cache",
+       not others, others)
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="parse_cache_")
     try:
@@ -582,6 +1000,8 @@ def main():
         section_housekeeping(sb)
         section_real_keys()
         section_end_to_end(tmp)
+        section_fetch(tmp)
+        section_contract()
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     print(f"\n{PASS} passed, {FAIL} failed")

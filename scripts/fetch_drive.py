@@ -37,6 +37,14 @@ of reports sat in _Unsorted because no routing rule matched their names, and
 nothing downstream could tell. Organisation is still maintained -- it is just no
 longer load-bearing.
 
+A file whose parse an earlier run kept is not downloaded at all, with
+--skip-parsed (update.yml passes it; nothing else does). Drive reports each
+file's md5 in the listing, and parse_cache keys a file on exactly that, so the
+fetch can ask the cache whether it already holds this file's parse before
+fetching a byte. The manifest still lists the file -- with its Drive id and
+md5, and "downloaded": false -- so the build sees the same set of files either
+way, and if it needs the bytes after all it downloads them then (fetch_one).
+
 The sweep is deliberately scoped and will not touch:
   - the reference tree, which is the owner's curated library. Archived copies of
     superseded reports live there; sweeping it would feed a seven-week-old rent
@@ -53,6 +61,8 @@ import io
 import json
 import pathlib
 import sys
+
+import parse_cache
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -77,6 +87,14 @@ NEVER_SWEEP = {"Archive Reports", "Archive"}
 # How far below a registered folder the folder pass walks. See contents().
 MAX_SUBFOLDER_DEPTH = 2
 
+# Report types --skip-parsed always downloads, because something other than
+# the parser reads the file from _downloads/. A file left in Drive is only
+# safe when the parse is the one thing that would have read it.
+READ_FROM_DISK = {
+    "bldg_metrics_csv": "build_pipeline.sh fills the scorecard from the newest "
+                        "CSV in _downloads/bldg_metrics_csv/",
+}
+
 
 def _service():
     key = json.loads(os.environ["GDRIVE_SA_KEY"])
@@ -95,8 +113,10 @@ def _list_children(svc, parent_id, mime=None):
             # createdTime/modifiedTime are what the dashboard reports as "data
             # last updated" for a Drive-fed report — when the file landed in the
             # folder, as distinct from the period the report covers.
+            # md5Checksum keys the parse cache, so --skip-parsed can tell a
+            # file it already holds the parse of without downloading it.
             fields=("nextPageToken, files(id, name, mimeType, "
-                    "createdTime, modifiedTime)"),
+                    "createdTime, modifiedTime, md5Checksum, size)"),
             pageToken=token,
             includeItemsFromAllDrives=True, supportsAllDrives=True,
         ).execute(num_retries=API_RETRIES)
@@ -117,12 +137,67 @@ def _download(svc, file_id, dest):
             _, done = dl.next_chunk(num_retries=API_RETRIES)
 
 
+_build_svc = None
+
+
+def fetch_one(item):
+    """Download one file a --skip-parsed fetch left in Drive, for a build that
+    needs its bytes after all: main moved and a parser changed, the cache's
+    self-check picked this file, or the kept parse would not read.
+
+    Every way this can fail ends the run, loudly. The alternative is a build
+    that goes on without the file, which publishes as though the report had
+    never arrived -- the failure this pipeline is most careful about."""
+    global _build_svc
+    name = item.get("name")
+    where = f"{item.get('found_in')}/{name}"
+    if not item.get("drive_id"):
+        raise SystemExit(f"::error::{where} is not on disk and the manifest has "
+                         f"no Drive id to download it by")
+    if not os.environ.get("GDRIVE_SA_KEY"):
+        raise SystemExit(f"::error::the build needs {where}, which the fetch "
+                         f"left in Drive because its parse was kept, and "
+                         f"GDRIVE_SA_KEY is not set in this step to download it")
+    dest = pathlib.Path(item["path"])
+    try:
+        if _build_svc is None:
+            _build_svc = _service()
+        _download(_build_svc, item["drive_id"], dest)
+    except Exception as e:                            # noqa: BLE001
+        dest.unlink(missing_ok=True)
+        raise SystemExit(f"::error::the build needs {where} and it could not be "
+                         f"downloaded: {e}")
+    got = parse_cache.md5_file(dest)
+    if item.get("md5") and got != item["md5"]:
+        # Its arrival time and checksum in the manifest describe the copy the
+        # fetch listed, not this one. The next run lists the new copy.
+        dest.unlink()
+        raise SystemExit(f"::error::{where} changed in Drive after the fetch "
+                         f"listed it (md5 {item['md5']} then, {got} now); the "
+                         f"next run reads the new copy")
+    print(f"[fetched] {where} -- downloaded for the build, which needed its "
+          f"bytes after all")
+
+
 def main():
     # --all also downloads folders that have no parser yet, into
     # _downloads/_pending/<folder>/. For inspecting a new report format; the
     # daily pipeline never passes it, so nothing unparsed reaches the build.
     fetch_pending = "--all" in sys.argv
     cfg = json.load(open("config/report_map.json"))
+
+    # --skip-parsed leaves a file in Drive when the parse cache already holds
+    # its parse. Only update.yml passes it: refresh_comps.yml reads its files
+    # straight from _downloads/, and so would anything else that is not the
+    # build. The cache is the build's own (PARSE_CACHE, _cache/parse), so the
+    # two cannot be looking in different places.
+    cache = None
+    if "--skip-parsed" in sys.argv:
+        cache = parse_cache.from_env()
+        if not isinstance(cache, parse_cache.ParseCache):
+            print("[info] --skip-parsed: PARSE_CACHE is off, so every file is "
+                  "downloaded")
+            cache = None
 
     # --only <report_type> (repeatable) narrows the run to one feed. The daily
     # pipeline never passes it and is unchanged; it exists because the whole
@@ -270,31 +345,57 @@ def main():
                 print(f"[ok] downloaded (unmapped) {name}/{f['name']}")
 
     claimed = set()   # Drive file ids the folder pass took, so the sweep cannot double-count
+    taken = set()     # paths this run has given a file, downloaded or left in Drive
+    tally = {"downloaded": [0, 0], "left": [0, 0]}    # files, bytes
 
     def take(entry, f, found_in, rescued=False):
         dest = DL_ROOT / entry["report_type"] / f["name"]
-        if dest.exists():
+        if dest in taken:
             # Two folders holding the same filename would otherwise silently
             # overwrite each other on disk and the second parse would win.
+            # Counted by path rather than by what is on disk, because a file
+            # left in Drive is on no disk.
             print(f"[note] {found_in}/{f['name']} skipped — a file of that name "
-                  f"was already downloaded for {entry['report_type']}")
+                  f"was already taken for {entry['report_type']}")
             return
-        _download(svc, f["id"], dest)
+        taken.add(dest)
         claimed.add(f["id"])
         # landed_at: when this report showed up in Drive. createdTime is the
         # arrival; modifiedTime is later only if someone edited it in place,
         # and an edited report is newer data, so take the later of the two.
         landed_at = max(x for x in (f.get("createdTime"), f.get("modifiedTime")) if x) \
             if (f.get("createdTime") or f.get("modifiedTime")) else None
-        manifest.append({"report_type": entry["report_type"],
-                         "parser": entry["parser"],
-                         "path": str(dest), "name": f["name"],
-                         "landed_at": landed_at,
-                         "found_in": found_in,
-                         "rescued_by_name": rescued,
-                         "drive_created_time": f.get("createdTime"),
-                         "drive_modified_time": f.get("modifiedTime")})
-        print(f"[{'rescued' if rescued else 'ok'}] downloaded {found_in}/{f['name']}"
+        item = {"report_type": entry["report_type"],
+                "parser": entry["parser"],
+                "path": str(dest), "name": f["name"],
+                "landed_at": landed_at,
+                "found_in": found_in,
+                "rescued_by_name": rescued,
+                "drive_created_time": f.get("createdTime"),
+                "drive_modified_time": f.get("modifiedTime"),
+                "drive_id": f["id"],
+                "md5": f.get("md5Checksum")}
+        size = int(f.get("size") or 0)
+        left = (cache is not None and item["md5"]
+                and entry["report_type"] not in READ_FROM_DISK
+                and cache.has(item, entry["parser"]))
+        if left:
+            # A copy from an earlier local run would be read in place of the
+            # file the manifest describes, so it goes unless it is that file.
+            if dest.exists() and parse_cache.md5_file(dest) != item["md5"]:
+                dest.unlink()
+        else:
+            _download(svc, f["id"], dest)
+            # The key is the bytes the parser reads. Drive's checksum should be
+            # theirs; if the file changed between the listing and the download,
+            # the download is what gets parsed, so it is what gets keyed.
+            item["md5"] = parse_cache.md5_file(dest)
+        item["downloaded"] = not left
+        tally["left" if left else "downloaded"][0] += 1
+        tally["left" if left else "downloaded"][1] += size
+        manifest.append(item)
+        print(f"[{'rescued' if rescued else 'ok'}] "
+              f"{'kept, not downloaded:' if left else 'downloaded'} {found_in}/{f['name']}"
               + (f" (landed in Drive {landed_at})" if landed_at else "")
               + (f" — filed outside its own folder, matched on name as "
                  f"{entry['report_type']}" if rescued else ""))
@@ -412,7 +513,19 @@ def main():
             print("[info] rescue sweep: nothing outside its own folder")
 
     json.dump(manifest, open("_downloads/manifest.json", "w"), indent=2)
-    print(f"\n{len(manifest)} file(s) downloaded.")
+    (n_dl, b_dl), (n_left, b_left) = tally["downloaded"], tally["left"]
+    line = f"{n_dl} file(s) downloaded ({b_dl / 1e6:.1f} MB)"
+    if cache is not None:
+        line += (f"; {n_left} left in Drive ({b_left / 1e6:.1f} MB), their parse "
+                 f"kept from an earlier run")
+    print(f"\n{len(manifest)} file(s) in the manifest: {line}.")
+    summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_file:
+        try:
+            with open(summary_file, "a") as fh:
+                fh.write(f"**Drive fetch:** {line}\n\n")
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

@@ -12,9 +12,10 @@ every run since it landed.
 
 A parse is a function of four things, and the key is all four:
 
-  * the file -- its bytes (sha256) and the path it was read from, because
-    parsers read the filename: the daily leasing week label, a property
-    named only in the name;
+  * the file -- its bytes (md5, the digest Drive itself reports, so the
+    fetch can find a kept parse without downloading the file) and the path
+    it was read from, because parsers read the filename: the daily leasing
+    week label, a property named only in the name;
   * the parser's code -- its own module and every repo module it imports,
     found by walking the imports with `ast`. A grep would also find the
     `from parse_comps import parse` a docstring quotes;
@@ -58,6 +59,13 @@ the previous one made. Nothing in it is published. An entry unused for
 PRUNE_DAYS is deleted, so the cache follows the drop tree rather than its
 history.
 
+The fetch uses it too. A file whose parse is kept is not downloaded at all
+(fetch_drive --skip-parsed, has() below): the manifest carries Drive's md5 for
+it instead, which keys it exactly as its bytes would. If the build turns out
+to need the bytes after all -- main moved and a parser changed, the self-check
+picked that file, a kept parse would not read -- the `fetch` hook downloads it
+then, before the parser is called.
+
 PARSE_CACHE=off parses everything afresh, as before; any other value is the
 directory to keep the parses in.
 """
@@ -73,9 +81,11 @@ import sys
 import time
 import warnings
 
-# Bump when the entry or index shape changes: every kept parse is then refused
-# on read, and the next run parses everything once.
-FORMAT = 1
+# Bump when the entry or index shape changes, or what the key covers: every
+# kept parse is then refused on read, and the next run parses everything once.
+# 2: the file is keyed on md5 rather than sha256, so the fetch can key it from
+# Drive's own checksum.
+FORMAT = 2
 DEFAULT_DIR = "_cache/parse"
 PRUNE_DAYS = 14
 
@@ -119,18 +129,47 @@ class ReusedFailure(Exception):
     """
 
 
-def call_parser(mod, item):
+def call_parser(mod, item, fetch=None):
     """The call process_manifest has always made: every parser exposes
-    parse(path), and parse_t12 is kept as an alias."""
+    parse(path), and parse_t12 is kept as an alias.
+
+    A file the fetch left in Drive because its parse was kept is downloaded
+    first, by `fetch`. Without one the parser meets the missing file and says
+    so, which is what a run with no fetch hook should do.
+
+    A download that fails ENDS THE RUN, whatever the hook raised. As an
+    ordinary exception it would be caught three ways, all wrong: kept as the
+    file's failure, read by the self-check as a parse that differs (setting
+    the parser's whole cache aside), or printed as one more `[error]` line
+    while the build carried on without the report."""
+    if fetch is not None and not os.path.exists(item["path"]):
+        try:
+            fetch(item)
+        except Exception as e:                        # noqa: BLE001
+            raise SystemExit(f"::error::{item['path']} is needed by the build "
+                             f"and could not be downloaded: {e}") from e
     return (mod.parse if hasattr(mod, "parse") else mod.parse_t12)(item["path"])
 
 
-def sha256_file(path, chunk=1 << 20):
-    h = hashlib.sha256()
+def md5_file(path, chunk=1 << 20):
+    h = hashlib.md5()
     with open(path, "rb") as fh:
         for block in iter(lambda: fh.read(chunk), b""):
             h.update(block)
     return h.hexdigest()
+
+
+def file_digest(item):
+    """The md5 the key carries for `item`'s file: of the bytes on disk when
+    they are there -- the bytes the parser would read -- and otherwise the
+    one the manifest recorded from Drive for a file it did not download."""
+    path = item["path"]
+    if os.path.exists(path):
+        return md5_file(path)
+    if item.get("md5"):
+        return item["md5"]
+    raise FileNotFoundError(f"{path} is not on disk and the manifest has no "
+                            f"checksum for it")
 
 
 def _tree(path):
@@ -234,11 +273,14 @@ def _openpyxl_version():
 class NoCache:
     """PARSE_CACHE=off: every file parsed afresh, nothing kept."""
 
+    def __init__(self, fetch=None):
+        self.fetch = fetch
+
     def prepare(self, items, load):
         pass
 
     def parse(self, item, mod):
-        return call_parser(mod, item)
+        return call_parser(mod, item, self.fetch)
 
     def finish(self):
         pass
@@ -246,8 +288,9 @@ class NoCache:
 
 class ParseCache:
     def __init__(self, root=DEFAULT_DIR, *, person_fields=(), cached_types=None,
-                 config_dir=CONFIG, now=None, log=print):
+                 config_dir=CONFIG, now=None, log=print, fetch=None):
         self.root = pathlib.Path(root)
+        self.fetch = fetch        # downloads a file the fetch left in Drive
         self.entries = self.root / "entries"
         self.person_fields = frozenset(person_fields)
         self.cached_types = CACHED_TYPES if cached_types is None else cached_types
@@ -286,13 +329,36 @@ class ParseCache:
     def key(self, item, mod):
         k = (mod.__name__, item["path"])
         if k not in self._keys:
-            h = hashlib.sha256()
-            for part in (self.fingerprint(mod), str(item["path"]),
-                         sha256_file(item["path"])):
-                h.update(part.encode())
-                h.update(b"\0")
-            self._keys[k] = h.hexdigest()
+            self._keys[k] = self._key(mod, item["path"], file_digest(item))
         return self._keys[k]
+
+    def _key(self, mod, path, digest):
+        h = hashlib.sha256()
+        for part in (self.fingerprint(mod), str(path), digest):
+            h.update(part.encode())
+            h.update(b"\0")
+        return h.hexdigest()
+
+    def has(self, item, parser):
+        """Whether a parse of `item` by the parser module named `parser` is
+        kept, so the build can answer it without the file. The fetch asks this
+        before it downloads anything, with Drive's md5 in `item`.
+
+        Only a yes is a promise, and only a weak one: the build may still need
+        the bytes (main moved, the self-check picked this file, the kept parse
+        will not read), and its fetch hook downloads them then.
+
+        Keyed on Drive's md5 alone, never on a copy already on disk: that
+        copy may be an older file of the same name, and the question is
+        about the one Drive holds now."""
+        if not item.get("md5"):
+            return False
+        try:
+            mod = _Named(parser, HERE / f"{parser}.py")
+            key = self._key(mod, item["path"], item["md5"])
+            return (self.entries / f"{key}.pickle").is_file()
+        except Exception:                             # noqa: BLE001
+            return False
 
     # ---- one file -----------------------------------------------------------
 
@@ -305,7 +371,7 @@ class ParseCache:
         except Exception as e:                        # noqa: BLE001
             self.log(f"[cache] {item.get('name')}: cannot be keyed ({e}) -- "
                      f"parsed afresh and not kept")
-            return call_parser(mod, item)
+            return call_parser(mod, item, self.fetch)
         self.used.add(key)
         trusted = key in self.written or mod.__name__ not in self.distrusted
         kept = self._read(key) if trusted else None
@@ -317,7 +383,7 @@ class ParseCache:
             raise ReusedFailure(kept["error"])
         t0 = time.monotonic()
         try:
-            result = call_parser(mod, item)
+            result = call_parser(mod, item, self.fetch)
         except Exception as e:
             self._tally(t0)
             self._keep(key, item, mod, ok=False, error=e)
@@ -427,7 +493,7 @@ class ParseCache:
             return
         t0 = time.monotonic()
         try:
-            fresh, err = call_parser(mod, item), None
+            fresh, err = call_parser(mod, item, self.fetch), None
         except Exception as e:                        # noqa: BLE001
             fresh, err = None, e
         secs = time.monotonic() - t0
@@ -536,6 +602,16 @@ class ParseCache:
         return {}
 
 
+class _Named:
+    """What the key needs of a parser module -- its name and its file --
+    without importing it. The fetch keys a file this way, before the build
+    has imported anything."""
+
+    def __init__(self, name, path):
+        self.__name__ = name
+        self.__file__ = str(path)
+
+
 def _aware(when):
     return when if when.tzinfo else when.replace(tzinfo=dt.timezone.utc)
 
@@ -549,8 +625,9 @@ def _when(stamp, default):
 
 def from_env(**kwargs):
     """The cache process_manifest uses: PARSE_CACHE=off for none, any other
-    value for a directory, unset for _cache/parse."""
+    value for a directory, unset for _cache/parse. The fetch builds its own
+    the same way, so the two cannot be looking in different places."""
     value = os.environ.get("PARSE_CACHE", "").strip()
     if value.lower() in ("off", "0", "false", "no"):
-        return NoCache()
+        return NoCache(fetch=kwargs.get("fetch"))
     return ParseCache(value or DEFAULT_DIR, **kwargs)

@@ -1,9 +1,11 @@
 """
 build_metrics.py
 ----------------
-Runs after fetch_drive.py. For every downloaded file in _downloads/manifest.json:
+Runs after fetch_drive.py. For every file in _downloads/manifest.json:
   1. runs the file's parser -- or reuses the parse an earlier run made of the
-     same bytes with the same parser code, see parse_cache.py
+     same bytes with the same parser code, see parse_cache.py. A file whose
+     parse was kept may not have been downloaded at all; it is fetched here
+     if the build needs its bytes after all
   2. routes the result to a property (via property code -> config/properties.json)
   3. appends to that property's per-metric history in data/  (keyed by period,
      so re-processing the same statement overwrites rather than duplicates)
@@ -1397,6 +1399,16 @@ ACCUMULATORS = {
 }
 
 
+def fetch_left_in_drive(item):
+    """Download a file the fetch did not, because its parse was kept, for a
+    build that needs its bytes after all (parse_cache.call_parser calls this).
+    Imported here rather than at the top: the Drive client is only needed on
+    the run that actually has to reach Drive, and a local build has every file
+    on disk already."""
+    import fetch_drive
+    fetch_drive.fetch_one(item)
+
+
 def process_manifest():
     mpath = pathlib.Path("_downloads/manifest.json")
     if not mpath.exists():
@@ -1424,7 +1436,7 @@ def process_manifest():
     # on it exactly as on a fresh one. parse_cache.py says what the key covers,
     # which report types may be kept between runs and how each run checks the
     # cache against a fresh parse.
-    cache = parse_cache.from_env(person_fields=PII_FIELDS)
+    cache = parse_cache.from_env(person_fields=PII_FIELDS, fetch=fetch_left_in_drive)
     cache.prepare([i for i in manifest if i["report_type"] in ACCUMULATORS],
                   lambda i: importlib.import_module(i["parser"]))
 
