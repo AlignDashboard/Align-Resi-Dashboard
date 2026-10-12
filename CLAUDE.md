@@ -1556,7 +1556,7 @@ rather than publishing stale semantics.
 `scripts/populate_building_metrics.py <export.csv>` fills the scorecard from
 EliseAI's **building metrics export** (`metrics-building-<YYYY-MM-DD>.csv`,
 `metricsbuilding<YYYYMMDD>.csv` in the earliest copies; 79 columns per property
-when it began, 40 since 2026-09-22 — B9). This is a *third* EliseAI feed,
+when it began, 40 from 2026-09-22 and 41 since 2026-10-05 — B9). This is a *third* EliseAI feed,
 distinct from the two above: the weekly funnel report and the daily emails.
 
 **`# of Renewals` prints the count beside the rate** — `42/88.9%` for The
@@ -1621,6 +1621,19 @@ now lands in the Drive `EliseAI Reports` folder and `update.yml` runs this
 script on the newest one automatically, passing Drive's `landed_at` as the
 arrival — the hand-off step only exists for a CSV that never reached Drive.
 
+**"The newest one" is the latest export date, not the last filename**
+(2026-10-12). The fill took `sorted(glob)[-1]`, and a copy the Gmail filer
+prefixes with its arrival date (`2026-10-20 metrics-building-2026-10-19.csv`)
+sorts ahead of every unprefixed name, as the earliest `metricsbuilding2026…`
+names sort after them. The scorecard would then sit on an older export while
+the Leasing & Occupancy store below, which keys on the date, moved on — the
+rent roll's trap under *A snapshot report never walks backwards*, one feed
+over. Nothing published was wrong: every name in the folder shares one pattern
+so far. `newest_export()` in `parse_building_metrics` decides it — export date,
+then the later Drive arrival for one export filed twice (the store's own rule
+for that pair), then the name — and `build_pipeline.sh` prints which file it
+chose and of how many.
+
 **Every export is kept, not just the newest** (2026-10-08). The fill reads one
 file and keeps nothing, so the leads, tours, applications, occupancy and
 exposure each export carries never became a series. `parse_building_metrics` now reads every
@@ -1651,10 +1664,12 @@ The six exports on file were back-filled the same day: four buildings,
 
 A later export never supersedes an earlier date's point, and a date filed twice
 keeps the later arrival (`older_landed`). `scripts/test_building_metrics.py`
-holds it down — 28 fixture-free checks, the router included end to end through
-`process_manifest`; nine guards were each verified by mutation (the rate check,
+holds it down — 37 fixture-free checks, the router included end to end through
+`process_manifest`; ten guards were each verified by mutation (the rate check,
 the last date, first tours, the required column, accumulation, the later
-arrival, a refused building not stored, active properties only, the routing).
+arrival, a refused building not stored, active properties only, the routing,
+and the fill's choice by date — by filename, without the arrival tie-break,
+arrivals compared as text, and the pipeline back on `csvs[-1]` each fail).
 
 ### The lease tradeout report
 
