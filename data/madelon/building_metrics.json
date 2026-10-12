@@ -85,6 +85,20 @@
       "first_tours_attended": 22.0,
       "applications_completed": 3.0,
       "leases_signed": 3.0
+    },
+    {
+      "as_of": "2026-10-12",
+      "source_file": "metrics-building-2026-10-12.csv",
+      "landed_at": "2026-10-12T17:45:38.674Z",
+      "heading": "The Madelon",
+      "occupancy": 94.5545,
+      "exposure": 7.9208,
+      "vacant_units": 11.0,
+      "new_prospects": 239.0,
+      "first_tours_booked": 50.0,
+      "first_tours_attended": 28.0,
+      "applications_completed": 3.0,
+      "leases_signed": 2.0
     }
   ]
 }

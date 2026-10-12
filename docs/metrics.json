@@ -14086,6 +14086,19 @@
             "first_tours_attended": 12.0,
             "applications_completed": 3.0,
             "leases_signed": 3.0
+          },
+          {
+            "as_of": "2026-10-12",
+            "landed_at": "2026-10-12T17:45:38.674Z",
+            "source_file": "metrics-building-2026-10-12.csv",
+            "occupancy": 98.4791,
+            "exposure": 7.9848,
+            "vacant_units": 4.0,
+            "new_prospects": 94.0,
+            "first_tours_booked": 16.0,
+            "first_tours_attended": 9.0,
+            "applications_completed": 1.0,
+            "leases_signed": 2.0
           }
         ]
       },
@@ -14170,6 +14183,19 @@
             "first_tours_attended": 88.0,
             "applications_completed": 20.0,
             "leases_signed": 13.0
+          },
+          {
+            "as_of": "2026-10-12",
+            "landed_at": "2026-10-12T17:45:38.674Z",
+            "source_file": "metrics-building-2026-10-12.csv",
+            "occupancy": 95.9135,
+            "exposure": 7.9327,
+            "vacant_units": 17.0,
+            "new_prospects": 313.0,
+            "first_tours_booked": 119.0,
+            "first_tours_attended": 90.0,
+            "applications_completed": 13.0,
+            "leases_signed": 17.0
           }
         ]
       },
@@ -14254,6 +14280,19 @@
             "first_tours_attended": 22.0,
             "applications_completed": 3.0,
             "leases_signed": 3.0
+          },
+          {
+            "as_of": "2026-10-12",
+            "landed_at": "2026-10-12T17:45:38.674Z",
+            "source_file": "metrics-building-2026-10-12.csv",
+            "occupancy": 94.5545,
+            "exposure": 7.9208,
+            "vacant_units": 11.0,
+            "new_prospects": 239.0,
+            "first_tours_booked": 50.0,
+            "first_tours_attended": 28.0,
+            "applications_completed": 3.0,
+            "leases_signed": 2.0
           }
         ]
       },
@@ -14337,6 +14376,19 @@
             "first_tours_booked": 28.0,
             "first_tours_attended": 17.0,
             "applications_completed": 4.0,
+            "leases_signed": 3.0
+          },
+          {
+            "as_of": "2026-10-12",
+            "landed_at": "2026-10-12T17:45:38.674Z",
+            "source_file": "metrics-building-2026-10-12.csv",
+            "occupancy": 13.1579,
+            "exposure": 65.7895,
+            "vacant_units": 33.0,
+            "new_prospects": 125.0,
+            "first_tours_booked": 32.0,
+            "first_tours_attended": 19.0,
+            "applications_completed": 5.0,
             "leases_signed": 3.0
           }
         ]
