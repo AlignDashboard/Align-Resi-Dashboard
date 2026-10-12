@@ -60,7 +60,10 @@ OMITTED_METRICS = {"# of offers that are 30 days",
 # Grid columns the dashboard publishes under a different name. The workbook's own
 # header is left alone; this is only what the JSON and the page call the KPI, and
 # the ranges sheet is matched through it too so a renamed cell keeps its band.
-RENAMES = {"# of month to month": "Month to Month Leases"}
+# "Total Deliquency" is the grid's own misspelling, published corrected since
+# 2026-10-12; the ranges sheet already spells it right.
+RENAMES = {"# of month to month": "Month to Month Leases",
+           "Total Deliquency": "Total Delinquency"}
 
 # Rows on the workbook's grid that are not published. The grid is the analyst's
 # working sheet and carries properties the dashboard does not report on; each
@@ -161,15 +164,13 @@ for row in range(FIRST_DATA_ROW, ws.max_row + 1):
     })
 
 # ---- target ranges (new in v10) ----------------------------------------
-# The ranges sheet spells each KPI slightly differently in two places
-# ("Total Deliquency" on the grid, "Total Delinquency" here; "# of work
-# orders" vs "# of open work orders"). Thresholds are keyed by the GRID's
-# metric names, since that is what the dashboard renders.
+# The ranges sheet spells some KPIs differently from the grid ("# of work
+# orders" vs "# of open work orders"). Thresholds are keyed by the names the
+# dashboard renders: the grid's, after RENAMES.
 def _norm(s):
     return re.sub(r"\s+", " ", str(s)).strip().casefold()
 
 ALIASES = {                                   # ranges-sheet name -> grid name
-    "total delinquency": "Total Deliquency",
     "# of open work orders": "# of work orders",
     "open eliseai tasks": "Open Elise Tasks",
 }

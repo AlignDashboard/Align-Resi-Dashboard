@@ -9,7 +9,7 @@ keeping the workbook's original symbol alongside it so nothing is lost.
 
 Which KPIs a delinquency report can actually answer:
 
-  Total Deliquency          gross resident AR / one month's billed rent
+  Total Delinquency         gross resident AR / one month's billed rent
                             (needs the monthly rent too — a delinquency report
                             alone does not carry it, see --monthly-rent)
   Split Between 30/60/90    the report's three past-due buckets, printed as
@@ -78,7 +78,7 @@ resident AR report cannot speak to them and they are left alone.
 Sources:
   --delinquency <report.xlsx>   a real rs_rp_DelinquencySummaryReport, parsed by
                                 parse_delinquency (add --monthly-rent to enable
-                                the Total Deliquency ratio)
+                                the Total Delinquency ratio)
   --from-landing                The Landing's figures out of docs/landing.json,
                                 which the extractor already took from the
                                 workbook's Source Delinquency tab (the same
@@ -107,12 +107,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 OUT = "docs/scorecard.json"
 
-# The grid spells it "Total Deliquency" (sic). Key off the grid's own spelling,
-# because that is what the properties' status maps use.
-KPI_TOTAL = "Total Deliquency"
+# The grid spells it "Total Deliquency"; extract_scorecard's RENAMES publishes it
+# corrected, and the properties' status maps are keyed on the published name.
+KPI_TOTAL = "Total Delinquency"
 KPI_SPLIT = "Split Between 30/60/90"
 
-# Total Deliquency is the EliseAI building-metrics export's `Delinquency Rate`
+# Total Delinquency is the EliseAI building-metrics export's `Delinquency Rate`
 # wherever that export covers the property -- the outstanding-balance figure,
 # owner's call 2026-09-29, closing B4. So the Yardi AR report stops writing the
 # rate for these four and keeps the 30/60/90 split, which the export does not
@@ -692,7 +692,7 @@ def facts_from_pipeline(slug, monthly_rent=None):
     """data/<slug>/delinquency.json, as build_metrics writes it from Drive.
 
     Already scrubbed of names. The delinquency report carries no rent, so the
-    Total Deliquency ratio needs --monthly-rent; without it that KPI is left
+    Total Delinquency ratio needs --monthly-rent; without it that KPI is left
     alone rather than guessed at.
     """
     # The rent roll fills Loss to Lease % on both paths, from the same
@@ -1052,7 +1052,7 @@ def main():
                          "report handed over by hand, which has none of its own. "
                          "The scorecard shows it as the data's last-updated time.")
     ap.add_argument("--monthly-rent", type=float,
-                    help="one month's billed rent, for the Total Deliquency ratio")
+                    help="one month's billed rent, for the Total Delinquency ratio")
     ap.add_argument("--out", default=OUT)
     a = ap.parse_args()
 

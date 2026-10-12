@@ -5404,7 +5404,7 @@ renderScorecard({ eyebrow: "scEyebrow", head: "scHead", table: "scTable",
 
 // The header figures for whichever groups a tab is showing. Hiding cells without
 // this would leave the head counting KPIs the card no longer displays -- The
-// Landing's one below-target cell is Total Deliquency, in a hidden group, so the
+// Landing's one below-target cell is Total Delinquency, in a hidden group, so the
 // head would have said "1 of 7 below target" and named a metric that is not
 // there. A KPI counts as graded when status_source says "measured", which is the
 // test populate_scorecard.recompute itself applies: "value_only" and "unscored"
@@ -7108,7 +7108,7 @@ async function loadLandingDrive() {
         read: () => (meas.budget_variance_pct == null ? null
           : [signed(meas.budget_variance_pct, x => fmPct(x, 1)),
              signed(meas.budget_variance_dollars, fm$) + " on controllable opex"]) },
-      { kpi: "Total Deliquency", label: "Delinquency", to: "cdDelq",
+      { kpi: "Total Delinquency", label: "Delinquency", to: "cdDelq",
         where: "the delinquency card",
         // The AR balance is a snapshot; the month is the denominator, not the
         // window, which is why this is not "monthly" like the revenue tiles.
@@ -7497,10 +7497,10 @@ async function loadLandingDrive() {
     // populate_scorecard.py), and the Yardi report keeps the 30/60/90 split.
     // So the rate follows whichever Drive family lists the cell.
     const rateFeed = SCD_DRIVE_FEEDS.find(f =>
-      (meas[f.prefix + "kpis"] || []).indexOf("Total Deliquency") >= 0);
+      (meas[f.prefix + "kpis"] || []).indexOf("Total Delinquency") >= 0);
     const rateFromExport = !!rateFeed && rateFeed.prefix === "bldg_";
     const rate = rateFeed && scdFeedIsDrive(rateFeed, meas) && prop
-      && scValue(prop, "Total Deliquency");
+      && scValue(prop, "Total Delinquency");
     const split = driveOwns && prop && scValue(prop, "Split Between 30/60/90");
     const parts = (split && split.parts) || null;
     const labels = (split && split.parts_labels) || null;
@@ -7511,7 +7511,7 @@ async function loadLandingDrive() {
       // asserted -- lineage.json attributes its evidence to whichever feed owns
       // the cell, so once the workbook takes it there is no Drive row left to
       // quote, and naming a file the page cannot see would be inventing one.
-      const hasCells = prop && (feed.only || ["Total Deliquency", "Split Between 30/60/90"])
+      const hasCells = prop && (feed.only || ["Total Delinquency", "Split Between 30/60/90"])
         .some(k => (scValue(prop, k) || {}).display != null);
       eyebrow.textContent = hasCells ? "NOT DRIVE-FED TODAY" : "AWAITING THE AR REPORT";
       return;

@@ -464,11 +464,11 @@ DRIVE_FLOWS = {
         ],
         "stores": ["data/<slug>/delinquency.json  (gitignored — unit level)"],
         "publishes": [
-            {"file": "scorecard.json", "key": "Total Deliquency"},
+            {"file": "scorecard.json", "key": "Total Delinquency"},
             {"file": "scorecard.json", "key": "Split Between 30/60/90"},
         ],
         "dashboard": [
-            {"card": "KPI Scorecard — Total Deliquency", "tab": "Scorecard",
+            {"card": "KPI Scorecard — Total Delinquency", "tab": "Scorecard",
              "anchor": "cScorecard", "primary": "t-sc-matrix",
              "tables": ["t-sc-measured", "t-sc-arrivals", "t-sc-props"]},
             # The Drive-only tab shows the rate and the 30/60/90 split -- the
@@ -478,7 +478,7 @@ DRIVE_FLOWS = {
              "anchor": "cdDelq", "primary": "t-sc-measured",
              "tables": ["t-sc-measured", "t-sc-arrivals"]},
             # The Drive-only tab's KPI grid came off 2026-09-15; Total
-            # Deliquency is a tile there now, beside the card above it.
+            # Delinquency is a tile there now, beside the card above it.
             {"card": "Delinquency tile", "tab": "Landing",
              "anchor": "dkpisSc", "tile": True},
             {"card": "What Feeds This Tab", "tab": "Landing",
@@ -502,11 +502,11 @@ DRIVE_FLOWS = {
         ],
         "stores": ["data/<slug>/delinquency.json  (gitignored — unit level)"],
         "publishes": [
-            {"file": "scorecard.json", "key": "Total Deliquency"},
+            {"file": "scorecard.json", "key": "Total Delinquency"},
             {"file": "scorecard.json", "key": "Split Between 30/60/90"},
         ],
         "dashboard": [
-            {"card": "KPI Scorecard — Total Deliquency", "tab": "Scorecard",
+            {"card": "KPI Scorecard — Total Delinquency", "tab": "Scorecard",
              "anchor": "cScorecard"},
         ],
         "tables": ["t-sc-measured"],
@@ -555,7 +555,7 @@ DRIVE_FLOWS = {
             {"file": "scorecard.json", "key": "Closing Ratio"},
             {"file": "scorecard.json", "key": "# of Renewals"},
             {"file": "scorecard.json", "key": "% Increase"},
-            {"file": "scorecard.json", "key": "Total Deliquency"},
+            {"file": "scorecard.json", "key": "Total Delinquency"},
             {"file": "scorecard.json", "key": "AI Containment Rate"},
             {"file": "scorecard.json", "key": "Avg First Response Time"},
             {"file": "scorecard.json", "key": "# of Tours/Leads/Applications"},

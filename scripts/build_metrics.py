@@ -554,7 +554,7 @@ def store_monthly_revenue(prop, t12_parses):
     revenue, summed across this property's codes (Palma = rspalman + rspalmas).
 
     This exists to give ratio KPIs a denominator: the scorecard's Total
-    Deliquency is gross resident AR over one month's billed rent, and a
+    Delinquency is gross resident AR over one month's billed rent, and a
     delinquency report does not carry the rent. The nearest thing the pipeline
     holds is GL 4999-9999, which is total operating revenue rather than billed
     rent alone — close, and honest as long as the basis is recorded.

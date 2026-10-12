@@ -27,14 +27,14 @@ subset the scorecard can honestly take from it.
                                   The rate is still what the band grades.
   % Increase                      Avg Rent Increase Executed (%), falling back
                                   to Offered (%) where executed is blank.
-  Total Deliquency                Delinquency Rate.
+  Total Delinquency               Delinquency Rate.
   AI Containment Rate             Leasing Automation Rate (prospect side).
   Avg First Response Time         AI Response Time, assumed SECONDS. VALUE ONLY
                                   until the unit is confirmed — see UNIT note.
 
 Deliberately NOT filled, and why:
 
-  * Any cell another feed already owns -- except Total Deliquency, which this
+  * Any cell another feed already owns -- except Total Delinquency, which this
     export owns outright for every property it covers (EXPORT_OWNS, owner
     2026-09-29): its Delinquency Rate is the outstanding-balance figure, and the
     Yardi AR report keeps only the 30/60/90 split. 335 Third's T/L/A comes from the
@@ -73,9 +73,9 @@ from populate_scorecard import (OUT, AR_FROM_EXPORT, classify,  # noqa: E402
 
 # KPIs this export owns outright, even where another feed has filled the cell:
 # its Delinquency Rate is the outstanding-balance figure (owner, 2026-09-29,
-# closing B4), so it takes Total Deliquency from the Yardi AR report for every
+# closing B4), so it takes Total Delinquency from the Yardi AR report for every
 # property in AR_FROM_EXPORT. Rule 1 below still holds for everything else.
-EXPORT_OWNS = {"Total Deliquency"}
+EXPORT_OWNS = {"Total Delinquency"}
 
 # CSV property heading -> scorecard slug. A heading absent from here is reported
 # rather than guessed at, so a new property in the export cannot land silently
@@ -241,7 +241,7 @@ def measurements(row, slug, owned):
 
     # ---- delinquency ---------------------------------------------------
     dq = num(row, "Delinquency Rate")
-    add("Total Deliquency", None if dq is None else dq / 100,
+    add("Total Delinquency", None if dq is None else dq / 100,
         None if dq is None else f"{dq:.1f}%",
         "Delinquency Rate as reported -- the outstanding-balance figure (owner, "
         "2026-09-29); the export does not state its denominator or window",
