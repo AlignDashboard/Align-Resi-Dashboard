@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Guard tests for who fills Total Deliquency.
+"""Guard tests for who fills Total Delinquency.
 
 Owner's call, 2026-09-29 (closing B4): the EliseAI building-metrics export's
 `Delinquency Rate` is the outstanding-balance figure, so it fills Total
-Deliquency for every property it covers. The Yardi AR report keeps the
+Delinquency for every property it covers. The Yardi AR report keeps the
 30/60/90 split, which the export does not carry, and keeps the rate only for a
 property the export does not cover (Palma).
 

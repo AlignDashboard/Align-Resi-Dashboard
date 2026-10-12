@@ -761,7 +761,7 @@
    "publishes": [
     {
      "file": "scorecard.json",
-     "key": "Total Deliquency"
+     "key": "Total Delinquency"
     },
     {
      "file": "scorecard.json",
@@ -770,7 +770,7 @@
    ],
    "dashboard": [
     {
-     "card": "KPI Scorecard \u2014 Total Deliquency",
+     "card": "KPI Scorecard \u2014 Total Delinquency",
      "tab": "Scorecard",
      "anchor": "cScorecard",
      "primary": "t-sc-matrix",
@@ -826,7 +826,7 @@
      "as_of": "2026-08-10",
      "source_file": "Delinquency_8_1_2026.xls.xlsx",
      "landed_at": "2026-08-10T17:30:44.001Z",
-     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Delinquency"
     },
     {
      "property": "Chorus",
@@ -867,7 +867,7 @@
    "publishes": [
     {
      "file": "scorecard.json",
-     "key": "Total Deliquency"
+     "key": "Total Delinquency"
     },
     {
      "file": "scorecard.json",
@@ -876,7 +876,7 @@
    ],
    "dashboard": [
     {
-     "card": "KPI Scorecard \u2014 Total Deliquency",
+     "card": "KPI Scorecard \u2014 Total Delinquency",
      "tab": "Scorecard",
      "anchor": "cScorecard"
     }
@@ -902,7 +902,7 @@
      "as_of": "2026-08-10",
      "source_file": "Delinquency_8_1_2026.xls.xlsx",
      "landed_at": "2026-08-10T17:30:44.001Z",
-     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Deliquency"
+     "detail": "2 KPI cell(s): Split Between 30/60/90, Total Delinquency"
     },
     {
      "property": "Chorus",
@@ -979,7 +979,7 @@
     },
     {
      "file": "scorecard.json",
-     "key": "Total Deliquency"
+     "key": "Total Delinquency"
     },
     {
      "file": "scorecard.json",
@@ -1076,7 +1076,7 @@
      "as_of": "2026-10-12",
      "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
      "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "6 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency"
+     "detail": "6 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency"
     },
     {
      "property": "335 Third",
@@ -1084,7 +1084,7 @@
      "as_of": "2026-10-12",
      "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
      "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "4 KPI cell(s): AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency"
+     "detail": "4 KPI cell(s): AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency"
     },
     {
      "property": "Chorus",
@@ -1092,7 +1092,7 @@
      "as_of": "2026-10-12",
      "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
      "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency, Trade-out %"
+     "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency, Trade-out %"
     },
     {
      "property": "Madelon",
@@ -1100,7 +1100,7 @@
      "as_of": "2026-10-12",
      "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
      "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Deliquency, Trade-out %"
+     "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency, Trade-out %"
     }
    ],
    "status": "live"

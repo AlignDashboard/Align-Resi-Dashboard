@@ -51,7 +51,7 @@ def check(name, got, want):
 
 
 OMIT = "# of dropped kpi"
-KEEP = "Total Deliquency"
+KEEP = "Total Delinquency"
 
 
 def scorecard():

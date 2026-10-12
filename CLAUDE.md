@@ -1224,7 +1224,7 @@ the entries, which is the only thing that should.
 
 A delinquency report answers exactly two of the 27 published KPIs:
 
-- `Total Deliquency` — gross resident AR over one month's billed rent, graded
+- `Total Delinquency` — gross resident AR over one month's billed rent, graded
   against the published band. The report alone does not carry the rent, so pass
   `--monthly-rent` when working from a raw report.
 - `Split Between 30/60/90` — the report's three past-due buckets printed as
@@ -1238,10 +1238,17 @@ A delinquency report answers exactly two of the 27 published KPIs:
 `POs over 30 days` and `# of invoices processed` are accounts *payable* and a
 resident AR report cannot speak to them.
 
+**The workbook's grid spells the first `Total Deliquency`**, and the page
+printed it that way until 2026-10-12. `RENAMES` in `extract_scorecard.py`
+publishes it corrected, so a re-extraction keeps the fix, and every key
+downstream (`KPI_TOTAL`, `EXPORT_OWNS`, the Landing tiles, `build_lineage`'s
+declarations) uses the published spelling. Only `RENAMES` still names the old
+one.
+
 **Since 2026-09-29 the report fills only the split wherever the EliseAI
 building-metrics export covers the property** — owner's call, closing B4: the
 export's `Delinquency Rate` is the outstanding-balance figure, and it fills
-`Total Deliquency` for Chorus, The Landing, Madelon and 335 Third.
+`Total Delinquency` for Chorus, The Landing, Madelon and 335 Third.
 `AR_FROM_EXPORT` in `populate_scorecard.py` is that list, and must equal
 `populate_building_metrics.HEADING_TO_SLUG`'s values; Palma is not in the export
 and keeps the report's rate. It is a static list rather than whichever writer
@@ -1572,7 +1579,7 @@ the rate alone — `RENEWAL_COUNT_SOURCE` is the lookup, so adding one is a line
 
 It fills eight KPIs where the export column means what the KPI means — Leased %
 (from `100 − Exposure Rate`, which matches the KPI's definition better than
-`Occupancy Rate`), Closing Ratio, # of Renewals, % Increase, Total Deliquency,
+`Occupancy Rate`), Closing Ratio, # of Renewals, % Increase, Total Delinquency,
 AI Containment Rate, Avg First Response Time, and the T/L/A triple.
 
 It filled **Trade-out %** as well until 2026-09-17, when that cell moved to the
@@ -1584,7 +1591,7 @@ what "excluded by default rather than by remembering" buys.
 Four rules keep it from overwriting better data or asserting what it cannot:
 
 1. **It never takes a cell another feed owns** — with one exception since
-   2026-09-29: `Total Deliquency` is the export's outright for every property
+   2026-09-29: `Total Delinquency` is the export's outright for every property
    it covers (`EXPORT_OWNS`), because its `Delinquency Rate` is the
    outstanding-balance figure (owner's call, closing B4; see the delinquency
    notes above). Palma, which the export does not cover, keeps the Drive AR
