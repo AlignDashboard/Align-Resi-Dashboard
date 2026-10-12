@@ -40,6 +40,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Every parse the previous run made, so this one re-reads only what is
+      # new or changed: a parse is reused when the file's bytes, the parser's
+      # code and the config it reads all match (scripts/parse_cache.py). The
+      # newest cache is restored by prefix and this run saves its own, so the
+      # chain survives a failed or cancelled run. A cold cache is a full parse,
+      # exactly as before. Restored before the fetch, which uses it too.
+      - name: Restore the parse cache
+        uses: actions/cache/restore@v4
+        with:
+          path: _cache/parse
+          key: parse-cache-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: parse-cache-v2-
+
+      # --skip-parsed: a file whose parse the cache already holds is listed in
+      # the manifest and left in Drive. Drive reports each file's md5, and the
+      # cache keys a file on exactly that, so "have we parsed these bytes with
+      # this code?" is answered before a byte is downloaded. Most of what this
+      # step spent was re-downloading files every earlier run had already
+      # read -- 485 files and ten minutes on 2026-10-05, 270 s of it the
+      # formatted comp twins no parser reads.
       - name: Fetch reports from Google Drive
         env:
           GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
@@ -48,7 +68,7 @@ jobs:
           # unit directory. Optional: unset, report_map entries marked
           # "tree": "reference" are skipped with a line in the log.
           GDRIVE_REFERENCE_FOLDER_ID: ${{ secrets.GDRIVE_REFERENCE_FOLDER_ID }}
-        run: python scripts/fetch_drive.py
+        run: python scripts/fetch_drive.py --skip-parsed
 
       # The checkout above is taken at run START, and the Drive fetch is hours
       # of it -- 4h34m on 2026-09-16. So by the time anything is built, main
@@ -63,7 +83,9 @@ jobs:
       #
       # Re-syncing here keeps the build from starting on a stale main. The
       # reports this run just fetched are safe: _downloads/ is gitignored, so a
-      # reset does not touch them and nothing is downloaded twice. Whatever
+      # reset does not touch them and nothing is downloaded twice. (The fetch
+      # takes seconds now that it skips what it has parsed, so this rarely
+      # finds main moved; it costs nothing to keep.) Whatever
       # lands DURING the build is the commit step's to handle, and it rebuilds
       # on top of it rather than over it (open item A15).
       - name: Re-sync to main before building
@@ -84,25 +106,21 @@ jobs:
           git reset -q --hard "$after"
           git log -1 --format='building on %h %s'
 
-      # Every parse the previous run made, so this one re-reads only what is
-      # new or changed: a parse is reused when the file's bytes, the parser's
-      # code and the config it reads all match (scripts/parse_cache.py). The
-      # newest cache is restored by prefix and this run saves its own, so the
-      # chain survives a failed or cancelled run. A cold cache is a full parse,
-      # exactly as before.
-      - name: Restore the parse cache
-        uses: actions/cache/restore@v4
-        with:
-          path: _cache/parse
-          key: parse-cache-v1-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: parse-cache-v1-
-
       # Metrics, the three scorecard fills in the order G3 and H1 settled, and
       # the lineage. One script rather than five steps because the commit step
       # has to be able to run exactly the same thing again on a newer main --
       # see scripts/build_pipeline.sh for the stages and why they run in that
       # order. Its log groups each stage and its summary times them.
+      #
+      # The Drive key is here because a file the fetch left in Drive may be
+      # needed after all -- main moved and a parser changed, or the cache's
+      # self-check picked it -- and the build downloads it then
+      # (fetch_drive.fetch_one). It is the service account the fetch and the
+      # packet upload already use, and the step already holds the checkout's
+      # push credential.
       - name: Build metrics, fill the scorecard, build the lineage
+        env:
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
         run: bash scripts/build_pipeline.sh
 
       # The packet PDF lives in Drive for the people who pull the Yardi exports
@@ -140,6 +158,9 @@ jobs:
       - name: Check for personal data, commit and push
         env:
           REBUILD: pip install -q -r requirements.txt && bash scripts/build_pipeline.sh
+          # A rebuild on a newer main can need a file the fetch left in Drive,
+          # exactly as the build step can.
+          GDRIVE_SA_KEY: ${{ secrets.GDRIVE_SA_KEY }}
         run: |
           git config user.name  "dashboard-bot"
           git config user.email "actions@github.com"
@@ -156,4 +177,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: _cache/parse
-          key: parse-cache-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          key: parse-cache-v2-${{ github.run_id }}-${{ github.run_attempt }}
