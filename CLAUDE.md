@@ -565,7 +565,7 @@ a review praises by name keep the name, staff it criticises by name are
 replaced with their role. `docs/reviews.json` is in `check_no_pii.py`'s
 `PUBLISHED` list, so the structural pass covers it, and its keys avoid `name`.
 
-Three things about how the pane is built:
+Four things about how the pane is built:
 
 - **Two panes, one tab.** The operations grid is `#dOpsPane` and the reviews
   grid `#dRevPane`, each a `.grid` carrying `data-pane`, and `setLandingPane()`
@@ -573,6 +573,23 @@ Three things about how the pane is built:
   `display: grid` outranks the UA `[hidden]` rule, the trap `.opsel` records. A
   deep link to a card in the hidden pane (`index.html#cdRevTone`) switches the
   select on the way in, in `focusCardFromHash`.
+- **The tab opens on Operations, asserted rather than assumed** (2026-10-12, by
+  request). Being the first `<option>` is not enough: `dViewSel` is the **one
+  select on the page whose options are in the markup** — every other one is
+  filled by JS, so a browser has nothing to restore into it — and Chrome and
+  Firefox both restore a markup select's value across a reload. Worse than
+  reopening on reviews, a restore sets the select and **not** the panes, whose
+  `hidden` attributes come from the markup and are re-synced by nothing: the
+  select reads `Google reviews` over the operations cards. So the select
+  carries `autocomplete="off"` and `reveal()` calls `setLandingPane("ops")`,
+  which forces the pair back into agreement whatever was restored. It runs
+  **before** the deep-link handler, so `index.html#cdRevTone` still lands on
+  reviews — the default is what you get when nothing says otherwise, not
+  instead of a link that does. Verified in the browser, and the reset is
+  mutation-tested: without it a restored select shows `reviews` over
+  `#dOpsPane`. Note Playwright's Chromium does **not** restore form state on
+  reload, so that half cannot be reproduced headless — the check plants the
+  restored value on `DOMContentLoaded` instead.
 - **Lazy, like the tabs.** `reviews.json` is fetched the first time the pane is
   chosen, so its canvases are visible and sized when built, and each card draws
   inside `section()`: a missing file reads `— not available` card by card.

@@ -1075,7 +1075,14 @@
     <div class="view" id="view2d" role="tabpanel" aria-labelledby="tabView2d" tabindex="0" hidden>
     <div class="landsel">
       <label for="dViewSel">View</label>
-      <select class="prop-select" id="dViewSel">
+      <!-- autocomplete=off because this is the one select on the page whose
+           options are in the markup: every other one is filled by JS, so a
+           browser has nothing to restore into it. Chrome and Firefox restore
+           a markup select's value across a reload, which would reopen the tab
+           on whichever pane was last chosen. setLandingPane("ops") in reveal()
+           is the belt to this brace -- it also re-syncs the panes, which a
+           restore does not. -->
+      <select class="prop-select" id="dViewSel" autocomplete="off">
         <option value="ops">Operations</option>
         <option value="reviews">Google reviews</option>
       </select>
@@ -1473,6 +1480,13 @@ function reveal() {
   gate.style.display = "none";
   app.style.display = "block";
   loadDashboard();
+  // The Landing tab opens on Operations, whatever a browser restored into the
+  // View select on a reload. Setting the select alone would not do: the panes'
+  // own hidden attributes come from the markup and nothing re-syncs them to a
+  // restored value, so the select can read "Google reviews" over the
+  // operations cards. This runs before the deep link below, so a link naming a
+  // reviews card still lands on it.
+  setLandingPane("ops");
   // A link from the data-flow page carries the card in the fragment; act on it
   // now that the page is actually visible.
   if (location.hash) setTimeout(focusCardFromHash, 0);
