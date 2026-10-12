@@ -51,6 +51,7 @@ import csv
 import os
 import re
 import sys
+from datetime import datetime, timezone
 
 # store key -> the export's column
 FIELDS = {
@@ -90,6 +91,42 @@ def as_of_from_name(path):
     parser's rule. A name whose only date is that prefix falls back to it."""
     found = re.findall(r"(20\d{2})-?(\d{2})-?(\d{2})", os.path.basename(path))
     return "-".join(found[-1]) if found else None
+
+
+def _instant(stamp):
+    """An ISO-8601 arrival time as a comparable datetime, or None. Drive writes
+    some with milliseconds and some without, so the strings cannot be compared
+    as text: '…05.607Z' sorts before '…05Z' within the same second."""
+    try:
+        return datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+
+
+def newest_export(paths, landed=None):
+    """The export the scorecard fill reads: the latest export DATE, never the
+    last filename.
+
+    Sorting the names picked the wrong file in two ways the folder can hold: a
+    copy the Gmail filer prefixes with its arrival date ("2026-10-20
+    metrics-building-2026-10-19.csv") sorts ahead of every unprefixed one, and
+    the earliest exports' "metricsbuilding2026…" sorts after every
+    "metrics-building-2026…". Either way the scorecard stays on an older export
+    while store_building_metrics, which keys on the date, moves on -- every step
+    green and the cells a week stale.
+
+    `landed` maps a filename to its Drive arrival. One export filed twice goes
+    to the later arrival, the rule store_building_metrics applies to the same
+    pair, then to the name so the choice never depends on listing order. A name
+    with no date in it loses to any name with one."""
+    landed = landed or {}
+    epoch = datetime.min.replace(tzinfo=timezone.utc)
+
+    def key(p):
+        name = os.path.basename(str(p))
+        return (as_of_from_name(name) or "", _instant(landed.get(name)) or epoch, name)
+
+    return max(paths, key=key) if paths else None
 
 
 def num(v):

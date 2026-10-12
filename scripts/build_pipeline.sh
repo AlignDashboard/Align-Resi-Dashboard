@@ -53,14 +53,21 @@ fill_measured() {
 fill_building_metrics() {
   python - <<'EOF'
 import json, pathlib, subprocess, sys
+sys.path.insert(0, "scripts")
+from parse_building_metrics import as_of_from_name, newest_export
 folder = pathlib.Path("_downloads/bldg_metrics_csv")
 csvs = sorted(folder.glob("*.csv")) if folder.exists() else []
 if not csvs:
     print("no building-metrics CSV this run"); sys.exit(0)
-newest = csvs[-1]
-landed = next((e.get("landed_at")
-               for e in json.load(open("_downloads/manifest.json"))
-               if e.get("name") == newest.name), None)
+arrivals = {e.get("name"): e.get("landed_at")
+            for e in json.load(open("_downloads/manifest.json"))
+            if e.get("report_type") == "bldg_metrics_csv"}
+# By export date, not by filename: a filer-prefixed copy sorts ahead of every
+# unprefixed name, and the fill would stay on an older export (newest_export).
+newest = newest_export(csvs, arrivals)
+landed = arrivals.get(newest.name)
+print(f"newest export: {newest.name} (as of {as_of_from_name(newest.name)}, "
+      f"of {len(csvs)} on disk)")
 cmd = [sys.executable, "scripts/populate_building_metrics.py", str(newest)]
 if landed:
     cmd += ["--received-at", landed]

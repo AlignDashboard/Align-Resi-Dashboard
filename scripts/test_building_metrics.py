@@ -18,6 +18,9 @@ has to hold:
     the card reads.
   - the router: the export's own headings reach their buildings through the
     property master, end to end through process_manifest.
+  - the fill's choice: build_pipeline.sh hands populate_building_metrics the
+    newest export by its DATE (newest_export), never the last filename -- a
+    filer-prefixed copy sorts ahead of every unprefixed name.
 
 Fixture-free: every export is built in a temp dir, and every figure is invented.
 Run: python scripts/test_building_metrics.py
@@ -235,6 +238,40 @@ try:
           ["335-third-street", "chorus", "madelon", "the-landing"])
 finally:
     shutil.rmtree(tmp)
+
+print("the scorecard fill reads the newest export by date, not by filename")
+# The fill (build_pipeline.sh) once took sorted(glob)[-1]. Every name in the
+# folder happens to share one pattern today, so that worked -- until a copy the
+# filer prefixes with its arrival date, or one of the earliest
+# metricsbuilding2026... names, sits beside them.
+filed = "2026-10-20 metrics-building-2026-10-19.csv"
+check("a filer-prefixed newer export beats an unprefixed older one",
+      pbm.newest_export(["metrics-building-2026-10-12.csv", filed]), filed)
+check("the earliest naming does not outrank a later export by sorting last",
+      pbm.newest_export(["metricsbuilding20260819.csv",
+                         "metrics-building-2026-10-12.csv"]),
+      "metrics-building-2026-10-12.csv")
+check("paths are judged on their basename",
+      pbm.newest_export([pathlib.Path("_downloads/bldg_metrics_csv/metrics-building-2026-10-12.csv"),
+                         pathlib.Path("_downloads/bldg_metrics_csv/" + filed)]).name, filed)
+pair = ["metrics-building-2026-10-19.csv", filed]
+check("one export filed twice goes to the later Drive arrival",
+      pbm.newest_export(pair, {pair[0]: "2026-10-19T17:00:00Z",
+                               filed: "2026-10-20T09:00:00.120Z"}), filed)
+check("... whichever copy that is",
+      pbm.newest_export(pair, {pair[0]: "2026-10-21T08:00:00Z",
+                               filed: "2026-10-20T09:00:00.120Z"}), pair[0])
+check("arrivals compare as instants, not text (milliseconds vs none)",
+      pbm.newest_export(pair, {pair[0]: "2026-10-20T09:00:00Z",
+                               filed: "2026-10-20T09:00:00.607Z"}), filed)
+check("a name with no date loses to any dated one",
+      pbm.newest_export(["metrics-building-2026-08-19.csv", "metrics-building.csv"]),
+      "metrics-building-2026-08-19.csv")
+check("nothing to choose from is None", pbm.newest_export([]), None)
+with open(os.path.join(HERE, "build_pipeline.sh")) as fh:
+    sh = fh.read()
+check("build_pipeline.sh chooses the fill's export through newest_export",
+      "newest_export(csvs" in sh and "csvs[-1]" not in sh, True)
 
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
