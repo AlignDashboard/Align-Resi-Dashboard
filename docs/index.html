@@ -7690,6 +7690,19 @@ async function loadLandingDrive() {
     // seven bars into the three bars' 210px.
     document.getElementById("dcInv").parentElement.style.height =
       Math.max(210, 30 * barKeys.length + 90) + "px";
+    // Five of The Landing's seven bars are 11 units or fewer on an axis that
+    // runs to 133, so the scale's own ticks -- every 20, and every 50 at phone
+    // width -- leave all five inside the first interval with nothing to measure
+    // them against. The first 20 units carry a mark every 5 as well.
+    //
+    // Added to the scale's own ticks rather than replacing them, so a property
+    // whose axis is already finer than this loses nothing, and so the coarse
+    // half stays whatever Chart.js sized for the width. The marks are only
+    // worth adding where they have room: below INV_MIN_TICK_PX apart the
+    // labels run together, and an axis you cannot read is worse than one you
+    // cannot read closely. ax.width is the plot width Chart.js has just sized
+    // its own ticks against -- which is why those already differ by viewport.
+    const INV_FINE_TO = 20, INV_FINE_STEP = 5, INV_MIN_TICK_PX = 22;
     new Chart(document.getElementById("dcInv"), {
       type: "bar",
       data: { labels: barKeys.map(bedLabel),
@@ -7735,7 +7748,19 @@ async function loadLandingDrive() {
         },
         scales: {
           x: { stacked: splitOK, grid: gridCfg, beginAtZero: true,
-               ticks: { precision: 0 } },
+               // autoSkip off: the fit is done below, against this scale's own
+               // width, and autoSkip thins by taking every nth tick -- over a
+               // list that is deliberately finer at one end that drops the
+               // very marks the fit decided there was room for.
+               ticks: { precision: 0, autoSkip: false },
+               afterBuildTicks: ax => {
+                 const span = ax.max - ax.min;
+                 if (!(span > 0) || !(ax.width > 0)) return;
+                 if (ax.width * INV_FINE_STEP / span < INV_MIN_TICK_PX) return;
+                 const vals = new Set(ax.ticks.map(t => t.value));
+                 for (let v = 0; v <= Math.min(INV_FINE_TO, ax.max); v += INV_FINE_STEP) vals.add(v);
+                 ax.ticks = [...vals].sort((a, b) => a - b).map(v => ({ value: v }));
+               } },
           y: { stacked: splitOK, grid: { display: false } } } }
     });
 

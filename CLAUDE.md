@@ -1963,6 +1963,33 @@ count, its share of that bedroom type, and the group's whole
 leased/vacant/occupied line. The Landing reads 97.7% leased —
 1 bed 135/2, 2 bed 106/4, 3 bed 16/0.
 
+**The first 20 units are ticked every 5** (2026-10-12, by request). Splitting on
+baths made the data bimodal: five of The Landing's seven bars are 11 units or
+fewer against an axis that runs to 133, and the scale's own ticks — every 20,
+and every 50 at phone width — left all five inside the first interval with
+nothing to measure them against. Three things about how it is done:
+
+- **The marks are added to the scale's own ticks, not substituted for them.**
+  Replacing them passes every obvious check and silently drops the coarse half:
+  the axis stops at 20 and the 133-unit bar runs past the last gridline with no
+  label. Merging also means a property whose axis is already finer than this
+  loses nothing. Both are mutation-tested.
+- **Only where they have room.** Below `INV_MIN_TICK_PX` (22) apart the labels
+  run together — at 900px they paint as `051015 20` — so the guard withholds
+  them and the axis keeps its own step. They show at 1440 and 1100 (27px and
+  25px apart) and not below. `ax.width` is the plot width Chart.js has just
+  sized its own ticks against, which is why those already differ by viewport.
+- **`autoSkip` is off**, unlike `rtTimeAxis`'s explicit ticks. It thins by
+  taking every nth tick, which over a list that is deliberately finer at one
+  end drops the very marks the fit decided there was room for. That axis can
+  leave it on because its own ticks are uniform.
+
+The spacing is uneven by design — fine to 20, then the scale's own step — and
+that is a ruler with a fine end rather than two scales spliced: one linear
+axis, every line labelled, every bar still proportional. Uniform every-5 was
+the alternative and is worse here: 29 gridlines behind 7 bars, and `autoSkip`
+would thin them uniformly at narrow widths, taking the low end with it.
+
 The column beside the bars is the **unit count per bedroom type** and nothing
 else — 137 / 110 / 16 — as of 2026-09-14. It is built from the same keys and the
 same totals the chart draws, so a figure there cannot disagree with the bar it
