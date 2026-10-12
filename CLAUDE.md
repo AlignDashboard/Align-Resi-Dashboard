@@ -3904,6 +3904,25 @@ file it needs and still stores the same. Fourteen mutations, thirteen caught;
 the one missed — recording Drive's listed md5 for a downloaded file instead of
 its bytes' — changes nothing, since a file on disk is always keyed from disk.
 
+**Verified on the runner the same day.** Run #120 started cold (`Cache not
+found` under the new prefix): 454 files downloaded (280 MB) in 7m21s and parsed
+in 11m38s, which is the old daily cost once. Another session pushed twice while
+it ran, so it also showed both race guards at work: the re-sync after the fetch
+moved it onto `695254a`, and the commit step rebuilt on `081beea` — reusing
+every parse it had just made, 21 s — and pushed on the second attempt. Run #121
+restored that cache and logged `454 file(s) in the manifest: 37 file(s)
+downloaded (12.4 MB); 417 left in Drive (267.6 MB)`. **The fetch took 69 s
+against #118's 6m19s, the build 31 s, the whole job about two minutes.** The 37
+are exactly the never-kept types (rent rolls, delinquency, renewal trackers, the
+burn-off) and the building-metrics CSVs; the build then downloaded 8 more on
+demand, one per parser for its self-check, and all 8 matched. Its commit
+differed from #120's only in three wall-clock timestamps.
+
+What is left of the fetch is listing the drop tree and those 37 files, about
+30 s of which is nine renewal trackers and daily trackers in `Daily Leasing
+Reports` — files the renewal-tracker parser reads successfully, so their parse
+is never kept (`NOT_KEPT`: the MTM tenant code).
+
 ### The commit step rebuilds on a newer main
 
 Until 2026-10-05 a rejected push reset to the new `main`, copied this run's
