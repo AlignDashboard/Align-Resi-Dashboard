@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-12T20:10:51.680039+00:00",
+    "generated_at": "2026-10-13T18:01:15.551237+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -3425,8 +3425,8 @@
             "from": "2024-02",
             "to": "2026-12"
           },
-          "landed_at": "2026-10-05T17:28:58.239Z",
-          "source_file": "2026-10-05 Chorus 2026 Renewal Tracker (7).xlsx",
+          "landed_at": "2026-10-13T16:28:36.105Z",
+          "source_file": "2026-10-13 Renewal Tracker - Chorus.xlsx",
           "months": [
             {
               "month": "2024-02",
@@ -3846,8 +3846,8 @@
               "offered_rent": 90061.0,
               "statuses": {
                 "MTM": 1,
-                "Notice": 10,
-                "Offer Accepted": 1,
+                "Notice": 9,
+                "Offer Accepted": 2,
                 "Renewed": 8
               }
             },
@@ -3873,16 +3873,16 @@
               "statuses": {
                 "MTM": 1,
                 "Notice": 7,
-                "Offer Accepted": 3,
-                "Renewed": 9
+                "Offer Accepted": 2,
+                "Renewed": 10
               }
             },
             {
               "month": "2026-12",
               "leases": 18,
-              "mean_increase": 0.145163,
-              "wtd_increase": 0.145009,
-              "current_rent": 77802.0,
+              "mean_increase": 0.157271,
+              "wtd_increase": 0.155959,
+              "current_rent": 77065.0,
               "offered_rent": 89084.0,
               "statuses": {
                 "Renewed": 1,
@@ -9651,7 +9651,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -11245,7 +11245,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12892,7 +12892,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13875,7 +13875,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
