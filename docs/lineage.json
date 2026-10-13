@@ -399,7 +399,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-12T20:10:52.181872+00:00",
+  "generated_at": "2026-10-13T18:01:15.964233+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -830,10 +830,10 @@
     },
     {
      "property": "Chorus",
-     "file": "2026-10-05 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
      "as_of": null,
-     "source_file": "2026-10-05 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
-     "landed_at": "2026-10-05T17:29:08.460Z",
+     "source_file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "landed_at": "2026-10-13T16:28:41.599Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
@@ -906,10 +906,10 @@
     },
     {
      "property": "Chorus",
-     "file": "2026-10-05 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
      "as_of": null,
-     "source_file": "2026-10-05 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
-     "landed_at": "2026-10-05T17:29:08.460Z",
+     "source_file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "landed_at": "2026-10-13T16:28:41.599Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
@@ -1745,9 +1745,9 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/leasing_funnel.json",
-     "as_of": "2026-10-06",
-     "source_file": "2026-10-06 leasing_funnel_report_2026-10-06.xlsx",
-     "landed_at": "2026-10-06T15:28:30.354Z",
+     "as_of": "2026-10-13",
+     "source_file": "2026-10-13 leasing_funnel_report_2026-10-13.xlsx",
+     "landed_at": "2026-10-13T15:28:31.291Z",
      "detail": null
     }
    ],
@@ -1794,9 +1794,9 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/leasing_funnel.json",
-     "as_of": "2026-10-06",
-     "source_file": "2026-10-06 leasing_funnel_report_2026-10-06.xlsx",
-     "landed_at": "2026-10-06T15:28:30.354Z",
+     "as_of": "2026-10-13",
+     "source_file": "2026-10-13 leasing_funnel_report_2026-10-13.xlsx",
+     "landed_at": "2026-10-13T15:28:31.291Z",
      "detail": null
     }
    ],
@@ -2340,10 +2340,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-11",
+     "as_of": "2026-10-12",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-11T19:26:46Z",
-     "detail": "171 leases, 266 renewals and 62 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-10-12T22:27:33Z",
+     "detail": "171 leases, 269 renewals and 62 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2393,7 +2393,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-12T20:10:51.680039+00:00",
+     "landed_at": "2026-10-13T18:01:15.551237+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
