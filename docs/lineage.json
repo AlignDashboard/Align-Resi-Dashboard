@@ -399,7 +399,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-13T18:01:15.964233+00:00",
+  "generated_at": "2026-10-14T15:45:06.870933+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -835,6 +835,14 @@
      "source_file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
      "landed_at": "2026-10-13T16:28:41.599Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
+    },
+    {
+     "property": "Madelon",
+     "file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
+     "as_of": "2026-10-12",
+     "source_file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
+     "landed_at": "2026-10-14T02:28:40.038Z",
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
    "status": "live"
@@ -910,6 +918,14 @@
      "as_of": null,
      "source_file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
      "landed_at": "2026-10-13T16:28:41.599Z",
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
+    },
+    {
+     "property": "Madelon",
+     "file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
+     "as_of": "2026-10-12",
+     "source_file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
+     "landed_at": "2026-10-14T02:28:40.038Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
@@ -1366,6 +1382,14 @@
    "open_item": null,
    "same_as": null,
    "evidence": [
+    {
+     "property": "madelon",
+     "file": "data/madelon/rent_roll.json",
+     "as_of": "2026-10-11",
+     "source_file": "2026-10-13 RentRoll10_12_2026 - The Madelon.xlsx",
+     "landed_at": "2026-10-14T02:28:42.935Z",
+     "detail": null
+    },
     {
      "property": "the-landing",
      "file": "data/the-landing/rent_roll.json",
@@ -2340,9 +2364,9 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-12",
+     "as_of": "2026-10-13",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-12T22:27:33Z",
+     "landed_at": "2026-10-13T20:35:08Z",
      "detail": "171 leases, 269 renewals and 62 weekly rows across 5 buildings, encrypted"
     }
    ],
@@ -2393,7 +2417,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-13T18:01:15.551237+00:00",
+     "landed_at": "2026-10-14T15:45:06.424913+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
