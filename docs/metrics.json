@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-15T15:32:05.064649+00:00",
+    "generated_at": "2026-10-16T15:17:52.625911+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -4248,8 +4248,8 @@
         "new_leases": {
           "weeks": 8,
           "as_of": "2026-10-18",
-          "landed_at": "2026-10-15T02:28:31.150Z",
-          "source_file": "2026-10-14 10.12.2026- 10.18.2026- Chorus - Daily Report Copy.xlsx",
+          "landed_at": "2026-10-16T01:28:34.252Z",
+          "source_file": "2026-10-15 10.12.2026- 10.18.2026- Chorus - Daily Report Copy (2).xlsx",
           "months": [
             {
               "month": "2026-09",
@@ -4261,15 +4261,15 @@
             },
             {
               "month": "2026-10",
-              "leases": 16,
-              "lease_rent": 81425.0,
-              "prior_rent": 65678.0,
-              "mean_tradeout": 0.258145,
-              "wtd_tradeout": 0.239761
+              "leases": 17,
+              "lease_rent": 89423.0,
+              "prior_rent": 71978.0,
+              "mean_tradeout": 0.258815,
+              "wtd_tradeout": 0.242366
             }
           ],
-          "leases": 30,
-          "mean_tradeout": 0.26066
+          "leases": 31,
+          "mean_tradeout": 0.260946
         },
         "renewals": {
           "as_of": "2026-12",
@@ -4749,10 +4749,10 @@
         "slug": "madelon",
         "name": "Madelon",
         "new_leases": {
-          "weeks": 32,
-          "as_of": "2026-10-08",
-          "landed_at": "2026-10-09T00:28:31.473Z",
-          "source_file": "2026-10-08 10.8.26 - The Madelon - Daily Report .xlsx",
+          "weeks": 33,
+          "as_of": "2026-10-15",
+          "landed_at": "2026-10-16T02:28:36.172Z",
+          "source_file": "2026-10-15 10.15.26 - The Madelon - Daily Report  (1).xlsx",
           "months": [
             {
               "month": "2026-09",
@@ -4764,15 +4764,15 @@
             },
             {
               "month": "2026-10",
-              "leases": 5,
-              "lease_rent": 28158.0,
-              "prior_rent": 20075.0,
-              "mean_tradeout": 0.401999,
-              "wtd_tradeout": 0.40264
+              "leases": 6,
+              "lease_rent": 32691.0,
+              "prior_rent": 23337.0,
+              "mean_tradeout": 0.399939,
+              "wtd_tradeout": 0.400823
             }
           ],
-          "leases": 36,
-          "mean_tradeout": 0.27026
+          "leases": 37,
+          "mean_tradeout": 0.273486
         }
       }
     ]
@@ -10503,7 +10503,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12097,7 +12097,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13744,7 +13744,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -14727,7 +14727,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
