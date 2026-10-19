@@ -1225,6 +1225,17 @@
 
       <div class="kpis" id="dRevKpis"></div>
 
+      <!-- The written summary of the newest copy: reviews.json's update block,
+           shown only when it names the copy on the page. -->
+      <div class="card wide" id="cdRevLatest" hidden>
+        <h2>Latest Update</h2>
+        <span class="eyebrow" id="drupEyebrow">LOADING…</span>
+        <h3 class="rv-sub rv-first">What the new copy shows</h3>
+        <ul class="rv-list rv-points" id="drupShows"></ul>
+        <h3 class="rv-sub">What changed on this page</h3>
+        <ul class="rv-list" id="drupPage"></ul>
+      </div>
+
       <!-- Shown once a copy has an earlier one stored to be compared with:
            reviews.json's changes and previous blocks. -->
       <div class="card wide" id="cdRevChanges" hidden>
@@ -1853,6 +1864,7 @@ async function loadReviews() {
   }
 
   section("dRevKpis", () => rvTiles(need()));
+  section("cdRevLatest", () => rvLatest(need()));
   section("cdRevChanges", () => rvChanges(need()));
   section("cdRevBottom", () => rvBottom(need()));
   section("cdRevThemes", () => rvThemesChart(need()));
@@ -1881,6 +1893,77 @@ function rvTiles(R) {
     host.appendChild(b);
   };
   rvFour(R).forEach(f => tile(f.v, f.k, f.per, f.s, f.target));
+}
+
+// The figure in front of a Latest Update point, counted here against the
+// earlier copy: the point names what to count and its finding says why it
+// matters, so no number in the card is typed. "" when there is nothing to
+// count against.
+function rvMetric(R, m) {
+  const c = R.d.changes, P = R.prev;
+  if (!m || !c || !P) return "";
+  const since = rvDay(c.since);
+  const byN = Object.fromEntries(R.rows.map(r => [r.n, r]));
+  if (m === "new") {
+    const tones = RV_TONES.map(t => [t, c.new.filter(n => byN[n] && byN[n].tone === t).length])
+      .filter(([, k]) => k);
+    return c.new.length + " new " + (c.new.length === 1 ? "review" : "reviews") + " since " + since
+      + (tones.length ? ": " + rvAnd(tones.map(([t, k]) => k + " " + (RV_TONE_WORD[t] || t))) : "") + ".";
+  }
+  if (m === "replies_added") {
+    const fresh = c.new.filter(n => byN[n] && byN[n].owner_reply !== "No").length;
+    const k = c.reply_added.length;
+    return k + (k === 1 ? " review" : " reviews") + " that had no reply on " + since
+      + (k === 1 ? " now has one" : " now have one")
+      + (c.new.length ? ", and " + fresh + " of the " + c.new.length + " new " + (c.new.length === 1
+        ? "one does" : "ones do") : "") + ".";
+  }
+  if (m === "tone") {
+    const neg = p => rvShare(p.neg, p.read);
+    return rvPct(neg(R.byP.recent)) + " of reviews with readable text from " + R.byP.recent.label
+      + " are negative, against " + rvPct(neg(P.byP.recent)) + " for " + P.byP.recent.label + " on "
+      + since + ".";
+  }
+  if (m.startsWith("theme:")) {
+    const code = m.slice(6);
+    const t = R.themes.find(x => x.code === code), pt = P.themes.find(x => x.code === code);
+    if (!t || !pt) return "";
+    return t.year + " of " + R.year.length + " reviews this year, against " + pt.year + " of "
+      + P.year.length + " on " + since + ".";
+  }
+  return "";
+}
+
+// The newest copy in words: what it shows against the one before, and what
+// changed on the page with it. The prose is reviews.json's `update`, written
+// for one copy, and the card stays hidden unless that copy is the one on the
+// page -- notes from an earlier copy read as news they no longer are.
+function rvLatest(R) {
+  const card = document.getElementById("cdRevLatest");
+  const u = R.d.update, c = R.d.changes;
+  card.hidden = !(u && u.copied && u.copied === R.d.copied);
+  if (card.hidden) return;
+  document.getElementById("drupEyebrow").textContent = ("The " + rvDay(R.d.copied, true) + " copy"
+    + (c ? " against " + rvDay(c.since, true) : "") + " · what it shows and what changed on this page")
+    .toUpperCase();
+  const shows = document.getElementById("drupShows");
+  shows.textContent = "";
+  (u.shows || []).forEach(it => {
+    const li = elc("li");
+    li.appendChild(elc("strong", null, it.lead + ". "));
+    li.appendChild(document.createTextNode((rvMetric(R, it.metric) + " " + it.finding).trim()));
+    shows.appendChild(li);
+  });
+  const page = document.getElementById("drupPage");
+  page.textContent = "";
+  (u.page || []).forEach(t => page.appendChild(elc("li", null, t)));
+  // Which reviews this copy carried rather than saw is counted from the rows,
+  // so the note cannot disagree with the source line above the tiles.
+  if (c && c.carried.length) {
+    const first = R.rows.find(r => r.n === c.carried[0]);
+    page.appendChild(elc("li", null, "This copy stopped before the oldest reviews, so " + rvNums(c.carried)
+      + " are carried from " + (rvDay(first && first.carried_from) || rvDay(c.since)) + " as coded then."));
+  }
 }
 
 // What moved since the copy before this one. The lists of review numbers are

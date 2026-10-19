@@ -175,7 +175,7 @@
    ],
    "owner_reply": "Before edit",
    "excerpt": "Updating my review: While Lina is an awesome member of the team. This place has gone through 3…",
-   "note": "Rewritten since 30 Sep, when it praised the leasing team; cut off after “gone through 3”, coded as turnover. Its reply answers the earlier version, in the words of the reply to review 21"
+   "note": "Rewritten since Sep 30, when it praised the leasing team; cut off after “gone through 3”, coded as turnover. Its reply answers the earlier version, in the words of the reply to review 21"
   },
   {
    "n": 58,
@@ -209,7 +209,7 @@
    ],
    "owner_reply": "Before edit",
    "excerpt": "Their alarms have been blasting all day. This is probably annoying 10,000 people in the area.",
-   "note": "Edited again since 30 Sep. The owner's reply, from a year ago, says no lease record was found for the reviewer"
+   "note": "Edited again since Sep 30. The owner's reply, from a year ago, says no lease record was found for the reviewer"
   },
   {
    "n": 1,
@@ -1105,7 +1105,7 @@
    {
     "metric": "replies",
     "lead": "Public replies to reviews",
-    "finding": "The owner has caught up: on 30 Sep no review from Apr–Sep 2026 had a public reply, and most of them now do, every one posted in the two weeks before this copy. The replies name the new property manager and offer to talk directly (3, 6, 14, 17).",
+    "finding": "The owner has caught up: on Sep 30 no review from Apr–Sep 2026 had a public reply, and most of them now do, every one posted in the two weeks before this copy. The replies name the new property manager and offer to talk directly (3, 6, 14, 17).",
     "do": "Keep replying within a couple of days of each review rather than in catch-up batches, and answer what the review says now: review 22 has been rewritten as a complaint, and its reply still thanks it for a kind review about a package, in the words of the reply to review 21."
    },
    {
@@ -1153,6 +1153,46 @@
     "finding": "A small, busy gym (10, 25), common areas less well kept and social events dropped (4), alarms sounding all day (11), and the elevators, BBQ grills and common areas a current resident raised, according to the owner's reply (6).",
     "do": "Bring back the monthly events, look at the gym at peak hours, give residents advance notice of alarm tests, and follow up on the elevators and BBQ grills raised in review 6."
    }
+  ]
+ },
+ "update": {
+  "copied": "2026-10-19",
+  "shows": [
+   {
+    "metric": "replies_added",
+    "lead": "Owner replies have caught up",
+    "finding": "They went up in one batch in the two weeks before this copy, naming the new property manager and offering to talk (3, 6, 14, 17). One answers an earlier version of a review that has since been rewritten as a complaint (22)."
+   },
+   {
+    "metric": "theme:P2",
+    "lead": "A deposit dispute is the newest complaint",
+    "finding": "One household that moved out in January says a refund of nearly $6,000 was still unpaid in October, past the 21 days its lease allows (54, 55). The owner's replies say the account is under review."
+   },
+   {
+    "metric": "theme:P4",
+    "lead": "Staff conduct is now the most-raised problem",
+    "finding": "The new deposit review calls management incompetent (55), review 22 now turns to staff turnover, and the owner's reply to 14 answers concerns about the team. On Sep 30 it was level with slow responses and fees."
+   },
+   {
+    "metric": "tone",
+    "lead": "Tone is a little less negative",
+    "finding": "Two new negative reviews (54, 55) arrived with two positive ones (57, 58), and a rewritten review joined the window as mixed (22), so the share fell even though the complaints grew."
+   },
+   {
+    "metric": "theme:H1",
+    "lead": "Praise still centres on the leasing team",
+    "finding": "A new review praises a tour with the community manager (58), and Lina is still named again and again (19, 21, 22, 27, 32), the rewritten review included."
+   },
+   {
+    "lead": "One review is gone and two were edited",
+    "finding": "The $20 Luxer late-fee complaint (23) is no longer on Google. The “Lina and the leasing team are the best” review (22) now opens “Updating my review” and turns to turnover, and the alarms complaint (11) was edited again."
+   }
+  ],
+  "page": [
+   "This card and What Changed below are new. What Changed sets the headline figures for both copies side by side and lists every change by review number.",
+   "Every Review shades the reviews that are new or edited since the last copy and tags each change under its number.",
+   "Review numbers now stay with their review: the new ones are 54 to 58, and every number the findings cite still points where it did.",
+   "The Bottom Line's reply sentence now reads against the previous copy, so it says replies have picked back up rather than fallen off. Public replies moved to What we’re doing well, and deposits now lead Where we need to improve."
   ]
  },
  "changes": {
