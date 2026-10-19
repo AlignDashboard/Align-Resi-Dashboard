@@ -768,7 +768,8 @@ Restated on a comp-supported market rent, the published **loss to lease falls
 from 36.5% to 30.4%** — still far above the band's 10% ceiling, so this does not
 answer A8's band question, but it moves the number A8 is arguing about. And with
 further steps expected, that KPI climbs with each one: its denominator is now a
-pricing position rather than a measurement, which is the live half of A14.
+pricing position rather than a measurement — what A14 recorded until the owner
+closed it on 2026-10-19.
 
 ### The market's own answer, which agrees
 
@@ -1663,23 +1664,51 @@ Four rules keep it from overwriting better data or asserting what it cannot:
    is tours per available unit per *month*, which cannot grade a count triple.
    The per-unit figure is recorded in `bldg_basis` for reference.
 3. **A property in lease-up is not graded on stabilised bands.** Under 50%
-   occupancy (`LEASEUP_OCCUPANCY_UNDER`), the occupancy- and rent-derived cells
-   in `LEASEUP_UNGRADED` are filled but left ungraded — otherwise an unopened
-   building scores red for not having opened. Automation and response-time KPIs
-   still grade normally, since they are about conversation handling.
+   occupancy (`LEASEUP_OCCUPANCY_UNDER`), the occupancy-, rent- and AR-derived
+   cells in `LEASEUP_UNGRADED` are filled but left ungraded — otherwise an
+   unopened building scores red for not having opened. Automation and
+   response-time KPIs still grade normally, since they are about conversation
+   handling. **Total Delinquency joined the list on 2026-10-19** (B8): 335
+   Third read 0.0% and exceeding on its first export, then 41.4% and below,
+   off the same handful of first residents. A cell that stops being graded
+   takes the **workbook's own symbol** back (`restore_workbook_status` in
+   `populate_scorecard`), because the page's hover says a value-only cell's
+   colour is the workbook's — left alone it would quote the last measured
+   grade as the workbook's.
 4. **Implausible cells are skipped, loudly.** Chorus reports +119.78% executed
    rent increase against −3.74% offered, so `% Increase` is skipped there and
    Trade-out falls back to `New Lease Trade-Out` alone, recorded in the basis.
 
 Two things the owner settled on 2026-08-20: the export is a **snapshot taken on
 the filename's date**, with the rate KPIs (trade-out, closing ratio, renewal
-rate) on a **trailing 1-month basis** from that date — note the scorecard's
-bands for those KPIs are written for trailing 3 months, so a volatile month
-swings the grade more than the bands assume; and **`AI Response Time` is in
+rate) on a **trailing 1-month basis** from that date; and **`AI Response Time` is in
 days** (`RESPONSE_UNIT`). Taken at face value that reads 35–37 days to first
 response at every property, which is hard to square with an AI assistant, so
 the figure is published in days but stays value-only rather than graded until
 a fresh export makes sense of it.
+
+**Closing Ratio and # of Renewals are trailing-one-month measures** (owner,
+2026-10-19, closing B6). The ranges sheet wrote their bands for trailing three
+months, and the export grading them is one; the call is to keep the cutoffs and
+grade the month. So their published definition says so — `T1_HOW` in this
+script restates `how` ("…trailing 1 month"), the sheet's wording kept in
+`how_workbook`, the treatment the concession and controllable definitions get —
+and the hover no longer describes a window the number does not cover.
+Trade-out % is not affected: it left this export for the tradeout report and is
+graded on three months (`TRADEOUT_WINDOW`, below).
+
+**`% Increase` is graded on a two-sided band** (2026-10-19, closing H3).
++4.0% to +7.0% exceeds, above +7.0% drops back to in range ("above +7% the
+green flips to amber"), under +1.0% is below. The extractor publishes two
+cutoffs and this band has three, so `classify()` reads the top one off the
+band's own `exceeding` label rather than a constant, and leaves the cell
+ungraded if the label stops holding exactly two figures with the green cutoff
+the lower — a reworded band then shows as ungraded rather than graded upward.
+Until then it graded the band as plain higher-is-better, so The Landing's
+20.7% read exceeding beside a band calling it in range. One function, so all
+three writers share it. `scripts/test_leaseup_and_bands.py` holds this, the
+lease-up AR rule and the trailing-month restatement down — 34 fixture-free
+checks, each guard verified by mutation.
 
 Run it after `extract_scorecard.py` and after `populate_eliseai.py`. `--dry-run`
 reports without writing; `--received-at` records a real arrival time. The CSV
@@ -1760,9 +1789,10 @@ happened to cover:
 
 **Trailing three months, because that is the basis the published band was
 written for.** The export this replaced was a trailing *one* — open item B6,
-"a volatile month swings the grade more than the bands assume". B6 is closed for
-this KPI and still open for Closing Ratio and # of Renewals, which the export
-still fills. `TRADEOUT_WINDOW` in `populate_scorecard.py` is the one constant.
+"a volatile month swings the grade more than the bands assume". B6 closed for
+this KPI here, and for Closing Ratio and # of Renewals on 2026-10-19 by the
+owner's call that those two are trailing-one-month measures (see the export's
+section above). `TRADEOUT_WINDOW` in `populate_scorecard.py` is the one constant.
 
 **The percentage is rent-weighted, never the mean of the per-lease rates.**
 The report's own figure is total current effective rent over total previous
