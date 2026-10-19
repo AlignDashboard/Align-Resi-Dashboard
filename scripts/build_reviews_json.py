@@ -120,7 +120,7 @@ REVIEWS = [
      "Lived there from 2020, across three units; cut off as it turns to the staff"),
     (22, "Edited a week ago", 0, True, "cut off", "Mixed", False, False, "Lina", ["P4", "H1"], "Before edit",
      "Updating my review: While Lina is an awesome member of the team. This place has gone through 3…",
-     "Rewritten since 30 Sep, when it praised the leasing team; cut off after “gone through 3”, coded as turnover. "
+     "Rewritten since Sep 30, when it praised the leasing team; cut off after “gone through 3”, coded as turnover. "
      "Its reply answers the earlier version, in the words of the reply to review 21"),
     (58, "2 weeks ago", 0, False, "full", "Positive", False, True, None, ["H1"], "Yes",
      "Had a tour & was very impressed ! The community manager was super helpful. She was extremely knowledgable on "
@@ -128,7 +128,7 @@ REVIEWS = [
      "Visitor on a tour"),
     (11, "Edited 2 weeks ago", 0, True, "cut off", "Negative", False, False, None, ["P5"], "Before edit",
      "Their alarms have been blasting all day. This is probably annoying 10,000 people in the area.",
-     "Edited again since 30 Sep. The owner's reply, from a year ago, says no lease record was found for the reviewer"),
+     "Edited again since Sep 30. The owner's reply, from a year ago, says no lease record was found for the reviewer"),
     (1, "3 weeks ago", 0, False, "none", "No text", False, False, None, [], "Yes",
      None, "Star rating only; the owner's reply thanks them for a 5-star review"),
     (2, "a month ago", 1, False, "none", "No text", False, False, None, [], "Yes",
@@ -312,6 +312,52 @@ WATCH = [
     "deposit counts twice in the deposit and former-resident figures.",
 ]
 
+# The Latest Update card, for this copy only: what it shows against the copy
+# before it, and what changed on the page with it. build() refuses to publish it
+# under any other copy date, so the next refresh rewrites it rather than carrying
+# these words forward. Like the assessment, a point may name a "metric" the page
+# computes and prints in front of it -- "new", "replies_added", "tone" or
+# "theme:<code>", each against the earlier copy -- so no count is typed here and
+# the findings cite review numbers.
+UPDATE = {
+    "copied": "2026-10-19",
+    "shows": [
+        {"metric": "replies_added", "lead": "Owner replies have caught up",
+         "finding": "They went up in one batch in the two weeks before this copy, naming the new property manager "
+                    "and offering to talk (3, 6, 14, 17). One answers an earlier version of a review that has since "
+                    "been rewritten as a complaint (22)."},
+        {"metric": "theme:P2", "lead": "A deposit dispute is the newest complaint",
+         "finding": "One household that moved out in January says a refund of nearly $6,000 was still unpaid in "
+                    "October, past the 21 days its lease allows (54, 55). The owner's replies say the account is "
+                    "under review."},
+        {"metric": "theme:P4", "lead": "Staff conduct is now the most-raised problem",
+         "finding": "The new deposit review calls management incompetent (55), review 22 now turns to staff "
+                    "turnover, and the owner's reply to 14 answers concerns about the team. On Sep 30 it was level "
+                    "with slow responses and fees."},
+        {"metric": "tone", "lead": "Tone is a little less negative",
+         "finding": "Two new negative reviews (54, 55) arrived with two positive ones (57, 58), and a rewritten "
+                    "review joined the window as mixed (22), so the share fell even though the complaints grew."},
+        {"metric": "theme:H1", "lead": "Praise still centres on the leasing team",
+         "finding": "A new review praises a tour with the community manager (58), and Lina is still named again "
+                    "and again (19, 21, 22, 27, 32), the rewritten review included."},
+        {"lead": "One review is gone and two were edited",
+         "finding": "The $20 Luxer late-fee complaint (23) is no longer on Google. The \u201cLina and the leasing "
+                    "team are the best\u201d review (22) now opens \u201cUpdating my review\u201d and turns to "
+                    "turnover, and the alarms complaint (11) was edited again."},
+    ],
+    "page": [
+        "This card and What Changed below are new. What Changed sets the headline figures for both copies side by "
+        "side and lists every change by review number.",
+        "Every Review shades the reviews that are new or edited since the last copy and tags each change under its "
+        "number.",
+        "Review numbers now stay with their review: the new ones are 54 to 58, and every number the findings cite "
+        "still points where it did.",
+        "The Bottom Line's reply sentence now reads against the previous copy, so it says replies have picked back "
+        "up rather than fallen off. Public replies moved to What we\u2019re doing well, and deposits now lead "
+        "Where we need to improve.",
+    ],
+}
+
 # The Bottom Line card's two columns. Each point names the theme whose count the
 # page prints before it ("7 of 33 reviews this year"), so no count is typed here;
 # "metric": "replies" prints the owner's reply rate instead. "former" adds how many
@@ -325,7 +371,7 @@ ASSESSMENT = {
          "do": "Make the way Lina runs a tour the standard for the whole team, and carry that attention past "
                "move-in, which is where the reviews turn."},
         {"metric": "replies", "lead": "Public replies to reviews",
-         "finding": "The owner has caught up: on 30 Sep no review from Apr–Sep 2026 had a public reply, and "
+         "finding": "The owner has caught up: on Sep 30 no review from Apr–Sep 2026 had a public reply, and "
                     "most of them now do, every one posted in the two weeks before this copy. The replies name the "
                     "new property manager and offer to talk directly (3, 6, 14, 17).",
          "do": "Keep replying within a couple of days of each review rather than in catch-up batches, and answer "
@@ -478,6 +524,15 @@ def build():
             assert item.get("theme") in codes or item.get("metric") == "replies", item["lead"]
             assert item["lead"] and item["finding"] and item["do"], item["lead"]
 
+    # Update notes describe one copy: published under another date they would
+    # report last time's news as this time's.
+    assert UPDATE["copied"] == COPIED.isoformat(), "UPDATE describes another copy; rewrite it for this one"
+    metrics = {"new", "replies_added", "tone"} | {"theme:" + c for c in codes}
+    for item in UPDATE["shows"]:
+        assert item["lead"] and item["finding"], item
+        assert item.get("metric") is None or item["metric"] in metrics, item["metric"]
+    assert all(UPDATE["page"]), "an empty page note"
+
     periods = [
         {"key": "old", "label": "12+ months ago", "min": 12, "max": None},
         {"key": "prior", "label": span(6, 11), "min": 6, "max": 11},
@@ -496,6 +551,7 @@ def build():
         "reviews": reviews,
         "watch": WATCH,
         "assessment": ASSESSMENT,
+        "update": UPDATE,
     }
     if prev:
         ch = changes_since(prev, reviews)

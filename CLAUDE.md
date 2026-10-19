@@ -508,8 +508,8 @@ same day had already closed three rows before that.
 A **View** select sits above the Landing tab's grid (2026-10-05, by request:
 "a dropdown menu under the Landing tab"). `Operations` is the default and is
 every card above, unchanged; `Google reviews` swaps the grid for an executive
-summary of The Landing's Google Maps reviews: four tiles, what changed since
-the last copy, a bottom line with what is going well and where to improve, what
+summary of The Landing's Google Maps reviews: four tiles, the latest update in
+words, what changed since the last copy, a bottom line with what is going well and where to improve, what
 reviewers raise, tone and owner replies by period, problems and highlights with
 what reviewers say, three further notes, and every review in a collapsed table.
 
@@ -589,6 +589,18 @@ Four things it depends on:
   does not read as a habit. The most-raised problems sentence likewise names
   any problem tied with the third, rather than whichever the sort left in
   front.
+
+**The Latest Update card sits above What Changed and says it in words**
+(2026-10-19, by request: "a new card summarizing the updates and changes"):
+*What the new copy shows* — each point a typed lead and finding that cite review
+numbers, with a figure the page counts against the earlier copy in front
+(`metric`: `new`, `replies_added`, `tone` or `theme:<code>`, read by
+`rvMetric`) — and *What changed on this page*, typed notes plus a computed line
+for the carried reviews. It is `update` in `reviews.json`, written for **one
+copy**: the build refuses an `UPDATE` whose `copied` is not `COPIED`, and the
+page hides the card unless the two dates match, so a refresh has to rewrite the
+notes rather than carry last time's news forward. The pane's typed dates follow
+the page's own `Sep 30` style.
 
 The card's ids are `drch*` because `drcEyebrow` is the Loss to Lease card's:
 the first draft wrote the reviews eyebrow into that card, on the other pane.
