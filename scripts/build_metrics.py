@@ -1153,31 +1153,66 @@ def store_lease_tradeout(prop, parsed):
 
     No resident, no name — the report has no such column. It still goes through
     the central scrub, like the unit directory.
+
+    **Processing order decides nothing.** process_manifest walks files by NAME,
+    and the filer date-prefixes what it files, so a newer emailed export
+    ("2026-10-26 LeaseTradeoutReport-…") is processed BEFORE the older
+    hand-dropped one beside it, every run. When the router could not reach this
+    store that never mattered; once it could (2026-10-19), "last file wins" put
+    the older export's arrival, filename and rents back over the newer one's.
+    So two exports are ranked as readings -- the later window end, then the
+    later Drive arrival, then the name -- and that rank, not order, decides:
+    a lease two files share keeps the better file's figures (each stored lease
+    records `from_file`; a lease stored before that key existed is taken to be
+    from the store's governing file), and the top-level arrival, filename and
+    basis are the best file's. `from_file` stays in data/: the published rows
+    are built key by key (tradeout_lease_rows).
     """
     fp = DATA / prop["slug"] / "lease_tradeout.json"
     fp.parent.mkdir(parents=True, exist_ok=True)
     hist = json.load(open(fp)) if fp.exists() else {"files": [], "leases": []}
 
-    key = lambda l: (l.get("unit"), l.get("signed"), l.get("prev_start"))  # noqa: E731
-    fresh = {key(l): scrub(l) for l in parsed.get("leases") or []}
-    kept = [l for l in hist.get("leases", []) if key(l) not in fresh]
-    hist["leases"] = sorted(kept + list(fresh.values()),
-                            key=lambda l: (l.get("signed") or "", l.get("unit") or ""))
+    epoch = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+
+    def rank(f):
+        try:
+            t = datetime.datetime.fromisoformat(str(f.get("landed_at")).replace("Z", "+00:00"))
+            t = t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
+        except ValueError:
+            t = epoch
+        return (f.get("period_end") or "", t, f.get("source_file") or "")
 
     rec = {k: parsed.get(k) for k in
            ("source_file", "landed_at", "period_start", "period_end", "rate_type",
             "lease_date_basis", "tradeout_basis", "checks", "problems")}
+    before = {f.get("source_file"): f for f in hist.get("files", [])}
+    governing = hist.get("source_file")
+    mine = rank(rec)
+
+    key = lambda l: (l.get("unit"), l.get("signed"), l.get("prev_start"))  # noqa: E731
+    fresh = {key(l): {**scrub(l), "from_file": rec["source_file"]}
+             for l in parsed.get("leases") or []}
+    merged = {key(l): l for l in hist.get("leases", [])}
+    for k, lease in fresh.items():
+        held = merged.get(k)
+        origin = before.get((held or {}).get("from_file") or governing)
+        if held is None or origin is None or mine >= rank(origin):
+            merged[k] = lease
+    hist["leases"] = sorted(merged.values(),
+                            key=lambda l: (l.get("signed") or "", l.get("unit") or ""))
+
     rec["leases"] = len(fresh)
     hist["files"] = [f for f in hist.get("files", [])
                      if f.get("source_file") != rec["source_file"]] + [rec]
     hist["files"].sort(key=lambda f: f.get("period_end") or "")
 
-    for k in ("report_type", "property", "rate_type", "lease_date_basis",
-              "tradeout_basis"):
-        hist[k] = parsed.get(k)
+    best = max(hist["files"], key=rank)
+    hist["report_type"] = parsed.get("report_type")
+    hist["property"] = parsed.get("property")
+    for k in ("rate_type", "lease_date_basis", "tradeout_basis", "landed_at",
+              "source_file"):
+        hist[k] = best.get(k)
     hist["as_of"] = max(f.get("period_end") or "" for f in hist["files"]) or None
-    hist["landed_at"] = parsed.get("landed_at")
-    hist["source_file"] = parsed.get("source_file")
 
     json.dump(hist, open(fp, "w"), indent=2, default=str)
     print(f"[ok] stored lease trade-outs for {prop['name']}: "

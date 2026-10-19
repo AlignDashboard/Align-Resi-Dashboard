@@ -1871,10 +1871,24 @@ name lookup does the rest. Re-storing the 09-16 file through the router changes
 nothing published but its arrival time's milliseconds — checked against the
 tracked store.
 
-`scripts/test_lease_tradeout.py` holds it down — 50 fixture-free checks against
-workbooks built in a temp dir, the last three driving `process_manifest` itself
-on a `LeaseTradeoutReport-Landing.XLS` (removing the key reproduces the run's
-warning and fails all three). The six load-bearing guards (the forward-filled
+**And with routing came processing order.** `process_manifest` walks files by
+name, and the filer's date prefix sorts a newer emailed export ahead of the
+older hand-dropped `LeaseTradeoutReport-Landing.XLS` still in the folder. The
+store used to take its top-level arrival and filename, and a shared lease's
+figures, from whichever file came last, so the older file would have won every
+run. It ranks exports as readings now — the later window end, then the later
+Drive arrival, then the name — and each stored lease records `from_file`, so a
+shared lease keeps the better export's figures in either order. `from_file`
+stays in `data/`; the published rows are built key by key. Re-storing the 09-16
+file under the new code changed nothing but that tag.
+
+`scripts/test_lease_tradeout.py` holds it down — 54 fixture-free checks against
+workbooks built in a temp dir, sections 12 and 13 driving `process_manifest`
+itself: a `LeaseTradeoutReport-Landing.XLS` must route (removing the key
+reproduces the run's warning and fails all three), and a prefixed newer export
+beside the unprefixed older one must head the store and keep its rents, with
+the two stored in either order giving one store (the old store, no rank check,
+and a top level taken from the last file each fail). The six load-bearing guards (the forward-filled
 header, the parenthesised negative, the magic-number open, the Grand Total
 tie-out, the skipped subtotal rows and the narrowest-window-wins tagging behind
 the per-lease table) were each verified by mutation; removing any one of them
@@ -3385,8 +3399,13 @@ sheet, not the whole file.
 In CI the gitignored stores (`rent_roll.json`, `delinquency.json`) do not exist
 at the start of a run, so the guard decides between files **within** one run;
 locally it also protects whatever is already on disk. `stitch`-style series
-(the T12 stores, budgets, comps, lease trade-outs, the weekly leasing workbook)
-are keyed on their own period and were never exposed to this.
+(the T12 stores, budgets, comps, the weekly leasing workbook) are keyed on
+their own period and were never exposed to this. **Lease trade-outs were, from
+the day the router first reached their store** (2026-10-19): accumulated by
+lease, they took the top-level arrival and filename — and a shared lease's
+rents — from whichever file was processed last, so a newer filer-prefixed
+export would have been overwritten by the older hand-dropped one every run.
+`store_lease_tradeout` ranks exports instead; see *The lease tradeout report*.
 
 `scripts/test_snapshot_order.py` holds it down — 30 fixture-free checks with the
 parser stubbed, driving `process_manifest` through both of its store call sites
@@ -3760,8 +3779,12 @@ reports what that run actually produced.
   G4; a lineage page regenerated outside CI is now the same page CI writes.
 
 The script **refuses to write** on a card anchor `index.html` does not define, a
-table id `data.html` does not build, or a parser module named in the report map
-that is not in `scripts/`. A lineage page that has quietly gone stale is worse
+table id `data.html` does not build, a parser module named in the report map
+that is not in `scripts/`, or — since 2026-10-19 — a `DRIVE_FLOWS` declaration
+whose `(folder, report type)` key matches no `report_map.json` entry. The check
+only ran the other way before, so the renewal tracker's declaration, still keyed
+on its pre-A11 `Renewal Tracker` folder, matched nothing for four weeks and its
+flow showed as an undocumented `waiting` row. A lineage page that has quietly gone stale is worse
 than none, because it is read as a map.
 
 Five statuses, and they are the page's whole argument:
@@ -4216,11 +4239,16 @@ name in a source report searched for by word boundary in every published file.
 Run it locally the same way after any change to a parser or the extractor.
 
 **A resident code is as identifying as a name**, and the value pass above
-searches names only. A real Yardi tenant code sat in a test fixture's MTM row —
-with its unit, plan and lease-expiry date — from at least 2026-09-29 until
-2026-10-19, found only by matching a roll's every code against every tracked
-file (A20; still in history). Fixtures use invented codes, units and dates, as
-`test_rental_tracker.py`'s figures are invented.
+would not have caught one: it reads only the published files, never
+`scripts/`, it harvests names rather than codes, and nothing passes `--source`
+in CI. A real Yardi tenant code sat in a test fixture's MTM row — with that
+resident's unit, plan, lease-expiry date and rent — from 2026-09-11
+(`00ea8a7`, when the file was created) until 2026-10-19, and three other
+fixture rows reused real unit-and-rent pairs; found only by matching a roll's
+every code and every unit-and-rent pair against every tracked file (A20; still
+in history). Fixtures use invented codes, units, dates and rents, as
+`test_rental_tracker.py`'s figures are invented. This checkout is shallow, so
+date a file's history with `gh api …/commits?path=` rather than `git log`.
 
 Raw reports are gitignored (`_downloads/`, `*.xlsx`, `tests/fixtures/`,
 `data/*/rent_roll.json`, `data/*/delinquency.json`) because they hold everything.

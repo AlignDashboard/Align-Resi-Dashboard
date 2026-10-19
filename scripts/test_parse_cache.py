@@ -472,7 +472,7 @@ def build_week(path, rent, prior):
            "SCHEDULED MI DATE", "LEASE TERM", "LEASING ASSOCIATE"]
     for i, h in enumerate(hdr):
         ws.cell(row=25, column=2 + i, value=h)
-    row = [650, "MKT", "laa1", "1x1", 621, rent, rent / 621, 0, rent, rent / 621,
+    row = [901, "MKT", "laa1", "1x1", 621, rent, rent / 621, 0, rent, rent / 621,
            prior, rent - prior, (rent - prior) / prior, "2026-09-06", 12, "Edwin"]
     for i, v in enumerate(row):
         ws.cell(row=26, column=2 + i, value=v)
@@ -499,7 +499,7 @@ def section_end_to_end(tmp):
     roll = {"report_type": "rent_roll", "property": "The Landing",
             "property_code": "p0005611", "as_of": "2026-09-21",
             "source_file": "RentRoll09_21_2026.xlsx", "totals": {"units": 1},
-            "units": [{"unit": "650", "resident_name": "Resident Zed",
+            "units": [{"unit": "901", "resident_name": "Resident Zed",
                        "rent": 5973, "occupied": True}], "checks": []}
 
     def build(work, landed="2026-10-05T12:00:00Z"):
@@ -674,7 +674,7 @@ def section_fetch(tmp):
     roll = {"report_type": "rent_roll", "property": "The Landing",
             "property_code": "p0005611", "as_of": "2026-09-21",
             "source_file": "RentRoll09_21_2026.xlsx", "totals": {"units": 1},
-            "units": [{"unit": "650", "resident_name": "Resident Zed",
+            "units": [{"unit": "901", "resident_name": "Resident Zed",
                        "rent": 5973, "occupied": True}], "checks": []}
     drive.put("Rent Roll", "RentRoll09_21_2026.xlsx", json.dumps(roll).encode())
     daily = {f"Daily Leasing Reports/{n}" for n, _, _ in weeks}

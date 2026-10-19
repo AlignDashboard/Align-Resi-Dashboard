@@ -94,7 +94,7 @@ def build_leasing(path, leases, *, sheet_property="The Landing", units=263,
 
 print("parse_daily_leasing")
 
-p = build_leasing(f"{TMP}/a.xlsx", [lease_row(650, 5973, 3351, 621)])
+p = build_leasing(f"{TMP}/a.xlsx", [lease_row(901, 5973, 3351, 621)])
 r = parse_leasing(p)
 check("reads the NEW LEASES block", r["totals"]["leases"] == 1
       and r["leases"][0]["prior_rent"] == 3351,
@@ -156,7 +156,7 @@ check("a property disagreement is reported, not silently resolved",
 # The Landing's own file names no property at all, so the sheet header is what
 # resolves it -- the Information sheet alone would be a coin toss.
 p = build_leasing(f"{TMP}/Daily Report- Week Ending 9.7.26.xlsx",
-                  [lease_row(650, 5973, 3351)], sheet_property="The Landing")
+                  [lease_row(901, 5973, 3351)], sheet_property="The Landing")
 r = parse_leasing(p)
 check("a filename with no property falls back to the sheet header",
       r["property"] == "The Landing" and r["property_from_filename"] is None,
@@ -262,12 +262,12 @@ def build_renewal(path, sheets, mtm_rows=None, header_row=9):
 
 
 # modern: BEST OFFER RATE is the rate, BEST OFFER DIFFERENCE the difference
-modern_rows = [["Renewed", "A Name", 836, "Sep-03-2026", "2B", "lab19", "", 4791,
+modern_rows = [["Renewed", "A Name", 902, "Sep-03-2026", "2B", "lab19", "", 4791,
                 12, 7047, -2256, 0.32, 5222, 431, 0.15]]
 p = build_renewal(f"{TMP}/Landing 2025 Renewal Tracker.xlsx",
                   {"September 2026": (MODERN, modern_rows)},
                   mtm_rows=[["Waiting", "lab19", 101, "t0000001", "A Name",
-                             None, None, "2024-01-01", "2024-12-31", 4109, 7882]])
+                             None, None, "2024-01-01", "2024-12-31", 4100, 7882]])
 r = parse_renewal(p)
 m = r["months"][0]
 check("month sheet found from its title", m["month"] == "2026-09", m["month"])
@@ -281,7 +281,7 @@ check("weighted increase computed from the totals, not the sheet's own %",
       and abs(m["wtd_increase"] - 0.15) > 0.05, m["wtd_increase"])
 check("property resolved from the filename", r["property"] == "The Landing",
       r["property"])
-check("MTM roster read", r["mtm"]["units"] == 1 and r["mtm"]["current_rent"] == 4109,
+check("MTM roster read", r["mtm"]["units"] == 1 and r["mtm"]["current_rent"] == 4100,
       r["mtm"])
 # The tenant code must reach store_report under a name the scrub knows.
 check("the MTM tenant code is emitted as resident_code, so scrub() drops it",

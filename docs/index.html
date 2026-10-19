@@ -7030,7 +7030,7 @@ function prefixed(meas, prefix) {
 // of the tab's own data where the answer depends on what has arrived -- the
 // weekly workbook draws the new-lease series only when no tradeout report has.
 const SCD_FEED_ROWS = [
-  { flow: "t12", fills: "Operating Summary · Loss to Lease · Expense Load & NOI · Expense Deep Dive" },
+  { flow: "t12", fills: "Operating Summary · the four statement tiles · Loss to Lease's monthly series · Expense Load & NOI · Expense Deep Dive" },
   // The export's Delinquency Rate owns the rate since B4 closed (2026-09-29);
   // the Trade-out % tile left it for the tradeout report on 2026-09-17.
   { flow: "bldg_metrics", fills: "The Leased % and Delinquency tiles · the Delinquency card's rate" },
@@ -7040,8 +7040,11 @@ const SCD_FEED_ROWS = [
     fillsIf: { prefix: "delq_",
                idle: "nothing yet — no AR report has filled the 30/60/90 split" } },
   { flow: "budget", fills: "The Budget variance tile" },
-  { flow: "rent_roll", fills: "Loss to Lease · Rollover Schedule · Largest Unit Gaps" },
-  { flow: "lease_tradeout", fills: "The Trade-out % tile · Trade-outs — the new-lease series" },
+  { flow: "rent_roll", fills: "Loss to Lease's figures · Rollover Schedule · Largest Unit Gaps · Unit Inventory's leased/vacant split" },
+  { flow: "lease_tradeout",
+    fills: d => d.tro
+      ? "The Trade-out % tile · Trade-outs — the new-lease series"
+      : "Nothing yet — no tradeout report is on file, so the weekly workbook draws the new-lease series" },
   { flow: "daily_leasing",
     fills: d => d.tro
       ? "Nothing today — the tradeout report draws the new-lease series, and this is its fallback"
@@ -7078,16 +7081,26 @@ const SCD_MISSING = [
   // week, and this sentence quoted 32 and 31 long after both had changed.
   { what: "Holdovers reconciled unit by unit",
     why: d => {
-      const h = d.rr && d.rr.holdovers ? d.rr.holdovers.units : null;
-      const t = d.rn && d.rn.mtm ? d.rn.mtm.units : null;
+      const rr = d.rr, mtm = d.rn && d.rn.mtm;
+      const h = rr && rr.holdovers ? rr.holdovers.units : null;
+      const t = mtm ? mtm.units : null;
+      // Says which side is missing rather than claiming both arrived.
+      if (!rr && !mtm) return "Neither the rent roll nor the renewal tracker's MTM "
+                            + "roster is on file, so there is nothing to compare";
+      if (!rr) return "No rent roll is on file, so the tracker's MTM roster"
+                    + (t != null ? " (" + t + " units)" : "") + " has nothing to be "
+                    + "compared with";
+      if (!mtm) return "No MTM roster is on file from the renewal tracker, so the rent "
+                     + "roll's holdovers" + (h != null ? " (" + h + ")" : "")
+                     + " have nothing to be compared with";
       const counts = h != null && t != null
-        ? "the rent roll of " + d.rr.as_of + " names " + h + " holdovers and the "
+        ? "the rent roll of " + rr.as_of + " names " + h + " holdovers and the "
           + "tracker's MTM roster names " + t
-        : "the rent roll and the renewal tracker's MTM roster";
+        : "the rent roll and the tracker's MTM roster";
       return "Both feeds are here — " + counts + " — but nothing compares them unit "
-           + "by unit. When the workbook last checked, the roster missed 27 of the "
-           + "roll's 31 holdovers, so even matching counts would not show they are "
-           + "the same units";
+           + "by unit. When the analyst workbook last compared them, on its "
+           + "2026-07-14 roll, the roster held only 4 of that roll's 31 holdovers, "
+           + "so even matching counts would not show they are the same units";
     },
     fix: "No new report: join the rent roll's expired-and-occupied units to the tracker's "
        + "MTM roster and show which appear on both",
