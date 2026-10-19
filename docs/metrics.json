@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-19T17:23:24.133487+00:00",
+    "generated_at": "2026-10-19T17:55:04.842362+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -1896,35 +1896,35 @@
     "available": true,
     "properties": [
       {
-        "as_of": "2026-10-12",
-        "landed_at": "2026-10-12T17:51:35.929Z",
-        "source_file": "RentRoll10_12_2026.xlsx",
+        "as_of": "2026-10-19",
+        "landed_at": "2026-10-19T17:51:11.760Z",
+        "source_file": "RentRoll10_19_2026.xlsx",
         "units": 263,
-        "occupied": 257,
-        "vacant": 6,
-        "on_notice": 21,
-        "occupancy": 0.977186,
+        "occupied": 256,
+        "vacant": 7,
+        "on_notice": 25,
+        "occupancy": 0.973384,
         "sqft": 215452.0,
         "market_rent_total": 2101182.0,
-        "actual_rent_total": 1261254.0,
-        "market_rent_occupied": 2046924.0,
-        "actual_rent_occupied": 1261254.0,
-        "loss_to_lease": 785670.0,
-        "loss_to_lease_pct": 0.38383,
-        "market_psf": 9.7448,
-        "inplace_psf": 6.0045,
+        "actual_rent_total": 1258835.0,
+        "market_rent_occupied": 2040741.0,
+        "actual_rent_occupied": 1258835.0,
+        "loss_to_lease": 781906.0,
+        "loss_to_lease_pct": 0.383148,
+        "market_psf": 9.7441,
+        "inplace_psf": 6.0107,
         "holdovers": {
-          "units": 28,
-          "share_of_occupied": 0.108949,
-          "inplace": 125608.0,
-          "market": 236044.0,
-          "gap_yr": 1325232.0
+          "units": 27,
+          "share_of_occupied": 0.105469,
+          "inplace": 122694.0,
+          "market": 229861.0,
+          "gap_yr": 1286004.0
         },
         "by_plan": {
           "laa1": {
             "units": 88,
-            "leased": 88,
-            "vacant": 0
+            "leased": 87,
+            "vacant": 1
           },
           "laa10": {
             "units": 1,
@@ -2130,23 +2130,23 @@
         "rollover": [
           {
             "month": "Expired",
-            "units": 28,
-            "sqft": 24589.0,
-            "inplace": 125608.0,
-            "market": 236044.0,
-            "uncaptured": 110436.0,
-            "cum_units": 28,
-            "cum_pct": 0.108949
+            "units": 27,
+            "sqft": 23971.0,
+            "inplace": 122694.0,
+            "market": 229861.0,
+            "uncaptured": 107167.0,
+            "cum_units": 27,
+            "cum_pct": 0.105469
           },
           {
             "month": "2026-10",
-            "units": 4,
-            "sqft": 2751.0,
-            "inplace": 20683.0,
-            "market": 28725.0,
-            "uncaptured": 8042.0,
-            "cum_units": 32,
-            "cum_pct": 0.124514
+            "units": 3,
+            "sqft": 2160.0,
+            "inplace": 17383.0,
+            "market": 22442.0,
+            "uncaptured": 5059.0,
+            "cum_units": 30,
+            "cum_pct": 0.117188
           },
           {
             "month": "2026-11",
@@ -2155,8 +2155,8 @@
             "inplace": 57711.0,
             "market": 102154.0,
             "uncaptured": 44443.0,
-            "cum_units": 45,
-            "cum_pct": 0.175097
+            "cum_units": 43,
+            "cum_pct": 0.167969
           },
           {
             "month": "2026-12",
@@ -2165,8 +2165,8 @@
             "inplace": 88552.0,
             "market": 139852.0,
             "uncaptured": 51300.0,
-            "cum_units": 62,
-            "cum_pct": 0.241245
+            "cum_units": 60,
+            "cum_pct": 0.234375
           },
           {
             "month": "2027-01",
@@ -2175,8 +2175,8 @@
             "inplace": 73138.0,
             "market": 118598.0,
             "uncaptured": 45460.0,
-            "cum_units": 77,
-            "cum_pct": 0.299611
+            "cum_units": 75,
+            "cum_pct": 0.292969
           },
           {
             "month": "2027-02",
@@ -2185,8 +2185,8 @@
             "inplace": 49774.0,
             "market": 80952.0,
             "uncaptured": 31178.0,
-            "cum_units": 87,
-            "cum_pct": 0.338521
+            "cum_units": 85,
+            "cum_pct": 0.332031
           },
           {
             "month": "2027-03",
@@ -2195,8 +2195,8 @@
             "inplace": 100699.0,
             "market": 165584.0,
             "uncaptured": 64885.0,
-            "cum_units": 108,
-            "cum_pct": 0.420233
+            "cum_units": 106,
+            "cum_pct": 0.414062
           },
           {
             "month": "2027-04",
@@ -2205,8 +2205,8 @@
             "inplace": 83529.0,
             "market": 135744.0,
             "uncaptured": 52215.0,
-            "cum_units": 125,
-            "cum_pct": 0.486381
+            "cum_units": 123,
+            "cum_pct": 0.480469
           },
           {
             "month": "2027-05",
@@ -2215,8 +2215,8 @@
             "inplace": 82759.0,
             "market": 135204.0,
             "uncaptured": 52445.0,
-            "cum_units": 143,
-            "cum_pct": 0.55642
+            "cum_units": 141,
+            "cum_pct": 0.550781
           },
           {
             "month": "2027-06",
@@ -2225,8 +2225,8 @@
             "inplace": 186795.0,
             "market": 297992.0,
             "uncaptured": 111197.0,
-            "cum_units": 179,
-            "cum_pct": 0.696498
+            "cum_units": 177,
+            "cum_pct": 0.691406
           },
           {
             "month": "2027-07",
@@ -2235,8 +2235,8 @@
             "inplace": 108342.0,
             "market": 158712.0,
             "uncaptured": 50370.0,
-            "cum_units": 200,
-            "cum_pct": 0.77821
+            "cum_units": 198,
+            "cum_pct": 0.773438
           },
           {
             "month": "2027-08",
@@ -2245,8 +2245,8 @@
             "inplace": 64452.0,
             "market": 105022.0,
             "uncaptured": 40570.0,
-            "cum_units": 214,
-            "cum_pct": 0.832685
+            "cum_units": 212,
+            "cum_pct": 0.828125
           },
           {
             "month": "2027-09",
@@ -2255,8 +2255,8 @@
             "inplace": 112221.0,
             "market": 165317.0,
             "uncaptured": 53096.0,
-            "cum_units": 234,
-            "cum_pct": 0.910506
+            "cum_units": 232,
+            "cum_pct": 0.90625
           },
           {
             "month": "2027-10",
@@ -2265,8 +2265,8 @@
             "inplace": 27031.0,
             "market": 47367.0,
             "uncaptured": 20336.0,
-            "cum_units": 240,
-            "cum_pct": 0.933852
+            "cum_units": 238,
+            "cum_pct": 0.929688
           },
           {
             "month": "2027-11",
@@ -2275,8 +2275,8 @@
             "inplace": 34507.0,
             "market": 57155.0,
             "uncaptured": 22648.0,
-            "cum_units": 248,
-            "cum_pct": 0.964981
+            "cum_units": 246,
+            "cum_pct": 0.960938
           },
           {
             "month": "2027-12",
@@ -2285,7 +2285,17 @@
             "inplace": 45453.0,
             "market": 72502.0,
             "uncaptured": 27049.0,
-            "cum_units": 257,
+            "cum_units": 255,
+            "cum_pct": 0.996094
+          },
+          {
+            "month": "2028-01",
+            "units": 1,
+            "sqft": 591.0,
+            "inplace": 3795.0,
+            "market": 6283.0,
+            "uncaptured": 2488.0,
+            "cum_units": 256,
             "cum_pct": 1.0
           }
         ],
@@ -2824,14 +2834,14 @@
           {
             "check": "actual_rent ties to the report Total row",
             "ok": true,
-            "parsed": 1261254.0,
-            "report": 1261254.0,
+            "parsed": 1258835.0,
+            "report": 1258835.0,
             "delta": 0.0
           },
           {
             "check": "as-of date found",
             "ok": true,
-            "note": "2026-10-12"
+            "note": "2026-10-19"
           },
           {
             "check": "stopped at a section marker",
@@ -10660,11 +10670,11 @@
               "key": "rent_roll",
               "label": "Rent roll",
               "detail": "the market rent column, unit by unit",
-              "as_of": "2026-10-12",
-              "source_file": "RentRoll10_12_2026.xlsx",
+              "as_of": "2026-10-19",
+              "source_file": "RentRoll10_19_2026.xlsx",
               "market_rent": 2101182.0,
               "units": 263,
-              "psf": 9.7448,
+              "psf": 9.7441,
               "gap": 0.182,
               "exact": true
             },
@@ -10734,10 +10744,10 @@
             "source": "rent_roll",
             "label": "Rent roll",
             "exact": true,
-            "as_of": "2026-10-12",
-            "source_file": "RentRoll10_12_2026.xlsx",
-            "ltl_published": 0.38383,
-            "ltl_restated": 0.2717
+            "as_of": "2026-10-19",
+            "source_file": "RentRoll10_19_2026.xlsx",
+            "ltl_published": 0.383148,
+            "ltl_restated": 0.2709
           }
         }
       },
@@ -14951,6 +14961,19 @@
             "first_tours_attended": 9.0,
             "applications_completed": 1.0,
             "leases_signed": 2.0
+          },
+          {
+            "as_of": "2026-10-19",
+            "landed_at": "2026-10-19T17:51:26.917Z",
+            "source_file": "metrics-building-2026-10-19.csv",
+            "occupancy": 98.0989,
+            "exposure": 10.6464,
+            "vacant_units": 5.0,
+            "new_prospects": 87.0,
+            "first_tours_booked": 16.0,
+            "first_tours_attended": 6.0,
+            "applications_completed": 1.0,
+            "leases_signed": 1.0
           }
         ]
       },
@@ -15048,6 +15071,19 @@
             "first_tours_attended": 90.0,
             "applications_completed": 13.0,
             "leases_signed": 17.0
+          },
+          {
+            "as_of": "2026-10-19",
+            "landed_at": "2026-10-19T17:51:26.917Z",
+            "source_file": "metrics-building-2026-10-19.csv",
+            "occupancy": 95.6731,
+            "exposure": 6.7308,
+            "vacant_units": 18.0,
+            "new_prospects": 294.0,
+            "first_tours_booked": 142.0,
+            "first_tours_attended": 101.0,
+            "applications_completed": 19.0,
+            "leases_signed": 14.0
           }
         ]
       },
@@ -15145,6 +15181,19 @@
             "first_tours_attended": 28.0,
             "applications_completed": 3.0,
             "leases_signed": 2.0
+          },
+          {
+            "as_of": "2026-10-19",
+            "landed_at": "2026-10-19T17:51:26.917Z",
+            "source_file": "metrics-building-2026-10-19.csv",
+            "occupancy": 94.5545,
+            "exposure": 6.4356,
+            "vacant_units": 11.0,
+            "new_prospects": 246.0,
+            "first_tours_booked": 48.0,
+            "first_tours_attended": 28.0,
+            "applications_completed": 5.0,
+            "leases_signed": 2.0
           }
         ]
       },
@@ -15241,6 +15290,19 @@
             "first_tours_booked": 32.0,
             "first_tours_attended": 19.0,
             "applications_completed": 5.0,
+            "leases_signed": 3.0
+          },
+          {
+            "as_of": "2026-10-19",
+            "landed_at": "2026-10-19T17:51:26.917Z",
+            "source_file": "metrics-building-2026-10-19.csv",
+            "occupancy": 13.1579,
+            "exposure": 63.1579,
+            "vacant_units": 33.0,
+            "new_prospects": 152.0,
+            "first_tours_booked": 32.0,
+            "first_tours_attended": 20.0,
+            "applications_completed": 3.0,
             "leases_signed": 3.0
           }
         ]
