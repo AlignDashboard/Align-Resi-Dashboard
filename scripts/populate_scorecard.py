@@ -359,6 +359,27 @@ def restate_controllable_band(thresholds):
     return (t["green_cutoff_workbook"], t["red_cutoff_workbook"], g, r)
 
 
+def band_upper(t):
+    """The top of a two-sided band's exceeding range, read off its own label.
+
+    The extractor publishes two cutoffs per band, and a two-sided band has
+    three: `% Increase` exceeds from +4.0% to +7.0% and drops back to in range
+    above that ("above +7% the green flips to amber"). The third is only in the
+    band's text, so it is read from the `exceeding` label rather than restated
+    as a constant -- a re-extracted sheet that moves it moves this too. None
+    unless the label holds exactly two percentages and the lower one IS the
+    published green cutoff, so a reworded label leaves the cell ungraded rather
+    than graded on a number nobody wrote (open item H3).
+    """
+    nums = [float(x) / 100 for x in
+            re.findall(r"[-+]?\d+(?:\.\d+)?(?=\s*%)", str(t.get("exceeding") or ""))]
+    green = t.get("green_cutoff")
+    if len(nums) != 2 or green is None:
+        return None
+    lo, hi = sorted(nums)
+    return hi if abs(lo - green) < 1e-9 else None
+
+
 def classify(value, t):
     """Status from the workbook's published band. None if it cannot be decided."""
     if value is None or not t:
@@ -366,6 +387,15 @@ def classify(value, t):
     green, red = t.get("green_cutoff"), t.get("red_cutoff")
     if green is None or red is None:
         return None
+    if "two-sided" in str(t.get("direction", "")).lower():
+        # Higher is better up to the top of the exceeding range, and in range
+        # past it. Graded as plain higher-is-better until 2026-10-19 (H3), so
+        # The Landing's 20.7% read exceeding against a band calling it amber.
+        upper = band_upper(t)
+        if upper is None:
+            return None
+        if value > upper:
+            return "in_range"
     lower_better = "lower" in str(t.get("direction", "")).lower()
     if lower_better:
         if value <= green:
@@ -890,6 +920,22 @@ def keep_workbook_status(prop, kpi, was):
     that restate a status call this rather than keeping their own copy.
     """
     prop.setdefault("status_workbook", {}).setdefault(kpi, was)
+
+
+def restore_workbook_status(prop, kpi):
+    """Put the workbook's own symbol back on a cell that is no longer graded.
+
+    A value-only cell is coloured by the workbook's status, and the page says
+    so on hover ("the colour is the workbook's own status"). A cell an earlier
+    run graded still carries that grade in `statuses`, so without this the
+    hover would quote a measured grade as the workbook's: 335 Third's
+    delinquency, graded below on the 09-28 export, would read "the workbook's
+    own status (below)" over a workbook that said in range. The entry comes off
+    `status_workbook` with it, so a later grade records the symbol afresh.
+    """
+    wb = prop.get("status_workbook") or {}
+    if kpi in wb:
+        prop["statuses"][kpi] = wb.pop(kpi)
 
 
 def graded(p, names):
