@@ -799,6 +799,19 @@
   .rv-next b { color: var(--amber); font-weight: 600; }
   @media (max-width: 820px) { .rv-points { grid-template-columns: 1fr; } }
   #cdRevTable table.dt { min-width: 640px; }
+  /* What Changed: the four headline figures then and now, each with the window
+     it covers -- the six-month window moves with the copy date. Three short
+     columns fit a phone, so the labels, headings and windows wrap rather than
+     putting the figures behind a sideways scroll. */
+  #cdRevChanges table.dt { margin-bottom: 4px; }
+  #cdRevChanges td.rv-th { white-space: normal; }
+  #cdRevChanges td.rv-num .rv-note { font-size: 9.5px; white-space: normal; }
+  #cdRevChanges th.rv-num { white-space: normal; }
+  /* A row new or edited since the last copy is shaded; every change a row has
+     is named under its number. */
+  .rv-tag { display: block; margin-top: 3px; font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--amber); white-space: nowrap; }
+  #cdRevAll tr.rv-changed > td { background: var(--amber-soft); }
   #cdRevAll table.dt { min-width: 720px; }
   table.dt td.rv-th { font-weight: 700; padding-left: 10px; white-space: nowrap; }
   table.dt td.rv-num, table.dt th.rv-num { text-align: right; padding-right: 14px;
@@ -1211,6 +1224,16 @@
     <div class="grid" id="dRevPane" data-pane="reviews" hidden>
 
       <div class="kpis" id="dRevKpis"></div>
+
+      <!-- Shown once a copy has an earlier one stored to be compared with:
+           reviews.json's changes and previous blocks. -->
+      <div class="card wide" id="cdRevChanges" hidden>
+        <h2>What Changed</h2>
+        <span class="eyebrow" id="drchEyebrow">LOADING…</span>
+        <div class="rv-scroll" id="drchTbl"></div>
+        <h3 class="rv-sub">Review by review</h3>
+        <ul class="rv-list" id="drchList"></ul>
+      </div>
 
       <div class="card wide" id="cdRevBottom">
         <h2>Bottom Line</h2>
@@ -1702,6 +1725,24 @@ const rvPct = v => (v === null || v === undefined ? "—" : Math.round(v * 100) 
 const rvAnd = xs => (xs.length < 2 ? xs.join("")
   : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
 const rvColors = () => ({ warm: C.red, cool: "#3987e5", mid: C.muted });
+// A YYYY-MM-DD as "Sep 30" or "Sep 30, 2026", built from its parts: handed to
+// new Date() whole it is UTC midnight, a day early west of Greenwich -- the
+// trap the Delinquency card's eyebrow records.
+function rvDay(iso, withYear) {
+  const [y, m, dd] = String(iso || "").split("-").map(Number);
+  if (!y) return "";
+  return new Date(y, m - 1, dd).toLocaleDateString("en-US", withYear
+    ? { day: "numeric", month: "short", year: "numeric" } : { day: "numeric", month: "short" });
+}
+// Review numbers for a sentence; an unbroken run such as 38 to 53 reads 38–53.
+function rvNums(ns) {
+  const s = [...ns].sort((a, b) => a - b);
+  if (s.length > 2 && s[s.length - 1] - s[0] === s.length - 1) return s[0] + "–" + s[s.length - 1];
+  return rvAnd(s.map(String));
+}
+const RV_TONES = ["Negative", "Mixed", "Positive", "Unclear", "No text"];
+const RV_TONE_WORD = { Negative: "negative", Mixed: "mixed", Positive: "positive", Unclear: "unclear",
+  "No text": "star rating only" };
 // Below this chart width a category label is too long for the axis, which
 // Chart.js clips at the canvas edge rather than wraps: "Apartments & building"
 // read "partments & building" at phone width.
@@ -1753,7 +1794,34 @@ function rvCompute(d) {
   const themes = (d.themes || []).map(t => Object.assign({}, t, {
     year: year.filter(r => r.themes.includes(t.code)).length,
     old: old.filter(r => r.themes.includes(t.code)).length }));
-  return { d, rows, year, old, byP, per, themes };
+  // The copy before this one, counted by this same function over its own
+  // rows and periods, so a "then" figure is what the page showed then.
+  const prev = d.previous && d.previous.reviews
+    ? rvCompute({ periods: d.previous.periods, reviews: d.previous.reviews, themes: d.themes }) : null;
+  return { d, rows, year, old, byP, per, themes, prev };
+}
+
+// The four headline figures, shared by the tile row and the What Changed card
+// so the two cannot count or word them differently.
+function rvFour(R) {
+  const { recent, prior, old } = R.byP;
+  const negY = R.year.filter(r => r.tone === "Negative");
+  const dep = R.themes.find(t => t.code === "P2");
+  return [
+    { k: "Reviews", per: "last 12 mo", v: String(R.year.length), of: "", target: "cdRevThemes",
+      s: recent.n + " in " + recent.label + " · " + prior.n + " in " + prior.label },
+    { k: "Negative", per: recent.label, v: rvPct(rvShare(recent.neg, recent.read)), target: "cdRevTone",
+      of: recent.neg + " of " + recent.read + " readable",
+      s: "of " + recent.read + " with readable text · " + rvPct(rvShare(prior.neg, prior.read))
+        + " in " + prior.label },
+    { k: "Answered by the owner", per: recent.label, v: rvPct(rvShare(recent.replied, recent.n)),
+      of: recent.replied + " of " + recent.n, target: "cdRevTone",
+      s: rvPct(rvShare(old.replied, old.n)) + " of reviews " + old.label },
+    { k: "Negative reviews by former residents", per: "last 12 mo", of: "", target: "cdRevTable",
+      v: negY.filter(r => r.former_resident).length + " of " + negY.length,
+      s: dep ? R.year.filter(r => r.former_resident && r.themes.includes("P2")).length + " of the "
+        + dep.year + " about deposits and move-out" : "" },
+  ];
 }
 
 async function loadReviews() {
@@ -1771,17 +1839,21 @@ async function loadReviews() {
   if (R) {
     // A YYYY-MM-DD handed to new Date() is UTC midnight, a day early west of
     // Greenwich -- the trap the Delinquency card's eyebrow records.
-    const [y, m, dd] = String(d.copied || "").split("-").map(Number);
-    const copied = y ? new Date(y, m - 1, dd).toLocaleDateString("en-US",
-      { day: "numeric", month: "short", year: "numeric" }) : "an unrecorded date";
+    const copied = rvDay(d.copied, true) || "an unrecorded date";
+    // A copy can stop before the oldest reviews; those rows are carried from
+    // the copy they were last seen in, and the line says so.
+    const carried = R.rows.filter(r => r.carried_from);
     document.getElementById("dRevSrc").textContent = R.rows.length + " Google Maps reviews of "
-      + d.building + ", " + d.address + ", copied by hand on " + copied + ". "
+      + d.building + ", " + d.address + ", copied by hand on " + copied
+      + (carried.length ? " (" + carried.length + " of them, " + rvNums(carried.map(r => r.n))
+        + ", carried from the " + rvDay(carried[0].carried_from, true) + " copy)" : "") + ". "
       + (d.star_ratings ? "" : "Star ratings did not come through in the copy, so tone and "
         + "themes are read from each review's text. ")
       + "Months are approximate: Google shows dates such as “3 months ago”.";
   }
 
   section("dRevKpis", () => rvTiles(need()));
+  section("cdRevChanges", () => rvChanges(need()));
   section("cdRevBottom", () => rvBottom(need()));
   section("cdRevThemes", () => rvThemesChart(need()));
   section("cdRevTone", () => rvTone(need()));
@@ -1793,9 +1865,6 @@ async function loadReviews() {
 function rvTiles(R) {
   const host = document.getElementById("dRevKpis");
   host.textContent = "";
-  const { recent, prior, old } = R.byP;
-  const negY = R.year.filter(r => r.tone === "Negative");
-  const dep = R.themes.find(t => t.code === "P2");
   const tile = (v, k, per, s, target) => {
     const b = elc("button", "kpi");
     b.type = "button";
@@ -1811,17 +1880,103 @@ function rvTiles(R) {
     b.addEventListener("click", () => rvJump(target));
     host.appendChild(b);
   };
-  tile(String(R.year.length), "Reviews", "last 12 mo",
-    recent.n + " in " + recent.label + " · " + prior.n + " in " + prior.label, "cdRevThemes");
-  tile(rvPct(rvShare(recent.neg, recent.read)), "Negative", recent.label,
-    "of " + recent.read + " with readable text · " + rvPct(rvShare(prior.neg, prior.read))
-      + " in " + prior.label, "cdRevTone");
-  tile(rvPct(rvShare(recent.replied, recent.n)), "Answered by the owner", recent.label,
-    rvPct(rvShare(old.replied, old.n)) + " of reviews " + old.label, "cdRevTone");
-  tile(negY.filter(r => r.former_resident).length + " of " + negY.length,
-    "Negative reviews by former residents", "last 12 mo",
-    dep ? R.year.filter(r => r.former_resident && r.themes.includes("P2")).length + " of the "
-      + dep.year + " about deposits and move-out" : "", "cdRevTable");
+  rvFour(R).forEach(f => tile(f.v, f.k, f.per, f.s, f.target));
+}
+
+// What moved since the copy before this one. The lists of review numbers are
+// reviews.json's `changes`, worked out by the build script against the stored
+// copy; every figure is counted here, from this copy's rows and the earlier
+// copy's, by rvCompute and rvFour.
+function rvChanges(R) {
+  const card = document.getElementById("cdRevChanges");
+  const c = R.d.changes;
+  card.hidden = !(c && R.prev);
+  if (card.hidden) return;
+  const then = R.prev, since = rvDay(c.since);
+  document.getElementById("drchEyebrow").textContent = ("Copied " + rvDay(R.d.copied, true) + " against "
+    + rvDay(c.since, true) + " · " + then.rows.length + " reviews then, " + R.rows.length + " now")
+    .toUpperCase();
+
+  const tbl = elc("table", "dt");
+  const hr = elc("tr");
+  [["", null], [rvDay(c.since) + " copy", "rv-num"], [rvDay(R.d.copied) + " copy", "rv-num"]]
+    .forEach(([t, cl]) => hr.appendChild(elc("th", cl, t)));
+  tbl.appendChild(hr);
+  const was = rvFour(then);
+  rvFour(R).forEach((f, i) => {
+    const tr = elc("tr");
+    tr.appendChild(elc("td", "rv-th", f.k));
+    [was[i], f].forEach(x => {
+      const td = elc("td", "rv-num", x.v);
+      td.appendChild(elc("span", "rv-note", [x.per, x.of].filter(Boolean).join(" · ")));
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  const host = document.getElementById("drchTbl");
+  host.textContent = "";
+  host.appendChild(tbl);
+
+  const label = Object.fromEntries(R.themes.map(t => [t.code, t.label.toLowerCase()]));
+  const word = t => RV_TONE_WORD[t] || String(t).toLowerCase();
+  const now = Object.fromEntries(R.rows.map(r => [r.n, r]));
+  const before = Object.fromEntries(then.rows.map(r => [r.n, r]));
+  const count = (k, one, many) => k + " " + (k === 1 ? one : many);
+  const items = [];
+
+  if (c.new.length) {
+    const tones = RV_TONES.map(t => [t, c.new.filter(n => now[n] && now[n].tone === t).length])
+      .filter(([, k]) => k);
+    items.push(count(c.new.length, "new review", "new reviews") + ": " + rvNums(c.new) + " — "
+      + rvAnd(tones.map(([t, k]) => k + " " + word(t))) + ".");
+  }
+  if (c.edited.length) {
+    items.push("Edited since " + since + ": " + rvAnd(c.edited.map(n => {
+      const a = before[n], b = now[n];
+      return n + (a && b && a.tone !== b.tone ? " (was " + word(a.tone) + ", now " + word(b.tone) + ")" : "");
+    })) + ".");
+  }
+  (c.gone || []).forEach(g => {
+    const ex = String(g.excerpt || "");
+    const cut = ex.length > 52 ? ex.slice(0, ex.lastIndexOf(" ", 52)) + "…" : ex;
+    const what = g.tone === "No text" ? "a star rating with no text"
+      : (/^[aeiou]/i.test(word(g.tone)) ? "an " : "a ") + word(g.tone) + " review";
+    items.push("No longer on Google: " + g.n + ", " + what
+      + (g.themes.length ? " on " + rvAnd(g.themes.map(t => label[t] || t)) : "")
+      + (cut ? " (“" + cut + "”)" : "") + ".");
+  });
+  if (c.reply_added.length || c.new.length) {
+    const fresh = c.new.filter(n => now[n] && now[n].owner_reply !== "No").length;
+    items.push("Owner replies: " + count(c.reply_added.length, "review", "reviews") + " that had none on "
+      + since + (c.reply_added.length === 1 ? " now has one" : " now have one")
+      + (c.new.length ? ", and " + fresh + " of the " + c.new.length + " new " + (c.new.length === 1 ? "one does"
+        : "ones do") : "") + ".");
+  }
+  if (c.recoded.length) {
+    items.push("Recoded on what this copy shows: " + rvAnd(c.recoded.map(n => {
+      const a = before[n], b = now[n];
+      if (!a || !b) return String(n);
+      const adds = b.themes.filter(t => !a.themes.includes(t)).map(t => label[t] || t);
+      const drops = a.themes.filter(t => !b.themes.includes(t)).map(t => label[t] || t);
+      const why = [adds.length ? "adds " + rvAnd(adds) : "", drops.length ? "drops " + rvAnd(drops) : "",
+        a.tone !== b.tone ? "was " + word(a.tone) + ", now " + word(b.tone) : ""].filter(Boolean);
+      return n + (why.length ? " (" + why.join("; ") + ")" : "");
+    })) + ".");
+  }
+  if (c.aged_out.length) items.push("Now more than 12 months old: " + rvNums(c.aged_out) + ".");
+  if (c.carried.length) {
+    const from = now[c.carried[0]] && now[c.carried[0]].carried_from;
+    items.push("Not in this copy: " + rvNums(c.carried) + ", carried from " + (rvDay(from) || since)
+      + " as coded then.");
+  }
+
+  const ul = document.getElementById("drchList");
+  ul.textContent = "";
+  items.forEach(t => ul.appendChild(elc("li", null, t)));
+  const keep = elc("li", null, "A review keeps its number from copy to copy: a new one takes the next "
+    + "number, and one Google no longer lists leaves its number unused.");
+  keep.style.color = "var(--muted)";
+  ul.appendChild(keep);
 }
 
 function rvBottom(R) {
@@ -1837,13 +1992,30 @@ function rvBottom(R) {
     + recent.label + " are negative, against " + rvPct(neg(prior)) + " in " + prior.label
     + " and " + rvPct(neg(old)) + " among reviews from " + old.label + ".");
 
+  // Against the copy before this one where there is one: a reply rate that
+  // was nil and is now most reviews has picked back up, which reading the
+  // three periods of one copy cannot tell from a rate that never fell. A few
+  // points under the oldest period is noise on two dozen reviews, not a fall.
+  const before = R.prev ? rep(R.prev.byP.recent) : null;
   const replyLead = rep(recent) === 0 ? "Public replies have stopped."
-    : rep(recent) < rep(old) ? "Public replies have fallen off." : "The owner is still replying.";
+    : before !== null && rep(recent) - before >= 0.25 ? "Public replies have picked back up."
+    : rep(recent) < rep(old) - 0.1 ? "Public replies have fallen off." : "The owner is still replying.";
+  // Replies posted since the last copy, so a rate restored by one catch-up
+  // batch does not read as a habit.
+  const ch = R.d.changes;
+  const fresh = ch ? new Set([...ch.reply_added, ...ch.new]) : null;
+  const yearYes = R.year.filter(r => r.owner_reply === "Yes");
+  const added = fresh ? yearYes.filter(r => fresh.has(r.n)).length : 0;
   items.push(replyLead + " The owner answered " + rvPct(rep(old)) + " of reviews from " + old.label
     + ", " + rvPct(rep(prior)) + " in " + prior.label + " and " + rvPct(rep(recent)) + " in "
-    + recent.label + ".");
+    + recent.label + "." + (added ? " " + added + " of the " + yearYes.length + " replies to the last "
+      + "12 months’ reviews were not there on " + rvDay(ch.since) + "." : ""));
 
-  const probs = R.themes.filter(t => t.kind === "problem").sort((a, b) => b.year - a.year).slice(0, 3);
+  // The three most-raised, and any tied with the third rather than whichever
+  // the sort happened to leave in front.
+  const ranked = R.themes.filter(t => t.kind === "problem" && t.year).sort((a, b) => b.year - a.year);
+  const cut = ranked.length > 2 ? ranked[2].year : 0;
+  const probs = ranked.filter((t, i) => i < 3 || t.year === cut);
   const negY = R.year.filter(r => r.tone === "Negative");
   const dep = R.themes.find(t => t.code === "P2");
   items.push("Most-raised problems this year: " + rvAnd(probs.map((t, i) =>
@@ -2090,16 +2262,27 @@ function rvEvery(R) {
   const col = rvColors();
   const key = { Negative: col.warm, Mixed: col.mid, Positive: col.cool };
   const label = Object.fromEntries(R.themes.map(t => [t.code, t.label]));
+  // What each row has had happen since the last copy, named under its number;
+  // a review new or edited since is also shaded.
+  const c = R.d.changes || null;
+  const tags = {};
+  if (c) [["new", "New"], ["edited", "Edited"], ["reply_added", "Reply added"], ["recoded", "Recoded"]]
+    .forEach(([k, t]) => (c[k] || []).forEach(n => (tags[n] = tags[n] || []).push(t)));
+  const shade = new Set(c ? [...c.new, ...c.edited] : []);
   document.getElementById("drallEyebrow").textContent = R.rows.length + " REVIEWS, NEWEST FIRST · "
-    + "REVIEWER NAMES AND UNIT NUMBERS LEFT OUT · STAFF CRITICISED BY NAME SHOWN BY ROLE";
-  document.getElementById("drallSum").textContent = "Show all " + R.rows.length + " reviews";
+    + "REVIEWER NAMES AND UNIT NUMBERS LEFT OUT · STAFF CRITICISED BY NAME SHOWN BY ROLE"
+    + (c ? " · SHADED: NEW OR EDITED SINCE " + rvDay(c.since).toUpperCase() : "");
+  document.getElementById("drallSum").textContent = "Show all " + R.rows.length + " reviews"
+    + (c && c.new.length ? " · " + c.new.length + " new since " + rvDay(c.since) : "");
   const tbl = elc("table", "dt");
   const hr = elc("tr");
   ["#", "On Google", "Tone", "Themes", "Owner reply", "What it says"].forEach(t => hr.appendChild(elc("th", null, t)));
   tbl.appendChild(hr);
   R.rows.forEach(r => {
-    const tr = elc("tr");
-    tr.appendChild(elc("td", "rv-num", String(r.n)));
+    const tr = elc("tr", shade.has(r.n) ? "rv-changed" : null);
+    const num = elc("td", "rv-num", String(r.n));
+    (tags[r.n] || []).forEach(t => num.appendChild(elc("span", "rv-tag", t)));
+    tr.appendChild(num);
     tr.appendChild(elc("td", null, r.shown));
     const tone = elc("td");
     tone.style.whiteSpace = "nowrap";

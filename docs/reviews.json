@@ -4,7 +4,7 @@
  "building": "The Landing",
  "address": "1395 22nd Street, San Francisco 94107",
  "source": "Google Maps review list, newest first, copied by hand",
- "copied": "2026-09-30",
+ "copied": "2026-10-19",
  "star_ratings": false,
  "periods": [
   {
@@ -15,13 +15,13 @@
   },
   {
    "key": "prior",
-   "label": "Oct 2025–Mar 2026",
+   "label": "Nov 2025–Apr 2026",
    "min": 6,
    "max": 11
   },
   {
    "key": "recent",
-   "label": "Apr–Sep 2026",
+   "label": "May–Oct 2026",
    "min": 0,
    "max": 5
   }
@@ -39,61 +39,96 @@
    "kind": "problem",
    "label": "Fees, price & value",
    "definition": "Charges outside the lease, package or utility charges, rent seen as poor value, management called greedy or money-first.",
-   "says": "Charges outside the lease until challenged (4), $20 package-locker late fees and “shady fees” (23), rent called “highway robbery” (12) and poor value at $6.5K for a two-bed (18, 10). Management is called greedy or money-first (3, 4, 15, 26)."
+   "says": "Charges outside the lease until challenged (4), package-locker charges for residents who are away (12), rent called “highway robbery” (12) and poor value at $6.5K for a two-bed (18, 10). Management is called greedy or money-first (3, 4, 15, 26)."
   },
   {
    "code": "P4",
    "kind": "problem",
    "label": "Staff conduct",
    "definition": "Staff described as rude, condescending, disorganized, unprofessional or incompetent; staff turnover.",
-   "says": "Staff described as rude, condescending, disorganized or unprofessional (3, 8, 15, 17, 20, 31) or incompetent (3, 4). Review 8 names a staff member as rude. Review 24 points to staff turnover."
+   "says": "Staff described as rude, condescending, disorganized or unprofessional (3, 8, 15, 17, 20, 31) or incompetent (3, 4, 55). Review 8 names a staff member as rude, and the owner's reply to review 14 answers concerns about interactions with the team. Reviews 22 and 24 point to staff turnover."
   },
   {
    "code": "P5",
    "kind": "problem",
    "label": "Building & amenities",
    "definition": "The gym, common areas, social events, alarms, the building's design or a fading community.",
-   "says": "A small, busy gym (10, 25), common areas less well kept and the monthly social events dropped (4), alarms sounding all day (11), and a long-time resident who “saw the life of it get drained away” (12). Review 24 blames the building's design."
+   "says": "A small, busy gym (10, 25), common areas less well kept and the monthly social events dropped (4), alarms sounding all day (11), the elevators and BBQ grills, according to the owner's reply (6), and a long-time resident who “saw the life of it get drained away” (12). Review 24 blames the building's design."
   },
   {
    "code": "P2",
    "kind": "problem",
    "label": "Deposits & move-out",
    "definition": "Deposits returned late or not at all, move-out charges such as cleaning or paint, a hard move-out, slow refunds.",
-   "says": "Deposits returned months late or not yet (17, 31), cleaning and repainting charges despite a professional clean (33), a difficult move-out (20), and a slow refund of a $1,000 application deposit (30)."
+   "says": "A refund of nearly $6,000 still unpaid nine months after a January move-out (54, 55), deposits returned months late or not yet (17, 31), cleaning and repainting charges despite a professional clean (33), a difficult move-out (20), and a slow refund of a $1,000 application deposit (30)."
   },
   {
    "code": "P6",
    "kind": "problem",
    "label": "Packages & mail",
    "definition": "Package lockers and their fees, lost mail, mail forwarding.",
-   "says": "Luxer package lockers and their late-pickup fees (23), and a mail room that loses mail and never forwarded any after move-out (12)."
+   "says": "A mail room that loses mail, package lockers that charge residents who are away, and no mail forwarded after move-out (12)."
   },
   {
    "code": "H1",
    "kind": "highlight",
    "label": "Helpful staff",
    "definition": "Praise for leasing, management, resident services or maintenance staff, by name or in general.",
-   "says": "Tours and the leasing process are praised again and again (16, 19, 22, 27, 32). Lina is named in reviews 19, 21, 22, 27 and 32. Others thank the community manager (16), resident services (21) and a staff member a vendor worked with (29)."
+   "says": "Tours and the leasing process are praised again and again (16, 19, 27, 32, 58). Lina is named in reviews 19, 21, 22, 27 and 32. Others thank the community manager (16, 58), resident services (21) and a staff member a vendor worked with (29)."
   },
   {
    "code": "H2",
    "kind": "highlight",
    "label": "Apartments & building",
    "definition": "The units, finishes, light, views, appliances, the building itself or its location.",
-   "says": "Light-filled units with East Bay views and modern finishes (27), good appliances in a newer building (25), new units (22) and “very good apartments” (13). Even critical reviews call the building nice (6, 20)."
+   "says": "Light-filled units with East Bay views and modern finishes (27), good appliances in a newer building (25), a building and units still well maintained after six years (57) and “very good apartments” (13). Even critical reviews call the building nice (6, 20)."
   },
   {
    "code": "H3",
    "kind": "highlight",
    "label": "Amenities & community",
    "definition": "Common areas, the gym, the conference room, package service, the community feel.",
-   "says": "The conference room by the gym (9), the amenities in general (13, 22) and a “great community” (22)."
+   "says": "The conference room by the gym (9) and the amenities in general (13)."
   }
  ],
  "reviews": [
   {
-   "n": 1,
+   "n": 54,
+   "shown": "a week ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "The Landing has made getting our security deposit back an absolute nightmare. We moved out in January 2026. It is October, and the nearly $6,000 refund they calculated is still unpaid, even though our lease says the refund was due within 21…",
+   "note": "Moved out in January 2026; the owner's reply says the account and the earlier refund checks are being reviewed"
+  },
+  {
+   "n": 55,
+   "shown": "a week ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P4",
+    "P2"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Literally never live here. To be more specific, they will steal your deposit and never give it back. Do not live at The Landing if you expect competent management or to get your…",
+   "note": "Same household as review 54, per the owner's replies, which mention refund checks that could not be deposited"
+  },
+  {
+   "n": 56,
    "shown": "a week ago",
    "months_ago": 0,
    "edited": false,
@@ -108,8 +143,77 @@
    "note": "Star rating only"
   },
   {
-   "n": 2,
+   "n": 57,
+   "shown": "a week ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "cut off",
+   "tone": "Positive",
+   "former_resident": true,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "H2"
+   ],
+   "owner_reply": "No",
+   "excerpt": "Lived there since 2020 and lived across 3 different units and really loved my time there. The property is beautiful and the building and units are very well maintained even after all these years. It's very dog friendly and the staff is very…",
+   "note": "Lived there from 2020, across three units; cut off as it turns to the staff"
+  },
+  {
+   "n": 22,
+   "shown": "Edited a week ago",
+   "months_ago": 0,
+   "edited": true,
+   "text": "cut off",
+   "tone": "Mixed",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": "Lina",
+   "themes": [
+    "P4",
+    "H1"
+   ],
+   "owner_reply": "Before edit",
+   "excerpt": "Updating my review: While Lina is an awesome member of the team. This place has gone through 3…",
+   "note": "Rewritten since 30 Sep, when it praised the leasing team; cut off after “gone through 3”, coded as turnover. Its reply answers the earlier version, in the words of the reply to review 21"
+  },
+  {
+   "n": 58,
    "shown": "2 weeks ago",
+   "months_ago": 0,
+   "edited": false,
+   "text": "full",
+   "tone": "Positive",
+   "former_resident": false,
+   "about_leasing": true,
+   "staff_praised": null,
+   "themes": [
+    "H1"
+   ],
+   "owner_reply": "Yes",
+   "excerpt": "Had a tour & was very impressed ! The community manager was super helpful. She was extremely knowledgable on the property and amenities. 10/10!",
+   "note": "Visitor on a tour"
+  },
+  {
+   "n": 11,
+   "shown": "Edited 2 weeks ago",
+   "months_ago": 0,
+   "edited": true,
+   "text": "cut off",
+   "tone": "Negative",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [
+    "P5"
+   ],
+   "owner_reply": "Before edit",
+   "excerpt": "Their alarms have been blasting all day. This is probably annoying 10,000 people in the area.",
+   "note": "Edited again since 30 Sep. The owner's reply, from a year ago, says no lease record was found for the reviewer"
+  },
+  {
+   "n": 1,
+   "shown": "3 weeks ago",
    "months_ago": 0,
    "edited": false,
    "text": "none",
@@ -118,14 +222,29 @@
    "about_leasing": false,
    "staff_praised": null,
    "themes": [],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": null,
-   "note": "Star rating only"
+   "note": "Star rating only; the owner's reply thanks them for a 5-star review"
+  },
+  {
+   "n": 2,
+   "shown": "a month ago",
+   "months_ago": 1,
+   "edited": false,
+   "text": "none",
+   "tone": "No text",
+   "former_resident": false,
+   "about_leasing": false,
+   "staff_praised": null,
+   "themes": [],
+   "owner_reply": "Yes",
+   "excerpt": null,
+   "note": "Star rating only; the owner's reply thanks them for a 4-star review"
   },
   {
    "n": 3,
-   "shown": "3 weeks ago",
-   "months_ago": 0,
+   "shown": "a month ago",
+   "months_ago": 1,
    "edited": false,
    "text": "full",
    "tone": "Negative",
@@ -137,14 +256,14 @@
     "P3",
     "P4"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "Greedy, incompetent, and condescending… when I was moving in I emailed, called, and had someone look for [the property manager] in her office but got no response… after leaving a negative review I get contacted by [the property manager] and not when I needed help",
    "note": "Staff name replaced with role"
   },
   {
    "n": 4,
-   "shown": "3 weeks ago",
-   "months_ago": 0,
+   "shown": "a month ago",
+   "months_ago": 1,
    "edited": false,
    "text": "full",
    "tone": "Negative",
@@ -156,7 +275,7 @@
     "P4",
     "P5"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "the new management is incompetent and greedy. The common areas aren't well kept, they got rid of the monthly social activities and charge random fees that aren't a part of the lease agreement until you confront them",
    "note": null
   },
@@ -171,14 +290,14 @@
    "about_leasing": false,
    "staff_praised": null,
    "themes": [],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": null,
-   "note": "Star rating only"
+   "note": "Star rating only; the owner's reply thanks them for a 4-star review"
   },
   {
    "n": 6,
-   "shown": "a month ago",
-   "months_ago": 1,
+   "shown": "2 months ago",
+   "months_ago": 2,
    "edited": false,
    "text": "cut off",
    "tone": "Mixed",
@@ -187,16 +306,17 @@
    "staff_praised": null,
    "themes": [
     "P1",
+    "P5",
     "H2"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "Quite a nice spot to live, I would rate higher but management has not responded to our 5 or so emails about lease renewal options / negotiation. It seems they respond to bad google reviews though!",
-   "note": "Current resident"
+   "note": "Current resident, since renewed. The owner's reply answers comments on the elevators, BBQ grills and common areas that the copy cuts off, so the building theme is taken from it"
   },
   {
    "n": 7,
-   "shown": "a month ago",
-   "months_ago": 1,
+   "shown": "2 months ago",
+   "months_ago": 2,
    "edited": false,
    "text": "none",
    "tone": "No text",
@@ -204,9 +324,9 @@
    "about_leasing": false,
    "staff_praised": null,
    "themes": [],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": null,
-   "note": "Star rating only"
+   "note": "Star rating only; the owner's reply apologises"
   },
   {
    "n": 8,
@@ -221,7 +341,7 @@
    "themes": [
     "P4"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "[staff member] is so rude and stingy",
    "note": "Staff name replaced with role; unit number removed"
   },
@@ -238,14 +358,14 @@
    "themes": [
     "H3"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "theres a conference room by the gym. took all my meetings here",
    "note": null
   },
   {
    "n": 10,
-   "shown": "2 months ago",
-   "months_ago": 2,
+   "shown": "3 months ago",
+   "months_ago": 3,
    "edited": false,
    "text": "full",
    "tone": "Negative",
@@ -256,31 +376,14 @@
     "P3",
     "P5"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "Not worth it - super small gym and nothing worth the price",
    "note": null
   },
   {
-   "n": 11,
-   "shown": "Edited 2 months ago",
-   "months_ago": 2,
-   "edited": true,
-   "text": "cut off",
-   "tone": "Negative",
-   "former_resident": false,
-   "about_leasing": false,
-   "staff_praised": null,
-   "themes": [
-    "P5"
-   ],
-   "owner_reply": "Before edit",
-   "excerpt": "Their alarms have been blasting all day. This is probably annoying 10,000 people in the area.",
-   "note": "Owner's reply says no lease record was found for the reviewer"
-  },
-  {
    "n": 12,
-   "shown": "Edited 2 months ago",
-   "months_ago": 2,
+   "shown": "Edited 3 months ago",
+   "months_ago": 3,
    "edited": true,
    "text": "full",
    "tone": "Negative",
@@ -299,8 +402,8 @@
   },
   {
    "n": 13,
-   "shown": "2 months ago",
-   "months_ago": 2,
+   "shown": "3 months ago",
+   "months_ago": 3,
    "edited": false,
    "text": "full",
    "tone": "Positive",
@@ -311,14 +414,14 @@
     "H2",
     "H3"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "Very good apartments and ammenities",
    "note": null
   },
   {
    "n": 14,
-   "shown": "3 months ago",
-   "months_ago": 3,
+   "shown": "4 months ago",
+   "months_ago": 4,
    "edited": false,
    "text": "cut off",
    "tone": "Negative",
@@ -326,11 +429,12 @@
    "about_leasing": false,
    "staff_praised": null,
    "themes": [
-    "P1"
+    "P1",
+    "P4"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "The new management SUCKS. Their website, email, and phone are run by AI. No one ever gets back to you. They're never in the office",
-   "note": "Moved out in May 2026"
+   "note": "Moved out in May 2026. The owner's reply answers concerns about interactions with the team, so the staff theme is taken from it"
   },
   {
    "n": 15,
@@ -346,7 +450,7 @@
     "P3",
     "P4"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "Rude, unprofessional, and only concerned with making money.",
    "note": null
   },
@@ -363,7 +467,7 @@
    "themes": [
     "H1"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "The leasing manager was incredibly welcoming. I also got to meet Latiffia… she went above and beyond to help me and really made my day. Great team!",
    "note": "Visitor on a tour"
   },
@@ -382,14 +486,14 @@
     "P4",
     "P2"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "It's been 3 months since we've moved out and no sign of our deposit check. We have contacted building management repeatedly with zero response. Have never experienced unprofessionalism to this degree",
    "note": null
   },
   {
    "n": 18,
-   "shown": "6 months ago",
-   "months_ago": 6,
+   "shown": "7 months ago",
+   "months_ago": 7,
    "edited": false,
    "text": "full",
    "tone": "Negative",
@@ -400,14 +504,14 @@
     "P1",
     "P3"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "doesn't reply to emails. extremely poor customer service, especially when you consider rental for a 2 bedroom apartment is 6.5K per month.",
    "note": null
   },
   {
    "n": 19,
-   "shown": "6 months ago",
-   "months_ago": 6,
+   "shown": "7 months ago",
+   "months_ago": 7,
    "edited": false,
    "text": "full",
    "tone": "Positive",
@@ -417,14 +521,14 @@
    "themes": [
     "H1"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "Amazing time at The Landing, Lina in particular was incredibly helpful throughout the entire process.",
    "note": null
   },
   {
    "n": 20,
-   "shown": "6 months ago",
-   "months_ago": 6,
+   "shown": "7 months ago",
+   "months_ago": 7,
    "edited": false,
    "text": "full",
    "tone": "Mixed",
@@ -436,14 +540,14 @@
     "P2",
     "H2"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "The building is nice overall but management was not good - rude and disorganized… Move out process was also very difficult.",
    "note": null
   },
   {
    "n": 21,
-   "shown": "7 months ago",
-   "months_ago": 7,
+   "shown": "8 months ago",
+   "months_ago": 8,
    "edited": false,
    "text": "full",
    "tone": "Positive",
@@ -453,51 +557,14 @@
    "themes": [
     "H1"
    ],
-   "owner_reply": "No",
+   "owner_reply": "Yes",
    "excerpt": "thank the resident service department for helping me locate a missing package… Thank you, Lina for your support.",
    "note": null
   },
   {
-   "n": 22,
-   "shown": "7 months ago",
-   "months_ago": 7,
-   "edited": false,
-   "text": "full",
-   "tone": "Positive",
-   "former_resident": false,
-   "about_leasing": true,
-   "staff_praised": "Lina",
-   "themes": [
-    "H1",
-    "H2",
-    "H3"
-   ],
-   "owner_reply": "No",
-   "excerpt": "Lina and the leasing and management team are the best! Top notch service… this one has a great community, new units, and amenities.",
-   "note": null
-  },
-  {
-   "n": 23,
-   "shown": "7 months ago",
-   "months_ago": 7,
-   "edited": false,
-   "text": "full",
-   "tone": "Negative",
-   "former_resident": false,
-   "about_leasing": false,
-   "staff_praised": null,
-   "themes": [
-    "P3",
-    "P6"
-   ],
-   "owner_reply": "No",
-   "excerpt": "Absolutely trash move with LUXER to manage packaging. $20 for late pick up for a package during holidays is insane… absurd amount of shady fees.",
-   "note": null
-  },
-  {
    "n": 24,
-   "shown": "Edited 7 months ago",
-   "months_ago": 7,
+   "shown": "Edited 8 months ago",
+   "months_ago": 8,
    "edited": true,
    "text": "cut off",
    "tone": "Mixed",
@@ -514,8 +581,8 @@
   },
   {
    "n": 25,
-   "shown": "8 months ago",
-   "months_ago": 8,
+   "shown": "9 months ago",
+   "months_ago": 9,
    "edited": false,
    "text": "cut off",
    "tone": "Mixed",
@@ -532,8 +599,8 @@
   },
   {
    "n": 26,
-   "shown": "8 months ago",
-   "months_ago": 8,
+   "shown": "9 months ago",
+   "months_ago": 9,
    "edited": false,
    "text": "cut off",
    "tone": "Negative",
@@ -550,8 +617,8 @@
   },
   {
    "n": 27,
-   "shown": "9 months ago",
-   "months_ago": 9,
+   "shown": "10 months ago",
+   "months_ago": 10,
    "edited": false,
    "text": "full",
    "tone": "Positive",
@@ -583,8 +650,8 @@
   },
   {
    "n": 29,
-   "shown": "10 months ago",
-   "months_ago": 10,
+   "shown": "11 months ago",
+   "months_ago": 11,
    "edited": false,
    "text": "cut off",
    "tone": "Positive",
@@ -600,8 +667,8 @@
   },
   {
    "n": 30,
-   "shown": "10 months ago",
-   "months_ago": 10,
+   "shown": "11 months ago",
+   "months_ago": 11,
    "edited": false,
    "text": "cut off",
    "tone": "Negative",
@@ -617,8 +684,8 @@
   },
   {
    "n": 31,
-   "shown": "10 months ago",
-   "months_ago": 10,
+   "shown": "11 months ago",
+   "months_ago": 11,
    "edited": false,
    "text": "cut off",
    "tone": "Negative",
@@ -636,8 +703,8 @@
   },
   {
    "n": 32,
-   "shown": "10 months ago",
-   "months_ago": 10,
+   "shown": "11 months ago",
+   "months_ago": 11,
    "edited": false,
    "text": "cut off",
    "tone": "Positive",
@@ -653,8 +720,8 @@
   },
   {
    "n": 33,
-   "shown": "11 months ago",
-   "months_ago": 11,
+   "shown": "a year ago",
+   "months_ago": 12,
    "edited": false,
    "text": "full",
    "tone": "Negative",
@@ -749,7 +816,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Great Service",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 39,
@@ -766,7 +834,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "The current management at The Landing has taken the baton and run with the…",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 40,
@@ -781,7 +850,8 @@
    "themes": [],
    "owner_reply": "Yes",
    "excerpt": null,
-   "note": "Star rating only; the owner's reply thanks them for a 5-star review"
+   "note": "Star rating only; the owner's reply thanks them for a 5-star review",
+   "carried_from": "2026-09-30"
   },
   {
    "n": 41,
@@ -799,7 +869,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Nicholas and the team are doing an amazing job with livening up the community here at The Landing.",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 42,
@@ -816,7 +887,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Easily the nicest apartment I've lived in. Top of the line appliances, 10+ ft ceilings, spectacular view.",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 43,
@@ -834,7 +906,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Nice ambiance, close to dogpatch, clean.",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 44,
@@ -849,7 +922,8 @@
    "themes": [],
    "owner_reply": "Yes",
    "excerpt": null,
-   "note": "Star rating only; the owner's reply apologises"
+   "note": "Star rating only; the owner's reply apologises",
+   "carried_from": "2026-09-30"
   },
   {
    "n": 45,
@@ -866,7 +940,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "I moved in right as the management changed and have had an incredible experience with the new management. They are extremely helpful, someone is always here even on weekends",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 46,
@@ -884,7 +959,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "New management is not better than the old one. Poor communication during the management change. Move out experience is terrible… Wall paint charge is overpriced",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 47,
@@ -901,7 +977,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Overall has been a nice experience. Major flaw is the utilities… we have been charged anywhere from $80-$175 for WATER ALONE on some months.",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 48,
@@ -918,7 +995,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Marissa was awesome!! She explained everything in the showing and process.",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 49,
@@ -935,7 +1013,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Do yourself a favor and avoid this place at all costs! I had a terrible experience with this apartment complex. They didn't return my…",
-   "note": "Deposit theme and move-out taken from the owner's reply, which dates the move-out before the current management"
+   "note": "Deposit theme and move-out taken from the owner's reply, which dates the move-out before the current management",
+   "carried_from": "2026-09-30"
   },
   {
    "n": 50,
@@ -953,7 +1032,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "It's stupidly overpriced and poorly designed. The building has like 0 signs… The game room is terrible for hosting",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 51,
@@ -970,7 +1050,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Great common area spaces and great for hosting. Gym is well equipped. Package service is great… Apartment itself was pretty average.",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 52,
@@ -988,7 +1069,8 @@
    ],
    "owner_reply": "Yes",
    "excerpt": "Do not rent here. We moved in thinking it was going to be a great; fun amenities, nice people, friendly staff etc... It was the opposite.",
-   "note": null
+   "note": null,
+   "carried_from": "2026-09-30"
   },
   {
    "n": 53,
@@ -1003,71 +1085,713 @@
    "themes": [],
    "owner_reply": "Yes",
    "excerpt": null,
-   "note": "Star rating only; the owner's reply notes it had no text"
+   "note": "Star rating only; the owner's reply notes it had no text",
+   "carried_from": "2026-09-30"
   }
  ],
  "watch": [
   "Review 26 (about Jan 2026) calls the building's practices “illegal, shady, predatory”. The owner's reply ties it to a lease buy-out clause.",
-  "Review 12 praised the building a year ago (the owner's reply thanks them for it) and has since been edited to a negative review."
+  "Review 12 praised the building a year ago (the owner's reply thanks them for it) and has since been edited to a negative review.",
+  "Reviews 54 and 55 are one household's account of one unpaid deposit (the owner's replies say so), so that deposit counts twice in the deposit and former-resident figures."
  ],
  "assessment": {
   "strengths": [
    {
     "theme": "H1",
     "lead": "Leasing and tours",
-    "finding": "Tours and the leasing process draw more praise than anything else here (16, 19, 22, 27, 32), and Lina is named again and again (19, 21, 22, 27, 32).",
+    "finding": "Tours and the leasing process draw more praise than anything else here (16, 19, 27, 32, 58), and Lina is named again and again (19, 21, 22, 27, 32).",
     "do": "Make the way Lina runs a tour the standard for the whole team, and carry that attention past move-in, which is where the reviews turn."
+   },
+   {
+    "metric": "replies",
+    "lead": "Public replies to reviews",
+    "finding": "The owner has caught up: on 30 Sep no review from Apr–Sep 2026 had a public reply, and most of them now do, every one posted in the two weeks before this copy. The replies name the new property manager and offer to talk directly (3, 6, 14, 17).",
+    "do": "Keep replying within a couple of days of each review rather than in catch-up batches, and answer what the review says now: review 22 has been rewritten as a complaint, and its reply still thanks it for a kind review about a package, in the words of the reply to review 21."
    },
    {
     "theme": "H2",
     "lead": "The apartments themselves",
-    "finding": "Light, East Bay views, modern finishes and appliances are praised (13, 22, 25, 27), and even critical reviewers call the building nice (6, 20). The complaints are about service, not the product.",
+    "finding": "Light, East Bay views, modern finishes and appliances are praised (13, 25, 27), a resident of three units since 2020 says the building is still well maintained (57), and even critical reviewers call the building nice (6, 20). The complaints are about service, not the product.",
     "do": "Lead tours and marketing with the views, light and finishes, and close the service gaps that make residents say it isn't worth the price (10, 18)."
    },
    {
     "theme": "H3",
     "lead": "Amenities and community spaces",
-    "finding": "Residents use and like the conference room by the gym (9), the amenities in general (13, 22) and the community feel (22).",
+    "finding": "Residents use and like the conference room by the gym (9) and the amenities in general (13). A year ago reviewers also praised the community and its common spaces (41, 51).",
     "do": "Promote the conference room to residents who work from home, and bring back the monthly social events one reviewer says were dropped (4)."
    }
   ],
   "improvements": [
    {
-    "theme": "P1",
-    "lead": "Responsiveness",
-    "finding": "The most common complaint: emails, calls and office visits that go unanswered, including a renewal negotiation after five emails (6), a deposit (17) and a final lease a week before move-in (3). One reviewer says the website, email and phone are run by AI and no one gets back (14).",
-    "do": "Set a response standard, such as every email and call answered within one business day; check that questions the AI assistant can't answer reach a person; and send renewal questions straight to leasing, since an unanswered renewal is revenue at risk."
-   },
-   {
-    "metric": "replies",
-    "lead": "Public replies to reviews",
-    "finding": "Public replies stopped around January 2026, and two reviewers say management reached out privately only after a bad review (3, 6), which reads as caring about the rating rather than the resident.",
-    "do": "Reply publicly to every review, newest first and within a couple of days, answering what the review actually says, and follow up privately as well, not instead."
-   },
-   {
     "theme": "P2",
     "former": true,
     "lead": "Move-out and deposits",
-    "finding": "Deposits returned months late or not yet (17, 31), cleaning and repaint charges despite a professional clean (33), and a hard move-out (20). These come from people who have already left, and their reviews stay up.",
-    "do": "Audit the process against California's 21-day deadline for returning a deposit or an itemized statement (Civil Code §1950.5), offer a walkthrough before move-out so charges are not a surprise, and pay refunds by ACH, as the owner's reply to review 31 already promised."
-   },
-   {
-    "theme": "P3",
-    "lead": "Fees and value",
-    "finding": "Charges outside the lease until challenged (4), $20 package-locker late fees and “shady fees” (23), and rent seen as poor value for the service (10, 12, 18). Greedy is the word several reviewers reach for (3, 4, 26).",
-    "do": "Give every resident a one-page fee schedule at signing, audit the charges reviewers say were not in the lease, and lengthen or waive the package-locker late-fee window around holidays."
+    "finding": "A household that moved out in January says a refund of nearly $6,000 was still unpaid in October, past the 21 days its lease allows, after refund checks it could not deposit (54, 55). Earlier reviews describe deposits returned months late (17, 31), cleaning and repaint charges despite a professional clean (33) and a hard move-out (20). These come from people who have already left, and their reviews stay up.",
+    "do": "Settle the refund in reviews 54 and 55 first, which the owner's replies say is under review; then audit move-out against California's 21-day deadline for returning a deposit or an itemized statement (Civil Code §1950.5), offer a walkthrough before move-out so charges are not a surprise, and pay refunds by ACH, as the owner's reply to review 31 already promised."
    },
    {
     "theme": "P4",
     "lead": "Staff conduct",
-    "finding": "Staff described as rude, condescending, disorganized or unprofessional (3, 8, 15, 17, 20, 31), with staff turnover noted (24). The same building earns praise for its leasing team, so the gap is consistency.",
+    "finding": "Staff described as rude, condescending, disorganized or unprofessional (3, 8, 15, 17, 20, 31), management called incompetent (3, 4, 55), and turnover noted (22, 24). The same building earns praise for its leasing team, so the gap is consistency.",
     "do": "Coach the on-site team on resident service, follow up on review 8 internally, and hand residents over properly when staff change."
+   },
+   {
+    "theme": "P1",
+    "lead": "Responsiveness",
+    "finding": "Emails, calls and office visits that go unanswered, including a renewal negotiation after five emails (6), a deposit (17) and a final lease a week before move-in (3). One reviewer says the website, email and phone are run by AI and no one gets back (14).",
+    "do": "Set a response standard, such as every email and call answered within one business day; check that questions the AI assistant can't answer reach a person; and send renewal questions straight to leasing, since an unanswered renewal is revenue at risk."
+   },
+   {
+    "theme": "P3",
+    "lead": "Fees and value",
+    "finding": "Charges outside the lease until challenged (4), package lockers that charge residents who are away (12), and rent seen as poor value for the service (10, 12, 18). Greedy is the word several reviewers reach for (3, 4, 26).",
+    "do": "Give every resident a one-page fee schedule at signing, audit the charges reviewers say were not in the lease, and give residents who are away longer to collect a package before the lockers charge."
    },
    {
     "theme": "P5",
     "lead": "Building and community upkeep",
-    "finding": "A small, busy gym (10, 25), common areas less well kept and social events dropped (4), and alarms sounding all day (11).",
-    "do": "Bring back the monthly events, look at the gym at peak hours, and give residents advance notice of alarm tests."
+    "finding": "A small, busy gym (10, 25), common areas less well kept and social events dropped (4), alarms sounding all day (11), and the elevators, BBQ grills and common areas a current resident raised, according to the owner's reply (6).",
+    "do": "Bring back the monthly events, look at the gym at peak hours, give residents advance notice of alarm tests, and follow up on the elevators and BBQ grills raised in review 6."
+   }
+  ]
+ },
+ "changes": {
+  "since": "2026-09-30",
+  "new": [
+   54,
+   55,
+   56,
+   57,
+   58
+  ],
+  "gone": [
+   {
+    "n": 23,
+    "shown": "7 months ago",
+    "tone": "Negative",
+    "themes": [
+     "P3",
+     "P6"
+    ],
+    "excerpt": "Absolutely trash move with LUXER to manage packaging. $20 for late pick up for a package during holidays is insane… absurd amount of shady fees."
+   }
+  ],
+  "edited": [
+   11,
+   22
+  ],
+  "reply_added": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22
+  ],
+  "recoded": [
+   6,
+   14
+  ],
+  "aged_out": [
+   33
+  ],
+  "carried": [
+   38,
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45,
+   46,
+   47,
+   48,
+   49,
+   50,
+   51,
+   52,
+   53
+  ]
+ },
+ "previous": {
+  "copied": "2026-09-30",
+  "periods": [
+   {
+    "key": "old",
+    "label": "12+ months ago",
+    "min": 12,
+    "max": null
+   },
+   {
+    "key": "prior",
+    "label": "Oct 2025–Mar 2026",
+    "min": 6,
+    "max": 11
+   },
+   {
+    "key": "recent",
+    "label": "Apr–Sep 2026",
+    "min": 0,
+    "max": 5
+   }
+  ],
+  "reviews": [
+   {
+    "n": 1,
+    "months_ago": 0,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 2,
+    "months_ago": 0,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 3,
+    "months_ago": 0,
+    "tone": "Negative",
+    "themes": [
+     "P1",
+     "P3",
+     "P4"
+    ],
+    "owner_reply": "No",
+    "former_resident": true
+   },
+   {
+    "n": 4,
+    "months_ago": 0,
+    "tone": "Negative",
+    "themes": [
+     "P3",
+     "P4",
+     "P5"
+    ],
+    "owner_reply": "No",
+    "former_resident": true
+   },
+   {
+    "n": 5,
+    "months_ago": 1,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 6,
+    "months_ago": 1,
+    "tone": "Mixed",
+    "themes": [
+     "P1",
+     "H2"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 7,
+    "months_ago": 1,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 8,
+    "months_ago": 2,
+    "tone": "Negative",
+    "themes": [
+     "P4"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 9,
+    "months_ago": 2,
+    "tone": "Positive",
+    "themes": [
+     "H3"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 10,
+    "months_ago": 2,
+    "tone": "Negative",
+    "themes": [
+     "P3",
+     "P5"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 11,
+    "months_ago": 2,
+    "tone": "Negative",
+    "themes": [
+     "P5"
+    ],
+    "owner_reply": "Before edit",
+    "former_resident": false
+   },
+   {
+    "n": 12,
+    "months_ago": 2,
+    "tone": "Negative",
+    "themes": [
+     "P1",
+     "P3",
+     "P5",
+     "P6"
+    ],
+    "owner_reply": "Before edit",
+    "former_resident": true
+   },
+   {
+    "n": 13,
+    "months_ago": 2,
+    "tone": "Positive",
+    "themes": [
+     "H2",
+     "H3"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 14,
+    "months_ago": 3,
+    "tone": "Negative",
+    "themes": [
+     "P1"
+    ],
+    "owner_reply": "No",
+    "former_resident": true
+   },
+   {
+    "n": 15,
+    "months_ago": 4,
+    "tone": "Negative",
+    "themes": [
+     "P3",
+     "P4"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 16,
+    "months_ago": 4,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 17,
+    "months_ago": 5,
+    "tone": "Negative",
+    "themes": [
+     "P1",
+     "P4",
+     "P2"
+    ],
+    "owner_reply": "No",
+    "former_resident": true
+   },
+   {
+    "n": 18,
+    "months_ago": 6,
+    "tone": "Negative",
+    "themes": [
+     "P1",
+     "P3"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 19,
+    "months_ago": 6,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 20,
+    "months_ago": 6,
+    "tone": "Mixed",
+    "themes": [
+     "P4",
+     "P2",
+     "H2"
+    ],
+    "owner_reply": "No",
+    "former_resident": true
+   },
+   {
+    "n": 21,
+    "months_ago": 7,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 22,
+    "months_ago": 7,
+    "tone": "Positive",
+    "themes": [
+     "H1",
+     "H2",
+     "H3"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 23,
+    "months_ago": 7,
+    "tone": "Negative",
+    "themes": [
+     "P3",
+     "P6"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 24,
+    "months_ago": 7,
+    "tone": "Mixed",
+    "themes": [
+     "P4",
+     "P5"
+    ],
+    "owner_reply": "Before edit",
+    "former_resident": false
+   },
+   {
+    "n": 25,
+    "months_ago": 8,
+    "tone": "Mixed",
+    "themes": [
+     "P5",
+     "H2"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": true
+   },
+   {
+    "n": 26,
+    "months_ago": 8,
+    "tone": "Negative",
+    "themes": [
+     "P1",
+     "P3"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": true
+   },
+   {
+    "n": 27,
+    "months_ago": 9,
+    "tone": "Positive",
+    "themes": [
+     "H1",
+     "H2"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 28,
+    "months_ago": 10,
+    "tone": "Unclear",
+    "themes": [],
+    "owner_reply": "No",
+    "former_resident": true
+   },
+   {
+    "n": 29,
+    "months_ago": 10,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 30,
+    "months_ago": 10,
+    "tone": "Negative",
+    "themes": [
+     "P2"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 31,
+    "months_ago": 10,
+    "tone": "Negative",
+    "themes": [
+     "P1",
+     "P4",
+     "P2"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": true
+   },
+   {
+    "n": 32,
+    "months_ago": 10,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 33,
+    "months_ago": 11,
+    "tone": "Negative",
+    "themes": [
+     "P2"
+    ],
+    "owner_reply": "No",
+    "former_resident": true
+   },
+   {
+    "n": 34,
+    "months_ago": 12,
+    "tone": "Mixed",
+    "themes": [
+     "P3",
+     "H1",
+     "H2"
+    ],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 35,
+    "months_ago": 12,
+    "tone": "Unclear",
+    "themes": [],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 36,
+    "months_ago": 12,
+    "tone": "Negative",
+    "themes": [
+     "P4"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 37,
+    "months_ago": 12,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "No",
+    "former_resident": false
+   },
+   {
+    "n": 38,
+    "months_ago": 12,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 39,
+    "months_ago": 12,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 40,
+    "months_ago": 12,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 41,
+    "months_ago": 12,
+    "tone": "Positive",
+    "themes": [
+     "H1",
+     "H3"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 42,
+    "months_ago": 12,
+    "tone": "Positive",
+    "themes": [
+     "H2"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 43,
+    "months_ago": 12,
+    "tone": "Positive",
+    "themes": [
+     "H2",
+     "H3"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 44,
+    "months_ago": 12,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 45,
+    "months_ago": 12,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 46,
+    "months_ago": 12,
+    "tone": "Negative",
+    "themes": [
+     "P1",
+     "P2"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": true
+   },
+   {
+    "n": 47,
+    "months_ago": 12,
+    "tone": "Mixed",
+    "themes": [
+     "P3"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 48,
+    "months_ago": 12,
+    "tone": "Positive",
+    "themes": [
+     "H1"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 49,
+    "months_ago": 12,
+    "tone": "Negative",
+    "themes": [
+     "P2"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": true
+   },
+   {
+    "n": 50,
+    "months_ago": 12,
+    "tone": "Negative",
+    "themes": [
+     "P3",
+     "P5"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 51,
+    "months_ago": 12,
+    "tone": "Mixed",
+    "themes": [
+     "H3"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": true
+   },
+   {
+    "n": 52,
+    "months_ago": 12,
+    "tone": "Negative",
+    "themes": [
+     "P4",
+     "P5"
+    ],
+    "owner_reply": "Yes",
+    "former_resident": false
+   },
+   {
+    "n": 53,
+    "months_ago": 12,
+    "tone": "No text",
+    "themes": [],
+    "owner_reply": "Yes",
+    "former_resident": false
    }
   ]
  }
