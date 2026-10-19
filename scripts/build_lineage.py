@@ -750,10 +750,12 @@ DRIVE_FLOWS = {
         "open_item": "D1",
     },
     # Keyed on the folder report_map.json names, which since A11 (2026-09-21)
-    # is Daily Leasing Reports: the tracker's own folder folded into it. Under
-    # the old "Renewal Tracker" key this declaration matched nothing, so the
-    # flow showed as an undocumented "waiting" row and the Landing tab's feeds
-    # card found no renewal_tracker flow to date the tracker by.
+    # is Daily Leasing Reports. (Drive still has a top-level "Renewal Tracker"
+    # folder the deployed filer keeps filing into -- A16 -- and the rescue sweep
+    # reads it by name_patterns.) Under the old "Renewal Tracker" key this
+    # declaration matched nothing, so the flow showed as an undocumented
+    # "waiting" row and the Landing tab's feeds card found no renewal_tracker
+    # flow to date the tracker by. run_checks now refuses a key like that.
     ("Daily Leasing Reports", "renewal_tracker"): {
         "id": "renewal_tracker",
         "example": '<date> Landing 2025 Renewal Tracker - Full (42).xlsx',
@@ -1552,6 +1554,19 @@ def run_checks(flows):
         if e.get("parser") and not (SCRIPTS / (e["parser"] + ".py")).exists():
             problems.append(f"report_map names parser '{e['parser']}', "
                             f"which is not in scripts/")
+
+    # ...and every declaration must still name a report_map entry. The check
+    # above only looks one way, so a declaration whose folder was renamed
+    # matched nothing and said nothing: the renewal tracker's sat under its
+    # pre-A11 "Renewal Tracker" key for four weeks, its flow showing as an
+    # undocumented "waiting" row, until a reviewer noticed. Refused, like a card
+    # anchor that points at nothing.
+    mapped = {(e.get("drive_folder"), e.get("report_type"))
+              for e in cfg.get("subfolders") or []}
+    for key in DRIVE_FLOWS:
+        if key not in mapped:
+            problems.append(f"DRIVE_FLOWS declares {key!r}, which matches no "
+                            f"report_map.json entry — renamed folder or report type?")
 
     return problems, warnings
 

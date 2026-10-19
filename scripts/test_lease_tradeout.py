@@ -366,6 +366,65 @@ def main():
           sorted(p.name for p in (run / "data").iterdir()) == ["the-landing"]
           if (run / "data").exists() else False)
 
+    print("\n13. two exports: the better reading wins, whatever order they arrive in")
+    # Once the router reaches the store, process_manifest's filename order feeds
+    # it: the filer's "2026-10-26 …" prefix sorts a NEWER export ahead of the
+    # older hand-dropped "LeaseTradeoutReport-Landing.XLS", every run. "Last
+    # file wins" then put the old arrival, filename and rents back on top.
+    run2 = _pl.Path(tmp) / "run2"
+    shutil.copytree(run / "config", run2 / "config")
+    d2 = run2 / "_downloads" / "lease_tradeout"
+    d2.mkdir(parents=True)
+    old = as_xls(build(str(d2 / "LeaseTradeoutReport-Landing.xlsx"),
+                       [lease_row("102", "7/8/26", 4226, 3131)],
+                       period="From: 8/1/24 To: 9/16/26"))
+    new = as_xls(build(str(d2 / "2026-10-26 LeaseTradeoutReport-Landing.xlsx"),
+                       [lease_row("102", "7/8/26", 4300, 3131),
+                        lease_row("104", "10/2/26", 5000, 4000)],
+                       period="From: 8/1/24 To: 10/25/26"))
+    _json.dump([{"name": os.path.basename(f), "path": f, "report_type": "lease_tradeout",
+                 "parser": "parse_lease_tradeout", "landed_at": t}
+                for f, t in ((old, "2026-09-17T22:34:37.906Z"), (new, "2026-10-26T18:00:00Z"))],
+               open(run2 / "_downloads" / "manifest.json", "w"))
+    cwd, data, env = os.getcwd(), bm.DATA, os.environ.get("PARSE_CACHE")
+    os.environ["PARSE_CACHE"] = "off"
+    try:
+        os.chdir(run2)
+        bm.DATA = _pl.Path("data")
+        bm.process_manifest()
+        held = _json.load(open(run2 / "data" / "the-landing" / "lease_tradeout.json"))
+    finally:
+        os.chdir(cwd)
+        bm.DATA = data
+        if env is None:
+            os.environ.pop("PARSE_CACHE", None)
+        else:
+            os.environ["PARSE_CACHE"] = env
+    by_unit = {l["unit"]: l for l in held["leases"]}
+    check("the newer export's arrival and file head the store, though it was processed first",
+          held.get("landed_at") == "2026-10-26T18:00:00Z"
+          and held.get("source_file") == "2026-10-26 LeaseTradeoutReport-Landing.XLS",
+          f"{held.get('landed_at')} {held.get('source_file')}")
+    check("a lease both exports carry keeps the newer export's rent",
+          by_unit.get("102", {}).get("eff_rent") == 4300, by_unit.get("102"))
+    check("both files are on record, and the window runs to the newer end",
+          len(held["files"]) == 2 and held.get("as_of") == "2026-10-25", held.get("as_of"))
+
+    # And directly: the same two parses stored in either order give one store.
+    a = parse(old); a["source_file"] = os.path.basename(old); a["landed_at"] = "2026-09-17T22:34:37.906Z"
+    b = parse(new); b["source_file"] = os.path.basename(new); b["landed_at"] = "2026-10-26T18:00:00Z"
+    stores = []
+    for order in ((a, b), (b, a)):
+        bm.DATA = _pl.Path(tmp) / "order" / str(len(stores))
+        try:
+            for one in order:
+                bm.store_lease_tradeout({"slug": "t", "name": "T"}, one)
+            stores.append(_json.load(open(bm.DATA / "t" / "lease_tradeout.json")))
+        finally:
+            bm.DATA = data
+    check("storing the two exports in either order gives the same store",
+          stores[0] == stores[1])
+
     shutil.rmtree(tmp, ignore_errors=True)
     print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
     return 1 if FAIL else 0
