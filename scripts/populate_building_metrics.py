@@ -69,7 +69,8 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from populate_scorecard import (OUT, AR_FROM_EXPORT, classify,  # noqa: E402
-                                keep_workbook_status, recompute)
+                                keep_workbook_status, recompute,
+                                restore_workbook_status)
 
 # KPIs this export owns outright, even where another feed has filled the cell:
 # its Delinquency Rate is the outstanding-balance figure (owner, 2026-09-29,
@@ -99,10 +100,34 @@ RESPONSE_UNIT = "days"
 
 # The export is a snapshot taken on the date in the filename; the rate KPIs in
 # it (trade-out, closing ratio, renewal rate) are on a trailing ONE month basis
-# from that date, per the owner (2026-08-20). Note the scorecard's bands for
-# those KPIs are written for a trailing THREE month basis, so a volatile month
-# swings the grade more than the band's authors assumed.
+# from that date, per the owner (2026-08-20). The ranges sheet wrote the bands
+# for those KPIs on a trailing THREE month basis (open item B6). Trade-out %
+# left this export for the Yardi tradeout report and is graded on three months;
+# for the two still read from here the owner's call (2026-10-19, closing B6) is
+# that they ARE trailing-one-month measures, on the same cutoffs. So their
+# published definition says so, with the sheet's own wording kept in
+# "how_workbook" -- the treatment CONCESSION_HOW and CONTROLLABLE_HOW get.
 EXPORT_BASIS = "snapshot on the filename date; rate KPIs trailing 1 month from it"
+T1_HOW = {
+    "Closing Ratio": "Signed leases / tours attended, trailing 1 month",
+    "# of Renewals": ("Renewals signed / lease expirations, trailing 1 month "
+                      "(renewal conversion rate)"),
+}
+
+
+def restate_t1_how(thresholds):
+    """Name the trailing month on the two bands this export grades on one.
+
+    Idempotent, and the sheet's wording is written to how_workbook once, so a
+    second run does not record the restated text as the workbook's."""
+    moved = []
+    for kpi, how in T1_HOW.items():
+        t = thresholds.get(kpi)
+        if t and t.get("how") != how:
+            t.setdefault("how_workbook", t.get("how"))
+            t["how"] = how
+            moved.append(kpi)
+    return moved
 
 # Cells that carry a figure but no status. Either the band cannot apply to a
 # count triple, or the basis behind the number is not yet confirmed.
@@ -112,12 +137,17 @@ VALUE_ONLY = {KPI_TLA, KPI_RESPONSE}
 # stabilised bands would mark it below target for not having opened yet.
 LEASEUP_OCCUPANCY_UNDER = 50.0
 
-# In lease-up, only the occupancy- and rent-derived cells are left ungraded:
-# their bands assume an operating asset, so an empty building scores red for not
-# having opened. Automation and response-time KPIs are about conversation
-# handling and grade the same whether the building is full or empty.
+# In lease-up, only the occupancy-, rent- and AR-derived cells are left
+# ungraded: their bands assume an operating asset, so an empty building scores
+# red for not having opened. Automation and response-time KPIs are about
+# conversation handling and grade the same whether the building is full or empty.
+#
+# Total Delinquency joined on 2026-10-19 (B8). A month's AR over a handful of
+# first residents says nothing about collections at a building that has not
+# opened, in either direction: 335 Third read 0.0% and exceeding on its first
+# export, then 41.4% and below four weeks later, off the same few units.
 LEASEUP_UNGRADED = {"Leased %", "Trade-out %", "Closing Ratio",
-                    "# of Renewals", "% Increase"}
+                    "# of Renewals", "% Increase", "Total Delinquency"}
 
 
 def num(row, key):
@@ -368,9 +398,11 @@ def main():
             if kpi in VALUE_ONLY:
                 note = "value only (band cannot grade this form)"
                 prop.setdefault("status_source", {})[kpi] = "value_only"
+                restore_workbook_status(prop, kpi)
             elif leaseup and kpi in LEASEUP_UNGRADED:
                 note = "value only (property is in lease-up)"
                 prop.setdefault("status_source", {})[kpi] = "value_only"
+                restore_workbook_status(prop, kpi)
             else:
                 band = classify(value, thresholds.get(kpi))
                 if band and band != was:
@@ -414,6 +446,9 @@ def main():
         print(f"dry run — nothing written ({total_filled} cell(s) would be filled)")
         return
 
+    for kpi in restate_t1_how(thresholds):
+        print(f"restated {kpi}'s definition to trailing 1 month (B6; the sheet's "
+              f"wording is kept in how_workbook)")
     recompute(sc)
     # Minified, matching extract_scorecard / populate_scorecard / populate_eliseai.
     # This file is fetched by the browser on every page load, and the writers have
@@ -423,11 +458,18 @@ def main():
     with open(a.out, "w") as f:
         json.dump(sc, f, separators=(",", ":"))
     print(f"wrote {a.out}: {total_filled} cell(s) filled")
+
+    # recompute() leaves at_or_above None for a row with nothing graded -- which
+    # a building in lease-up can now be, its AR having joined LEASEUP_UNGRADED --
+    # and a summary line must not fail a run whose file is already written.
+    def share(v, digits):
+        return "no graded cells" if v is None else f"{v:.{digits}%} at or above target"
+
     for p in sc["properties"]:
         if p.get("slug") in {HEADING_TO_SLUG.get(r["Property"]) for r in rows}:
-            print(f"  {p['label']}: {p['at_or_above']:.0%} at or above target "
+            print(f"  {p['label']}: {share(p['at_or_above'], 0)} "
                   f"({p['counts']['below']} below of {p['scored']})")
-    print(f"  portfolio: {sc['portfolio']['at_or_above']:.2%} at or above target "
+    print(f"  portfolio: {share(sc['portfolio']['at_or_above'], 2)} "
           f"({sc['portfolio']['counts']['below']} below of {sc['portfolio']['scored']})")
 
 
