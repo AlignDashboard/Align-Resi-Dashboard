@@ -399,7 +399,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-19T17:23:24.575520+00:00",
+  "generated_at": "2026-10-19T17:55:05.546298+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 13,
@@ -1057,65 +1057,65 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/building_metrics.json",
-     "as_of": "2026-10-12",
-     "source_file": "metrics-building-2026-10-12.csv",
-     "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "7 export(s) kept, 2026-08-19 to 2026-10-12"
+     "as_of": "2026-10-19",
+     "source_file": "metrics-building-2026-10-19.csv",
+     "landed_at": "2026-10-19T17:51:26.917Z",
+     "detail": "8 export(s) kept, 2026-08-19 to 2026-10-19"
     },
     {
      "property": "chorus",
      "file": "data/chorus/building_metrics.json",
-     "as_of": "2026-10-12",
-     "source_file": "metrics-building-2026-10-12.csv",
-     "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "7 export(s) kept, 2026-08-19 to 2026-10-12"
+     "as_of": "2026-10-19",
+     "source_file": "metrics-building-2026-10-19.csv",
+     "landed_at": "2026-10-19T17:51:26.917Z",
+     "detail": "8 export(s) kept, 2026-08-19 to 2026-10-19"
     },
     {
      "property": "madelon",
      "file": "data/madelon/building_metrics.json",
-     "as_of": "2026-10-12",
-     "source_file": "metrics-building-2026-10-12.csv",
-     "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "7 export(s) kept, 2026-08-19 to 2026-10-12"
+     "as_of": "2026-10-19",
+     "source_file": "metrics-building-2026-10-19.csv",
+     "landed_at": "2026-10-19T17:51:26.917Z",
+     "detail": "8 export(s) kept, 2026-08-19 to 2026-10-19"
     },
     {
      "property": "the-landing",
      "file": "data/the-landing/building_metrics.json",
-     "as_of": "2026-10-12",
-     "source_file": "metrics-building-2026-10-12.csv",
-     "landed_at": "2026-10-12T17:45:38.674Z",
-     "detail": "7 export(s) kept, 2026-08-19 to 2026-10-12"
+     "as_of": "2026-10-19",
+     "source_file": "metrics-building-2026-10-19.csv",
+     "landed_at": "2026-10-19T17:51:26.917Z",
+     "detail": "8 export(s) kept, 2026-08-19 to 2026-10-19"
     },
     {
      "property": "Landing",
-     "file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "as_of": "2026-10-12",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "landed_at": "2026-10-12T17:45:38.674Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "as_of": "2026-10-19",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "landed_at": "2026-10-19T17:51:26.917Z",
      "detail": "6 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency"
     },
     {
      "property": "335 Third",
-     "file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "as_of": "2026-10-12",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "landed_at": "2026-10-12T17:45:38.674Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "as_of": "2026-10-19",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "landed_at": "2026-10-19T17:51:26.917Z",
      "detail": "4 KPI cell(s): AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency"
     },
     {
      "property": "Chorus",
-     "file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "as_of": "2026-10-12",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "landed_at": "2026-10-12T17:45:38.674Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "as_of": "2026-10-19",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "landed_at": "2026-10-19T17:51:26.917Z",
      "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency, Trade-out %"
     },
     {
      "property": "Madelon",
-     "file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "as_of": "2026-10-12",
-     "source_file": "EliseAI building metrics export (metrics-building-2026-10-12.csv)",
-     "landed_at": "2026-10-12T17:45:38.674Z",
+     "file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "as_of": "2026-10-19",
+     "source_file": "EliseAI building metrics export (metrics-building-2026-10-19.csv)",
+     "landed_at": "2026-10-19T17:51:26.917Z",
      "detail": "7 KPI cell(s): # of Renewals, % Increase, AI Containment Rate, Avg First Response Time, Leased %, Total Delinquency, Trade-out %"
     }
    ],
@@ -1393,9 +1393,9 @@
     {
      "property": "the-landing",
      "file": "data/the-landing/rent_roll.json",
-     "as_of": "2026-10-12",
-     "source_file": "RentRoll10_12_2026.xlsx",
-     "landed_at": "2026-10-12T17:51:35.929Z",
+     "as_of": "2026-10-19",
+     "source_file": "RentRoll10_19_2026.xlsx",
+     "landed_at": "2026-10-19T17:51:11.760Z",
      "detail": null
     }
    ],
@@ -2417,7 +2417,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-19T17:23:24.133487+00:00",
+     "landed_at": "2026-10-19T17:55:04.842362+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

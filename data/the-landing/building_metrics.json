@@ -99,6 +99,20 @@
       "first_tours_attended": 9.0,
       "applications_completed": 1.0,
       "leases_signed": 2.0
+    },
+    {
+      "as_of": "2026-10-19",
+      "source_file": "metrics-building-2026-10-19.csv",
+      "landed_at": "2026-10-19T17:51:26.917Z",
+      "heading": "The Landing",
+      "occupancy": 98.0989,
+      "exposure": 10.6464,
+      "vacant_units": 5.0,
+      "new_prospects": 87.0,
+      "first_tours_booked": 16.0,
+      "first_tours_attended": 6.0,
+      "applications_completed": 1.0,
+      "leases_signed": 1.0
     }
   ]
 }
