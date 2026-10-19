@@ -321,6 +321,51 @@ def main():
           not any(k in r for r in rows
                   for k in ("resident", "resident_name", "tenant", "name")))
 
+    print("\n12. the router stores a report end to end")
+    # Every check above calls parse() or the store directly, which is how a
+    # parse that named its property and could not be routed went unseen: the
+    # router reads property_code, and this parser emitted only "property".
+    # Run #130's log carried "unknown property code 'None'" for the one real
+    # export, and nothing was stored. So drive process_manifest itself, on a
+    # filename the way Yardi writes it and the filer files it.
+    import json as _json
+    import pathlib as _pl
+    run = _pl.Path(tmp) / "run"
+    (run / "config").mkdir(parents=True)
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for f in ("properties.json", "report_map.json", "coa_map.json"):
+        shutil.copy(os.path.join(repo, "config", f), run / "config" / f)
+    (run / "_downloads" / "lease_tradeout").mkdir(parents=True)
+    src = as_xls(build(str(run / "_downloads" / "lease_tradeout" / "LeaseTradeoutReport-Landing.xlsx"),
+                       [lease_row("102", "7/8/26", 4226, 3131),
+                        lease_row("103", "8/3/26", 3568, 3399)]))
+    _json.dump([{"name": os.path.basename(src), "path": src, "report_type": "lease_tradeout",
+                 "parser": "parse_lease_tradeout", "landed_at": "2026-10-20T17:00:00Z"}],
+               open(run / "_downloads" / "manifest.json", "w"))
+    cwd, data, env = os.getcwd(), bm.DATA, os.environ.get("PARSE_CACHE")
+    os.environ["PARSE_CACHE"] = "off"
+    try:
+        os.chdir(run)
+        bm.DATA = _pl.Path("data")
+        bm.process_manifest()
+        fp = run / "data" / "the-landing" / "lease_tradeout.json"
+        held = _json.load(open(fp)) if fp.exists() else {}
+    finally:
+        os.chdir(cwd)
+        bm.DATA = data
+        if env is None:
+            os.environ.pop("PARSE_CACHE", None)
+        else:
+            os.environ["PARSE_CACHE"] = env
+    check("a Landing tradeout export routes to The Landing and is stored",
+          len(held.get("leases") or []) == 2, f"stored: {sorted(held)}")
+    check("... with its file and arrival on record",
+          [f.get("source_file") for f in held.get("files") or []] == ["LeaseTradeoutReport-Landing.XLS"]
+          and held.get("landed_at") == "2026-10-20T17:00:00Z", held.get("files"))
+    check("nothing is stored under any other building",
+          sorted(p.name for p in (run / "data").iterdir()) == ["the-landing"]
+          if (run / "data").exists() else False)
+
     shutil.rmtree(tmp, ignore_errors=True)
     print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
     return 1 if FAIL else 0

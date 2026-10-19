@@ -362,6 +362,14 @@ def parse(path):
     return {
         "report_type": REPORT_TYPE,
         "property": name,
+        # The router resolves a single-property parse on property_code alone,
+        # and names are among what it resolves (codes, aliases and names --
+        # load_properties). Without this key every tradeout export logged
+        # "unknown property code 'None'" and stored nothing: the Trade-out %
+        # tile was the hand-stored 2026-09-16 report, and the next export
+        # would have been skipped with one line in the log. The renewal
+        # tracker hands its name over the same way.
+        "property_code": name,
         "property_from": name_from,
         "owner_row": owner,
         "source_file": os.path.basename(path),

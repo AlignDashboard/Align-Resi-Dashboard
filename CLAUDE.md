@@ -488,6 +488,16 @@ it is not, so the entry is skipped with a log line every run (open item C5). The
 `blocked` field on that row in `SCD_FEED_ROWS` is what both notes read, so
 closing C5 means deleting one field rather than hunting for prose.
 
+`SCD_FEED_ROWS` says what each feed fills and `SCD_MISSING` what is absent, and
+**a row's prose may be a function of the tab's own data** (`fills: d => …`,
+`why: d => …`, handed `{rr, rn, tro}`) wherever the answer moves. Two typed rows
+had gone wrong by 2026-10-19: the holdovers row quoted 32 and 31 long after the
+roll and the roster had moved (27 and 34 that day), and the building-metrics row
+claimed the Trade-out % tile a month after the tradeout report took it — with no
+row for that report at all. Both read the data now, and the weekly leasing
+workbook's row says it fills nothing while a tradeout report is on file, since
+it is only the Trade-outs card's fallback.
+
 `SCD_MISSING` is the honesty block: four things The Landing shows that no Drive
 export can refresh today, each with why and what would fix it. The counts in the
 note under it are computed from the list rather than typed, so they cannot go
@@ -1850,8 +1860,21 @@ lists it — so the tile went on hovering "EliseAI building-metrics export · as
 2026-08-31" over a figure from a report of 2026-09-16. That is the over-report
 this file warns about, fixed in the data rather than worked around on the page.
 
-`scripts/test_lease_tradeout.py` holds it down — 47 fixture-free checks against
-workbooks built in a temp dir. The six load-bearing guards (the forward-filled
+**It routes by name.** The report names its building and carries no Yardi
+code, and `process_manifest` resolves a single-property parse on
+`property_code` alone, so until 2026-10-19 every run logged `unknown property
+code 'None' in LeaseTradeoutReport-Landing.XLS … skipping` and stored nothing:
+the tile was the 09-16 report stored by hand, and the next export would have
+been dropped with one line in the log. `parse_lease_tradeout` now hands its name
+over as `property_code`, the way `parse_renewal_tracker` does, and the router's
+name lookup does the rest. Re-storing the 09-16 file through the router changes
+nothing published but its arrival time's milliseconds — checked against the
+tracked store.
+
+`scripts/test_lease_tradeout.py` holds it down — 50 fixture-free checks against
+workbooks built in a temp dir, the last three driving `process_manifest` itself
+on a `LeaseTradeoutReport-Landing.XLS` (removing the key reproduces the run's
+warning and fails all three). The six load-bearing guards (the forward-filled
 header, the parenthesised negative, the magic-number open, the Grand Total
 tie-out, the skipped subtotal rows and the narrowest-window-wins tagging behind
 the per-lease table) were each verified by mutation; removing any one of them
@@ -4191,6 +4214,13 @@ that script makes — a commit rebuilt after a lost push race included. Three pa
 per-unit output tracked in git, and (with `--source <report.xlsx>`) every real
 name in a source report searched for by word boundary in every published file.
 Run it locally the same way after any change to a parser or the extractor.
+
+**A resident code is as identifying as a name**, and the value pass above
+searches names only. A real Yardi tenant code sat in a test fixture's MTM row —
+with its unit, plan and lease-expiry date — from at least 2026-09-29 until
+2026-10-19, found only by matching a roll's every code against every tracked
+file (A20; still in history). Fixtures use invented codes, units and dates, as
+`test_rental_tracker.py`'s figures are invented.
 
 Raw reports are gitignored (`_downloads/`, `*.xlsx`, `tests/fixtures/`,
 `data/*/rent_roll.json`, `data/*/delinquency.json`) because they hold everything.

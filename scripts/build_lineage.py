@@ -749,7 +749,12 @@ DRIVE_FLOWS = {
                 "file, because each workbook carries one week and accumulates.",
         "open_item": "D1",
     },
-    ("Renewal Tracker", "renewal_tracker"): {
+    # Keyed on the folder report_map.json names, which since A11 (2026-09-21)
+    # is Daily Leasing Reports: the tracker's own folder folded into it. Under
+    # the old "Renewal Tracker" key this declaration matched nothing, so the
+    # flow showed as an undocumented "waiting" row and the Landing tab's feeds
+    # card found no renewal_tracker flow to date the tracker by.
+    ("Daily Leasing Reports", "renewal_tracker"): {
         "id": "renewal_tracker",
         "example": '<date> Landing 2025 Renewal Tracker - Full (42).xlsx',
         "title": "Renewal tracker",
