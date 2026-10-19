@@ -266,8 +266,8 @@ modern_rows = [["Renewed", "A Name", 836, "Sep-03-2026", "2B", "lab19", "", 4791
                 12, 7047, -2256, 0.32, 5222, 431, 0.15]]
 p = build_renewal(f"{TMP}/Landing 2025 Renewal Tracker.xlsx",
                   {"September 2026": (MODERN, modern_rows)},
-                  mtm_rows=[["Waiting", "lab19", 355, "t0519674", "A Name",
-                             None, None, "2024-02-26", "2025-02-25", 4109, 7882]])
+                  mtm_rows=[["Waiting", "lab19", 101, "t0000001", "A Name",
+                             None, None, "2024-01-01", "2024-12-31", 4109, 7882]])
 r = parse_renewal(p)
 m = r["months"][0]
 check("month sheet found from its title", m["month"] == "2026-09", m["month"])

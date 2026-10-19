@@ -7026,18 +7026,26 @@ function prefixed(meas, prefix) {
 
 // The Drive flows behind this tab, and what each one puts on it. Arrival times
 // are read from lineage.json's evidence rather than restated here, so the card
-// reports what the last pipeline run actually found.
+// reports what the last pipeline run actually found. `fills` may be a function
+// of the tab's own data where the answer depends on what has arrived -- the
+// weekly workbook draws the new-lease series only when no tradeout report has.
 const SCD_FEED_ROWS = [
   { flow: "t12", fills: "Operating Summary · Loss to Lease · Expense Load & NOI · Expense Deep Dive" },
-  { flow: "bldg_metrics", fills: "The Leased % and Trade-out % tiles" },
+  // The export's Delinquency Rate owns the rate since B4 closed (2026-09-29);
+  // the Trade-out % tile left it for the tradeout report on 2026-09-17.
+  { flow: "bldg_metrics", fills: "The Leased % and Delinquency tiles · the Delinquency card's rate" },
   // What this one fills depends on which populate_scorecard run wrote last, so
-  // it is asked rather than asserted.
-  { flow: "delinquency", fills: "Delinquency card and tile",
+  // it is asked rather than asserted. Since B4 it fills the split, not the rate.
+  { flow: "delinquency", fills: "The Delinquency card's 30/60/90 bars",
     fillsIf: { prefix: "delq_",
-               idle: "nothing yet — no AR report has filled its two cells" } },
+               idle: "nothing yet — no AR report has filled the 30/60/90 split" } },
   { flow: "budget", fills: "The Budget variance tile" },
   { flow: "rent_roll", fills: "Loss to Lease · Rollover Schedule · Largest Unit Gaps" },
-  { flow: "daily_leasing", fills: "Trade-outs — the new-lease series" },
+  { flow: "lease_tradeout", fills: "The Trade-out % tile · Trade-outs — the new-lease series" },
+  { flow: "daily_leasing",
+    fills: d => d.tro
+      ? "Nothing today — the tradeout report draws the new-lease series, and this is its fallback"
+      : "Trade-outs — the new-lease series" },
   { flow: "renewal_tracker", fills: "Trade-outs — the renewal series and the MTM count" },
   { flow: "unit_directory", fills: "Unit Inventory · the door count under controllable/door",
     // The one feed on this tab that does not refresh -- and, since the owner
@@ -7066,17 +7074,27 @@ const scdBlocker = flow => (SCD_FEED_ROWS.find(r => r.flow === flow) || {}).bloc
 // outright rather than merely from this view.
 const SCD_MISSING = [
   // Both sides of this arrived on 2026-09-11. What is left is not a report.
+  // The two counts are read from the data rather than typed: they move every
+  // week, and this sentence quoted 32 and 31 long after both had changed.
   { what: "Holdovers reconciled unit by unit",
-    why: "Both feeds are now here — the rent roll names 32 holdovers and the tracker's "
-       + "MTM roster names 31 — but nothing compares them unit by unit. Last time anyone "
-       + "checked, the tracker missed 27 of the rent roll's holdovers, so the two counts "
-       + "landing one apart is not evidence they are the same 31 units",
+    why: d => {
+      const h = d.rr && d.rr.holdovers ? d.rr.holdovers.units : null;
+      const t = d.rn && d.rn.mtm ? d.rn.mtm.units : null;
+      const counts = h != null && t != null
+        ? "the rent roll of " + d.rr.as_of + " names " + h + " holdovers and the "
+          + "tracker's MTM roster names " + t
+        : "the rent roll and the renewal tracker's MTM roster";
+      return "Both feeds are here — " + counts + " — but nothing compares them unit "
+           + "by unit. When the workbook last checked, the roster missed 27 of the "
+           + "roll's 31 holdovers, so even matching counts would not show they are "
+           + "the same units";
+    },
     fix: "No new report: join the rent roll's expired-and-occupied units to the tracker's "
        + "MTM roster and show which appear on both",
     needs: null },
-  { what: "Delinquency aging · balances by unit",
-    why: "The report parses from Drive and ties out, but the aging stops in data/ — it is unit level and arrives with resident names — and the two aggregates it does publish are owned by the workbook today, so the card is empty either way",
-    fix: "No new report at all: publish an aggregate aging block out of the parse that already runs, and run populate_scorecard --from-pipeline so Drive owns the two cells again (open item G3)",
+  { what: "Delinquency aging · gross owed and units in arrears",
+    why: "The report parses from Drive and ties out, and the Delinquency card draws its three past-due buckets, but gross owed and the count of units in arrears stop in data/ with the unit-level parse, which arrives with resident names",
+    fix: "No new report at all: publish an aggregate aging block out of the parse that already runs (open item G2)",
     needs: null },
   { what: "Insights scorecard",
     why: "The analyst's own scored read of the workbook — a judgement, not a feed",
@@ -8082,6 +8100,8 @@ async function loadLandingDrive() {
     };
     const now = new Date();
     let newest = null;
+    // What a row's prose may depend on: the tab's own blocks, read once above.
+    const ctx = { rr, rn: (lease && lease.renewals) || null, tro };
     const rows = SCD_FEED_ROWS.map(r => {
       const f = flows.find(x => x.id === r.flow);
       const ev = f && (f.evidence || []).find(e => isLanding(e.property));
@@ -8092,7 +8112,7 @@ async function loadLandingDrive() {
           + " · " + scAgo(d, now)
         : "not recorded");
       if (d) arrived.title = ev.source_file + "\narrived " + d.toISOString();
-      let fills = r.fills;
+      let fills = typeof r.fills === "function" ? r.fills(ctx) : r.fills;
       if (r.fillsIf) {
         const feed = SCD_DRIVE_FEEDS.find(x => x.prefix === r.fillsIf.prefix);
         if (feed && !scdFeedIsDrive(feed, meas)) fills = r.fillsIf.idle;
@@ -8111,7 +8131,7 @@ async function loadLandingDrive() {
       rows);
     buildTable(document.getElementById("dfMissing"),
       [{ t: "Not on this tab" }, { t: "Why", mut: true }, { t: "What would put it here", mut: true }],
-      SCD_MISSING.map(r => [r.what, r.why, r.fix]));
+      SCD_MISSING.map(r => [r.what, typeof r.why === "function" ? r.why(ctx) : r.why, r.fix]));
     // Counted rather than written down: the point of the list is which single
     // report unlocks the most of it, and a hand-typed "six of the eight" goes
     // wrong the first time a row moves.
