@@ -508,10 +508,10 @@ same day had already closed three rows before that.
 A **View** select sits above the Landing tab's grid (2026-10-05, by request:
 "a dropdown menu under the Landing tab"). `Operations` is the default and is
 every card above, unchanged; `Google reviews` swaps the grid for an executive
-summary of The Landing's Google Maps reviews: four tiles, a bottom line with
-what is going well and where to improve, what reviewers raise, tone and owner
-replies by period, problems and highlights with what reviewers say, two further
-notes, and every review in a collapsed table.
+summary of The Landing's Google Maps reviews: four tiles, what changed since
+the last copy, a bottom line with what is going well and where to improve, what
+reviewers raise, tone and owner replies by period, problems and highlights with
+what reviewers say, three further notes, and every review in a collapsed table.
 
 **There is no feed behind it**, and that is the first thing to know:
 
@@ -528,8 +528,10 @@ notes, and every review in a collapsed table.
 - **Dates are relative.** "3 months ago" is `months_ago: 3`, so a month is
   approximate, and "a year ago" covers 12 to 23 months: the older group is
   "12+ months ago" and the copy may stop before its oldest review.
-- 25 of the 53 reviews were cut at Google's "More" link and are coded from what
-  was visible.
+- 29 of the 57 reviews in the 2026-10-19 copy were cut at Google's "More" link
+  and are coded from what was visible. Where an owner's reply names what the
+  hidden text raised, the theme is taken from the reply and the row's note says
+  so (6 and 14 on 2026-10-19; 49 since the first copy).
 
 `scripts/build_reviews_json.py` holds the coding, one row per review: tone, the
 themes it raises, the owner's reply (`Yes`, `No`, or `Before edit` when the
@@ -537,10 +539,10 @@ reply predates the reviewer's latest edit and so answers an older version),
 whether the reviewer has moved out, whether the review is about touring,
 applying or moving in, staff praised by name, and a shortened verbatim excerpt.
 It writes `docs/reviews.json`; never edit the JSON. The script asserts the
-tallies made by hand when the rows were first coded (33 reviews in the last 12
-months, the per-theme counts, negatives and replies per window), so a slipped
-row cannot change the view unnoticed. Change those numbers deliberately, with
-the rows.
+tallies made by hand for the current copy (on 2026-10-19: 57 reviews, 36 in the
+last 12 months, the per-theme counts, negatives and replies per window, and what
+changed since the last copy), so a slipped row cannot change the view
+unnoticed. Change those numbers deliberately, with the rows.
 
 **Every figure on the pane is computed from the rows in the page**, each
 bottom-line sentence and its lead included: "Reviews have turned more
@@ -549,13 +551,58 @@ the assessment's findings and next steps, and the watch notes are the only
 typed prose, and they cite review numbers rather than counts. So recoding a row
 and rerunning the script is the whole refresh.
 
+**A refresh is a new copy compared with the last one** (2026-10-19, by
+request: "run an update ... highlight changes"). `COPIED` moves to the new
+date, the rows are recoded against the paste — Google's relative dates age, an
+edit re-dates a review, replies appear — and each run stores its copy as coded
+in `data/the-landing/reviews/<copied>.json`. The run compares itself with the
+newest copy stored before it and publishes the review numbers that moved as
+`changes` (new, edited, gone, newly answered, recoded, now past 12 months,
+carried) and the earlier copy's rows as `previous`. The pane's **What Changed**
+card, under the tiles, sets the four tile figures then and now above that list,
+each copy counted by the same `rvCompute`/`rvFour` over its own rows and
+periods, so a "then" figure is the one the page showed then. Every Review shades
+the rows new or edited since and names each change under the row's number.
+Four things it depends on:
+
+- **A review keeps its number.** A new review takes the next number and one
+  Google no longer lists leaves its number unused, so "review 26" in a finding
+  means the same review after every refresh; the build refuses a new review on
+  an existing or retired number. Numbering by position would have renumbered
+  every citation on the first refresh, when five reviews arrived at the top.
+- **Edited is read off the date.** Aging only adds months, so a review whose
+  `months_ago` went down has been edited since — Google dates a review by its
+  latest edit. 22 was rewritten from praise into a complaint that way, and
+  still carries the owner's reply to the praise.
+- **A copy can stop early.** The 2026-10-19 paste ends before the sixteen
+  oldest reviews, 38–53. They are listed in `CARRIED`, kept exactly as coded in
+  the copy they were last seen in (the build asserts it), and the source line
+  and the card both say so.
+- **The reply sentence reads against the last copy.** Its lead was written when
+  no recent review had a reply: "stopped" at nil, otherwise "fallen off" below
+  the oldest period's rate. On 2026-10-19 the owner had answered 20 earlier
+  reviews in one batch and the recent rate (78%) sat three points under the
+  oldest (81%), so that rule would have printed "fallen off". It now says
+  "picked back up" when the rate is 25 points above the last copy's, allows ten
+  points before "fallen off", and adds how many of the year's replies were not
+  there on the last copy (22 of 28), so a rate restored by one catch-up batch
+  does not read as a habit. The most-raised problems sentence likewise names
+  any problem tied with the third, rather than whichever the sort left in
+  front.
+
+The card's ids are `drch*` because `drcEyebrow` is the Loss to Lease card's:
+the first draft wrote the reviews eyebrow into that card, on the other pane.
+Scan the page for duplicate `id=` values after adding a card.
+
 **The Bottom Line card carries the assessment** (2026-10-05, by request): under
 the computed summary, *What we're doing well* and *Where we need to improve*,
 each point a finding that cites review numbers and a `Next:` step. They are
 `assessment` in `reviews.json`, and each names the theme whose count the page
-prints in front of it ("8 of 33 reviews this year"), or `metric: "replies"` for
+prints in front of it ("8 of 36 reviews this year"), or `metric: "replies"` for
 the owner's reply rate, so a recount moves those figures without touching the
-prose. The five suggested actions that had a card of their own became those
+prose. On 2026-10-19 the replies point moved to *What we're doing well*, since
+the owner had caught up, and deposits took the lead of the improvements after
+one household's two reviews about a refund unpaid since January (54, 55). The five suggested actions that had a card of their own became those
 next steps, and that card keeps the two remaining watch notes as *Also Worth
 Knowing*. The two groups stack and lay their points in two columns: side by
 side, three strengths beside six improvements left half the card empty.
