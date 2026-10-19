@@ -249,6 +249,24 @@
    "primary": "t-comps",
    "holds": "Comp set"
   },
+  "cdTradeOuts": {
+   "card": "Trade-outs",
+   "tab": "Landing",
+   "tables": [
+    "t-renewals",
+    "t-tradeouts",
+    "t-tradeout",
+    "t-tradeout-tile",
+    "t-tradeout-leases"
+   ],
+   "flows": [
+    "renewal_tracker",
+    "daily_leasing",
+    "lease_tradeout"
+   ],
+   "primary": "t-tradeout",
+   "holds": "Lease trade-outs, by month"
+  },
   "cdRollover": {
    "card": "Rollover Schedule",
    "tab": "Landing",
@@ -287,23 +305,6 @@
    ],
    "primary": "t-occupancy",
    "holds": "Occupancy by floorplan"
-  },
-  "cdTradeOuts": {
-   "card": "Trade-outs",
-   "tab": "Landing",
-   "tables": [
-    "t-tradeouts",
-    "t-renewals",
-    "t-tradeout",
-    "t-tradeout-tile",
-    "t-tradeout-leases"
-   ],
-   "flows": [
-    "daily_leasing",
-    "lease_tradeout"
-   ],
-   "primary": "t-tradeout",
-   "holds": "Lease trade-outs, by month"
   },
   "cRtLock": {
    "card": "Rental Rate Tracker",
@@ -399,18 +400,15 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-19T18:08:36.691473+00:00",
+  "generated_at": "2026-10-19T18:38:46.800195+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
-   "live": 13,
+   "live": 14,
    "partial": 4,
-   "waiting": 1,
    "no-parser": 8,
    "manual": 1
   },
-  "warnings": [
-   "Daily Leasing Reports (renewal_tracker) is active in report_map.json but has no entry in build_lineage.DRIVE_FLOWS \u2014 the page shows it with an unknown downstream"
-  ]
+  "warnings": []
  },
  "stages": [
   {
@@ -830,10 +828,10 @@
     },
     {
      "property": "Chorus",
-     "file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "file": "2026-10-19 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
      "as_of": null,
-     "source_file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
-     "landed_at": "2026-10-13T16:28:41.599Z",
+     "source_file": "2026-10-19 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "landed_at": "2026-10-19T18:28:55.583Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     },
     {
@@ -914,10 +912,10 @@
     },
     {
      "property": "Chorus",
-     "file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "file": "2026-10-19 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
      "as_of": null,
-     "source_file": "2026-10-13 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
-     "landed_at": "2026-10-13T16:28:41.599Z",
+     "source_file": "2026-10-19 rs_rp_DelinquencySummaryReport - Chorus.xlsx",
+     "landed_at": "2026-10-19T18:28:55.583Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     },
     {
@@ -1266,6 +1264,80 @@
    "status": "live"
   },
   {
+   "id": "renewal_tracker",
+   "title": "Renewal tracker",
+   "origin_kind": "drive",
+   "source_label": "Daily Leasing Reports",
+   "source_detail": "Drive folder \u00b7 *.xlsx",
+   "example": "<date> Landing 2025 Renewal Tracker - Full (42).xlsx",
+   "carries": "A sheet per month from January 2024 forward \u2014 every renewal offer with its current rent, offered rent and status \u2014 plus the month-to-month roster.",
+   "filed_by": [
+    "dailytracker"
+   ],
+   "report_type": "renewal_tracker",
+   "parser": "parse_renewal_tracker",
+   "registered": "active",
+   "documented": true,
+   "steps": [
+    {
+     "script": "scripts/parse_renewal_tracker.py",
+     "does": "Reads each month sheet and the MTM roster, and works out which column holds the offered rent.",
+     "checks": "The offered rent is resolved by ARITHMETIC, not by label: 'BEST OFFER $' is the offer difference on the May 2025 sheet and the offered rate on June 2025's, so a value near the current rent is read as a rate and one near zero as a difference. A sheet whose header cannot be matched is recorded as unread rather than read with the wrong columns."
+    },
+    {
+     "script": "scripts/build_metrics.py",
+     "does": "Stores the whole tracker, overwriting the last copy \u2014 one file carries every month.",
+     "checks": "The Yardi tenant code beside each MTM unit is emitted as resident_code so the central scrub drops it."
+    }
+   ],
+   "stores": [
+    "data/<slug>/renewal_tracker.json"
+   ],
+   "publishes": [
+    {
+     "file": "metrics.json",
+     "key": "leasing"
+    }
+   ],
+   "dashboard": [
+    {
+     "card": "Trade-outs",
+     "tab": "Landing",
+     "anchor": "cdTradeOuts",
+     "tables": [
+      "t-renewals-*",
+      "t-tradeouts-*"
+     ],
+     "holds": "Renewal offers by month, and the month-to-month roster"
+    }
+   ],
+   "tables": [
+    "t-renewals-*"
+   ],
+   "note": "Its per-offer rows are what let the Trade-outs card average renewals the same way it averages new leases. The analyst workbook carries monthly aggregates only, which is why the card on The Landing has to show one side rent-weighted and the other as a plain mean.",
+   "open_item": "D9",
+   "same_as": null,
+   "evidence": [
+    {
+     "property": "chorus",
+     "file": "data/chorus/renewal_tracker.json",
+     "as_of": "2026-12",
+     "source_file": "2026-10-19 Chorus 2026 Renewal Tracker.xlsx",
+     "landed_at": "2026-10-19T18:29:01.139Z",
+     "detail": null
+    },
+    {
+     "property": "the-landing",
+     "file": "data/the-landing/renewal_tracker.json",
+     "as_of": "2027-01",
+     "source_file": "2026-10-05 Landing 2025 Renewal Tracker - Full.xlsx",
+     "landed_at": "2026-10-06T00:28:43.707Z",
+     "detail": null
+    }
+   ],
+   "status": "live"
+  },
+  {
    "id": "rent_roll",
    "title": "Rent roll (SPV PM Deliverable Package)",
    "origin_kind": "drive",
@@ -1576,7 +1648,7 @@
      "file": "data/the-landing/lease_tradeout.json",
      "as_of": "2026-09-16",
      "source_file": "LeaseTradeoutReport-Landing.XLS",
-     "landed_at": "2026-09-17T22:34:37Z",
+     "landed_at": "2026-09-17T22:34:37.906Z",
      "detail": null
     }
    ],
@@ -1825,32 +1897,6 @@
     }
    ],
    "status": "partial"
-  },
-  {
-   "id": "daily-leasing-reports-renewal-tracker",
-   "title": "Daily Leasing Reports",
-   "origin_kind": "drive",
-   "source_label": "Daily Leasing Reports",
-   "source_detail": "Drive folder \u00b7 *.xlsx",
-   "example": null,
-   "carries": "The Landing 2025 Renewal Tracker and the 'Renewals since ...' extracts. Feeds the analyst workbook's Source Renewal Tracker grey tab, which is refreshed by pasting",
-   "filed_by": [
-    "dailytracker"
-   ],
-   "report_type": "renewal_tracker",
-   "parser": "parse_renewal_tracker",
-   "registered": "active",
-   "documented": false,
-   "steps": [],
-   "stores": [],
-   "publishes": [],
-   "dashboard": [],
-   "tables": [],
-   "note": "Registered so a file dropped here is visible to the fetch log. A parser needs one sample file to write against; none has arrived.",
-   "open_item": null,
-   "same_as": null,
-   "evidence": [],
-   "status": "waiting"
   },
   {
    "id": "airm-yardi-rev-management-revenue-mgmt",
@@ -2417,7 +2463,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-19T18:08:35.912909+00:00",
+     "landed_at": "2026-10-19T18:38:46.207579+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

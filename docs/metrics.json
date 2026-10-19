@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-19T18:08:35.912909+00:00",
+    "generated_at": "2026-10-19T18:38:46.207579+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -4287,8 +4287,8 @@
             "from": "2024-02",
             "to": "2026-12"
           },
-          "landed_at": "2026-10-13T16:28:36.105Z",
-          "source_file": "2026-10-13 Renewal Tracker - Chorus.xlsx",
+          "landed_at": "2026-10-19T18:29:01.139Z",
+          "source_file": "2026-10-19 Chorus 2026 Renewal Tracker.xlsx",
           "months": [
             {
               "month": "2024-02",
@@ -4709,8 +4709,8 @@
               "statuses": {
                 "MTM": 1,
                 "Notice": 9,
-                "Offer Accepted": 2,
-                "Renewed": 8
+                "Offer Accepted": 1,
+                "Renewed": 9
               }
             },
             {
@@ -4735,8 +4735,8 @@
               "statuses": {
                 "MTM": 1,
                 "Notice": 7,
-                "Offer Accepted": 2,
-                "Renewed": 10
+                "Offer Accepted": 1,
+                "Renewed": 11
               }
             },
             {
@@ -5581,7 +5581,7 @@
         "lease_date_basis": "App Date/Signed Date",
         "tradeout_basis": "Effective Rent",
         "source_file": "LeaseTradeoutReport-Landing.XLS",
-        "landed_at": "2026-09-17T22:34:37Z",
+        "landed_at": "2026-09-17T22:34:37.906Z",
         "files": 1,
         "all": {
           "leases": 247,
