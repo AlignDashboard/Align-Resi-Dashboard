@@ -400,7 +400,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-19T18:38:46.800195+00:00",
+  "generated_at": "2026-10-20T15:36:55.376572+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -812,10 +812,10 @@
    "evidence": [
     {
      "property": "Landing",
-     "file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "file": "2026-10-19 rs_rp_DelinquencySummaryReport - The Landing (2).xlsx",
      "as_of": null,
-     "source_file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "landed_at": "2026-10-06T00:28:39.541Z",
+     "source_file": "2026-10-19 rs_rp_DelinquencySummaryReport - The Landing (2).xlsx",
+     "landed_at": "2026-10-19T19:29:08.440Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     },
     {
@@ -836,10 +836,10 @@
     },
     {
      "property": "Madelon",
-     "file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
-     "as_of": "2026-10-12",
-     "source_file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
-     "landed_at": "2026-10-14T02:28:40.038Z",
+     "file": "2026-10-19 Delinquency_10_1_2026.xls - The Madelon (1).xlsx",
+     "as_of": "2026-10-19",
+     "source_file": "2026-10-19 Delinquency_10_1_2026.xls - The Madelon (1).xlsx",
+     "landed_at": "2026-10-19T20:28:37.191Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
@@ -896,10 +896,10 @@
    "evidence": [
     {
      "property": "Landing",
-     "file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
+     "file": "2026-10-19 rs_rp_DelinquencySummaryReport - The Landing (2).xlsx",
      "as_of": null,
-     "source_file": "2026-10-05 rs_rp_DelinquencySummaryReport - The Landing.xlsx",
-     "landed_at": "2026-10-06T00:28:39.541Z",
+     "source_file": "2026-10-19 rs_rp_DelinquencySummaryReport - The Landing (2).xlsx",
+     "landed_at": "2026-10-19T19:29:08.440Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     },
     {
@@ -920,10 +920,10 @@
     },
     {
      "property": "Madelon",
-     "file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
-     "as_of": "2026-10-12",
-     "source_file": "2026-10-13 Delinquency_10_1_2026.xls - The Madelon.xlsx",
-     "landed_at": "2026-10-14T02:28:40.038Z",
+     "file": "2026-10-19 Delinquency_10_1_2026.xls - The Madelon (1).xlsx",
+     "as_of": "2026-10-19",
+     "source_file": "2026-10-19 Delinquency_10_1_2026.xls - The Madelon (1).xlsx",
+     "landed_at": "2026-10-19T20:28:37.191Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
@@ -1330,8 +1330,8 @@
      "property": "the-landing",
      "file": "data/the-landing/renewal_tracker.json",
      "as_of": "2027-01",
-     "source_file": "2026-10-05 Landing 2025 Renewal Tracker - Full.xlsx",
-     "landed_at": "2026-10-06T00:28:43.707Z",
+     "source_file": "Landing 2025 Renewal Tracker - Full (50).xlsx",
+     "landed_at": "2026-10-19T21:30:38.332Z",
      "detail": null
     }
    ],
@@ -1457,9 +1457,9 @@
     {
      "property": "madelon",
      "file": "data/madelon/rent_roll.json",
-     "as_of": "2026-10-11",
-     "source_file": "2026-10-13 RentRoll10_12_2026 - The Madelon.xlsx",
-     "landed_at": "2026-10-14T02:28:42.935Z",
+     "as_of": "2026-10-18",
+     "source_file": "2026-10-19 RentRoll10_19_2026 - The Madelon.xlsx",
+     "landed_at": "2026-10-19T20:28:34.402Z",
      "detail": null
     },
     {
@@ -1841,9 +1841,9 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/leasing_funnel.json",
-     "as_of": "2026-10-13",
-     "source_file": "2026-10-13 leasing_funnel_report_2026-10-13.xlsx",
-     "landed_at": "2026-10-13T15:28:31.291Z",
+     "as_of": "2026-10-20",
+     "source_file": "2026-10-20 leasing_funnel_report_2026-10-20.xlsx",
+     "landed_at": "2026-10-20T15:28:32.285Z",
      "detail": null
     }
    ],
@@ -1890,9 +1890,9 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/leasing_funnel.json",
-     "as_of": "2026-10-13",
-     "source_file": "2026-10-13 leasing_funnel_report_2026-10-13.xlsx",
-     "landed_at": "2026-10-13T15:28:31.291Z",
+     "as_of": "2026-10-20",
+     "source_file": "2026-10-20 leasing_funnel_report_2026-10-20.xlsx",
+     "landed_at": "2026-10-20T15:28:32.285Z",
      "detail": null
     }
    ],
@@ -2463,7 +2463,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-19T18:38:46.207579+00:00",
+     "landed_at": "2026-10-20T15:36:54.485693+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
