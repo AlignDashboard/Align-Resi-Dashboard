@@ -52,7 +52,8 @@
       "prev_eff_rent": 4171.0,
       "vacant_days": 63.0,
       "tradeout_amount": -4087.0,
-      "tradeout_pct": -0.98
+      "tradeout_pct": -0.98,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -73,7 +74,8 @@
       "prev_eff_rent": 3664.0,
       "vacant_days": 7.0,
       "tradeout_amount": -248.0,
-      "tradeout_pct": -0.068
+      "tradeout_pct": -0.068,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -94,7 +96,8 @@
       "prev_eff_rent": 3628.0,
       "vacant_days": 24.0,
       "tradeout_amount": 506.0,
-      "tradeout_pct": 0.14
+      "tradeout_pct": 0.14,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -115,7 +118,8 @@
       "prev_eff_rent": 887.0,
       "vacant_days": 19.0,
       "tradeout_amount": 4544.0,
-      "tradeout_pct": 5.122999999999999
+      "tradeout_pct": 5.122999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -136,7 +140,8 @@
       "prev_eff_rent": 3562.0,
       "vacant_days": 20.0,
       "tradeout_amount": 729.0,
-      "tradeout_pct": 0.205
+      "tradeout_pct": 0.205,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -157,7 +162,8 @@
       "prev_eff_rent": 4245.0,
       "vacant_days": 49.0,
       "tradeout_amount": -148.0,
-      "tradeout_pct": -0.035
+      "tradeout_pct": -0.035,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -178,7 +184,8 @@
       "prev_eff_rent": 3177.0,
       "vacant_days": 63.0,
       "tradeout_amount": 200.0,
-      "tradeout_pct": 0.063
+      "tradeout_pct": 0.063,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -199,7 +206,8 @@
       "prev_eff_rent": 3424.0,
       "vacant_days": 42.0,
       "tradeout_amount": 124.0,
-      "tradeout_pct": 0.036000000000000004
+      "tradeout_pct": 0.036000000000000004,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -220,7 +228,8 @@
       "prev_eff_rent": 5165.0,
       "vacant_days": 6.0,
       "tradeout_amount": -671.0,
-      "tradeout_pct": -0.13
+      "tradeout_pct": -0.13,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -241,7 +250,8 @@
       "prev_eff_rent": 5252.0,
       "vacant_days": 37.0,
       "tradeout_amount": -646.0,
-      "tradeout_pct": -0.12300000000000001
+      "tradeout_pct": -0.12300000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -262,7 +272,8 @@
       "prev_eff_rent": 3690.0,
       "vacant_days": 27.0,
       "tradeout_amount": -238.0,
-      "tradeout_pct": -0.064
+      "tradeout_pct": -0.064,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -283,7 +294,8 @@
       "prev_eff_rent": 3643.0,
       "vacant_days": 28.0,
       "tradeout_amount": 149.0,
-      "tradeout_pct": 0.040999999999999995
+      "tradeout_pct": 0.040999999999999995,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -304,7 +316,8 @@
       "prev_eff_rent": 3465.0,
       "vacant_days": 51.0,
       "tradeout_amount": 516.0,
-      "tradeout_pct": 0.149
+      "tradeout_pct": 0.149,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -325,7 +338,8 @@
       "prev_eff_rent": 3968.0,
       "vacant_days": 24.0,
       "tradeout_amount": 13.0,
-      "tradeout_pct": 0.003
+      "tradeout_pct": 0.003,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -346,7 +360,8 @@
       "prev_eff_rent": 4385.0,
       "vacant_days": 17.0,
       "tradeout_amount": -514.0,
-      "tradeout_pct": -0.11699999999999999
+      "tradeout_pct": -0.11699999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -367,7 +382,8 @@
       "prev_eff_rent": 5810.0,
       "vacant_days": 7.0,
       "tradeout_amount": -42.0,
-      "tradeout_pct": -0.006999999999999999
+      "tradeout_pct": -0.006999999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -388,7 +404,8 @@
       "prev_eff_rent": 3344.0,
       "vacant_days": 22.0,
       "tradeout_amount": 320.0,
-      "tradeout_pct": 0.096
+      "tradeout_pct": 0.096,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -409,7 +426,8 @@
       "prev_eff_rent": 4340.0,
       "vacant_days": 10.0,
       "tradeout_amount": -1178.0,
-      "tradeout_pct": -0.271
+      "tradeout_pct": -0.271,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -430,7 +448,8 @@
       "prev_eff_rent": 0.0,
       "vacant_days": 30.0,
       "tradeout_amount": 3913.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -451,7 +470,8 @@
       "prev_eff_rent": 0.0,
       "vacant_days": 36.0,
       "tradeout_amount": 3215.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -472,7 +492,8 @@
       "prev_eff_rent": 3931.0,
       "vacant_days": 11.0,
       "tradeout_amount": -379.0,
-      "tradeout_pct": -0.096
+      "tradeout_pct": -0.096,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -493,7 +514,8 @@
       "prev_eff_rent": 4475.0,
       "vacant_days": 57.0,
       "tradeout_amount": -187.0,
-      "tradeout_pct": -0.042
+      "tradeout_pct": -0.042,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -514,7 +536,8 @@
       "prev_eff_rent": 3911.0,
       "vacant_days": 40.0,
       "tradeout_amount": -576.0,
-      "tradeout_pct": -0.147
+      "tradeout_pct": -0.147,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -535,7 +558,8 @@
       "prev_eff_rent": 7446.0,
       "vacant_days": 6.0,
       "tradeout_amount": -1341.0,
-      "tradeout_pct": -0.18
+      "tradeout_pct": -0.18,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -556,7 +580,8 @@
       "prev_eff_rent": 3101.0,
       "vacant_days": 54.0,
       "tradeout_amount": -78.0,
-      "tradeout_pct": -0.025
+      "tradeout_pct": -0.025,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -577,7 +602,8 @@
       "prev_eff_rent": 0.0,
       "vacant_days": 50.0,
       "tradeout_amount": 3215.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -598,7 +624,8 @@
       "prev_eff_rent": 0.0,
       "vacant_days": 4.0,
       "tradeout_amount": 3322.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -619,7 +646,8 @@
       "prev_eff_rent": 86.0,
       "vacant_days": 60.0,
       "tradeout_amount": 5277.0,
-      "tradeout_pct": 61.36
+      "tradeout_pct": 61.36,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -640,7 +668,8 @@
       "prev_eff_rent": 3782.0,
       "vacant_days": 9.0,
       "tradeout_amount": 944.0,
-      "tradeout_pct": 0.25
+      "tradeout_pct": 0.25,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -661,7 +690,8 @@
       "prev_eff_rent": 4565.0,
       "vacant_days": 39.0,
       "tradeout_amount": -296.0,
-      "tradeout_pct": -0.065
+      "tradeout_pct": -0.065,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -682,7 +712,8 @@
       "prev_eff_rent": 3378.0,
       "vacant_days": 37.0,
       "tradeout_amount": 1511.0,
-      "tradeout_pct": 0.447
+      "tradeout_pct": 0.447,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -703,7 +734,8 @@
       "prev_eff_rent": 0.0,
       "vacant_days": 58.0,
       "tradeout_amount": 4232.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -724,7 +756,8 @@
       "prev_eff_rent": 84.0,
       "vacant_days": 41.0,
       "tradeout_amount": 4414.0,
-      "tradeout_pct": 52.548
+      "tradeout_pct": 52.548,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -745,7 +778,8 @@
       "prev_eff_rent": 4228.0,
       "vacant_days": 56.0,
       "tradeout_amount": 1384.0,
-      "tradeout_pct": 0.327
+      "tradeout_pct": 0.327,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -766,7 +800,8 @@
       "prev_eff_rent": 3934.0,
       "vacant_days": 80.0,
       "tradeout_amount": 664.0,
-      "tradeout_pct": 0.16899999999999998
+      "tradeout_pct": 0.16899999999999998,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -787,7 +822,8 @@
       "prev_eff_rent": 3160.0,
       "vacant_days": 49.0,
       "tradeout_amount": 186.0,
-      "tradeout_pct": 0.059000000000000004
+      "tradeout_pct": 0.059000000000000004,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -808,7 +844,8 @@
       "prev_eff_rent": 3365.0,
       "vacant_days": 31.0,
       "tradeout_amount": 1105.0,
-      "tradeout_pct": 0.32799999999999996
+      "tradeout_pct": 0.32799999999999996,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -829,7 +866,8 @@
       "prev_eff_rent": 3563.0,
       "vacant_days": 7.0,
       "tradeout_amount": 298.0,
-      "tradeout_pct": 0.084
+      "tradeout_pct": 0.084,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -850,7 +888,8 @@
       "prev_eff_rent": 3021.0,
       "vacant_days": 68.0,
       "tradeout_amount": 145.0,
-      "tradeout_pct": 0.048
+      "tradeout_pct": 0.048,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -871,7 +910,8 @@
       "prev_eff_rent": 3519.0,
       "vacant_days": 7.0,
       "tradeout_amount": -210.0,
-      "tradeout_pct": -0.06
+      "tradeout_pct": -0.06,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -892,7 +932,8 @@
       "prev_eff_rent": 3913.0,
       "vacant_days": 8.0,
       "tradeout_amount": 161.0,
-      "tradeout_pct": 0.040999999999999995
+      "tradeout_pct": 0.040999999999999995,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -913,7 +954,8 @@
       "prev_eff_rent": 4313.0,
       "vacant_days": 34.0,
       "tradeout_amount": -201.0,
-      "tradeout_pct": -0.047
+      "tradeout_pct": -0.047,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -934,7 +976,8 @@
       "prev_eff_rent": 4167.0,
       "vacant_days": 61.0,
       "tradeout_amount": 583.0,
-      "tradeout_pct": 0.14
+      "tradeout_pct": 0.14,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -955,7 +998,8 @@
       "prev_eff_rent": 4686.0,
       "vacant_days": 7.0,
       "tradeout_amount": -419.0,
-      "tradeout_pct": -0.08900000000000001
+      "tradeout_pct": -0.08900000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -976,7 +1020,8 @@
       "prev_eff_rent": 4803.0,
       "vacant_days": 7.0,
       "tradeout_amount": -676.0,
-      "tradeout_pct": -0.141
+      "tradeout_pct": -0.141,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -997,7 +1042,8 @@
       "prev_eff_rent": 3863.0,
       "vacant_days": 24.0,
       "tradeout_amount": -303.0,
-      "tradeout_pct": -0.078
+      "tradeout_pct": -0.078,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1018,7 +1064,8 @@
       "prev_eff_rent": 4856.0,
       "vacant_days": 15.0,
       "tradeout_amount": -237.0,
-      "tradeout_pct": -0.049
+      "tradeout_pct": -0.049,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1039,7 +1086,8 @@
       "prev_eff_rent": 3163.0,
       "vacant_days": 9.0,
       "tradeout_amount": 174.0,
-      "tradeout_pct": 0.055
+      "tradeout_pct": 0.055,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1060,7 +1108,8 @@
       "prev_eff_rent": 2649.0,
       "vacant_days": 62.0,
       "tradeout_amount": 496.0,
-      "tradeout_pct": 0.187
+      "tradeout_pct": 0.187,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1081,7 +1130,8 @@
       "prev_eff_rent": 3048.0,
       "vacant_days": 12.0,
       "tradeout_amount": 562.0,
-      "tradeout_pct": 0.184
+      "tradeout_pct": 0.184,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1102,7 +1152,8 @@
       "prev_eff_rent": 3296.0,
       "vacant_days": 54.0,
       "tradeout_amount": 455.0,
-      "tradeout_pct": 0.138
+      "tradeout_pct": 0.138,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1123,7 +1174,8 @@
       "prev_eff_rent": 5814.0,
       "vacant_days": 39.0,
       "tradeout_amount": -1763.0,
-      "tradeout_pct": -0.303
+      "tradeout_pct": -0.303,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1144,7 +1196,8 @@
       "prev_eff_rent": 3772.0,
       "vacant_days": 10.0,
       "tradeout_amount": 193.0,
-      "tradeout_pct": 0.051
+      "tradeout_pct": 0.051,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1165,7 +1218,8 @@
       "prev_eff_rent": 3716.0,
       "vacant_days": 8.0,
       "tradeout_amount": 1069.0,
-      "tradeout_pct": 0.28800000000000003
+      "tradeout_pct": 0.28800000000000003,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1186,7 +1240,8 @@
       "prev_eff_rent": 3844.0,
       "vacant_days": 6.0,
       "tradeout_amount": 205.0,
-      "tradeout_pct": 0.053
+      "tradeout_pct": 0.053,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1207,7 +1262,8 @@
       "prev_eff_rent": 3702.0,
       "vacant_days": 6.0,
       "tradeout_amount": 335.0,
-      "tradeout_pct": 0.09
+      "tradeout_pct": 0.09,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1228,7 +1284,8 @@
       "prev_eff_rent": 2971.0,
       "vacant_days": 8.0,
       "tradeout_amount": 154.0,
-      "tradeout_pct": 0.052000000000000005
+      "tradeout_pct": 0.052000000000000005,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -1249,7 +1306,8 @@
       "prev_eff_rent": 5869.0,
       "vacant_days": 7.0,
       "tradeout_amount": -407.0,
-      "tradeout_pct": -0.069
+      "tradeout_pct": -0.069,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1270,7 +1328,8 @@
       "prev_eff_rent": 3410.0,
       "vacant_days": 1.0,
       "tradeout_amount": 0.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1291,7 +1350,8 @@
       "prev_eff_rent": 2659.0,
       "vacant_days": 62.0,
       "tradeout_amount": 637.0,
-      "tradeout_pct": 0.24
+      "tradeout_pct": 0.24,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1312,7 +1372,8 @@
       "prev_eff_rent": 3692.0,
       "vacant_days": 45.0,
       "tradeout_amount": 6.0,
-      "tradeout_pct": 0.002
+      "tradeout_pct": 0.002,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1333,7 +1394,8 @@
       "prev_eff_rent": 2751.0,
       "vacant_days": 77.0,
       "tradeout_amount": 1279.0,
-      "tradeout_pct": 0.465
+      "tradeout_pct": 0.465,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -1354,7 +1416,8 @@
       "prev_eff_rent": 8129.0,
       "vacant_days": 37.0,
       "tradeout_amount": -540.0,
-      "tradeout_pct": -0.066
+      "tradeout_pct": -0.066,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1375,7 +1438,8 @@
       "prev_eff_rent": 4410.0,
       "vacant_days": 7.0,
       "tradeout_amount": 186.0,
-      "tradeout_pct": 0.042
+      "tradeout_pct": 0.042,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1396,7 +1460,8 @@
       "prev_eff_rent": 2591.0,
       "vacant_days": 44.0,
       "tradeout_amount": 14.0,
-      "tradeout_pct": 0.005
+      "tradeout_pct": 0.005,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1417,7 +1482,8 @@
       "prev_eff_rent": 2308.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1065.0,
-      "tradeout_pct": 0.461
+      "tradeout_pct": 0.461,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1438,7 +1504,8 @@
       "prev_eff_rent": 3215.0,
       "vacant_days": 27.0,
       "tradeout_amount": 524.0,
-      "tradeout_pct": 0.163
+      "tradeout_pct": 0.163,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1459,7 +1526,8 @@
       "prev_eff_rent": 3795.0,
       "vacant_days": 7.0,
       "tradeout_amount": 767.0,
-      "tradeout_pct": 0.20199999999999999
+      "tradeout_pct": 0.20199999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1480,7 +1548,8 @@
       "prev_eff_rent": 4750.0,
       "vacant_days": 8.0,
       "tradeout_amount": 31.0,
-      "tradeout_pct": 0.006
+      "tradeout_pct": 0.006,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1501,7 +1570,8 @@
       "prev_eff_rent": 4232.0,
       "vacant_days": 7.0,
       "tradeout_amount": 835.0,
-      "tradeout_pct": 0.19699999999999998
+      "tradeout_pct": 0.19699999999999998,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1522,7 +1592,8 @@
       "prev_eff_rent": 2417.0,
       "vacant_days": 45.0,
       "tradeout_amount": 1103.0,
-      "tradeout_pct": 0.456
+      "tradeout_pct": 0.456,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1543,7 +1614,8 @@
       "prev_eff_rent": 4301.0,
       "vacant_days": 47.0,
       "tradeout_amount": -21.0,
-      "tradeout_pct": -0.005
+      "tradeout_pct": -0.005,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1564,7 +1636,8 @@
       "prev_eff_rent": 2476.0,
       "vacant_days": 7.0,
       "tradeout_amount": 758.0,
-      "tradeout_pct": 0.306
+      "tradeout_pct": 0.306,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1585,7 +1658,8 @@
       "prev_eff_rent": 4726.0,
       "vacant_days": 18.0,
       "tradeout_amount": 80.0,
-      "tradeout_pct": 0.017
+      "tradeout_pct": 0.017,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1606,7 +1680,8 @@
       "prev_eff_rent": 3357.0,
       "vacant_days": 8.0,
       "tradeout_amount": -215.0,
-      "tradeout_pct": -0.064
+      "tradeout_pct": -0.064,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1627,7 +1702,8 @@
       "prev_eff_rent": 4160.0,
       "vacant_days": 32.0,
       "tradeout_amount": -432.0,
-      "tradeout_pct": -0.10400000000000001
+      "tradeout_pct": -0.10400000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1648,7 +1724,8 @@
       "prev_eff_rent": 4887.0,
       "vacant_days": 3.0,
       "tradeout_amount": 309.0,
-      "tradeout_pct": 0.063
+      "tradeout_pct": 0.063,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1669,7 +1746,8 @@
       "prev_eff_rent": 3135.0,
       "vacant_days": 21.0,
       "tradeout_amount": 78.0,
-      "tradeout_pct": 0.025
+      "tradeout_pct": 0.025,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1690,7 +1768,8 @@
       "prev_eff_rent": 2951.0,
       "vacant_days": 8.0,
       "tradeout_amount": 321.0,
-      "tradeout_pct": 0.109
+      "tradeout_pct": 0.109,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1711,7 +1790,8 @@
       "prev_eff_rent": 3249.0,
       "vacant_days": 7.0,
       "tradeout_amount": 676.0,
-      "tradeout_pct": 0.20800000000000002
+      "tradeout_pct": 0.20800000000000002,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1732,7 +1812,8 @@
       "prev_eff_rent": 3131.0,
       "vacant_days": 8.0,
       "tradeout_amount": 1095.0,
-      "tradeout_pct": 0.35
+      "tradeout_pct": 0.35,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1753,7 +1834,8 @@
       "prev_eff_rent": 2729.0,
       "vacant_days": 11.0,
       "tradeout_amount": 938.0,
-      "tradeout_pct": 0.344
+      "tradeout_pct": 0.344,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -1774,7 +1856,8 @@
       "prev_eff_rent": 6663.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1299.0,
-      "tradeout_pct": 0.195
+      "tradeout_pct": 0.195,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1795,7 +1878,8 @@
       "prev_eff_rent": 5317.0,
       "vacant_days": 11.0,
       "tradeout_amount": -286.0,
-      "tradeout_pct": -0.054000000000000006
+      "tradeout_pct": -0.054000000000000006,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1816,7 +1900,8 @@
       "prev_eff_rent": 2996.0,
       "vacant_days": 7.0,
       "tradeout_amount": 563.0,
-      "tradeout_pct": 0.188
+      "tradeout_pct": 0.188,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1837,7 +1922,8 @@
       "prev_eff_rent": 2527.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1158.0,
-      "tradeout_pct": 0.45799999999999996
+      "tradeout_pct": 0.45799999999999996,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1858,7 +1944,8 @@
       "prev_eff_rent": 3215.0,
       "vacant_days": 44.0,
       "tradeout_amount": 421.0,
-      "tradeout_pct": 0.131
+      "tradeout_pct": 0.131,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1879,7 +1966,8 @@
       "prev_eff_rent": 3549.0,
       "vacant_days": 7.0,
       "tradeout_amount": 964.0,
-      "tradeout_pct": 0.272
+      "tradeout_pct": 0.272,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1900,7 +1988,8 @@
       "prev_eff_rent": 4339.0,
       "vacant_days": 18.0,
       "tradeout_amount": 1303.0,
-      "tradeout_pct": 0.3
+      "tradeout_pct": 0.3,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1921,7 +2010,8 @@
       "prev_eff_rent": 5128.0,
       "vacant_days": 7.0,
       "tradeout_amount": 831.0,
-      "tradeout_pct": 0.162
+      "tradeout_pct": 0.162,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -1942,7 +2032,8 @@
       "prev_eff_rent": 2996.0,
       "vacant_days": 7.0,
       "tradeout_amount": 716.0,
-      "tradeout_pct": 0.239
+      "tradeout_pct": 0.239,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1963,7 +2054,8 @@
       "prev_eff_rent": 4124.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1403.0,
-      "tradeout_pct": 0.34
+      "tradeout_pct": 0.34,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -1984,7 +2076,8 @@
       "prev_eff_rent": 4470.0,
       "vacant_days": 3.0,
       "tradeout_amount": 630.0,
-      "tradeout_pct": 0.141
+      "tradeout_pct": 0.141,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2005,7 +2098,8 @@
       "prev_eff_rent": 5363.0,
       "vacant_days": 7.0,
       "tradeout_amount": 276.0,
-      "tradeout_pct": 0.052000000000000005
+      "tradeout_pct": 0.052000000000000005,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2026,7 +2120,8 @@
       "prev_eff_rent": 3410.0,
       "vacant_days": 7.0,
       "tradeout_amount": 286.0,
-      "tradeout_pct": 0.084
+      "tradeout_pct": 0.084,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2047,7 +2142,8 @@
       "prev_eff_rent": 4086.0,
       "vacant_days": 38.0,
       "tradeout_amount": 387.0,
-      "tradeout_pct": 0.095
+      "tradeout_pct": 0.095,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -2068,7 +2164,8 @@
       "prev_eff_rent": 5963.0,
       "vacant_days": 7.0,
       "tradeout_amount": 571.0,
-      "tradeout_pct": 0.096
+      "tradeout_pct": 0.096,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2089,7 +2186,8 @@
       "prev_eff_rent": 3358.0,
       "vacant_days": 46.0,
       "tradeout_amount": 210.0,
-      "tradeout_pct": 0.062
+      "tradeout_pct": 0.062,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2110,7 +2208,8 @@
       "prev_eff_rent": 3685.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1289.0,
-      "tradeout_pct": 0.35
+      "tradeout_pct": 0.35,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2131,7 +2230,8 @@
       "prev_eff_rent": 2706.0,
       "vacant_days": 12.0,
       "tradeout_amount": 812.0,
-      "tradeout_pct": 0.3
+      "tradeout_pct": 0.3,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -2152,7 +2252,8 @@
       "prev_eff_rent": 5575.0,
       "vacant_days": 7.0,
       "tradeout_amount": 193.0,
-      "tradeout_pct": 0.035
+      "tradeout_pct": 0.035,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2173,7 +2274,8 @@
       "prev_eff_rent": 3923.0,
       "vacant_days": 67.0,
       "tradeout_amount": 795.0,
-      "tradeout_pct": 0.203
+      "tradeout_pct": 0.203,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2194,7 +2296,8 @@
       "prev_eff_rent": 4473.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1272.0,
-      "tradeout_pct": 0.284
+      "tradeout_pct": 0.284,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2215,7 +2318,8 @@
       "prev_eff_rent": 3053.0,
       "vacant_days": 17.0,
       "tradeout_amount": 448.0,
-      "tradeout_pct": 0.147
+      "tradeout_pct": 0.147,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2236,7 +2340,8 @@
       "prev_eff_rent": 4349.0,
       "vacant_days": 55.0,
       "tradeout_amount": 647.0,
-      "tradeout_pct": 0.149
+      "tradeout_pct": 0.149,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2257,7 +2362,8 @@
       "prev_eff_rent": 2992.0,
       "vacant_days": 20.0,
       "tradeout_amount": 1150.0,
-      "tradeout_pct": 0.384
+      "tradeout_pct": 0.384,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2278,7 +2384,8 @@
       "prev_eff_rent": 4070.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1049.0,
-      "tradeout_pct": 0.258
+      "tradeout_pct": 0.258,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2299,7 +2406,8 @@
       "prev_eff_rent": 3611.0,
       "vacant_days": 18.0,
       "tradeout_amount": 1935.0,
-      "tradeout_pct": 0.536
+      "tradeout_pct": 0.536,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2320,7 +2428,8 @@
       "prev_eff_rent": 4733.0,
       "vacant_days": 7.0,
       "tradeout_amount": 727.0,
-      "tradeout_pct": 0.154
+      "tradeout_pct": 0.154,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2341,7 +2450,8 @@
       "prev_eff_rent": 3739.0,
       "vacant_days": 19.0,
       "tradeout_amount": 48.0,
-      "tradeout_pct": 0.013000000000000001
+      "tradeout_pct": 0.013000000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2362,7 +2472,8 @@
       "prev_eff_rent": 3037.0,
       "vacant_days": 51.0,
       "tradeout_amount": 359.0,
-      "tradeout_pct": 0.11800000000000001
+      "tradeout_pct": 0.11800000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2383,7 +2494,8 @@
       "prev_eff_rent": 4117.0,
       "vacant_days": 7.0,
       "tradeout_amount": 949.0,
-      "tradeout_pct": 0.23
+      "tradeout_pct": 0.23,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2404,7 +2516,8 @@
       "prev_eff_rent": 0.0,
       "vacant_days": 7.0,
       "tradeout_amount": 3400.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -2425,7 +2538,8 @@
       "prev_eff_rent": 7682.0,
       "vacant_days": 6.0,
       "tradeout_amount": 921.0,
-      "tradeout_pct": 0.12
+      "tradeout_pct": 0.12,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2446,7 +2560,8 @@
       "prev_eff_rent": 4290.0,
       "vacant_days": 19.0,
       "tradeout_amount": 662.0,
-      "tradeout_pct": 0.154
+      "tradeout_pct": 0.154,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2467,7 +2582,8 @@
       "prev_eff_rent": 4326.0,
       "vacant_days": 17.0,
       "tradeout_amount": 819.0,
-      "tradeout_pct": 0.18899999999999997
+      "tradeout_pct": 0.18899999999999997,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2488,7 +2604,8 @@
       "prev_eff_rent": 4484.0,
       "vacant_days": 7.0,
       "tradeout_amount": -138.0,
-      "tradeout_pct": -0.031
+      "tradeout_pct": -0.031,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2509,7 +2626,8 @@
       "prev_eff_rent": 3812.0,
       "vacant_days": 28.0,
       "tradeout_amount": 240.0,
-      "tradeout_pct": 0.063
+      "tradeout_pct": 0.063,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2530,7 +2648,8 @@
       "prev_eff_rent": 3733.0,
       "vacant_days": 7.0,
       "tradeout_amount": 473.0,
-      "tradeout_pct": 0.127
+      "tradeout_pct": 0.127,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2551,7 +2670,8 @@
       "prev_eff_rent": 3568.0,
       "vacant_days": 7.0,
       "tradeout_amount": 543.0,
-      "tradeout_pct": 0.152
+      "tradeout_pct": 0.152,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2572,7 +2692,8 @@
       "prev_eff_rent": 4295.0,
       "vacant_days": 12.0,
       "tradeout_amount": 321.0,
-      "tradeout_pct": 0.075
+      "tradeout_pct": 0.075,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2593,7 +2714,8 @@
       "prev_eff_rent": 2470.0,
       "vacant_days": 37.0,
       "tradeout_amount": 1089.0,
-      "tradeout_pct": 0.441
+      "tradeout_pct": 0.441,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2614,7 +2736,8 @@
       "prev_eff_rent": 4318.0,
       "vacant_days": 21.0,
       "tradeout_amount": -127.0,
-      "tradeout_pct": -0.028999999999999998
+      "tradeout_pct": -0.028999999999999998,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2635,7 +2758,8 @@
       "prev_eff_rent": 3550.0,
       "vacant_days": 24.0,
       "tradeout_amount": 352.0,
-      "tradeout_pct": 0.099
+      "tradeout_pct": 0.099,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2656,7 +2780,8 @@
       "prev_eff_rent": 4030.0,
       "vacant_days": 19.0,
       "tradeout_amount": -290.0,
-      "tradeout_pct": -0.07200000000000001
+      "tradeout_pct": -0.07200000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2677,7 +2802,8 @@
       "prev_eff_rent": 3080.0,
       "vacant_days": 7.0,
       "tradeout_amount": 781.0,
-      "tradeout_pct": 0.254
+      "tradeout_pct": 0.254,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2698,7 +2824,8 @@
       "prev_eff_rent": 2806.0,
       "vacant_days": 58.0,
       "tradeout_amount": -200.0,
-      "tradeout_pct": -0.071
+      "tradeout_pct": -0.071,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2719,7 +2846,8 @@
       "prev_eff_rent": 3640.0,
       "vacant_days": 10.0,
       "tradeout_amount": 357.0,
-      "tradeout_pct": 0.098
+      "tradeout_pct": 0.098,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2740,7 +2868,8 @@
       "prev_eff_rent": 3787.0,
       "vacant_days": 8.0,
       "tradeout_amount": 406.0,
-      "tradeout_pct": 0.107
+      "tradeout_pct": 0.107,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2761,7 +2890,8 @@
       "prev_eff_rent": 4360.0,
       "vacant_days": 33.0,
       "tradeout_amount": 1134.0,
-      "tradeout_pct": 0.26
+      "tradeout_pct": 0.26,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2782,7 +2912,8 @@
       "prev_eff_rent": 3548.0,
       "vacant_days": 27.0,
       "tradeout_amount": 1408.0,
-      "tradeout_pct": 0.397
+      "tradeout_pct": 0.397,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2803,7 +2934,8 @@
       "prev_eff_rent": 2800.0,
       "vacant_days": 39.0,
       "tradeout_amount": 953.0,
-      "tradeout_pct": 0.34
+      "tradeout_pct": 0.34,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2824,7 +2956,8 @@
       "prev_eff_rent": 3416.0,
       "vacant_days": 45.0,
       "tradeout_amount": 599.0,
-      "tradeout_pct": 0.175
+      "tradeout_pct": 0.175,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2845,7 +2978,8 @@
       "prev_eff_rent": 4903.0,
       "vacant_days": 43.0,
       "tradeout_amount": 838.0,
-      "tradeout_pct": 0.171
+      "tradeout_pct": 0.171,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2866,7 +3000,8 @@
       "prev_eff_rent": 3271.0,
       "vacant_days": 78.0,
       "tradeout_amount": 973.0,
-      "tradeout_pct": 0.298
+      "tradeout_pct": 0.298,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2887,7 +3022,8 @@
       "prev_eff_rent": 3853.0,
       "vacant_days": 6.0,
       "tradeout_amount": 1204.0,
-      "tradeout_pct": 0.312
+      "tradeout_pct": 0.312,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2908,7 +3044,8 @@
       "prev_eff_rent": 3142.0,
       "vacant_days": 11.0,
       "tradeout_amount": 575.0,
-      "tradeout_pct": 0.183
+      "tradeout_pct": 0.183,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2929,7 +3066,8 @@
       "prev_eff_rent": 3166.0,
       "vacant_days": 14.0,
       "tradeout_amount": 551.0,
-      "tradeout_pct": 0.174
+      "tradeout_pct": 0.174,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2950,7 +3088,8 @@
       "prev_eff_rent": 5612.0,
       "vacant_days": 6.0,
       "tradeout_amount": -7.0,
-      "tradeout_pct": -0.001
+      "tradeout_pct": -0.001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -2971,7 +3110,8 @@
       "prev_eff_rent": 2881.0,
       "vacant_days": 20.0,
       "tradeout_amount": 1140.0,
-      "tradeout_pct": 0.396
+      "tradeout_pct": 0.396,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -2992,7 +3132,8 @@
       "prev_eff_rent": 4494.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1222.0,
-      "tradeout_pct": 0.272
+      "tradeout_pct": 0.272,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3013,7 +3154,8 @@
       "prev_eff_rent": 0.0,
       "vacant_days": 23.0,
       "tradeout_amount": 3684.0,
-      "tradeout_pct": 0.0
+      "tradeout_pct": 0.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3034,7 +3176,8 @@
       "prev_eff_rent": 3058.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1071.0,
-      "tradeout_pct": 0.35
+      "tradeout_pct": 0.35,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3055,7 +3198,8 @@
       "prev_eff_rent": 4806.0,
       "vacant_days": 53.0,
       "tradeout_amount": 736.0,
-      "tradeout_pct": 0.153
+      "tradeout_pct": 0.153,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3076,7 +3220,8 @@
       "prev_eff_rent": 4553.0,
       "vacant_days": 7.0,
       "tradeout_amount": 147.0,
-      "tradeout_pct": 0.032
+      "tradeout_pct": 0.032,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3097,7 +3242,8 @@
       "prev_eff_rent": 3358.0,
       "vacant_days": 44.0,
       "tradeout_amount": 1142.0,
-      "tradeout_pct": 0.34
+      "tradeout_pct": 0.34,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3118,7 +3264,8 @@
       "prev_eff_rent": 4517.0,
       "vacant_days": 56.0,
       "tradeout_amount": 1567.0,
-      "tradeout_pct": 0.34700000000000003
+      "tradeout_pct": 0.34700000000000003,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3139,7 +3286,8 @@
       "prev_eff_rent": 3224.0,
       "vacant_days": 32.0,
       "tradeout_amount": 1537.0,
-      "tradeout_pct": 0.47700000000000004
+      "tradeout_pct": 0.47700000000000004,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3160,7 +3308,8 @@
       "prev_eff_rent": 4498.0,
       "vacant_days": 5.0,
       "tradeout_amount": 315.0,
-      "tradeout_pct": 0.07
+      "tradeout_pct": 0.07,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3181,7 +3330,8 @@
       "prev_eff_rent": 3396.0,
       "vacant_days": 7.0,
       "tradeout_amount": 563.0,
-      "tradeout_pct": 0.166
+      "tradeout_pct": 0.166,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3202,7 +3352,8 @@
       "prev_eff_rent": 4291.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1188.0,
-      "tradeout_pct": 0.27699999999999997
+      "tradeout_pct": 0.27699999999999997,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3223,7 +3374,8 @@
       "prev_eff_rent": 3302.0,
       "vacant_days": 51.0,
       "tradeout_amount": 517.0,
-      "tradeout_pct": 0.157
+      "tradeout_pct": 0.157,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3244,7 +3396,8 @@
       "prev_eff_rent": 3162.0,
       "vacant_days": 39.0,
       "tradeout_amount": 920.0,
-      "tradeout_pct": 0.29100000000000004
+      "tradeout_pct": 0.29100000000000004,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3265,7 +3418,8 @@
       "prev_eff_rent": 5639.0,
       "vacant_days": 7.0,
       "tradeout_amount": 271.0,
-      "tradeout_pct": 0.048
+      "tradeout_pct": 0.048,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -3286,7 +3440,8 @@
       "prev_eff_rent": 5824.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2206.0,
-      "tradeout_pct": 0.379
+      "tradeout_pct": 0.379,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3307,7 +3462,8 @@
       "prev_eff_rent": 3269.0,
       "vacant_days": 54.0,
       "tradeout_amount": 2029.0,
-      "tradeout_pct": 0.621
+      "tradeout_pct": 0.621,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3328,7 +3484,8 @@
       "prev_eff_rent": 3082.0,
       "vacant_days": 7.0,
       "tradeout_amount": 656.0,
-      "tradeout_pct": 0.213
+      "tradeout_pct": 0.213,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -3349,7 +3506,8 @@
       "prev_eff_rent": 6105.0,
       "vacant_days": 8.0,
       "tradeout_amount": 2167.0,
-      "tradeout_pct": 0.355
+      "tradeout_pct": 0.355,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3370,7 +3528,8 @@
       "prev_eff_rent": 4127.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2407.0,
-      "tradeout_pct": 0.583
+      "tradeout_pct": 0.583,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3391,7 +3550,8 @@
       "prev_eff_rent": 5031.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1413.0,
-      "tradeout_pct": 0.281
+      "tradeout_pct": 0.281,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -3412,7 +3572,8 @@
       "prev_eff_rent": 8603.0,
       "vacant_days": 7.0,
       "tradeout_amount": 184.0,
-      "tradeout_pct": 0.021
+      "tradeout_pct": 0.021,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3433,7 +3594,8 @@
       "prev_eff_rent": 2901.0,
       "vacant_days": 42.0,
       "tradeout_amount": 1104.0,
-      "tradeout_pct": 0.381
+      "tradeout_pct": 0.381,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3454,7 +3616,8 @@
       "prev_eff_rent": 3400.0,
       "vacant_days": 7.0,
       "tradeout_amount": 916.0,
-      "tradeout_pct": 0.26899999999999996
+      "tradeout_pct": 0.26899999999999996,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3475,7 +3638,8 @@
       "prev_eff_rent": 4277.0,
       "vacant_days": 4.0,
       "tradeout_amount": 1830.0,
-      "tradeout_pct": 0.428
+      "tradeout_pct": 0.428,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3496,7 +3660,8 @@
       "prev_eff_rent": 3981.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1572.0,
-      "tradeout_pct": 0.395
+      "tradeout_pct": 0.395,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -3517,7 +3682,8 @@
       "prev_eff_rent": 4932.0,
       "vacant_days": 5.0,
       "tradeout_amount": 2168.0,
-      "tradeout_pct": 0.44
+      "tradeout_pct": 0.44,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3538,7 +3704,8 @@
       "prev_eff_rent": 4990.0,
       "vacant_days": 5.0,
       "tradeout_amount": 1010.0,
-      "tradeout_pct": 0.20199999999999999
+      "tradeout_pct": 0.20199999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3559,7 +3726,8 @@
       "prev_eff_rent": 717.0,
       "vacant_days": 65.0,
       "tradeout_amount": 3116.0,
-      "tradeout_pct": 4.346
+      "tradeout_pct": 4.346,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3580,7 +3748,8 @@
       "prev_eff_rent": 3057.0,
       "vacant_days": 19.0,
       "tradeout_amount": 931.0,
-      "tradeout_pct": 0.304
+      "tradeout_pct": 0.304,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3601,7 +3770,8 @@
       "prev_eff_rent": 3103.0,
       "vacant_days": 25.0,
       "tradeout_amount": 842.0,
-      "tradeout_pct": 0.271
+      "tradeout_pct": 0.271,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3622,7 +3792,8 @@
       "prev_eff_rent": 3559.0,
       "vacant_days": 8.0,
       "tradeout_amount": 214.0,
-      "tradeout_pct": 0.06
+      "tradeout_pct": 0.06,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3643,7 +3814,8 @@
       "prev_eff_rent": 3073.0,
       "vacant_days": 58.0,
       "tradeout_amount": -1602.0,
-      "tradeout_pct": -0.521
+      "tradeout_pct": -0.521,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3664,7 +3836,8 @@
       "prev_eff_rent": 3727.0,
       "vacant_days": 27.0,
       "tradeout_amount": 4153.0,
-      "tradeout_pct": 1.114
+      "tradeout_pct": 1.114,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3685,7 +3858,8 @@
       "prev_eff_rent": 4596.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1924.0,
-      "tradeout_pct": 0.419
+      "tradeout_pct": 0.419,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3706,7 +3880,8 @@
       "prev_eff_rent": 3769.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1731.0,
-      "tradeout_pct": 0.45899999999999996
+      "tradeout_pct": 0.45899999999999996,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3727,7 +3902,8 @@
       "prev_eff_rent": 3712.0,
       "vacant_days": 7.0,
       "tradeout_amount": 196.0,
-      "tradeout_pct": 0.053
+      "tradeout_pct": 0.053,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3748,7 +3924,8 @@
       "prev_eff_rent": 5119.0,
       "vacant_days": 15.0,
       "tradeout_amount": -974.0,
-      "tradeout_pct": -0.19
+      "tradeout_pct": -0.19,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3769,7 +3946,8 @@
       "prev_eff_rent": 4288.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2176.0,
-      "tradeout_pct": 0.508
+      "tradeout_pct": 0.508,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3790,7 +3968,8 @@
       "prev_eff_rent": 3280.0,
       "vacant_days": 7.0,
       "tradeout_amount": 493.0,
-      "tradeout_pct": 0.15
+      "tradeout_pct": 0.15,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3811,7 +3990,8 @@
       "prev_eff_rent": 3391.0,
       "vacant_days": 15.0,
       "tradeout_amount": 522.0,
-      "tradeout_pct": 0.154
+      "tradeout_pct": 0.154,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3832,7 +4012,8 @@
       "prev_eff_rent": 4855.0,
       "vacant_days": 5.0,
       "tradeout_amount": 2034.0,
-      "tradeout_pct": 0.419
+      "tradeout_pct": 0.419,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3853,7 +4034,8 @@
       "prev_eff_rent": 4513.0,
       "vacant_days": 7.0,
       "tradeout_amount": -335.0,
-      "tradeout_pct": -0.07400000000000001
+      "tradeout_pct": -0.07400000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3874,7 +4056,8 @@
       "prev_eff_rent": 3964.0,
       "vacant_days": 13.0,
       "tradeout_amount": 647.0,
-      "tradeout_pct": 0.163
+      "tradeout_pct": 0.163,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3895,7 +4078,8 @@
       "prev_eff_rent": 3730.0,
       "vacant_days": 12.0,
       "tradeout_amount": 753.0,
-      "tradeout_pct": 0.20199999999999999
+      "tradeout_pct": 0.20199999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -3916,7 +4100,8 @@
       "prev_eff_rent": 3738.0,
       "vacant_days": 4.0,
       "tradeout_amount": 355.0,
-      "tradeout_pct": 0.095
+      "tradeout_pct": 0.095,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -3937,7 +4122,8 @@
       "prev_eff_rent": 4889.0,
       "vacant_days": 60.0,
       "tradeout_amount": 58.0,
-      "tradeout_pct": 0.012
+      "tradeout_pct": 0.012,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -3958,7 +4144,8 @@
       "prev_eff_rent": 5940.0,
       "vacant_days": 37.0,
       "tradeout_amount": 1274.0,
-      "tradeout_pct": 0.214
+      "tradeout_pct": 0.214,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -3979,7 +4166,8 @@
       "prev_eff_rent": 5768.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2000.0,
-      "tradeout_pct": 0.34700000000000003
+      "tradeout_pct": 0.34700000000000003,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4000,7 +4188,8 @@
       "prev_eff_rent": 3673.0,
       "vacant_days": 22.0,
       "tradeout_amount": 419.0,
-      "tradeout_pct": 0.114
+      "tradeout_pct": 0.114,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4021,7 +4210,8 @@
       "prev_eff_rent": 3664.0,
       "vacant_days": 33.0,
       "tradeout_amount": -2503.0,
-      "tradeout_pct": -0.6829999999999999
+      "tradeout_pct": -0.6829999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4042,7 +4232,8 @@
       "prev_eff_rent": 4113.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2542.0,
-      "tradeout_pct": 0.618
+      "tradeout_pct": 0.618,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4063,7 +4254,8 @@
       "prev_eff_rent": 4322.0,
       "vacant_days": 7.0,
       "tradeout_amount": 174.0,
-      "tradeout_pct": 0.04
+      "tradeout_pct": 0.04,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4084,7 +4276,8 @@
       "prev_eff_rent": 4700.0,
       "vacant_days": 27.0,
       "tradeout_amount": 2455.0,
-      "tradeout_pct": 0.522
+      "tradeout_pct": 0.522,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4105,7 +4298,8 @@
       "prev_eff_rent": 3610.0,
       "vacant_days": 12.0,
       "tradeout_amount": 616.0,
-      "tradeout_pct": 0.171
+      "tradeout_pct": 0.171,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4126,7 +4320,8 @@
       "prev_eff_rent": 4288.0,
       "vacant_days": 61.0,
       "tradeout_amount": 2737.0,
-      "tradeout_pct": 0.638
+      "tradeout_pct": 0.638,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4147,7 +4342,8 @@
       "prev_eff_rent": 3627.0,
       "vacant_days": 13.0,
       "tradeout_amount": 689.0,
-      "tradeout_pct": 0.19
+      "tradeout_pct": 0.19,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4168,7 +4364,8 @@
       "prev_eff_rent": 5773.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1063.0,
-      "tradeout_pct": 0.184
+      "tradeout_pct": 0.184,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4189,7 +4386,8 @@
       "prev_eff_rent": 4606.0,
       "vacant_days": 29.0,
       "tradeout_amount": 1299.0,
-      "tradeout_pct": 0.282
+      "tradeout_pct": 0.282,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4210,7 +4408,8 @@
       "prev_eff_rent": 3684.0,
       "vacant_days": 36.0,
       "tradeout_amount": 489.0,
-      "tradeout_pct": 0.133
+      "tradeout_pct": 0.133,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4231,7 +4430,8 @@
       "prev_eff_rent": 2606.0,
       "vacant_days": 46.0,
       "tradeout_amount": 1782.0,
-      "tradeout_pct": 0.684
+      "tradeout_pct": 0.684,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4252,7 +4452,8 @@
       "prev_eff_rent": 5298.0,
       "vacant_days": 52.0,
       "tradeout_amount": -1145.0,
-      "tradeout_pct": -0.21600000000000003
+      "tradeout_pct": -0.21600000000000003,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4273,7 +4474,8 @@
       "prev_eff_rent": 3981.0,
       "vacant_days": 14.0,
       "tradeout_amount": 1897.0,
-      "tradeout_pct": 0.47600000000000003
+      "tradeout_pct": 0.47600000000000003,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4294,7 +4496,8 @@
       "prev_eff_rent": 5100.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1595.0,
-      "tradeout_pct": 0.313
+      "tradeout_pct": 0.313,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4315,7 +4518,8 @@
       "prev_eff_rent": 3010.0,
       "vacant_days": 39.0,
       "tradeout_amount": 2357.0,
-      "tradeout_pct": 0.7829999999999999
+      "tradeout_pct": 0.7829999999999999,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -4336,7 +4540,8 @@
       "prev_eff_rent": 6703.0,
       "vacant_days": 28.0,
       "tradeout_amount": 2033.0,
-      "tradeout_pct": 0.303
+      "tradeout_pct": 0.303,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4357,7 +4562,8 @@
       "prev_eff_rent": 2620.0,
       "vacant_days": 14.0,
       "tradeout_amount": 1685.0,
-      "tradeout_pct": 0.643
+      "tradeout_pct": 0.643,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -4378,7 +4584,8 @@
       "prev_eff_rent": 5520.0,
       "vacant_days": 20.0,
       "tradeout_amount": 1926.0,
-      "tradeout_pct": 0.349
+      "tradeout_pct": 0.349,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4399,7 +4606,8 @@
       "prev_eff_rent": 4562.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2440.0,
-      "tradeout_pct": 0.535
+      "tradeout_pct": 0.535,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4420,7 +4628,8 @@
       "prev_eff_rent": 3269.0,
       "vacant_days": 42.0,
       "tradeout_amount": 3576.0,
-      "tradeout_pct": 1.094
+      "tradeout_pct": 1.094,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4441,7 +4650,8 @@
       "prev_eff_rent": 3346.0,
       "vacant_days": 48.0,
       "tradeout_amount": 1318.0,
-      "tradeout_pct": 0.39399999999999996
+      "tradeout_pct": 0.39399999999999996,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4462,7 +4672,8 @@
       "prev_eff_rent": 3539.0,
       "vacant_days": 7.0,
       "tradeout_amount": 774.0,
-      "tradeout_pct": 0.21899999999999997
+      "tradeout_pct": 0.21899999999999997,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4483,7 +4694,8 @@
       "prev_eff_rent": 3252.0,
       "vacant_days": 43.0,
       "tradeout_amount": 1420.0,
-      "tradeout_pct": 0.43700000000000006
+      "tradeout_pct": 0.43700000000000006,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4504,7 +4716,8 @@
       "prev_eff_rent": 5722.0,
       "vacant_days": 32.0,
       "tradeout_amount": -965.0,
-      "tradeout_pct": -0.16899999999999998
+      "tradeout_pct": -0.16899999999999998,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4525,7 +4738,8 @@
       "prev_eff_rent": 5692.0,
       "vacant_days": 74.0,
       "tradeout_amount": -769.0,
-      "tradeout_pct": -0.135
+      "tradeout_pct": -0.135,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4546,7 +4760,8 @@
       "prev_eff_rent": 3636.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2740.0,
-      "tradeout_pct": 0.754
+      "tradeout_pct": 0.754,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4567,7 +4782,8 @@
       "prev_eff_rent": 5460.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2004.0,
-      "tradeout_pct": 0.36700000000000005
+      "tradeout_pct": 0.36700000000000005,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4588,7 +4804,8 @@
       "prev_eff_rent": 3292.0,
       "vacant_days": 42.0,
       "tradeout_amount": 1684.0,
-      "tradeout_pct": 0.512
+      "tradeout_pct": 0.512,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4609,7 +4826,8 @@
       "prev_eff_rent": 4616.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1593.0,
-      "tradeout_pct": 0.345
+      "tradeout_pct": 0.345,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4630,7 +4848,8 @@
       "prev_eff_rent": 4915.0,
       "vacant_days": 6.0,
       "tradeout_amount": 2434.0,
-      "tradeout_pct": 0.495
+      "tradeout_pct": 0.495,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4651,7 +4870,8 @@
       "prev_eff_rent": 4226.0,
       "vacant_days": 70.0,
       "tradeout_amount": 1203.0,
-      "tradeout_pct": 0.285
+      "tradeout_pct": 0.285,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4672,7 +4892,8 @@
       "prev_eff_rent": 3373.0,
       "vacant_days": 13.0,
       "tradeout_amount": 1061.0,
-      "tradeout_pct": 0.315
+      "tradeout_pct": 0.315,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4693,7 +4914,8 @@
       "prev_eff_rent": 7880.0,
       "vacant_days": 7.0,
       "tradeout_amount": -24.0,
-      "tradeout_pct": -0.003
+      "tradeout_pct": -0.003,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4714,7 +4936,8 @@
       "prev_eff_rent": 4952.0,
       "vacant_days": 7.0,
       "tradeout_amount": 654.0,
-      "tradeout_pct": 0.132
+      "tradeout_pct": 0.132,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4735,7 +4958,8 @@
       "prev_eff_rent": 3921.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1489.0,
-      "tradeout_pct": 0.38
+      "tradeout_pct": 0.38,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4756,7 +4980,8 @@
       "prev_eff_rent": 3309.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2325.0,
-      "tradeout_pct": 0.703
+      "tradeout_pct": 0.703,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4777,7 +5002,8 @@
       "prev_eff_rent": 4267.0,
       "vacant_days": 7.0,
       "tradeout_amount": 2116.0,
-      "tradeout_pct": 0.496
+      "tradeout_pct": 0.496,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4798,7 +5024,8 @@
       "prev_eff_rent": 4206.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1508.0,
-      "tradeout_pct": 0.358
+      "tradeout_pct": 0.358,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4819,7 +5046,8 @@
       "prev_eff_rent": 3452.0,
       "vacant_days": 32.0,
       "tradeout_amount": 2761.0,
-      "tradeout_pct": 0.8
+      "tradeout_pct": 0.8,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4840,7 +5068,8 @@
       "prev_eff_rent": 4974.0,
       "vacant_days": 29.0,
       "tradeout_amount": 879.0,
-      "tradeout_pct": 0.177
+      "tradeout_pct": 0.177,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4861,7 +5090,8 @@
       "prev_eff_rent": 4092.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1516.0,
-      "tradeout_pct": 0.37
+      "tradeout_pct": 0.37,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4882,7 +5112,8 @@
       "prev_eff_rent": 3962.0,
       "vacant_days": 32.0,
       "tradeout_amount": 2198.0,
-      "tradeout_pct": 0.555
+      "tradeout_pct": 0.555,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4903,7 +5134,8 @@
       "prev_eff_rent": 5479.0,
       "vacant_days": 7.0,
       "tradeout_amount": 644.0,
-      "tradeout_pct": 0.11800000000000001
+      "tradeout_pct": 0.11800000000000001,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4924,7 +5156,8 @@
       "prev_eff_rent": 3500.0,
       "vacant_days": 7.0,
       "tradeout_amount": 389.0,
-      "tradeout_pct": 0.111
+      "tradeout_pct": 0.111,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4945,7 +5178,8 @@
       "prev_eff_rent": 4313.0,
       "vacant_days": 9.0,
       "tradeout_amount": 1357.0,
-      "tradeout_pct": 0.315
+      "tradeout_pct": 0.315,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -4966,7 +5200,8 @@
       "prev_eff_rent": 5057.0,
       "vacant_days": 17.0,
       "tradeout_amount": 3117.0,
-      "tradeout_pct": 0.616
+      "tradeout_pct": 0.616,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -4987,7 +5222,8 @@
       "prev_eff_rent": 3998.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1770.0,
-      "tradeout_pct": 0.44299999999999995
+      "tradeout_pct": 0.44299999999999995,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -5008,7 +5244,8 @@
       "prev_eff_rent": 5465.0,
       "vacant_days": 7.0,
       "tradeout_amount": 3107.0,
-      "tradeout_pct": 0.568
+      "tradeout_pct": 0.568,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -5029,7 +5266,8 @@
       "prev_eff_rent": 5153.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1942.0,
-      "tradeout_pct": 0.377
+      "tradeout_pct": 0.377,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -5050,7 +5288,8 @@
       "prev_eff_rent": 4985.0,
       "vacant_days": 7.0,
       "tradeout_amount": -4985.0,
-      "tradeout_pct": -1.0
+      "tradeout_pct": -1.0,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -5071,7 +5310,8 @@
       "prev_eff_rent": 6444.0,
       "vacant_days": 12.0,
       "tradeout_amount": 3479.0,
-      "tradeout_pct": 0.54
+      "tradeout_pct": 0.54,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "3B2B-3B3BD*",
@@ -5092,7 +5332,8 @@
       "prev_eff_rent": 8030.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1970.0,
-      "tradeout_pct": 0.245
+      "tradeout_pct": 0.245,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -5113,7 +5354,8 @@
       "prev_eff_rent": 5431.0,
       "vacant_days": 7.0,
       "tradeout_amount": 4064.0,
-      "tradeout_pct": 0.748
+      "tradeout_pct": 0.748,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -5134,7 +5376,8 @@
       "prev_eff_rent": 4124.0,
       "vacant_days": 31.0,
       "tradeout_amount": 2867.0,
-      "tradeout_pct": 0.695
+      "tradeout_pct": 0.695,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -5155,7 +5398,8 @@
       "prev_eff_rent": 3856.0,
       "vacant_days": 7.0,
       "tradeout_amount": 1283.0,
-      "tradeout_pct": 0.33299999999999996
+      "tradeout_pct": 0.33299999999999996,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "2B1B-2B2BD*",
@@ -5176,7 +5420,8 @@
       "prev_eff_rent": 4849.0,
       "vacant_days": 7.0,
       "tradeout_amount": 4396.0,
-      "tradeout_pct": 0.907
+      "tradeout_pct": 0.907,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -5197,7 +5442,8 @@
       "prev_eff_rent": 3351.0,
       "vacant_days": 12.0,
       "tradeout_amount": 2622.0,
-      "tradeout_pct": 0.782
+      "tradeout_pct": 0.782,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     },
     {
       "floor_plan": "1B1B-1B1BD*",
@@ -5218,7 +5464,8 @@
       "prev_eff_rent": 1471.0,
       "vacant_days": 31.0,
       "tradeout_amount": 4573.0,
-      "tradeout_pct": 3.109
+      "tradeout_pct": 3.109,
+      "from_file": "LeaseTradeoutReport-Landing.XLS"
     }
   ],
   "report_type": "lease_tradeout",
