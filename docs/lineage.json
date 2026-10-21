@@ -400,7 +400,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-20T15:36:55.376572+00:00",
+  "generated_at": "2026-10-21T15:54:12.387831+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -2184,17 +2184,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-10-19",
+     "as_of": "2026-10-21",
      "source_file": null,
-     "landed_at": "2026-10-19T15:37:58Z",
-     "detail": "61 day(s) recorded"
+     "landed_at": "2026-10-21T15:37:35Z",
+     "detail": "63 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-10-19",
+     "as_of": "2026-10-21",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-10-19T15:37:58Z",
+     "landed_at": "2026-10-21T15:37:35Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2410,10 +2410,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-18",
+     "as_of": "2026-10-20",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-18T17:57:57Z",
-     "detail": "176 leases, 269 renewals and 65 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-10-20T19:06:47Z",
+     "detail": "176 leases, 270 renewals and 65 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2463,7 +2463,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-20T15:36:54.485693+00:00",
+     "landed_at": "2026-10-21T15:54:11.653867+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
