@@ -400,7 +400,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-10-21T15:54:12.387831+00:00",
+  "generated_at": "2026-10-22T15:50:07.887108+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1455,6 +1455,14 @@
    "same_as": null,
    "evidence": [
     {
+     "property": "335-third-street",
+     "file": "data/335-third-street/rent_roll.json",
+     "as_of": "2026-10-21",
+     "source_file": "2026-10-21 RentRoll10_21_2026 (1).xlsx",
+     "landed_at": "2026-10-21T22:28:34.298Z",
+     "detail": null
+    },
+    {
      "property": "madelon",
      "file": "data/madelon/rent_roll.json",
      "as_of": "2026-10-18",
@@ -2410,10 +2418,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-10-20",
+     "as_of": "2026-10-21",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-10-20T19:06:47Z",
-     "detail": "176 leases, 270 renewals and 65 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-10-21T19:11:59Z",
+     "detail": "176 leases, 270 renewals and 66 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2463,7 +2471,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-10-21T15:54:11.653867+00:00",
+     "landed_at": "2026-10-22T15:50:07.265081+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

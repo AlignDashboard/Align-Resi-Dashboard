@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-10-21T15:54:11.653867+00:00",
+    "generated_at": "2026-10-22T15:50:07.265081+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -3713,6 +3713,114 @@
         ],
         "slug": "madelon",
         "name": "Madelon"
+      },
+      {
+        "as_of": "2026-10-21",
+        "landed_at": "2026-10-21T22:28:34.298Z",
+        "source_file": "2026-10-21 RentRoll10_21_2026 (1).xlsx",
+        "units": 38,
+        "occupied": 2,
+        "vacant": 36,
+        "on_notice": 0,
+        "occupancy": 0.052632,
+        "sqft": 22876.0,
+        "market_rent_total": 94671.0,
+        "actual_rent_total": 5065.0,
+        "market_rent_occupied": 5065.0,
+        "actual_rent_occupied": 5065.0,
+        "loss_to_lease": 0.0,
+        "loss_to_lease_pct": 0.0,
+        "market_psf": 4.2068,
+        "inplace_psf": 4.2068,
+        "holdovers": {
+          "units": 0,
+          "share_of_occupied": 0.0,
+          "inplace": 0,
+          "market": 0,
+          "gap_yr": 0
+        },
+        "by_plan": {
+          "3353rd": {
+            "units": 35,
+            "leased": 2,
+            "vacant": 33
+          },
+          "3353rdBM": {
+            "units": 3,
+            "leased": 0,
+            "vacant": 3
+          }
+        },
+        "rollover": [
+          {
+            "month": "2027-09",
+            "units": 2,
+            "sqft": 1204.0,
+            "inplace": 5065.0,
+            "market": 5065.0,
+            "uncaptured": 0.0,
+            "cum_units": 2,
+            "cum_pct": 1.0
+          }
+        ],
+        "gaps": [
+          {
+            "rank": 1,
+            "unit": "302",
+            "unit_type": "3353rd",
+            "sqft": 602.0,
+            "inplace": 2495.0,
+            "market": 2495.0,
+            "gap_mo": 0.0,
+            "gap_yr": 0.0,
+            "pct_below": 0.0,
+            "expiry": "2027-09-24",
+            "status": "Current"
+          },
+          {
+            "rank": 2,
+            "unit": "601",
+            "unit_type": "3353rd",
+            "sqft": 602.0,
+            "inplace": 2570.0,
+            "market": 2570.0,
+            "gap_mo": 0.0,
+            "gap_yr": 0.0,
+            "pct_below": 0.0,
+            "expiry": "2027-09-18",
+            "status": "Current"
+          }
+        ],
+        "undated_leases": 0,
+        "basis": "Occupied units only for loss to lease and the gap table; a vacant unit has an asking rent and no in-place rent, so counting it books the whole asking rent as loss to lease.",
+        "checks": [
+          {
+            "check": "market_rent ties to the report Total row",
+            "ok": true,
+            "parsed": 94671.0,
+            "report": 94671.0,
+            "delta": 0.0
+          },
+          {
+            "check": "actual_rent ties to the report Total row",
+            "ok": true,
+            "parsed": 5065.0,
+            "report": 5065.0,
+            "delta": 0.0
+          },
+          {
+            "check": "as-of date found",
+            "ok": true,
+            "note": "2026-10-21"
+          },
+          {
+            "check": "stopped at a section marker",
+            "ok": true,
+            "note": "stopped at row 46 ('future residents/applicants')"
+          }
+        ],
+        "slug": "335-third-street",
+        "name": "335 Third Street"
       }
     ]
   },
@@ -10523,7 +10631,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12117,7 +12225,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13764,7 +13872,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -14747,7 +14855,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
