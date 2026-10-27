@@ -704,10 +704,10 @@
       "offered_rent": 83373.0,
       "wtd_increase": 0.44677,
       "statuses": {
-        "Notice": 5,
-        "Offer Accepted": 4,
-        "Renewed": 1,
-        "Waiting For Response": 3
+        "Notice": 6,
+        "Offer Accepted": 1,
+        "Renewed": 4,
+        "Waiting For Response": 2
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -725,9 +725,10 @@
       "offered_rent": 109273.0,
       "wtd_increase": 0.378717,
       "statuses": {
-        "Notice": 5,
+        "Notice": 6,
+        "Offer Accepted": 1,
         "Renewed": 2,
-        "Waiting For Response": 9
+        "Waiting For Response": 7
       },
       "offer_basis": [
         "offer_difference (a rate)",
@@ -751,7 +752,8 @@
       "wtd_increase": 0.442643,
       "statuses": {
         "Notice": 3,
-        "Waiting For Response": 12
+        "Offer Accepted": 1,
+        "Waiting For Response": 11
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -777,8 +779,8 @@
     "statuses": {
       "(blank)": 3,
       "MTM": 1,
-      "Moved Out": 4,
-      "Notice": 5,
+      "Moved Out": 5,
+      "Notice": 4,
       "Renewed": 5,
       "Waiting For Response": 16
     },
@@ -1054,7 +1056,7 @@
         "offer_basis": null
       },
       {
-        "status": "Notice",
+        "status": "Moved Out",
         "unit": 734,
         "unit_type": "laa1",
         "mtm_charge": "\u00a0",
@@ -1300,8 +1302,8 @@
     "2025-04 appears on two sheets ('April 2025 - Pending Approval' with 24 offers and 'April 2025' with 25); the fuller one is used",
     "2025-07 appears on two sheets ('July 2025 (2)' with 21 offers and 'July 2025' with 21); the fuller one is used"
   ],
-  "source_file": "Landing 2025 Renewal Tracker - Full (50).xlsx",
-  "landed_at": "2026-10-19T21:30:38.332Z",
+  "source_file": "2026-10-26 Landing 2025 Renewal Tracker - Full (3).xlsx",
+  "landed_at": "2026-10-27T03:28:45.245Z",
   "checks": [
     {
       "check": "month sheets read",
