@@ -1,10 +1,10 @@
 {
   "report_type": "renewal_tracker",
   "property": "Chorus",
-  "as_of": "2026-12",
+  "as_of": "2027-01",
   "covers": {
     "from": "2024-02",
-    "to": "2026-12"
+    "to": "2027-01"
   },
   "months": [
     {
@@ -704,8 +704,8 @@
       "offered_rent": 89084.0,
       "wtd_increase": 0.155959,
       "statuses": {
-        "Renewed": 1,
-        "Waiting For Response": 17
+        "Renewed": 2,
+        "Waiting For Response": 16
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -713,6 +713,24 @@
       "unresolved": 0,
       "sheet": "December 2026",
       "header_row": 9
+    },
+    {
+      "month": "2027-01",
+      "rows": 18,
+      "mean_increase": 0.249271,
+      "leases": 18,
+      "current_rent": 72016.0,
+      "offered_rent": 88990.0,
+      "wtd_increase": 0.235698,
+      "statuses": {
+        "Waiting For Response": 18
+      },
+      "offer_basis": [
+        "offer_difference (a difference)"
+      ],
+      "unresolved": 0,
+      "sheet": "January 2027",
+      "header_row": 10
     }
   ],
   "mtm": null,
@@ -725,13 +743,13 @@
   "problems": [
     "1 sheet(s) were skipped because their header could not be matched \u2014 they are older layouts, and their months are absent from the series rather than wrong: MTM"
   ],
-  "source_file": "2026-10-19 Chorus 2026 Renewal Tracker.xlsx",
-  "landed_at": "2026-10-19T18:29:01.139Z",
+  "source_file": "2026-10-26 Chorus 2026 Renewal Tracker.xlsx",
+  "landed_at": "2026-10-26T20:28:44.346Z",
   "checks": [
     {
       "check": "month sheets read",
       "ok": true,
-      "note": "35 month sheet(s) read, 1 not read"
+      "note": "36 month sheet(s) read, 1 not read"
     },
     {
       "check": "MTM roster read",
