@@ -2277,6 +2277,79 @@
       "problems": [
         "the filename says the week ends 2026-10-28 and the sheet says 2026-11-01; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
       ]
+    },
+    {
+      "week_ending": "2026-10-30",
+      "source_file": "2026-10-30 10.30.26 - The Madelon - Daily Report.xlsx",
+      "landed_at": "2026-10-31T01:28:34.343Z",
+      "totals": {
+        "leases": 2,
+        "lease_rent": 10667.0,
+        "prior_rent": 3915.0,
+        "tradeout_amount": 6752.0,
+        "tradeout_pct_mean": 0.198595,
+        "sqft": 1011.0,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "620",
+          "unit_type": null,
+          "floor_plan": "A5",
+          "beds_baths": "1x1",
+          "sqft": 576.0,
+          "lease_rent": 5470.0,
+          "prior_rent": 3915.0,
+          "tradeout_amount": 1555,
+          "tradeout_pct": 0.39719,
+          "concession": 0.0,
+          "net_rent": 5470,
+          "move_in": "2026-11-01",
+          "term": "12"
+        },
+        {
+          "unit": "624",
+          "unit_type": null,
+          "floor_plan": "A1",
+          "beds_baths": "1X1",
+          "sqft": 435.0,
+          "lease_rent": 5197.0,
+          "prior_rent": null,
+          "tradeout_amount": 5197,
+          "tradeout_pct": 0,
+          "concession": 0.0,
+          "net_rent": 5197,
+          "move_in": "2026-12-01",
+          "term": "12"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": false,
+          "clean": 1,
+          "leases": 2
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-10-30 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Madelon (from the filename)"
+        }
+      ],
+      "problems": [
+        "unit 624: no prior lease rate \u2014 its trade-out cannot be verified",
+        "the filename says the week ends 2026-10-30 and the sheet says 2026-11-01; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
+      ]
     }
   ]
 }
