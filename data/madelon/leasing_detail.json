@@ -2350,6 +2350,91 @@
         "unit 624: no prior lease rate \u2014 its trade-out cannot be verified",
         "the filename says the week ends 2026-10-30 and the sheet says 2026-11-01; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
       ]
+    },
+    {
+      "week_ending": "2026-11-01",
+      "source_file": "2026-11-01 11.1.26 - The Madelon - Daily Report.xlsx",
+      "landed_at": "2026-11-02T03:28:31.331Z",
+      "totals": {
+        "leases": 3,
+        "lease_rent": 15547.0,
+        "prior_rent": 10923.0,
+        "tradeout_amount": 4624.0,
+        "tradeout_pct_mean": 0.424118,
+        "sqft": 1587.0,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "620",
+          "unit_type": null,
+          "floor_plan": "A5",
+          "beds_baths": "1x1",
+          "sqft": 576.0,
+          "lease_rent": 5470.0,
+          "prior_rent": 3915.0,
+          "tradeout_amount": 1555,
+          "tradeout_pct": 0.39719,
+          "concession": 0.0,
+          "net_rent": 5470,
+          "move_in": "2026-11-01",
+          "term": "12"
+        },
+        {
+          "unit": "624",
+          "unit_type": null,
+          "floor_plan": "A1",
+          "beds_baths": "1X1",
+          "sqft": 435.0,
+          "lease_rent": 5197.0,
+          "prior_rent": 3550.0,
+          "tradeout_amount": 1647,
+          "tradeout_pct": 0.463944,
+          "concession": 0.0,
+          "net_rent": 5197,
+          "move_in": "2026-12-01",
+          "term": "12"
+        },
+        {
+          "unit": "613",
+          "unit_type": null,
+          "floor_plan": "A5",
+          "beds_baths": "1x1",
+          "sqft": 576.0,
+          "lease_rent": 4880.0,
+          "prior_rent": 3458.0,
+          "tradeout_amount": 1422,
+          "tradeout_pct": 0.41122,
+          "concession": 0.0,
+          "net_rent": 4880,
+          "move_in": "2026-11-10",
+          "term": "15"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 3,
+          "leases": 3
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-11-01 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Madelon (from the filename)"
+        }
+      ],
+      "problems": []
     }
   ]
 }
