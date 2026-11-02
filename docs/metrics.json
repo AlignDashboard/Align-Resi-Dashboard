@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-11-01T17:03:14.200595+00:00",
+    "generated_at": "2026-11-02T20:40:35.694352+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -4415,8 +4415,8 @@
             "from": "2024-02",
             "to": "2027-01"
           },
-          "landed_at": "2026-10-26T20:28:44.346Z",
-          "source_file": "2026-10-26 Chorus 2026 Renewal Tracker.xlsx",
+          "landed_at": "2026-11-02T19:28:35.220Z",
+          "source_file": "2026-11-02 Chorus 2026 Renewal Tracker (9).xlsx",
           "months": [
             {
               "month": "2024-02",
@@ -4875,8 +4875,10 @@
               "current_rent": 77065.0,
               "offered_rent": 89084.0,
               "statuses": {
+                "Notice": 3,
+                "Offer Accepted": 1,
                 "Renewed": 2,
-                "Waiting For Response": 16
+                "Waiting For Response": 12
               }
             },
             {
@@ -4887,7 +4889,8 @@
               "current_rent": 72016.0,
               "offered_rent": 88990.0,
               "statuses": {
-                "Waiting For Response": 18
+                "Notice": 2,
+                "Waiting For Response": 16
               }
             }
           ],
@@ -4898,10 +4901,10 @@
         "slug": "madelon",
         "name": "Madelon",
         "new_leases": {
-          "weeks": 41,
-          "as_of": "2026-10-30",
-          "landed_at": "2026-10-31T01:28:34.343Z",
-          "source_file": "2026-10-30 10.30.26 - The Madelon - Daily Report.xlsx",
+          "weeks": 42,
+          "as_of": "2026-11-01",
+          "landed_at": "2026-11-02T03:28:31.331Z",
+          "source_file": "2026-11-01 11.1.26 - The Madelon - Daily Report.xlsx",
           "months": [
             {
               "month": "2026-09",
@@ -4918,10 +4921,18 @@
               "prior_rent": 45668.0,
               "mean_tradeout": 0.389863,
               "wtd_tradeout": 0.538911
+            },
+            {
+              "month": "2026-11",
+              "leases": 3,
+              "lease_rent": 15547.0,
+              "prior_rent": 10923.0,
+              "mean_tradeout": 0.424118,
+              "wtd_tradeout": 0.423327
             }
           ],
-          "leases": 44,
-          "mean_tradeout": 0.290627
+          "leases": 47,
+          "mean_tradeout": 0.299147
         }
       }
     ]
@@ -10652,7 +10663,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12246,7 +12257,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13893,7 +13904,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -14876,7 +14887,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",

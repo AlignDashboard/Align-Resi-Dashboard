@@ -704,15 +704,17 @@
       "offered_rent": 89084.0,
       "wtd_increase": 0.155959,
       "statuses": {
+        "Notice": 3,
+        "Offer Accepted": 1,
         "Renewed": 2,
-        "Waiting For Response": 16
+        "Waiting For Response": 12
       },
       "offer_basis": [
         "offered_rent (a rate)"
       ],
       "unresolved": 0,
       "sheet": "December 2026",
-      "header_row": 9
+      "header_row": 8
     },
     {
       "month": "2027-01",
@@ -723,7 +725,8 @@
       "offered_rent": 88990.0,
       "wtd_increase": 0.235698,
       "statuses": {
-        "Waiting For Response": 18
+        "Notice": 2,
+        "Waiting For Response": 16
       },
       "offer_basis": [
         "offer_difference (a difference)"
@@ -743,8 +746,8 @@
   "problems": [
     "1 sheet(s) were skipped because their header could not be matched \u2014 they are older layouts, and their months are absent from the series rather than wrong: MTM"
   ],
-  "source_file": "2026-10-26 Chorus 2026 Renewal Tracker.xlsx",
-  "landed_at": "2026-10-26T20:28:44.346Z",
+  "source_file": "2026-11-02 Chorus 2026 Renewal Tracker (9).xlsx",
+  "landed_at": "2026-11-02T19:28:35.220Z",
   "checks": [
     {
       "check": "month sheets read",
