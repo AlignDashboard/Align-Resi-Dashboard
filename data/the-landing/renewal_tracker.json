@@ -704,10 +704,8 @@
       "offered_rent": 83373.0,
       "wtd_increase": 0.44677,
       "statuses": {
-        "Notice": 6,
-        "Offer Accepted": 1,
-        "Renewed": 4,
-        "Waiting For Response": 2
+        "Notice": 7,
+        "Renewed": 6
       },
       "offer_basis": [
         "offered_rent (a rate)"
@@ -726,9 +724,9 @@
       "wtd_increase": 0.378717,
       "statuses": {
         "Notice": 6,
-        "Offer Accepted": 1,
+        "Offer Accepted": 2,
         "Renewed": 2,
-        "Waiting For Response": 7
+        "Waiting For Response": 6
       },
       "offer_basis": [
         "offer_difference (a rate)",
@@ -770,19 +768,20 @@
   "mtm": {
     "sheet": "MTM",
     "header_row": 10,
-    "units": 34,
+    "units": 33,
     "rows_without_rent": 0,
-    "current_rent": 164048.0,
-    "market_rent": 244460.0,
+    "current_rent": 160445.0,
+    "market_rent": 238280.0,
     "mtm_charge": 0,
     "units_with_charge": 0,
     "statuses": {
-      "(blank)": 3,
+      "(blank)": 2,
       "MTM": 1,
-      "Moved Out": 5,
-      "Notice": 4,
+      "Moved Out": 6,
+      "Notice": 3,
+      "Offer Accepted": 1,
       "Renewed": 5,
-      "Waiting For Response": 16
+      "Waiting For Response": 15
     },
     "rows": [
       {
@@ -1071,7 +1070,7 @@
         "offer_basis": null
       },
       {
-        "status": "Notice",
+        "status": "Moved Out",
         "unit": 870,
         "unit_type": "laa1",
         "mtm_charge": "\u00a0",
@@ -1101,7 +1100,7 @@
         "offer_basis": null
       },
       {
-        "status": "Waiting For Response",
+        "status": "Offer Accepted",
         "unit": 243,
         "unit_type": "laa7",
         "mtm_charge": "\u00a0",
@@ -1279,21 +1278,6 @@
         "increase_needed": null,
         "offered_rent": null,
         "offer_basis": null
-      },
-      {
-        "status": null,
-        "unit": 406,
-        "unit_type": null,
-        "mtm_charge": null,
-        "lease_from": null,
-        "lease_to": null,
-        "current_rent": 3603.0,
-        "market_rent": 6180.0,
-        "total_while_mtm": null,
-        "proposed_rate": 6798,
-        "increase_needed": null,
-        "offered_rent": null,
-        "offer_basis": null
       }
     ]
   },
@@ -1302,8 +1286,8 @@
     "2025-04 appears on two sheets ('April 2025 - Pending Approval' with 24 offers and 'April 2025' with 25); the fuller one is used",
     "2025-07 appears on two sheets ('July 2025 (2)' with 21 offers and 'July 2025' with 21); the fuller one is used"
   ],
-  "source_file": "2026-10-26 Landing 2025 Renewal Tracker - Full (3).xlsx",
-  "landed_at": "2026-10-27T03:28:45.245Z",
+  "source_file": "2026-11-02 Landing 2025 Renewal Tracker - Full (51).xlsx",
+  "landed_at": "2026-11-03T01:28:59.502Z",
   "checks": [
     {
       "check": "month sheets read",
@@ -1313,7 +1297,7 @@
     {
       "check": "MTM roster read",
       "ok": true,
-      "note": "34 units on 'MTM'"
+      "note": "33 units on 'MTM'"
     },
     {
       "check": "every month sheet had a readable header",
