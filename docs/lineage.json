@@ -400,7 +400,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-11-03T18:19:41.564254+00:00",
+  "generated_at": "2026-11-04T18:31:38.951286+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -827,6 +827,14 @@
      "detail": "2 KPI cell(s): Split Between 30/60/90, Total Delinquency"
     },
     {
+     "property": "335 Third",
+     "file": "2026-11-04 Delinquency_11_1_2026.xls - 335 3rd St.xlsx",
+     "as_of": "2026-11-02",
+     "source_file": "2026-11-04 Delinquency_11_1_2026.xls - 335 3rd St.xlsx",
+     "landed_at": "2026-11-04T08:28:36.768Z",
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
+    },
+    {
      "property": "Chorus",
      "file": "2026-11-02 rs_rp_DelinquencySummaryReport - Chorus (1).xlsx",
      "as_of": null,
@@ -909,6 +917,14 @@
      "source_file": "Delinquency_8_1_2026.xls.xlsx",
      "landed_at": "2026-08-10T17:30:44.001Z",
      "detail": "2 KPI cell(s): Split Between 30/60/90, Total Delinquency"
+    },
+    {
+     "property": "335 Third",
+     "file": "2026-11-04 Delinquency_11_1_2026.xls - 335 3rd St.xlsx",
+     "as_of": "2026-11-02",
+     "source_file": "2026-11-04 Delinquency_11_1_2026.xls - 335 3rd St.xlsx",
+     "landed_at": "2026-11-04T08:28:36.768Z",
+     "detail": "1 KPI cell(s): Split Between 30/60/90"
     },
     {
      "property": "Chorus",
@@ -1457,9 +1473,9 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/rent_roll.json",
-     "as_of": "2026-10-21",
-     "source_file": "2026-10-21 RentRoll10_21_2026 (1).xlsx",
-     "landed_at": "2026-10-21T22:28:34.298Z",
+     "as_of": "2026-11-01",
+     "source_file": "2026-11-04 RentRoll11_02_2026 - 335 3rd St.xlsx",
+     "landed_at": "2026-11-04T08:28:34.283Z",
      "detail": null
     },
     {
@@ -2192,17 +2208,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-11-02",
+     "as_of": "2026-11-03",
      "source_file": null,
-     "landed_at": "2026-11-02T16:37:15Z",
-     "detail": "75 day(s) recorded"
+     "landed_at": "2026-11-03T16:37:28Z",
+     "detail": "76 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-11-02",
+     "as_of": "2026-11-03",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-11-02T16:37:15Z",
+     "landed_at": "2026-11-03T16:37:28Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2418,10 +2434,10 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-11-02",
+     "as_of": "2026-11-03",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-11-02T23:03:49Z",
-     "detail": "194 leases, 277 renewals and 71 weekly rows across 5 buildings, encrypted"
+     "landed_at": "2026-11-03T20:52:16Z",
+     "detail": "195 leases, 276 renewals and 72 weekly rows across 5 buildings, encrypted"
     }
    ],
    "status": "live"
@@ -2471,7 +2487,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-11-03T18:19:40.906191+00:00",
+     "landed_at": "2026-11-04T18:31:38.280888+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
