@@ -917,6 +917,63 @@
       "problems": [
         "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
       ]
+    },
+    {
+      "week_ending": "2026-11-08",
+      "source_file": "2026-11-03 11.2.2026- 11.8.2026- Chorus - Daily Report.xlsx",
+      "landed_at": "2026-11-04T03:28:31.651Z",
+      "totals": {
+        "leases": 1,
+        "lease_rent": 3602,
+        "prior_rent": 3133,
+        "tradeout_amount": 469,
+        "tradeout_pct_mean": 0.149697,
+        "sqft": 583,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "315",
+          "unit_type": null,
+          "floor_plan": "\t cha1N",
+          "beds_baths": "1x1",
+          "sqft": 583,
+          "lease_rent": 3602,
+          "prior_rent": 3133,
+          "tradeout_amount": 469,
+          "tradeout_pct": 0.149697,
+          "concession": 0,
+          "net_rent": 3602,
+          "move_in": "2026-11-17",
+          "term": "12"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 1,
+          "leases": 1
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-11-08 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Chorus (from the filename)"
+        }
+      ],
+      "problems": [
+        "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
+      ]
     }
   ]
 }
