@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-11-06T17:51:29.481664+00:00",
+    "generated_at": "2026-11-07T16:47:26.126499+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -4949,10 +4949,10 @@
         "slug": "madelon",
         "name": "Madelon",
         "new_leases": {
-          "weeks": 44,
-          "as_of": "2026-11-05",
-          "landed_at": "2026-11-06T02:28:35.629Z",
-          "source_file": "2026-11-05 11.5.26 - The Madelon - Daily Report.xlsx",
+          "weeks": 45,
+          "as_of": "2026-11-06",
+          "landed_at": "2026-11-07T05:28:34.627Z",
+          "source_file": "2026-11-06 11.6.26 - The Madelon - Daily Report (1).xlsx",
           "months": [
             {
               "month": "2026-09",
@@ -4972,15 +4972,15 @@
             },
             {
               "month": "2026-11",
-              "leases": 5,
-              "lease_rent": 30455.0,
-              "prior_rent": 20207.0,
-              "mean_tradeout": 0.49678,
-              "wtd_tradeout": 0.507151
+              "leases": 7,
+              "lease_rent": 42697.0,
+              "prior_rent": 28681.0,
+              "mean_tradeout": 0.477022,
+              "wtd_tradeout": 0.488686
             }
           ],
-          "leases": 49,
-          "mean_tradeout": 0.311663
+          "leases": 51,
+          "mean_tradeout": 0.31621
         }
       }
     ]
@@ -10711,7 +10711,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12305,7 +12305,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13952,7 +13952,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -14935,7 +14935,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
