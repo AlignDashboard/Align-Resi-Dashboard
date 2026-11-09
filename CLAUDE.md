@@ -2551,10 +2551,21 @@ which cut on scope alone, would have spliced them. The anchor is now
 makes **`stitch_monthly_pl` and `ratio_trend` cut where scope or anchor
 changes**. The rent section's basis already names its row, so its stitch cuts
 there too. The Landing's P&L and rent-capture runs therefore start at Nov 2025,
-twelve months, and lengthen again as `jpm_is` statements arrive. The other
-three building codes the old statements combined (`p0005612`, `p0005640`,
-`p0005671`) carried nothing: expenses agree to the cent for Nov–Dec 2025, so
-the bucket store's "previously reported codes absent" warning is expected.
+twelve months, and lengthen again as `jpm_is` statements arrive.
+
+**The `jpm_is` file was replaced the same day** by a `jpm_bf1` export,
+`2026-11-09 12_Month_Statement_p0005611_Accrual.xlsx`, so the stored Oct 2026
+point is on `549999-9999` again and both runs stitch Aug 2025–Oct 2026. That
+export covers **`p0005611` alone**, where every earlier Landing statement
+combined all four codes (`Property = p0005611 p0005612 p0005671 p0005640`),
+and the other three are not empty. Against the four-code statements it
+matches to the cent for Nov 2025–Jun 2026, but the REIT-sensitive
+concierge/TRS activity sits under the other codes: **Jul 2026 −$55,481
+revenue, −$52,839 expenses, −$2,642 NOI; Aug 2026 −$290, −$276, −$14**. The
+newest statement wins an overlapping month, so those two months now read
+lower than they did. A four-code export of the same period puts them back,
+and the bucket store's "previously reported code(s) absent" warning is
+pointing at exactly this.
 
 `scripts/test_jpm_is.py` holds it down — 27 fixture-free checks against
 statements built in the `jpm_is` shape with invented figures. Ten guards were
