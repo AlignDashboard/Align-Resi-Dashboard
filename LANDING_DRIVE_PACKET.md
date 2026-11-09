@@ -94,12 +94,12 @@ _Feed state as of 2026-11-09 — regenerate with `python scripts/landing_drive_s
 | --- | --- | --- | --- |
 | **T12 statement** | Aug 2026 | 2026-09-14 | **56d — DUE (every 30d)** |
 | Budget | Jan 2026-Dec 2026 | 2026-09-16 | 54d — current |
-| **Rent roll** | 2026-10-19 | 2026-10-19 | **21d — DUE (every 7d)** |
+| Rent roll | 2026-11-09 | 2026-11-09 | 0d — current |
 | Delinquency | — | 2026-11-03 | 6d — current |
 | **Weekly leasing** | 2026-09-20 | 2026-09-21 | **49d — DUE (every 7d)** |
 | Renewal tracker | 2027-01 | 2026-11-03 | 6d — current |
 | Unit directory | 2026-08-25 | 2026-08-26 | 75d — refresh on change only |
-| EliseAI bldg metrics | 2026-10-19 | 2026-10-19 | 21d — current |
+| EliseAI bldg metrics | 2026-11-09 | 2026-11-09 | 0d — current |
 | **EliseAI funnel** | — | — | **never arrived** |
 <!-- END STATUS -->
 

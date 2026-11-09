@@ -113,6 +113,20 @@
       "first_tours_attended": 101.0,
       "applications_completed": 19.0,
       "leases_signed": 14.0
+    },
+    {
+      "as_of": "2026-11-09",
+      "source_file": "metrics-building-2026-11-09.csv",
+      "landed_at": "2026-11-09T18:41:07.340Z",
+      "heading": "Chorus",
+      "occupancy": 94.9519,
+      "exposure": 5.0481,
+      "vacant_units": 21.0,
+      "new_prospects": 285.0,
+      "first_tours_booked": 144.0,
+      "first_tours_attended": 93.0,
+      "applications_completed": 22.0,
+      "leases_signed": 16.0
     }
   ]
 }
