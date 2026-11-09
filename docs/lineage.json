@@ -400,7 +400,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-11-09T19:14:29.639305+00:00",
+  "generated_at": "2026-11-09T21:20:52.683494+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -1338,8 +1338,8 @@
      "property": "chorus",
      "file": "data/chorus/renewal_tracker.json",
      "as_of": "2027-01",
-     "source_file": "2026-11-02 Chorus 2026 Renewal Tracker (9).xlsx",
-     "landed_at": "2026-11-02T19:28:35.220Z",
+     "source_file": "2026-11-09 Chorus 2026 Renewal Tracker 01.xlsx",
+     "landed_at": "2026-11-09T19:28:36.317Z",
      "detail": null
     },
     {
@@ -2208,17 +2208,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-11-08",
+     "as_of": "2026-11-09",
      "source_file": null,
-     "landed_at": "2026-11-08T16:37:18Z",
-     "detail": "81 day(s) recorded"
+     "landed_at": "2026-11-09T16:36:36Z",
+     "detail": "82 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-11-08",
+     "as_of": "2026-11-09",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-11-08T16:37:18Z",
+     "landed_at": "2026-11-09T16:36:36Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2487,7 +2487,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-11-09T19:14:29.047236+00:00",
+     "landed_at": "2026-11-09T21:20:51.770107+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],

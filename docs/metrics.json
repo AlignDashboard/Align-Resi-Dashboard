@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-11-09T19:14:29.047236+00:00",
+    "generated_at": "2026-11-09T21:20:51.770107+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -4470,8 +4470,8 @@
             "from": "2024-02",
             "to": "2027-01"
           },
-          "landed_at": "2026-11-02T19:28:35.220Z",
-          "source_file": "2026-11-02 Chorus 2026 Renewal Tracker (9).xlsx",
+          "landed_at": "2026-11-09T19:28:36.317Z",
+          "source_file": "2026-11-09 Chorus 2026 Renewal Tracker 01.xlsx",
           "months": [
             {
               "month": "2024-02",
@@ -4892,8 +4892,7 @@
               "statuses": {
                 "MTM": 1,
                 "Notice": 9,
-                "Offer Accepted": 1,
-                "Renewed": 9
+                "Renewed": 10
               }
             },
             {
@@ -4918,8 +4917,7 @@
               "statuses": {
                 "MTM": 1,
                 "Notice": 7,
-                "Offer Accepted": 1,
-                "Renewed": 11
+                "Renewed": 12
               }
             },
             {
@@ -4931,9 +4929,9 @@
               "offered_rent": 89084.0,
               "statuses": {
                 "Notice": 3,
-                "Offer Accepted": 1,
+                "Offer Accepted": 4,
                 "Renewed": 2,
-                "Waiting For Response": 12
+                "Waiting For Response": 9
               }
             },
             {
@@ -4945,7 +4943,8 @@
               "offered_rent": 88990.0,
               "statuses": {
                 "Notice": 2,
-                "Waiting For Response": 16
+                "Offer Accepted": 1,
+                "Waiting For Response": 15
               }
             }
           ],
