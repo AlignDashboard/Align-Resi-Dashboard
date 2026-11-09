@@ -93,6 +93,50 @@
         27.5,
         3.8
       ]
+    },
+    {
+      "period_end": "Oct 2026",
+      "landed_at": "2026-11-09T18:43:27.112Z",
+      "source_files": [
+        "12_Month_Statement_p0005611_Accrual.xlsx"
+      ],
+      "ratio_t12": 28.7,
+      "revenue_t12": 14811586.29,
+      "expense_t12": 4254836.82,
+      "expense_scope": "total",
+      "expense_anchor": "jpm_is Total Operating Expenses",
+      "basis": "jpm_is Total Operating Expenses: every expense above the NOI line, the non-operating 52xxxx accounts included",
+      "source_codes": [
+        "p0005611"
+      ],
+      "labels": [
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct"
+      ],
+      "monthly_ratio": [
+        29.2,
+        34.1,
+        30.2,
+        33.9,
+        35.8,
+        53.0,
+        32.3,
+        27.5,
+        24.5,
+        3.8,
+        18.0,
+        26.6
+      ]
     }
   ]
 }

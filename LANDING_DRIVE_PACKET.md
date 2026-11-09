@@ -92,7 +92,7 @@ _Feed state as of 2026-11-09 — regenerate with `python scripts/landing_drive_s
 
 | Feed | Covers | Landed | Status |
 | --- | --- | --- | --- |
-| **T12 statement** | Aug 2026 | 2026-09-14 | **56d — DUE (every 30d)** |
+| T12 statement | Oct 2026 | 2026-11-09 | 0d — current |
 | Budget | Jan 2026-Dec 2026 | 2026-09-16 | 54d — current |
 | Rent roll | 2026-11-09 | 2026-11-09 | 0d — current |
 | Delinquency | — | 2026-11-03 | 6d — current |
