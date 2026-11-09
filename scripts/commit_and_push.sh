@@ -35,7 +35,10 @@
 #      check, on the first commit and on every rebuilt one.
 #
 # Environment, all optional; the defaults are update.yml's:
-#   PATHS          what the run commits
+#   PATHS          what the run commits. LANDING_DRIVE_PACKET.md is in it
+#                  since 2026-11-09 (G7): build_pipeline.sh rewrites its
+#                  feed-state section every run, and before then the rewrite
+#                  stayed on the runner, so the committed copy sat at 09-28
 #   MSG            the commit message
 #   REBUILD        the command that regenerates PATHS from the reports on disk
 #   CHECK          the gate every commit must pass first
@@ -47,7 +50,7 @@
 # scripts/test_push_race.py holds it down against a real bare repository.
 set -u
 
-PATHS=${PATHS:-"data docs/metrics.json docs/scorecard.json docs/lineage.json"}
+PATHS=${PATHS:-"data docs/metrics.json docs/scorecard.json docs/lineage.json LANDING_DRIVE_PACKET.md"}
 MSG=${MSG:-"Auto-update metrics ($(date -u +%Y-%m-%d))"}
 REBUILD=${REBUILD:-"bash scripts/build_pipeline.sh"}
 CHECK=${CHECK:-"python scripts/check_no_pii.py"}

@@ -104,6 +104,14 @@ stage "Fill the scorecard from the building-metrics export" fill_building_metric
 # points at nothing.
 stage "Build the data lineage" python scripts/build_lineage.py
 
+# LANDING_DRIVE_PACKET.md's feed-state section, read from the JSON just
+# written. Here rather than in its own workflow step (open item G7): the commit
+# step stages it, and a rebuild on a newer main resets the tree and runs this
+# script again, so a step outside it would be discarded by that reset. It reads
+# published JSON only, writes no Drive link (the PDF adds those, and the PDF is
+# never committed), and exits 0 whatever it finds.
+stage "Refresh the packet's feed state" python scripts/landing_drive_status.py --write
+
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {
     echo "### Build"

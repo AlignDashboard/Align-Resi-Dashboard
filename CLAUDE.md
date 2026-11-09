@@ -24,7 +24,13 @@ runs**, the same trap the parser tests record.
 `LANDING_DRIVE_PACKET.md` is the working document for the `Landing`
 tab (the filename predates the rename): which export feeds which card, where in Drive it goes, and what has
 actually arrived. Its current-state section is generated — refresh it with
-`python scripts/landing_drive_status.py --write` rather than editing it.
+`python scripts/landing_drive_status.py --write` rather than editing it. The
+daily run does exactly that and **commits it** since 2026-11-09 (G7): the
+rewrite had happened on every runner and stayed there, because the commit
+step's paths left the file out, so the copy in the repo sat at 2026-09-28. It is
+a stage of `build_pipeline.sh` rather than a workflow step, so a rebuild on a
+newer main regenerates it too, and it carries no Drive link (the PDF adds those
+and is never committed). `test_push_race.py` checks both halves.
 
 ## Workflow
 
@@ -4122,7 +4128,7 @@ Two scripts carry it, so that the rebuild cannot drift from the build:
 
 - **`scripts/build_pipeline.sh`** is everything the run derives, in order:
   metrics, the three scorecard fills in the order G3 and H1 settled, the
-  lineage. The workflow's build step runs it, and the commit step runs it again
+  lineage, and the packet's feed-state section (G7). The workflow's build step runs it, and the commit step runs it again
   for a rebuild. It replaced five workflow steps; run side by side against this
   repo's own stores it wrote the same files as those steps, differing only in
   two wall-clock timestamps. It times each stage in the run's summary.

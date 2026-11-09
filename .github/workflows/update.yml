@@ -129,12 +129,13 @@ jobs:
       # upload REPLACES the file already there rather than adding one, so the
       # link stays the same. Both steps no-op without their secret.
       #
-      # The PDF is not committed: it carries Drive folder links, and this repo
-      # is public. build/ is gitignored for that reason.
+      # The Markdown's feed-state section is refreshed by build_pipeline.sh,
+      # and the commit step commits it (G7); the PDF is not committed: it
+      # carries Drive folder links, and this repo is public. build/ is
+      # gitignored for that reason.
       - name: Rebuild the packet PDF
         run: |
           pip install --quiet markdown
-          python scripts/landing_drive_status.py --write
           python scripts/publish_packet_pdf.py
 
       - name: Upload the packet PDF to Drive

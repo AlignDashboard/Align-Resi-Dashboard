@@ -336,5 +336,24 @@ check("does not claim there was nothing to commit", "No changes to commit" in ou
 check("main is untouched", w.main_log(), ["seed"])
 w.done()
 
+print("\nthe packet's feed state is built and committed with everything else (G7)")
+# LANDING_DRIVE_PACKET.md's second section was rewritten on every runner and
+# never committed: the commit step's paths left it out. It has to be both
+# written by build_pipeline.sh -- which a rebuild runs again after resetting the
+# tree, so a separate workflow step would be thrown away by that reset -- and
+# staged by the commit step's default paths.
+import re as _re
+_sh = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "commit_and_push.sh")).read()
+_pipe = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "build_pipeline.sh")).read()
+_wf = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        ".github", "workflows", "update.yml")).read()
+_default = _re.search(r'^PATHS=\$\{PATHS:-"([^"]*)"\}', _sh, _re.M)
+check("the commit step's default paths include the packet",
+      bool(_default) and "LANDING_DRIVE_PACKET.md" in _default.group(1).split(), True)
+check("build_pipeline.sh rewrites the packet's feed state",
+      bool(_re.search(r'^stage .*landing_drive_status\.py --write', _pipe, _re.M)), True)
+check("no workflow step rewrites it outside the pipeline, where a rebuild would lose it",
+      "landing_drive_status.py --write" in _wf, False)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
