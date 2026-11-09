@@ -3888,7 +3888,7 @@ Drive fetch alone was 4h34m on 2026-09-16. Everything after it therefore built
 the repo as it was that morning, and the push-retry loop's replay then put that
 output over whatever had landed since. Every step green, nothing in the log.
 
-That is not hypothetical. Run #86 checked out `b8bcf4d` at 15:20 and committed
+That is not hypothetical. Run #86 checked out `d8a9e5f` at 15:20 and committed
 at 19:55; because its `build_metrics.py` predated the budget work it published a
 `metrics.json` with **no `budget` block** (the Budget vs Actual card read
 "no budget has reached the pipeline" with two budgets sitting parsed in Drive),
@@ -3933,7 +3933,7 @@ build grew by minutes a day until it could not finish. Two fixes:
   Madelon daily report in full just to reject it.
 
 **Verified on the runner the same day**: run #98 (`workflow_dispatch` on
-`22c80d4`) built in **9m29s** and the whole job in 20 minutes, pushing on the
+`6e569c8`) built in **9m29s** and the whole job in 20 minutes, pushing on the
 first attempt — against runs #94–#97, cancelled after ~5h50m each. Its own
 unbuffered log puts **7.4 of those 9.5 minutes in the Madelon daily reports,
 ~16 s apiece**, and 1.3 in the comps.
@@ -4142,7 +4142,7 @@ its bytes' — changes nothing, since a file on disk is always keyed from disk.
 found` under the new prefix): 454 files downloaded (280 MB) in 7m21s and parsed
 in 11m38s, which is the old daily cost once. Another session pushed twice while
 it ran, so it also showed both race guards at work: the re-sync after the fetch
-moved it onto `695254a`, and the commit step rebuilt on `081beea` — reusing
+moved it onto `03ec099`, and the commit step rebuilt on `4339623` — reusing
 every parse it had just made, 21 s — and pushed on the second attempt. Run #121
 restored that cache and logged `454 file(s) in the manifest: 37 file(s)
 downloaded (12.4 MB); 417 left in Drive (267.6 MB)`. **The fetch took 69 s
@@ -4168,12 +4168,12 @@ the run's own files and spun in a half-rebase — nothing published 2026-09-13 t
 09-15.)
 
 **The old step ran once more after the fix was on `main`.** Run #106 was
-dispatched at 17:28 on 2026-10-05, nine minutes before `3516699` replaced the
+dispatched at 17:28 on 2026-10-05, nine minutes before `8f37144` replaced the
 step, and a run keeps the workflow file of the commit it started from. It lost
-its push to `f07404a` at 17:53 and copied its own copy of
+its push to `3ad8c2c` at 17:53 and copied its own copy of
 `data/335-third-street/eliseai_daily.json` back over that commit's new
 `resident_calls` field — every step green, the file named only in a warning.
-`e8e9994` restored it three minutes later. So a run already queued when a
+`c9489b9` restored it three minutes later. So a run already queued when a
 workflow fix lands still runs the old steps, and is worth watching through.
 
 It **rebuilds on the new `main` instead**. The reports are still on the runner
@@ -4220,13 +4220,13 @@ the run's own commit, which the reset already discards — and was dropped
 rather than kept as a guard that guards nothing.
 
 **Verified on the runner the same day, with a real race.** Run #107
-(`workflow_dispatch` on `3516699`) re-synced onto `e8e9994` after its Drive
-fetch and built for 7m11s; `890c4d8` was pushed while it built, to put the new
+(`workflow_dispatch` on `8f37144`) re-synced onto `c9489b9` after its Drive
+fetch and built for 7m11s; `aa19dea` was pushed while it built, to put the new
 step through a race. Its first push was rejected at 18:14, it annotated the run
-`main moved under this run; rebuilding on 890c4d8 rather than overwriting it`,
+`main moved under this run; rebuilding on aa19dea rather than overwriting it`,
 rebuilt in about seven minutes, ran the personal-data check again, and logged
-`Pushed d4dfe5f on attempt 2, after 1 rebuild(s) on a newer main`. Its commit
-sits on `890c4d8` with that commit's notes and `e8e9994`'s `resident_calls`
+`Pushed 2590e42 on attempt 2, after 1 rebuild(s) on a newer main`. Its commit
+sits on `aa19dea` with that commit's notes and `c9489b9`'s `resident_calls`
 intact — the same shape of race #106 had lost twenty minutes earlier. The run summary
 says when this happens (`rebuilt N time(s) on a newer main`).
 
@@ -4308,10 +4308,16 @@ would not have caught one: it reads only the published files, never
 `scripts/`, it harvests names rather than codes, and nothing passes `--source`
 in CI. A real Yardi tenant code sat in a test fixture's MTM row — with that
 resident's unit, plan, lease-expiry date and rent — from 2026-09-11
-(`00ea8a7`, when the file was created) until 2026-10-19, and three other
+(`44b9244`, when the file was created) until 2026-10-19, and three other
 fixture rows reused real unit-and-rent pairs; found only by matching a roll's
-every code and every unit-and-rent pair against every tracked file (A20; still
-in history). Fixtures use invented codes, units, dates and rents, as
+every code and every unit-and-rent pair against every tracked file (A20).
+**It was removed from history on 2026-11-09**: every commit since 2026-09-11
+was rewritten with the fixture's invented values, and `main` and the branches
+holding those commits were force-pushed. So the commit hashes cited in this
+file name the rewritten commits. Actions run pages, and any clone made before
+then, still show the old ones. Such a clone must re-clone or reset to
+`origin/main`, never merge or rebase. Either would bring the old history back.
+Fixtures use invented codes, units, dates and rents, as
 `test_rental_tracker.py`'s figures are invented. This checkout is shallow, so
 date a file's history with `gh api …/commits?path=` rather than `git log`.
 

@@ -74,7 +74,7 @@ jobs:
       # of it -- 4h34m on 2026-09-16. So by the time anything is built, main
       # can carry code and data this run has never seen, and everything below
       # would then rebuild the repo as it was this morning and push that over
-      # the day's work. That is not hypothetical: run #86 checked out b8bcf4d
+      # the day's work. That is not hypothetical: run #86 checked out d8a9e5f
       # at 15:20, committed at 19:55, and because its build_metrics predated
       # the budget block it published a metrics.json with no budget in it,
       # rewrote data/the-landing/budget.json in the older single-year shape,
