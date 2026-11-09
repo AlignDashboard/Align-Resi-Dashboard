@@ -156,17 +156,36 @@ def ratio_trend(points, label=""):
     current anchor. Points stored before `expense_scope` existed are the
     operating-slice ones, so an absent value counts as "operating" rather than
     as "matches whatever is newest".
+
+    "The same way" is the scope AND the anchor: two statements can both read
+    the whole expense load and still not be one measurement, which is what a
+    jpm_is statement is beside a jpm_bf1 one (see measured_as).
     """
-    scope_of = lambda pt: pt.get("expense_scope") or "operating"
-    scope = scope_of(points[-1])
+    scope = (points[-1].get("expense_scope") or "operating")
+    how = measured_as(points[-1])
     run = points
-    while len(run) > 1 and scope_of(run[0]) != scope:
+    while len(run) > 1 and measured_as(run[0]) != how:
         run = run[1:]
     if len(run) < len(points):
         print(f"[warn] {label or 'expense-ratio'} trend cut to {len(run)} of "
               f"{len(points)} point(s): earlier periods are on a different "
-              f"expense anchor than '{scope}'")
+              f"expense anchor than '{scope}' ({how[1]})")
     return run, scope
+
+
+def measured_as(pt):
+    """(scope, anchor) -- what a stored point's expense row is.
+
+    The scope alone said "total" for both of The Landing's account trees, and
+    they are not one measurement: jpm_is counts the month-to-month premium as
+    revenue and renters insurance as an expense where jpm_bf1 does neither,
+    and books a concierge credit on the other side of the line. A series that
+    spliced the two would draw the tree change as a ~$7k a month step in
+    revenue. The anchor names the row and, for jpm_is, the tree, so a change of
+    either cuts the run. Points stored before either field existed are the
+    operating slice, with no anchor.
+    """
+    return (pt.get("expense_scope") or "operating", pt.get("expense_anchor"))
 
 
 def ratio_basis(scope, anchor):
@@ -1660,7 +1679,10 @@ def stitch_monthly_pl(points, label=""):
     slice instead, and a window straddling the switch would read the ~$4.4k a
     month between the two anchors as a real swing in spending. So the series is
     the run of months measured the same way as the newest one, and it grows back
-    to full length as statements re-arrive on the new anchor.
+    to full length as statements re-arrive on the new anchor. It stops where the
+    anchor changes too, scope or no scope -- see measured_as: The Landing's
+    statement moved from jpm_bf1 to jpm_is on 2026-11-09, and both read the
+    whole expense load.
     """
     cells = {}
     for pt in points:                       # oldest first, so newest overwrites
@@ -1677,20 +1699,23 @@ def stitch_monthly_pl(points, label=""):
                 # Absent on points stored before the anchor moved, and those are
                 # exactly the operating-slice ones.
                 "scope": pt.get("expense_scope") or "operating",
+                "how": measured_as(pt),
             }
     if not cells:
         return None
     hi = max(cells)
     scope = cells[hi]["scope"]
+    how = cells[hi]["how"]
     start = hi
-    while start - 1 in cells and cells[start - 1]["scope"] == scope:
+    while start - 1 in cells and cells[start - 1]["how"] == how:
         start -= 1
     if start - 1 in cells:
+        before = cells[start - 1]["how"]
         print(f"[warn] {label or 'monthly P&L'}: series cut at "
               f"{_MON[start % 12]} {start // 12} -- earlier months are on the "
-              f"'{cells[start - 1]['scope']}' expense anchor, the newest is on "
-              f"'{scope}' -- mixing them would show the anchor change as a "
-              f"spending change")
+              f"'{before[0]}' expense anchor ({before[1]}), the newest is on "
+              f"'{scope}' ({how[1]}) -- mixing them would show the anchor "
+              f"change as a spending change")
     idx = list(range(start, hi + 1))
     return {
         "labels": [_MON[i % 12] for i in idx],

@@ -23,6 +23,12 @@ the older definition is one field away and nothing has been lost.
 The Align tree has no total-expense row, so build_metrics falls back to the
 operating anchor for those statements and records that it did.
 
+A third tree, jpm_is, carries the same six-digit JPM accounts with its totals
+printed as LABELLED rows and no code at all ("Total Revenue", "Total Operating
+Expenses", "Net Operating Income"). It is read off those labels -- see
+LABELLED_TOTALS -- and refused unless revenue less its expense total reproduces
+its own Net Operating Income row, month by month.
+
 Usage:
     from parse_t12_statement import parse_t12
     result = parse_t12("path/to/statement.xlsx")
@@ -57,6 +63,32 @@ CODE_OPEX    = "5999-9998"   # align: TOTAL OPERATING EXPENSE RECOVERABLE
 JPM_REVENUE  = "499999-9999" # jpm: TOTAL REVENUE
 JPM_OPEX     = "519999-9999" # jpm: TOTAL OPERATING EXPENSES
 JPM_EXP_ALL  = "549999-9999" # jpm: TOTAL EXPENSES (operating + non-operating)
+
+# The jpm_is tree prints its totals as labelled rows with no account code. It
+# arrived with The Landing's statement of 2026-11-09 (Nov 2025-Oct 2026, the
+# residential code p0005611 alone), where every earlier JPM statement had been
+# jpm_bf1 with coded totals -- so the coded anchors above found nothing and the
+# file was refused whole. Its "Total Operating Expenses" is NOT 519999-9999's
+# operating slice: the 52xxxx accounts sit inside it, and revenue less it is the
+# statement's own Net Operating Income, so it is the whole expense load above
+# NOI -- what 549999-9999 is on jpm_bf1. That is checked on every file rather
+# than assumed (parse_t12), and the tree has no operating-only subtotal to
+# offer instead, so a jpm_is statement publishes the total and no recoverable
+# figure. The two trees also classify a few accounts differently (the month-to-
+# month premium is revenue on jpm_is, renters insurance an expense, and a
+# concierge credit moved from expense to revenue), so a jpm_is point is a
+# different measurement from a jpm_bf1 one even where the anchor role matches:
+# its anchor names the tree, and build_metrics' stitches cut where it changes.
+LABELLED_TOTALS = {
+    "jpm_is": {
+        "revenue": "Total Revenue",
+        "expenses": "Total Operating Expenses",
+        "noi": "Net Operating Income",
+        "expense_header": "EXPENSES",
+        "rental_income": "Total Rental Income",
+    },
+}
+JPM_IS_ANCHOR = "jpm_is Total Operating Expenses"
 
 # The Align tree has no counterpart to 549999-9999: below its 5999-9998
 # recoverable total sit the NOI line and then 6xxx OTHER EXPENSES in sections
@@ -187,26 +219,33 @@ _JPM_FALLBACK_RETIRED = [
 _NOT_CONTROLLABLE_GROUPS = ("tax", "insurance", "utilit", "management fee")
 
 
-def expense_buckets_jpm(rows):
+def expense_buckets_jpm(rows, labelled=None):
     """The Landing's statement arrives on the JPM tree; its expense leaves are
     translated to Align accounts through config/coa_map.json and grouped by the
     Align tree's families. Region: 500000-0000 EXPENSES through 549999-9999
     TOTAL EXPENSES (operating + non-operating; financing and the balance sheet
     sit outside it). The tie-out is strict: every leaf is grouped somewhere,
     so the groups must sum to the statement's own TOTAL EXPENSES each month.
+
+    On a tree whose totals are labelled rather than coded (`labelled`, one of
+    LABELLED_TOTALS), the region runs from the uncoded EXPENSES heading to the
+    uncoded expense total instead, and ties out against that row.
     """
     coa = _coa()["jpm"]
     months = 12
     buckets, unmapped, other, reclassified = {}, [], [], []
     total = None
     in_exp = False
+    total_name = (f"'{labelled['expenses']}'" if labelled else JPM_EXP_ALL)
     for r in rows:
         code = str(r[0]).strip() if r and r[0] else ""
         label = str(r[1]).strip() if r and len(r) > 1 and r[1] else ""
-        if code == "500000-0000":
+        if code == "500000-0000" or (labelled and not code and not in_exp
+                                     and label == labelled["expense_header"]):
             in_exp = True
             continue
-        if code == JPM_EXP_ALL:
+        if code == JPM_EXP_ALL or (labelled and in_exp and not code
+                                   and label == labelled["expenses"]):
             total = [float(r[c]) if isinstance(r[c], (int, float)) else 0.0
                      for c in MONTHS_COLS]
             break
@@ -240,11 +279,11 @@ def expense_buckets_jpm(rows):
                 tgt[i] += v
 
     if total is None:
-        raise ValueError(f"no {JPM_EXP_ALL} TOTAL EXPENSES row; cannot tie out")
+        raise ValueError(f"no {total_name} total-expense row; cannot tie out")
     summed = [sum(vs[i] for vs in buckets.values()) for i in range(months)]
     delta = max(abs(summed[i] - total[i]) for i in range(months))
     if delta > 1.0:
-        raise ValueError(f"grouped leaves do not tie out against {JPM_EXP_ALL} "
+        raise ValueError(f"grouped leaves do not tie out against {total_name} "
                          f"(max monthly gap {delta:,.2f}); buckets refused")
     return {
         "buckets": {k: [round(v, 2) for v in vs] for k, vs in sorted(buckets.items())},
@@ -422,6 +461,28 @@ def _line_by_code(rows, code):
     return None
 
 
+def _line_by_label(rows, label):
+    """The 12 monthly values of the one UNCODED row labelled `label`, or None.
+
+    For trees that print their totals without a code (LABELLED_TOTALS). Only a
+    row with no code qualifies, so an account whose name happens to match is
+    never read as a total, and a label that appears on two uncoded rows is
+    refused rather than resolved -- which of the two was meant is not something
+    the parser can know.
+    """
+    hits = [r for r in rows
+            if not (r and r[0]) and len(r) > 1 and r[1]
+            and str(r[1]).strip().lower() == label.lower()]
+    if len(hits) > 1:
+        raise ValueError(f"'{label}' labels {len(hits)} uncoded rows; refusing "
+                         f"to guess which is the total")
+    if not hits:
+        return None
+    r = hits[0]
+    return [float(r[c]) if isinstance(r[c], (int, float)) else 0.0
+            for c in MONTHS_COLS]
+
+
 def _period_end(rows):
     """Return the last month label in the header, e.g. 'Jun 2026'."""
     for r in rows:
@@ -440,28 +501,59 @@ def parse_t12(path):
     labels = _month_labels(rows)
     tree = _tree(rows)
     jpm = bool(tree and tree.lower().startswith("jpm"))
-    rev_code = JPM_REVENUE if jpm else CODE_REVENUE
-    opex_code = JPM_OPEX if jpm else CODE_OPEX
-    rev = _line_by_code(rows, rev_code)
-    opex = _line_by_code(rows, opex_code)
+    labelled = LABELLED_TOTALS.get((tree or "").lower())
+    if labelled:
+        rev = _line_by_label(rows, labelled["revenue"])
+        exp_all = _line_by_label(rows, labelled["expenses"])
+        noi = _line_by_label(rows, labelled["noi"])
+        for role, line in (("revenue", rev), ("expenses", exp_all), ("noi", noi)):
+            if line is None:
+                raise ValueError(f"{tree} statement has no uncoded "
+                                 f"'{labelled[role]}' row in {path}")
+        # What makes the expense row the whole expense load above NOI, rather
+        # than an operating slice of it that happens to share the name: revenue
+        # less it must BE the statement's own NOI line, every month, to the cent.
+        gap = max(abs(rev[k] - exp_all[k] - noi[k]) for k in range(12))
+        if gap > CENT:
+            raise ValueError(
+                f"'{labelled['revenue']}' less '{labelled['expenses']}' does not "
+                f"reproduce '{labelled['noi']}' (max monthly gap {gap:,.2f}); a "
+                f"{tree} statement is refused rather than read on a row whose "
+                f"meaning has changed")
+        # No operating-only subtotal on this tree; the ratio fields below are
+        # taken on the total, which is what build_metrics reads anyway.
+        opex = None
+        anchor, anchor_basis = JPM_IS_ANCHOR, (
+            f"{JPM_IS_ANCHOR}: every expense above the NOI line, the "
+            f"non-operating 52xxxx accounts included")
+    else:
+        rev_code = JPM_REVENUE if jpm else CODE_REVENUE
+        opex_code = JPM_OPEX if jpm else CODE_OPEX
+        rev = _line_by_code(rows, rev_code)
+        opex = _line_by_code(rows, opex_code)
 
-    if rev is None:
-        raise ValueError(f"Revenue line {rev_code} not found in {path}")
-    if opex is None:
-        raise ValueError(f"Opex line {opex_code} not found in {path}")
+        if rev is None:
+            raise ValueError(f"Revenue line {rev_code} not found in {path}")
+        if opex is None:
+            raise ValueError(f"Opex line {opex_code} not found in {path}")
 
-    # Total expenses: operating plus the non-operating 52xxxx region above it.
-    # A statement with no such row (every Align-tree one) publishes None here
-    # rather than a figure reassembled from parts; the ratio anchors are
-    # untouched either way, so this is additive.
-    exp_all = _line_by_code(rows, JPM_EXP_ALL) if jpm else None
+        # Total expenses: operating plus the non-operating 52xxxx region above
+        # it. A statement with no such row (every Align-tree one) publishes
+        # None here rather than a figure reassembled from parts; the ratio
+        # anchors are untouched either way, so this is additive.
+        exp_all = _line_by_code(rows, JPM_EXP_ALL) if jpm else None
+        anchor = JPM_EXP_ALL if exp_all is not None else None
+        anchor_basis = (f"jpm {JPM_EXP_ALL} total expenses "
+                        "(operating and non-operating)"
+                        if exp_all is not None else None)
 
+    ratio_line = opex if opex is not None else exp_all
     rev_t12 = sum(rev)
-    opex_t12 = sum(opex)
+    opex_t12 = sum(ratio_line)
     ratio_t12 = round(100 * opex_t12 / rev_t12, 1) if rev_t12 else None
 
     monthly = [
-        round(100 * opex[k] / rev[k], 1) if rev[k] else None
+        round(100 * ratio_line[k] / rev[k], 1) if rev[k] else None
         for k in range(12)
     ]
 
@@ -471,7 +563,8 @@ def parse_t12(path):
     # Bucketed monthly expense detail. A classification failure must not take
     # the ratio store down with it, so it degrades to None with the reason.
     try:
-        bucketed = expense_buckets_jpm(rows) if jpm else expense_buckets(rows)
+        bucketed = (expense_buckets_jpm(rows, labelled) if jpm
+                    else expense_buckets(rows))
         buckets_error = None
     except (ValueError, OSError) as e:
         bucketed, buckets_error = None, str(e)
@@ -489,24 +582,27 @@ def parse_t12(path):
         "property_code": code,
         "property_codes": codes,
         "tree": tree,
-        "opex_basis": ("jpm 519999-9999 total operating expenses" if jpm
+        "opex_basis": (None if labelled
+                       else "jpm 519999-9999 total operating expenses" if jpm
                        else "align 5999-9998 recoverable opex"),
         # The anchor the Operating Summary card reads. Named as a code rather
         # than a prose basis so store_monthly_pl can refuse to sum two codes
-        # measured on different rows.
-        "expenses_total_anchor": JPM_EXP_ALL if exp_all is not None else None,
-        "expenses_total_basis": (f"jpm {JPM_EXP_ALL} total expenses "
-                                 "(operating and non-operating)"
-                                 if exp_all is not None else None),
+        # measured on different rows -- or, on a tree whose totals carry no
+        # code, as the tree and the row's label (JPM_IS_ANCHOR).
+        "expenses_total_anchor": anchor,
+        "expenses_total_basis": anchor_basis,
         "book": _book(rows),
         "period_end": period_end,
         "labels": labels,
         "revenue_monthly": [round(x, 2) for x in rev],
-        "opex_recoverable_monthly": [round(x, 2) for x in opex],
+        # None on jpm_is, which has no operating-only subtotal to read.
+        "opex_recoverable_monthly": ([round(x, 2) for x in opex]
+                                     if opex is not None else None),
         "expenses_total_monthly": ([round(x, 2) for x in exp_all]
                                    if exp_all is not None else None),
         "revenue_t12": round(rev_t12, 2),
-        "opex_recoverable_t12": round(opex_t12, 2),
+        "opex_recoverable_t12": (round(sum(opex), 2)
+                                 if opex is not None else None),
         "expenses_total_t12": (round(sum(exp_all), 2)
                                if exp_all is not None else None),
         "expense_ratio_t12": ratio_t12,
@@ -547,6 +643,13 @@ if __name__ == "__main__":
 #   tie against. Accrued income is derived from the lines instead and the
 #   result says so, rather than presenting a derived figure as a read one.
 RENT_CAPTURE_TREES = {
+    # jpm_is: the same section and the same leaves, closed by an uncoded
+    # "Total Rental Income" row instead of 410499-9999 (LABELLED_TOTALS).
+    "jpm_is": {
+        "section": "410400-",
+        "total": None,
+        "series": None,                  # jpm's own, filled in below
+    },
     "jpm": {
         "section": "410400-",
         "total": "410499-9999",
@@ -574,6 +677,8 @@ RENT_CAPTURE_TREES = {
     },
 }
 
+RENT_CAPTURE_TREES["jpm_is"]["series"] = RENT_CAPTURE_TREES["jpm"]["series"]
+
 # The four deduction lines are negative on the statement (they reduce income)
 # and positive in the analyst workbook, which reads them as the size of each
 # loss. The published block follows the workbook, so the page renders either
@@ -593,7 +698,9 @@ def rent_capture(rows, tree=None):
     rent the building never billed.
     """
     jpm = bool(tree and str(tree).lower().startswith("jpm"))
-    spec = RENT_CAPTURE_TREES["jpm" if jpm else "align"]
+    labelled = LABELLED_TOTALS.get(str(tree or "").lower())
+    spec = RENT_CAPTURE_TREES["jpm_is" if labelled
+                              else "jpm" if jpm else "align"]
     months = len(MONTHS_COLS)
 
     def line(code):
@@ -636,7 +743,14 @@ def rent_capture(rows, tree=None):
             other_codes.append(f"{code} {str(r[1]).strip() if len(r) > 1 and r[1] else ''}".strip())
             for i in range(months):
                 other[i] += vals[i]
-        total = line(spec["total"])
+        if labelled:
+            total_name = labelled["rental_income"]
+            total = _line_by_label(rows, total_name)
+            basis = f"{tree} {total_name}"
+        else:
+            total_name = spec["total"]
+            total = line(total_name)
+            basis = f"jpm {total_name}"
         if total is None:
             return None
         summed = [gross[i] + sum(out[k][i] for k in DEDUCTIONS) + other[i]
@@ -645,8 +759,8 @@ def rent_capture(rows, tree=None):
         if gap > CENT:
             raise ValueError(
                 f"residential rental income does not tie out against "
-                f"{spec['total']} (max monthly gap {gap:,.2f}); rent capture refused")
-        income, basis, tieout = total, f"jpm {spec['total']}", round(gap, 4)
+                f"{total_name} (max monthly gap {gap:,.2f}); rent capture refused")
+        income, tieout = total, round(gap, 4)
         if other_codes:
             problems.append("section carries lines this parser does not name, "
                             "counted in 'other': " + ", ".join(sorted(other_codes)))

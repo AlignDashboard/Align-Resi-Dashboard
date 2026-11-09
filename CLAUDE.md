@@ -2515,6 +2515,54 @@ statements built in a temp dir by `test_expense_buckets`' own builders, no
 network and no fixtures. Each guard has a check that fails when the guard is
 removed (verified by mutation).
 
+### A third tree: `jpm_is`, whose totals carry no code
+
+The Landing's statement of 2026-11-09 (`12_Month_Statement_p0005611_Accrual.xlsx`,
+Nov 2025–Oct 2026, the residential code `p0005611` alone) arrived on **`jpm_is`**:
+the same six-digit JPM accounts, with every total printed as a **labelled row
+and no account code** — `Total Rental Income`, `Total Revenue`, `Total
+Operating Expenses`, `Net Operating Income`. The parser anchored only on coded
+totals, so it logged `Revenue line 499999-9999 not found` and skipped the file,
+and the run that day was green while the Landing tab kept the August statement.
+`LABELLED_TOTALS` in `parse_t12_statement.py` now names those rows for that
+tree, and three things hold the read:
+
+- **Revenue less the expense row must reproduce the statement's own `Net
+  Operating Income` row, every month, to the cent**, or the file is refused.
+  That is what makes `Total Operating Expenses` the whole expense load above
+  NOI on this tree — the 52xxxx accounts sit inside it — rather than the
+  operating slice its name suggests. The tree has no operating-only subtotal,
+  so a `jpm_is` parse publishes the total and no recoverable figure.
+- **Only an uncoded row is a total**, and a label on two uncoded rows is
+  refused rather than resolved.
+- The buckets run from the uncoded `EXPENSES` heading to the labelled total
+  and tie out against it; the rent section ties out against `Total Rental
+  Income`. Either refusal costs that block, not the statement.
+
+**It is a different measurement from `jpm_bf1`, and the series say so.** On
+the ten months both cover, `jpm_is` counts the month-to-month premium
+(`440200-0014`, ~$7k a month) as revenue and renters insurance (`520600-0018`,
+~$600) as an expense where `jpm_bf1` does neither, and books Jul 2026's
+−$54,453 concierge credit against revenue instead of expenses — NOI ~0.8%
+higher a month, revenue and expenses both $50k apart in July. Both read the
+whole expense load, so `expense_scope` is `total` for both and the stitch,
+which cut on scope alone, would have spliced them. The anchor is now
+`jpm_is Total Operating Expenses` — the tree and the row — and `measured_as`
+makes **`stitch_monthly_pl` and `ratio_trend` cut where scope or anchor
+changes**. The rent section's basis already names its row, so its stitch cuts
+there too. The Landing's P&L and rent-capture runs therefore start at Nov 2025,
+twelve months, and lengthen again as `jpm_is` statements arrive. The other
+three building codes the old statements combined (`p0005612`, `p0005640`,
+`p0005671`) carried nothing: expenses agree to the cent for Nov–Dec 2025, so
+the bucket store's "previously reported codes absent" warning is expected.
+
+`scripts/test_jpm_is.py` holds it down — 27 fixture-free checks against
+statements built in the `jpm_is` shape with invented figures. Ten guards were
+each verified by mutation: the NOI check, uncoded-only labels, the duplicate
+refusal, both ends of the bucket region, the rent section's labelled total,
+the tree table itself, both stitches' anchor cut, and not inventing an
+operating figure.
+
 ## Expense Load & NOI (Portfolio tab)
 
 **The Landing tab's Expense Load & NOI card, across the portfolio** (by request,

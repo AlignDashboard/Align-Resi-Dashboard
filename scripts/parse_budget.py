@@ -102,8 +102,10 @@ if __name__ == "__main__":
     p = parse(sys.argv[1])
     print(f"{p['property']} ({'+'.join(p['property_codes'] or [])}) "
           f"budget {p['year']}, tree {p['tree']}")
+    # A jpm_is file has no operating-only subtotal, so this can be None.
+    op = p["opex_operating_monthly"]
     print(f"revenue Jan-Dec: {sum(p['revenue_monthly']):,.0f}   "
-          f"operating expense: {sum(p['opex_operating_monthly']):,.0f}")
+          f"operating expense: {f'{sum(op):,.0f}' if op else 'n/a on this tree'}")
     if p["buckets"]:
         for g, vs in sorted(p["buckets"].items()):
             print(f"  {g:36} {sum(vs):>12,.0f}")
