@@ -454,9 +454,9 @@
     },
     {
       "period_end": "Oct 2026",
-      "landed_at": "2026-11-09T18:43:27.112Z",
+      "landed_at": "2026-11-09T19:11:25.170Z",
       "source_files": [
-        "12_Month_Statement_p0005611_Accrual.xlsx"
+        "2026-11-09 12_Month_Statement_p0005611_Accrual.xlsx"
       ],
       "labels": [
         "Nov",
@@ -633,16 +633,16 @@
         "Unmapped (JPM accounts not in the COA map)": [
           911.66,
           2041.67,
-          9467.9,
-          10390.23,
-          15942.0,
-          7729.33,
-          14933.67,
-          9884.5,
-          5602.8,
-          6067.0,
-          4035.65,
-          -1758.21
+          8412.9,
+          10160.29,
+          15342.0,
+          7245.33,
+          14333.67,
+          9284.5,
+          5002.8,
+          5467.0,
+          2934.99,
+          -2678.5
         ],
         "Utilities (net of billbacks)": [
           19523.65,
@@ -669,8 +669,7 @@
         "511015-0009 Credit reports",
         "511040-0005 Credit Card Fees",
         "520510-0007 Gross Rec./Bus. Lic. Tax",
-        "520600-0014 Professional Fees**",
-        "520600-0018 Renters Insurance Expense"
+        "520600-0014 Professional Fees"
       ],
       "codes_missing_vs_history": [
         "p0005612",

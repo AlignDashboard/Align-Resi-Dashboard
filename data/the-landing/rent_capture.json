@@ -258,9 +258,9 @@
     },
     {
       "period_end": "Oct 2026",
-      "landed_at": "2026-11-09T18:43:27.112Z",
+      "landed_at": "2026-11-09T19:11:25.170Z",
       "source_files": [
-        "12_Month_Statement_p0005611_Accrual.xlsx"
+        "2026-11-09 12_Month_Statement_p0005611_Accrual.xlsx"
       ],
       "labels": [
         "Nov",
@@ -377,7 +377,7 @@
         1250909.44,
         1265889.19
       ],
-      "basis": "jpm_is Total Rental Income",
+      "basis": "jpm 410499-9999",
       "tieout_max_gap": 0.0,
       "problems": []
     }
