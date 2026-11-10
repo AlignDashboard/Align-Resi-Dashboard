@@ -88,18 +88,18 @@ Four things worth knowing about the tables above:
 ## 2 · Current state
 
 <!-- BEGIN STATUS -->
-_Feed state as of 2026-11-09 — regenerate with `python scripts/landing_drive_status.py --write`._
+_Feed state as of 2026-11-10 — regenerate with `python scripts/landing_drive_status.py --write`._
 
 | Feed | Covers | Landed | Status |
 | --- | --- | --- | --- |
-| T12 statement | Oct 2026 | 2026-11-09 | 0d — current |
-| Budget | Jan 2026-Dec 2026 | 2026-09-16 | 54d — current |
-| Rent roll | 2026-11-09 | 2026-11-09 | 0d — current |
-| Delinquency | — | 2026-11-03 | 6d — current |
-| **Weekly leasing** | 2026-09-20 | 2026-09-21 | **49d — DUE (every 7d)** |
-| Renewal tracker | 2027-01 | 2026-11-03 | 6d — current |
-| Unit directory | 2026-08-25 | 2026-08-26 | 75d — refresh on change only |
-| EliseAI bldg metrics | 2026-11-09 | 2026-11-09 | 0d — current |
+| T12 statement | Oct 2026 | 2026-11-09 | 1d — current |
+| Budget | Jan 2026-Dec 2026 | 2026-09-16 | 55d — current |
+| Rent roll | 2026-11-09 | 2026-11-09 | 1d — current |
+| Delinquency | 2026-11-09 | 2026-11-10 | 0d — current |
+| **Weekly leasing** | 2026-09-20 | 2026-09-21 | **50d — DUE (every 7d)** |
+| Renewal tracker | 2027-01 | 2026-11-10 | 0d — current |
+| Unit directory | 2026-08-25 | 2026-08-26 | 76d — refresh on change only |
+| EliseAI bldg metrics | 2026-11-09 | 2026-11-09 | 1d — current |
 | **EliseAI funnel** | — | — | **never arrived** |
 <!-- END STATUS -->
 
