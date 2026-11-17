@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-11-16T20:52:14.563513+00:00",
+    "generated_at": "2026-11-17T19:42:21.711270+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -3913,13 +3913,13 @@
           "mean_tradeout": 0.793863
         },
         "renewals": {
-          "as_of": "2027-01",
+          "as_of": "2027-02",
           "covers": {
             "from": "2024-01",
-            "to": "2027-01"
+            "to": "2027-02"
           },
-          "landed_at": "2026-11-10T00:28:48.314Z",
-          "source_file": "2026-11-09 Landing 2025 Renewal Tracker - Full (52).xlsx",
+          "landed_at": "2026-11-17T00:28:39.378Z",
+          "source_file": "2026-11-16 Landing 2025 Renewal Tracker - Full.xlsx",
           "months": [
             {
               "month": "2024-01",
@@ -4391,9 +4391,9 @@
               "offered_rent": 109273.0,
               "statuses": {
                 "Notice": 8,
-                "Offer Accepted": 1,
+                "Offer Accepted": 2,
                 "Renewed": 3,
-                "Waiting For Response": 4
+                "Waiting For Response": 3
               }
             },
             {
@@ -4405,8 +4405,21 @@
               "offered_rent": 105512.0,
               "statuses": {
                 "Notice": 3,
-                "Offer Accepted": 1,
+                "Renewed": 1,
                 "Waiting For Response": 11
+              }
+            },
+            {
+              "month": "2027-02",
+              "leases": 10,
+              "mean_increase": 0.335614,
+              "wtd_increase": 0.321104,
+              "current_rent": 49663.0,
+              "offered_rent": 65610.0,
+              "statuses": {
+                "(blank)": 2,
+                "TOTAL": 1,
+                "Waiting For Response": 7
               }
             }
           ],
@@ -4418,10 +4431,10 @@
               "(blank)": 2,
               "MTM": 1,
               "Moved Out": 8,
-              "Notice": 1,
+              "Notice": 2,
               "Offer Accepted": 2,
               "Renewed": 5,
-              "Waiting For Response": 14
+              "Waiting For Response": 13
             },
             "rows_without_rent": 0
           }
@@ -4470,8 +4483,8 @@
             "from": "2024-02",
             "to": "2027-01"
           },
-          "landed_at": "2026-11-09T19:28:36.317Z",
-          "source_file": "2026-11-09 Chorus 2026 Renewal Tracker 01.xlsx",
+          "landed_at": "2026-11-16T23:28:49.352Z",
+          "source_file": "2026-11-16 Chorus 2026 Renewal Tracker (10).xlsx",
           "months": [
             {
               "month": "2024-02",
@@ -4928,10 +4941,10 @@
               "current_rent": 77065.0,
               "offered_rent": 89084.0,
               "statuses": {
-                "Notice": 3,
+                "Notice": 4,
                 "Offer Accepted": 4,
-                "Renewed": 2,
-                "Waiting For Response": 9
+                "Renewed": 6,
+                "Waiting For Response": 4
               }
             },
             {
@@ -4957,8 +4970,8 @@
         "new_leases": {
           "weeks": 50,
           "as_of": "2026-11-15",
-          "landed_at": "2026-11-16T17:28:34.992Z",
-          "source_file": "2026-11-16 11.15.26 - The Madelon - Daily Report .xlsx",
+          "landed_at": "2026-11-17T14:28:45.775Z",
+          "source_file": "2026-11-17 11.15.26 - The Madelon - Daily Report.xlsx",
           "months": [
             {
               "month": "2026-09",
@@ -10732,7 +10745,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12326,7 +12339,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13973,7 +13986,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -14956,7 +14969,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
