@@ -974,6 +974,93 @@
       "problems": [
         "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
       ]
+    },
+    {
+      "week_ending": "2026-11-22",
+      "source_file": "2026-11-17 11.16.2026- 11.22.2026- Chorus - Daily Report.xlsx",
+      "landed_at": "2026-11-18T02:28:30.935Z",
+      "totals": {
+        "leases": 3,
+        "lease_rent": 12537,
+        "prior_rent": 11126,
+        "tradeout_amount": 1411,
+        "tradeout_pct_mean": 0.124586,
+        "sqft": 1842,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "2501",
+          "unit_type": null,
+          "floor_plan": "cha1T",
+          "beds_baths": "1x1",
+          "sqft": 683,
+          "lease_rent": 4962,
+          "prior_rent": 4315,
+          "tradeout_amount": 647,
+          "tradeout_pct": 0.149942,
+          "concession": 0,
+          "net_rent": 4962,
+          "move_in": "2026-12-08",
+          "term": "16"
+        },
+        {
+          "unit": "330",
+          "unit_type": null,
+          "floor_plan": "cha1P",
+          "beds_baths": "1x1",
+          "sqft": 596,
+          "lease_rent": 3650,
+          "prior_rent": 3311,
+          "tradeout_amount": 339,
+          "tradeout_pct": 0.102386,
+          "concession": 0,
+          "net_rent": 3650,
+          "move_in": "2026-12-30",
+          "term": "3"
+        },
+        {
+          "unit": "407",
+          "unit_type": null,
+          "floor_plan": " cha1J",
+          "beds_baths": "1x1",
+          "sqft": 563,
+          "lease_rent": 3925,
+          "prior_rent": 3500,
+          "tradeout_amount": 425,
+          "tradeout_pct": 0.121429,
+          "concession": 0,
+          "net_rent": 3925,
+          "move_in": "2026-12-19",
+          "term": "13"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 3,
+          "leases": 3
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-11-22 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Chorus (from the filename)"
+        }
+      ],
+      "problems": [
+        "the file disagrees with itself about which property it is: Information sheet says 'The Landing'. 'Chorus' is used, from the filename. The Information sheet is a template field and is not always updated"
+      ]
     }
   ]
 }
