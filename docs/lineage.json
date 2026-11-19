@@ -400,7 +400,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-11-18T19:18:04.013034+00:00",
+  "generated_at": "2026-11-19T19:25:04.528151+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -2208,17 +2208,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-11-17",
+     "as_of": "2026-11-18",
      "source_file": null,
-     "landed_at": "2026-11-17T16:36:44Z",
-     "detail": "90 day(s) recorded"
+     "landed_at": "2026-11-18T16:37:08Z",
+     "detail": "91 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-11-17",
+     "as_of": "2026-11-18",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-11-17T16:36:44Z",
+     "landed_at": "2026-11-18T16:37:08Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2434,9 +2434,9 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-11-17",
+     "as_of": "2026-11-18",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-11-17T22:50:18Z",
+     "landed_at": "2026-11-18T22:31:53Z",
      "detail": "208 leases, 286 renewals and 83 weekly rows across 5 buildings, encrypted"
     }
    ],
@@ -2487,7 +2487,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-11-18T19:18:03.400457+00:00",
+     "landed_at": "2026-11-19T19:25:03.839449+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
