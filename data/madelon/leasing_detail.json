@@ -2884,6 +2884,78 @@
         }
       ],
       "problems": []
+    },
+    {
+      "week_ending": "2026-11-19",
+      "source_file": "2026-11-19 11.19.26 - The Madelon - Daily Report  (1).xlsx",
+      "landed_at": "2026-11-20T02:28:31.611Z",
+      "totals": {
+        "leases": 2,
+        "lease_rent": 9800.0,
+        "prior_rent": 9076.0,
+        "tradeout_amount": 724.0,
+        "tradeout_pct_mean": 0.080338,
+        "sqft": 1600.0,
+        "concession": 0
+      },
+      "leases": [
+        {
+          "unit": "302",
+          "unit_type": null,
+          "floor_plan": "A9",
+          "beds_baths": "1x1",
+          "sqft": 637.0,
+          "lease_rent": 4900.0,
+          "prior_rent": 4434.0,
+          "tradeout_amount": 466,
+          "tradeout_pct": 0.105097,
+          "concession": 0.0,
+          "net_rent": 4900,
+          "move_in": "2026-11-27",
+          "term": "15"
+        },
+        {
+          "unit": "417",
+          "unit_type": null,
+          "floor_plan": "B5",
+          "beds_baths": "2x2",
+          "sqft": 963.0,
+          "lease_rent": 4900.0,
+          "prior_rent": 4642.0,
+          "tradeout_amount": 258,
+          "tradeout_pct": 0.055579,
+          "concession": 0.0,
+          "net_rent": 4900,
+          "move_in": "2026-12-17",
+          "term": "15"
+        }
+      ],
+      "checks": [
+        {
+          "check": "every lease reconciles to its own trade-out",
+          "ok": true,
+          "clean": 2,
+          "leases": 2
+        },
+        {
+          "check": "week-ending date found",
+          "ok": true,
+          "note": "2026-11-19 (from the filename)"
+        },
+        {
+          "check": "stopped at a section marker",
+          "ok": true,
+          "note": "stopped at row 51 ('cancel/denials')"
+        },
+        {
+          "check": "property resolved",
+          "ok": true,
+          "note": "Madelon (from the filename)"
+        }
+      ],
+      "problems": [
+        "the filename says the week ends 2026-11-19 and the sheet says 2026-11-22; the filename is used, because the sheet's cell moves between snapshots of one week and would file that week twice"
+      ]
     }
   ]
 }
