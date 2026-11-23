@@ -400,7 +400,7 @@
   }
  },
  "meta": {
-  "generated_at": "2026-11-22T18:19:00.634554+00:00",
+  "generated_at": "2026-11-23T22:29:51.602389+00:00",
   "note": "The chain from a report in Google Drive to a card on the dashboard. The Drive side is derived from config/report_map.json, so a newly registered folder appears here by itself; the downstream edges are declared in scripts/build_lineage.py and checked against index.html and data.html on every run. Arrival times and as-of dates are read from what the pipeline actually wrote, not asserted.",
   "counts": {
    "live": 14,
@@ -844,10 +844,10 @@
     },
     {
      "property": "Madelon",
-     "file": "2026-11-02 Delinquency_11_1_2026.xls - The Madelon.xlsx",
-     "as_of": "2026-11-02",
-     "source_file": "2026-11-02 Delinquency_11_1_2026.xls - The Madelon.xlsx",
-     "landed_at": "2026-11-03T04:28:48.199Z",
+     "file": "2026-11-23 Delinquency11_23_2026 - The Madelon.xlsx",
+     "as_of": "2026-11-23",
+     "source_file": "2026-11-23 Delinquency11_23_2026 - The Madelon.xlsx",
+     "landed_at": "2026-11-23T19:28:44.060Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
@@ -936,10 +936,10 @@
     },
     {
      "property": "Madelon",
-     "file": "2026-11-02 Delinquency_11_1_2026.xls - The Madelon.xlsx",
-     "as_of": "2026-11-02",
-     "source_file": "2026-11-02 Delinquency_11_1_2026.xls - The Madelon.xlsx",
-     "landed_at": "2026-11-03T04:28:48.199Z",
+     "file": "2026-11-23 Delinquency11_23_2026 - The Madelon.xlsx",
+     "as_of": "2026-11-23",
+     "source_file": "2026-11-23 Delinquency11_23_2026 - The Madelon.xlsx",
+     "landed_at": "2026-11-23T19:28:44.060Z",
      "detail": "1 KPI cell(s): Split Between 30/60/90"
     }
    ],
@@ -2208,17 +2208,17 @@
     {
      "property": "335-third-street",
      "file": "data/335-third-street/eliseai_daily.json",
-     "as_of": "2026-11-21",
+     "as_of": "2026-11-23",
      "source_file": null,
-     "landed_at": "2026-11-21T16:37:16Z",
-     "detail": "94 day(s) recorded"
+     "landed_at": "2026-11-23T16:37:13Z",
+     "detail": "96 day(s) recorded"
     },
     {
      "property": "335 Third",
      "file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "as_of": "2026-11-21",
+     "as_of": "2026-11-23",
      "source_file": "Leasing AI Daily Report email (counts only; the prospect roster is never persisted)",
-     "landed_at": "2026-11-21T16:37:16Z",
+     "landed_at": "2026-11-23T16:37:13Z",
      "detail": "2 KPI cell(s): # of Tours/Leads/Applications, Open Elise Tasks"
     }
    ],
@@ -2434,9 +2434,9 @@
     {
      "property": "all",
      "file": "docs/rental_tracker.enc.json",
-     "as_of": "2026-11-21",
+     "as_of": "2026-11-22",
      "source_file": "Rental Rate Tracker, github.com/dbalduc/rental-rates (index.html)",
-     "landed_at": "2026-11-21T20:50:58Z",
+     "landed_at": "2026-11-22T20:58:41Z",
      "detail": "210 leases, 286 renewals and 84 weekly rows across 5 buildings, encrypted"
     }
    ],
@@ -2487,7 +2487,7 @@
      "file": "docs/metrics.json",
      "as_of": null,
      "source_file": null,
-     "landed_at": "2026-11-22T18:18:59.803247+00:00",
+     "landed_at": "2026-11-23T22:29:51.077399+00:00",
      "detail": "carried through the last pipeline run untouched"
     }
    ],
