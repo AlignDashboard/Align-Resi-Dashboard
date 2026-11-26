@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-11-25T20:25:21.424142+00:00",
+    "generated_at": "2026-11-26T20:02:11.771744+00:00",
     "portfolio": "Align Asset Management",
     "note": "Populated from uploaded reports. Placeholder charts await their source feeds."
   },
@@ -3712,23 +3712,23 @@
         "name": "Madelon"
       },
       {
-        "as_of": "2026-11-01",
-        "landed_at": "2026-11-04T08:28:34.283Z",
-        "source_file": "2026-11-04 RentRoll11_02_2026 - 335 3rd St.xlsx",
+        "as_of": "2026-11-22",
+        "landed_at": "2026-11-26T03:28:41.170Z",
+        "source_file": "2026-11-25 RentRoll11_23_2026 - 335 3rd St.xlsx",
         "units": 38,
-        "occupied": 5,
-        "vacant": 33,
+        "occupied": 9,
+        "vacant": 29,
         "on_notice": 0,
-        "occupancy": 0.131579,
+        "occupancy": 0.236842,
         "sqft": 22876.0,
         "market_rent_total": 94671.0,
-        "actual_rent_total": 12850.0,
-        "market_rent_occupied": 12850.0,
-        "actual_rent_occupied": 12850.0,
+        "actual_rent_total": 23156.0,
+        "market_rent_occupied": 23156.0,
+        "actual_rent_occupied": 23156.0,
         "loss_to_lease": 0.0,
         "loss_to_lease_pct": 0.0,
-        "market_psf": 4.2691,
-        "inplace_psf": 4.2691,
+        "market_psf": 4.2739,
+        "inplace_psf": 4.2739,
         "holdovers": {
           "units": 0,
           "share_of_occupied": 0.0,
@@ -3739,8 +3739,8 @@
         "by_plan": {
           "3353rd": {
             "units": 35,
-            "leased": 5,
-            "vacant": 30
+            "leased": 9,
+            "vacant": 26
           },
           "3353rdBM": {
             "units": 3,
@@ -3757,7 +3757,7 @@
             "market": 2545.0,
             "uncaptured": 0.0,
             "cum_units": 1,
-            "cum_pct": 0.2
+            "cum_pct": 0.111111
           },
           {
             "month": "2027-09",
@@ -3767,22 +3767,58 @@
             "market": 7660.0,
             "uncaptured": 0.0,
             "cum_units": 4,
-            "cum_pct": 0.8
+            "cum_pct": 0.444444
           },
           {
             "month": "2027-10",
-            "units": 1,
-            "sqft": 602.0,
-            "inplace": 2645.0,
-            "market": 2645.0,
+            "units": 2,
+            "sqft": 1204.0,
+            "inplace": 5290.0,
+            "market": 5290.0,
             "uncaptured": 0.0,
-            "cum_units": 5,
+            "cum_units": 6,
+            "cum_pct": 0.666667
+          },
+          {
+            "month": "2027-11",
+            "units": 3,
+            "sqft": 1806.0,
+            "inplace": 7661.0,
+            "market": 7661.0,
+            "uncaptured": 0.0,
+            "cum_units": 9,
             "cum_pct": 1.0
           }
         ],
         "gaps": [
           {
             "rank": 1,
+            "unit": "204",
+            "unit_type": "3353rd",
+            "sqft": 602.0,
+            "inplace": 2470.0,
+            "market": 2470.0,
+            "gap_mo": 0.0,
+            "gap_yr": 0.0,
+            "pct_below": 0.0,
+            "expiry": "2027-11-05",
+            "status": "Current"
+          },
+          {
+            "rank": 2,
+            "unit": "401",
+            "unit_type": "3353rd",
+            "sqft": 602.0,
+            "inplace": 2671.0,
+            "market": 2671.0,
+            "gap_mo": 0.0,
+            "gap_yr": 0.0,
+            "pct_below": 0.0,
+            "expiry": "2027-11-07",
+            "status": "Current"
+          },
+          {
+            "rank": 3,
             "unit": "402",
             "unit_type": "3353rd",
             "sqft": 602.0,
@@ -3795,7 +3831,20 @@
             "status": "Current"
           },
           {
-            "rank": 2,
+            "rank": 4,
+            "unit": "405",
+            "unit_type": "3353rd",
+            "sqft": 602.0,
+            "inplace": 2520.0,
+            "market": 2520.0,
+            "gap_mo": 0.0,
+            "gap_yr": 0.0,
+            "pct_below": 0.0,
+            "expiry": "2027-11-19",
+            "status": "Current"
+          },
+          {
+            "rank": 5,
             "unit": "501",
             "unit_type": "3353rd",
             "sqft": 602.0,
@@ -3808,7 +3857,7 @@
             "status": "Current"
           },
           {
-            "rank": 3,
+            "rank": 6,
             "unit": "601",
             "unit_type": "3353rd",
             "sqft": 602.0,
@@ -3821,7 +3870,7 @@
             "status": "Current"
           },
           {
-            "rank": 4,
+            "rank": 7,
             "unit": "605",
             "unit_type": "3353rd",
             "sqft": 602.0,
@@ -3834,7 +3883,20 @@
             "status": "Current"
           },
           {
-            "rank": 5,
+            "rank": 8,
+            "unit": "702",
+            "unit_type": "3353rd",
+            "sqft": 602.0,
+            "inplace": 2645.0,
+            "market": 2645.0,
+            "gap_mo": 0.0,
+            "gap_yr": 0.0,
+            "pct_below": 0.0,
+            "expiry": "2027-10-31",
+            "status": "Current"
+          },
+          {
+            "rank": 9,
             "unit": "705",
             "unit_type": "3353rd",
             "sqft": 602.0,
@@ -3860,14 +3922,14 @@
           {
             "check": "actual_rent ties to the report Total row",
             "ok": true,
-            "parsed": 12850.0,
-            "report": 12850.0,
+            "parsed": 23156.0,
+            "report": 23156.0,
             "delta": 0.0
           },
           {
             "check": "as-of date found",
             "ok": true,
-            "note": "2026-11-01"
+            "note": "2026-11-22"
           },
           {
             "check": "stopped at a section marker",
@@ -10745,7 +10807,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -12339,7 +12401,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -13986,7 +14048,7 @@
         "properties_in_file": 36,
         "listings_in_file": 6526,
         "source_file": "2026-10-06 HelloData - Simple - Align San Francisco Comps (Mid Market, Mission, Dogpatch_Mission Bay).xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T23:28:31.629Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
@@ -14969,7 +15031,7 @@
         "properties_in_file": 10,
         "listings_in_file": 739,
         "source_file": "2026-10-06 HelloData - Simple - 335 Third Street.xlsx",
-        "landed_at": null,
+        "landed_at": "2026-10-06T17:28:32.665Z",
         "checks": [
           {
             "check": "every listed building is described in 'Property Data'",
