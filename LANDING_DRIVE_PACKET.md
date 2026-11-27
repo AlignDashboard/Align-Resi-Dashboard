@@ -88,18 +88,18 @@ Four things worth knowing about the tables above:
 ## 2 · Current state
 
 <!-- BEGIN STATUS -->
-_Feed state as of 2026-11-26 — regenerate with `python scripts/landing_drive_status.py --write`._
+_Feed state as of 2026-11-27 — regenerate with `python scripts/landing_drive_status.py --write`._
 
 | Feed | Covers | Landed | Status |
 | --- | --- | --- | --- |
-| T12 statement | Oct 2026 | 2026-11-09 | 17d — current |
-| Budget | Jan 2026-Dec 2026 | 2026-09-16 | 71d — current |
-| **Rent roll** | 2026-11-09 | 2026-11-09 | **17d — DUE (every 7d)** |
-| Delinquency | — | 2026-11-24 | 2d — current |
-| **Weekly leasing** | 2026-09-20 | 2026-09-21 | **66d — DUE (every 7d)** |
-| **Renewal tracker** | 2027-02 | 2026-11-17 | **9d — DUE (every 7d)** |
-| Unit directory | 2026-08-25 | 2026-08-26 | 92d — refresh on change only |
-| EliseAI bldg metrics | 2026-11-09 | 2026-11-09 | 17d — current |
+| T12 statement | Oct 2026 | 2026-11-09 | 18d — current |
+| Budget | Jan 2026-Dec 2026 | 2026-09-16 | 72d — current |
+| **Rent roll** | 2026-11-09 | 2026-11-09 | **18d — DUE (every 7d)** |
+| Delinquency | — | 2026-11-24 | 3d — current |
+| **Weekly leasing** | 2026-09-20 | 2026-09-21 | **67d — DUE (every 7d)** |
+| **Renewal tracker** | 2027-02 | 2026-11-17 | **10d — DUE (every 7d)** |
+| Unit directory | 2026-08-25 | 2026-08-26 | 93d — refresh on change only |
+| EliseAI bldg metrics | 2026-11-09 | 2026-11-09 | 18d — current |
 | **EliseAI funnel** | — | — | **never arrived** |
 <!-- END STATUS -->
 
